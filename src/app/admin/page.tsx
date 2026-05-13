@@ -30,7 +30,7 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState('scan');
   const [testResult, setTestResult] = useState<'success' | 'error' | 'testing' | 'forbidden' | null>(null);
   const [nasBaseUrl, setNasBaseUrl] = useState(LOCAL_NAS_URL);
-  const [testFileName, setTestFileName] = useState('test.jpg');
+  const [testFileName, setTestFileName] = useState('1.jpg');
   const [includeRootFolder, setIncludeRootFolder] = useState(false);
 
   const artworksQuery = useMemo(() => {
@@ -61,6 +61,7 @@ export default function AdminPage() {
       let cleanName = file.name.split('.').slice(0, -1).join('.');
       cleanName = cleanName.replace(/[_-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
       
+      // Belangrijk: spaties vervangen door %20
       const encodedPath = adjustedPath.split('/').map(part => encodeURIComponent(part)).join('/');
       const fullUrl = `${nasBaseUrl}${encodedPath}`;
 
@@ -110,18 +111,16 @@ export default function AdminPage() {
     }
     
     setTimeout(() => {
-      toast({ title: "Importeren voltooid", description: "Alle werken zijn toegevoegd aan de database." });
+      toast({ title: "Importeren voltooid", description: "Alle werken zijn toegevoegd." });
       setScannedArtworks([]);
       setLoading(false);
-      setUploadProgress(0);
-      setCurrentUploadItem(0);
       setActiveTab('db');
     }, 2000);
   };
 
   const handleDeleteAll = async () => {
     if (!firestore) return;
-    if (!confirm("Weet je zeker dat je ALLE werken wilt verwijderen uit de database?")) return;
+    if (!confirm("Weet je zeker dat je de database wilt legen?")) return;
 
     setLoading(true);
     try {
@@ -131,7 +130,7 @@ export default function AdminPage() {
       await batch.commit();
       toast({ title: "Database geleegd" });
     } catch (err) {
-      toast({ variant: "destructive", title: "Fout bij het legen" });
+      toast({ variant: "destructive", title: "Fout bij legen" });
     } finally {
       setLoading(false);
     }
@@ -139,6 +138,7 @@ export default function AdminPage() {
 
   const testConnection = () => {
     setTestResult('testing');
+    // Test direct op een bestand, niet op de map (map geeft altijd 403)
     const fullUrl = `${nasBaseUrl}${testFileName}?t=${Date.now()}`;
     
     const img = new window.Image();
@@ -152,93 +152,104 @@ export default function AdminPage() {
   };
 
   return (
-    <main className="min-h-screen bg-background pt-32 pb-24 px-4">
+    <main className="min-h-screen bg-background pt-24 pb-24 px-4">
       <div className="container mx-auto max-w-5xl">
-        <header className="mb-12 flex flex-col md:flex-row items-center justify-between gap-6 bg-white p-8 rounded-3xl shadow-sm border border-border/50">
+        <header className="mb-12 flex flex-col md:flex-row items-center justify-between gap-6 bg-white p-6 rounded-3xl shadow-sm border border-border/50">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-accent flex items-center justify-center text-white">
-              <Database className="w-8 h-8" />
+            <div className="w-12 h-12 rounded-xl bg-accent flex items-center justify-center text-white">
+              <Database className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-4xl font-headline font-light">Portfolio <span className="italic">Beheer</span></h1>
-              <p className="text-muted-foreground">{artworks?.length || 0} schilderijen in database</p>
+              <h1 className="text-2xl font-headline font-light">Portfolio <span className="italic">Beheer</span></h1>
+              <p className="text-muted-foreground text-xs">{artworks?.length || 0} schilderijen online</p>
             </div>
           </div>
           <Button 
             variant="destructive" 
             onClick={handleDeleteAll} 
             disabled={loading} 
-            className="rounded-full h-14 px-8 font-bold shadow-xl hover:scale-105 transition-all bg-red-600 hover:bg-red-700 text-white"
+            className="rounded-full h-10 px-6 font-bold shadow-lg hover:scale-105 transition-all"
           >
-            <Trash2 className="w-6 h-6 mr-2" /> LEEG HELE DATABASE
+            <Trash2 className="w-4 h-4 mr-2" /> LEEG DATABASE
           </Button>
         </header>
 
-        <Card className="mb-12 border-none shadow-lg rounded-3xl bg-white overflow-hidden">
+        <Card className="mb-8 border-none shadow-lg rounded-3xl bg-white overflow-hidden">
           <CardHeader className="bg-primary/5 border-b border-primary/10">
-            <CardTitle className="flex items-center gap-2">
-              <Wifi className="w-5 h-5 text-primary" /> 1. Stap: Controleer de Verbinding
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Wifi className="w-5 h-5 text-primary" /> Stap 1: NAS Verbinding Testen
             </CardTitle>
             <CardDescription>
-              Stel in hoe we je foto's kunnen vinden op de NAS.
+              Test of de website bij je foto's op de NAS kan.
             </CardDescription>
           </CardHeader>
-          <CardContent className="p-8 space-y-6">
+          <CardContent className="p-6 space-y-6">
             <div className="grid md:grid-cols-2 gap-4">
               <div 
                 onClick={() => setNasBaseUrl(LOCAL_NAS_URL)}
-                className={`p-6 rounded-2xl border-2 cursor-pointer transition-all ${nasBaseUrl === LOCAL_NAS_URL ? 'border-accent bg-accent/5' : 'border-border bg-transparent hover:border-accent/50'}`}
+                className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${nasBaseUrl === LOCAL_NAS_URL ? 'border-accent bg-accent/5' : 'border-border bg-transparent'}`}
               >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-bold text-sm">Lokale Link (Alleen thuis Wi-Fi)</span>
-                  <Wifi className="w-4 h-4 text-accent" />
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-bold text-xs uppercase">Thuis Wi-Fi</span>
+                  <Wifi className="w-4 h-4" />
                 </div>
-                <code className="text-[10px] block p-2 bg-white rounded border truncate">{LOCAL_NAS_URL}</code>
+                <code className="text-[10px] block truncate text-muted-foreground">{LOCAL_NAS_URL}</code>
               </div>
               <div 
                 onClick={() => setNasBaseUrl(EXTERNAL_NAS_URL)}
-                className={`p-6 rounded-2xl border-2 cursor-pointer transition-all ${nasBaseUrl === EXTERNAL_NAS_URL ? 'border-accent bg-accent/5' : 'border-border bg-transparent hover:border-accent/50'}`}
+                className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${nasBaseUrl === EXTERNAL_NAS_URL ? 'border-accent bg-accent/5' : 'border-border bg-transparent'}`}
               >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-bold text-sm">Externe Link (Werkt overal)</span>
-                  <Globe className="w-4 h-4 text-accent" />
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-bold text-xs uppercase">Overal (Extern)</span>
+                  <Globe className="w-4 h-4" />
                 </div>
-                <code className="text-[10px] block p-2 bg-white rounded border truncate">{EXTERNAL_NAS_URL}</code>
+                <code className="text-[10px] block truncate text-muted-foreground">{EXTERNAL_NAS_URL}</code>
               </div>
             </div>
 
-            <div className="bg-muted/30 p-6 rounded-2xl space-y-4 border">
-              <div className="flex flex-col md:flex-row gap-4">
-                <div className="flex-1">
-                  <Label className="font-bold text-xs mb-2 block uppercase tracking-wider">Test een bestand (bijv. foto.jpg):</Label>
+            <div className="bg-muted/30 p-4 rounded-2xl space-y-4 border">
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-[10px] font-bold uppercase mb-2 block">Test een bestand (bijv. 1.jpg):</Label>
                   <div className="flex gap-2">
                     <Input 
                       value={testFileName} 
                       onChange={(e) => setTestFileName(e.target.value)}
-                      placeholder="naam-van-foto.jpg"
-                      className="bg-white"
+                      placeholder="foto.jpg"
+                      className="bg-white h-10"
                     />
+                    <Button variant="outline" onClick={testConnection} disabled={testResult === 'testing'} className="h-10">
+                      {testResult === 'testing' ? <Loader2 className="animate-spin h-4 w-4" /> : "Test"}
+                    </Button>
                   </div>
                 </div>
-                <div className="flex items-end gap-2">
-                  <Button variant="outline" onClick={testConnection} disabled={testResult === 'testing'} className="h-10">
-                    {testResult === 'testing' ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-                    Test Link
-                  </Button>
-                  <Button variant="secondary" onClick={() => window.open(`${nasBaseUrl}${testFileName}`, '_blank')} className="h-10">
-                    <ExternalLink className="mr-2 h-4 w-4" /> Open Direct
+                <div className="flex items-end">
+                   <Button variant="secondary" onClick={() => window.open(`${nasBaseUrl}${testFileName}`, '_blank')} className="w-full h-10">
+                    <ExternalLink className="mr-2 h-4 w-4" /> Open Bestand Direct
                   </Button>
                 </div>
               </div>
               
-              {testResult === 'success' && <div className="flex items-center text-green-600 text-sm gap-2 font-bold bg-green-50 p-4 rounded-xl border border-green-200"><CheckCircle2 className="w-5 h-5"/> Verbinding geslaagd!</div>}
+              {testResult === 'success' && (
+                <div className="flex items-center text-green-600 text-sm gap-2 font-bold bg-green-50 p-4 rounded-xl border border-green-200">
+                  <CheckCircle2 className="w-5 h-5"/> Verbinding geslaagd! Foto is bereikbaar.
+                </div>
+              )}
               
               {testResult === 'forbidden' && (
-                <Alert variant="destructive" className="rounded-xl bg-destructive/5 border-destructive/20">
+                <Alert variant="destructive" className="rounded-xl border-destructive/20 bg-destructive/5">
                   <Lock className="h-4 w-4" />
-                  <AlertTitle className="font-bold">403: Toegang Geweigerd op NAS</AlertTitle>
-                  <AlertDescription className="text-xs space-y-2">
-                    <p>De NAS weigert toegang. Controleer de machtigingen op de map <b>web/portfolio</b> en zorg dat de groep <b>http</b> leesrechten heeft.</p>
+                  <AlertTitle className="font-bold">403: NAS weigert toegang</AlertTitle>
+                  <AlertDescription className="text-xs space-y-3">
+                    <p>De NAS is gevonden, maar de foto mag niet worden getoond.</p>
+                    <p className="font-bold">Oplossing op je NAS:</p>
+                    <ol className="list-decimal ml-4 space-y-1">
+                      <li>Open <b>File Station</b>.</li>
+                      <li>Rechtermuis op map <b>web/portfolio</b> → <b>Eigenschappen</b>.</li>
+                      <li>Tabblad <b>Machtigingen</b> → Klik op <b>Maken</b>.</li>
+                      <li>Zoek groep <b>http</b> (of <b>Everyone</b>).</li>
+                      <li>Vink <b>Lezen</b> aan en vink onderaan <b>"Toepassen op submappen en bestanden"</b> aan!</li>
+                    </ol>
                   </AlertDescription>
                 </Alert>
               )}
@@ -247,8 +258,8 @@ export default function AdminPage() {
                 <Alert className="rounded-xl bg-amber-50 border-amber-200">
                   <ShieldAlert className="h-4 w-4 text-amber-600" />
                   <AlertTitle className="font-bold text-amber-800">Browserblokkade (SSL)</AlertTitle>
-                  <AlertDescription className="text-xs text-amber-700 space-y-2">
-                    <p>Klik op <b>Open Direct</b> hierboven en typ <b>thisisunsafe</b> op de geopende pagina.</p>
+                  <AlertDescription className="text-xs text-amber-700">
+                    <p>Klik op <b>Open Bestand Direct</b>. Zie je een rode waarschuwing? Typ dan <b>thisisunsafe</b> op je toetsenbord om door te gaan.</p>
                   </AlertDescription>
                 </Alert>
               )}
@@ -257,15 +268,15 @@ export default function AdminPage() {
         </Card>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-12 h-14 bg-muted/30 p-1 rounded-2xl">
-            <TabsTrigger value="scan" className="rounded-xl data-[state=active]:bg-white">2. Map Scannen</TabsTrigger>
-            <TabsTrigger value="import" className="rounded-xl data-[state=active]:bg-white">3. Opslaan ({scannedArtworks.length})</TabsTrigger>
-            <TabsTrigger value="db" className="rounded-xl data-[state=active]:bg-white">4. Database Check</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3 mb-8 h-12 bg-muted/30 p-1 rounded-2xl">
+            <TabsTrigger value="scan" className="rounded-xl">1. Map Scannen</TabsTrigger>
+            <TabsTrigger value="import" className="rounded-xl">2. Opslaan ({scannedArtworks.length})</TabsTrigger>
+            <TabsTrigger value="db" className="rounded-xl">3. Database</TabsTrigger>
           </TabsList>
 
           <TabsContent value="scan">
-            <div className="grid md:grid-cols-2 gap-8">
-              <Card className="border-none shadow-lg rounded-3xl p-12 text-center bg-white">
+            <div className="grid md:grid-cols-2 gap-6">
+              <Card className="border-none shadow-lg rounded-3xl p-8 text-center bg-white flex flex-col items-center justify-center min-h-[300px]">
                 <input 
                   type="file" 
                   multiple 
@@ -275,37 +286,31 @@ export default function AdminPage() {
                   accept="image/*" 
                   {...({ webkitdirectory: "", directory: "" } as any)} 
                 />
-                <div className="max-w-md mx-auto space-y-6">
-                  <div className="w-24 h-24 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-6 text-accent">
-                    <FolderOpen className="w-12 h-12" />
-                  </div>
-                  <h2 className="text-2xl font-headline">Kies je Portfolio Map</h2>
-                  <div className="flex items-center justify-center space-x-2 py-4 border-t border-b">
-                    <Switch id="root-folder" checked={includeRootFolder} onCheckedChange={(val) => setIncludeRootFolder(val)} />
-                    <Label htmlFor="root-folder" className="text-xs font-medium cursor-pointer">Mapnaam opnemen in link</Label>
-                  </div>
-                  <Button size="lg" className="rounded-full h-16 px-12 text-lg shadow-xl hover:scale-105 transition-transform w-full" asChild>
-                    <label htmlFor="file-scanner" className="cursor-pointer">Map Kiezen</label>
-                  </Button>
+                <FolderOpen className="w-12 h-12 text-accent mb-4" />
+                <h2 className="text-xl font-headline mb-4">Portfolio Map Kiezen</h2>
+                <div className="flex items-center space-x-2 mb-6 p-3 bg-muted/20 rounded-xl">
+                  <Switch id="root-folder" checked={includeRootFolder} onCheckedChange={setIncludeRootFolder} />
+                  <Label htmlFor="root-folder" className="text-[10px] font-medium cursor-pointer uppercase">Mapnaam in link opnemen</Label>
                 </div>
+                <Button size="lg" className="rounded-full h-12 px-10 shadow-xl" asChild>
+                  <label htmlFor="file-scanner" className="cursor-pointer">Map Selecteren</label>
+                </Button>
               </Card>
 
-              <Card className="border-none shadow-lg rounded-3xl bg-white p-8 overflow-hidden flex flex-col">
-                <CardHeader className="p-0 mb-6">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Search className="w-4 h-4" /> Live Link Preview
-                  </CardTitle>
-                </CardHeader>
-                <div className="flex-1 overflow-y-auto max-h-[300px] space-y-2 pr-2 custom-scrollbar">
+              <Card className="border-none shadow-lg rounded-3xl bg-white p-6 flex flex-col">
+                <h3 className="text-sm font-bold flex items-center gap-2 mb-4 uppercase tracking-wider">
+                  <Search className="w-4 h-4" /> Link Preview
+                </h3>
+                <div className="flex-1 overflow-y-auto max-h-[220px] space-y-2 pr-2 custom-scrollbar">
                   {scannedArtworks.length > 0 ? (
                     scannedArtworks.slice(0, 10).map((art, i) => (
-                      <div key={i} className="p-3 bg-muted/20 rounded-xl border text-[9px] font-mono break-all">
+                      <div key={i} className="p-2 bg-muted/20 rounded-lg border text-[9px] font-mono break-all">
                         <span className="text-primary font-bold">[{art.title}]</span><br/>
                         <span className="text-accent">{art.imageUrl}</span>
                       </div>
                     ))
                   ) : (
-                    <div className="h-full flex items-center justify-center text-muted-foreground italic text-xs">Scan een map om de links te zien...</div>
+                    <div className="h-full flex items-center justify-center text-muted-foreground italic text-xs">Scan een map om linkjes te zien...</div>
                   )}
                 </div>
               </Card>
@@ -315,22 +320,22 @@ export default function AdminPage() {
           <TabsContent value="import">
             <Card className="border-none shadow-lg rounded-3xl bg-white p-8">
               {loading ? (
-                <div className="py-12 space-y-6">
-                  <div className="flex justify-between text-2xl font-headline italic">
-                    <span>Bezig met uploaden...</span>
+                <div className="py-8 space-y-4">
+                  <div className="flex justify-between text-xl font-headline italic">
+                    <span>Importeren...</span>
                     <span>{currentUploadItem} / {scannedArtworks.length}</span>
                   </div>
-                  <Progress value={uploadProgress} className="h-8 rounded-full" />
+                  <Progress value={uploadProgress} className="h-6 rounded-full" />
                 </div>
               ) : (
-                <div className="space-y-6">
-                  <Alert className="bg-blue-50 border-blue-200">
-                    <Info className="h-4 w-4 text-blue-600" />
-                    <AlertTitle>Bevestigen</AlertTitle>
-                    <AlertDescription className="text-xs">Je gaat <b>{scannedArtworks.length}</b> schilderijen toevoegen.</AlertDescription>
-                  </Alert>
-                  <Button onClick={handleSaveAll} className="w-full h-24 text-2xl font-bold rounded-3xl shadow-2xl hover:scale-[1.02] transition-transform" disabled={scannedArtworks.length === 0}>
-                    Nu {scannedArtworks.length} Werken Toevoegen
+                <div className="space-y-6 text-center">
+                  <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Info className="w-8 h-8" />
+                  </div>
+                  <h3 className="text-2xl font-headline italic">Klaar voor import</h3>
+                  <p className="text-muted-foreground text-sm">Je gaat <b>{scannedArtworks.length}</b> schilderijen toevoegen aan de database.</p>
+                  <Button onClick={handleSaveAll} className="w-full h-16 text-xl font-bold rounded-2xl shadow-xl" disabled={scannedArtworks.length === 0}>
+                    Start Importeren
                   </Button>
                 </div>
               )}
@@ -338,13 +343,13 @@ export default function AdminPage() {
           </TabsContent>
 
           <TabsContent value="db">
-            <Card className="border-none shadow-lg rounded-3xl bg-white p-8">
+            <Card className="border-none shadow-lg rounded-3xl bg-white p-6">
               {loadingArtworks ? (
-                <div className="flex justify-center py-20"><Loader2 className="animate-spin text-accent h-12 w-12" /></div>
+                <div className="flex justify-center py-12"><Loader2 className="animate-spin text-accent h-10 w-10" /></div>
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4">
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
                   {artworks?.map((art: any) => (
-                    <div key={art.id} className="relative aspect-square border rounded-2xl overflow-hidden group bg-muted/30">
+                    <div key={art.id} className="relative aspect-square border rounded-xl overflow-hidden group bg-muted/30">
                       <Image 
                         src={art.imageUrl} 
                         alt="" 
@@ -352,11 +357,11 @@ export default function AdminPage() {
                         className="object-cover" 
                         unoptimized={true} 
                         onError={(e) => {
-                          (e.target as any).src = 'https://placehold.co/400x400/d5dc96/2013025?text=Link+Fout';
+                          (e.target as any).src = 'https://placehold.co/400x400/d5dc96/2013025?text=403/404';
                         }}
                       />
-                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-2">
-                        <Button variant="destructive" size="sm" className="rounded-full h-8 w-full" onClick={() => deleteDoc(doc(firestore!, 'artworks', art.id))}>Verwijder</Button>
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-1">
+                        <Button variant="destructive" size="sm" className="rounded-full h-6 w-full text-[8px]" onClick={() => deleteDoc(doc(firestore!, 'artworks', art.id))}>X</Button>
                       </div>
                     </div>
                   ))}

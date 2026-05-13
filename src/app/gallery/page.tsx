@@ -58,22 +58,20 @@ export default function GalleryPage() {
               Ontdek de volledige collectie van Thijs Sterk.
             </p>
             
-            {artworks && artworks.length > 0 && (
-              <Button 
-                variant="outline" 
-                size="lg" 
-                onClick={() => setShowHelp(!showHelp)}
-                className="mt-4 border-accent text-accent hover:bg-accent hover:text-white rounded-full px-8 animate-bounce"
-              >
-                <HelpCircle className="w-5 h-5 mr-2" />
-                AFBEELDINGEN LADEN NIET? KLIK HIER
-              </Button>
-            )}
+            <Button 
+              variant="outline" 
+              size="lg" 
+              onClick={() => setShowHelp(!showHelp)}
+              className="mt-4 border-accent text-accent hover:bg-accent hover:text-white rounded-full px-8 bg-yellow-400/20 font-bold"
+            >
+              <HelpCircle className="w-5 h-5 mr-2" />
+              AFBEELDINGEN LADEN NIET? KLIK HIER
+            </Button>
           </div>
         </header>
 
         {(hasImageErrors || showHelp) && (
-          <Alert className="mb-12 bg-amber-50 border-amber-400 max-w-4xl mx-auto rounded-3xl shadow-xl border-4 p-8">
+          <Alert className="mb-12 bg-amber-50 border-amber-400 max-w-4xl mx-auto rounded-3xl shadow-xl border-4 p-8 animate-in fade-in slide-in-from-top-4 duration-500">
             <div className="flex items-start gap-4">
               <AlertCircle className="h-8 w-8 text-amber-600 shrink-0" />
               <div className="space-y-4 w-full">
@@ -95,7 +93,7 @@ export default function GalleryPage() {
                     
                     <div className="bg-white/50 p-4 rounded-xl border border-amber-200">
                       <h4 className="font-bold mb-2">Stap 2: Galerie Verversen</h4>
-                      <p className="mb-4 text-xs">Zodra je de NAS in het andere tabblad ziet, kom je terug naar deze pagina en klik je op de knop hieronder.</p>
+                      <p className="mb-4 text-xs">Zodra je de NAS in het andere tabblad ziet (ook al staat er "403 Forbidden"), kom je terug en klik je op verversen.</p>
                       <Button 
                         variant="secondary"
                         className="w-full border-amber-300"
@@ -115,11 +113,6 @@ export default function GalleryPage() {
           <div className="flex flex-col items-center justify-center py-32 gap-4">
             <Loader2 className="w-8 h-8 animate-spin text-accent" />
             <p className="text-muted-foreground animate-pulse text-[10px] uppercase tracking-[0.2em]">Collectie laden...</p>
-          </div>
-        ) : error ? (
-          <div className="text-center py-24 border rounded-3xl border-dashed">
-            <p className="text-destructive mb-4 text-sm">Er ging iets mis bij het laden van de database.</p>
-            <Button variant="outline" size="sm" onClick={() => window.location.reload()}><RefreshCcw className="mr-2 w-3 h-3" /> Probeer opnieuw</Button>
           </div>
         ) : artworks && artworks.length > 0 ? (
           <>
