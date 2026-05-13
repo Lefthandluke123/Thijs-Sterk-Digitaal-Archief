@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo } from 'react';
@@ -140,12 +139,7 @@ export default function GalleryPage() {
         ) : (
           <div className="text-center py-24 border rounded-2xl border-dashed">
             <h3 className="text-lg font-light mb-2">Geen schilderijen gevonden</h3>
-            <p className="text-muted-foreground text-sm max-w-xs mx-auto mb-6">Er staan nog geen werken in de database. Gebruik de beheerpagina om je portfolio te vullen.</p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mt-6">
-              <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
-                <RefreshCcw className="mr-2 w-3 h-3" /> Ververs
-              </Button>
-            </div>
+            <p className="text-muted-foreground text-sm max-w-xs mx-auto mb-6">Er staan nog geen werken in de database.</p>
           </div>
         )}
       </div>

@@ -1,9 +1,8 @@
-
 "use client";
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useFirestore, useCollection } from '@/firebase';
-import { collection, addDoc, doc, serverTimestamp, deleteDoc, writeBatch, getDocs, setDoc } from 'firebase/firestore';
+import { collection, doc, serverTimestamp, deleteDoc, writeBatch, getDocs, setDoc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
@@ -47,21 +46,16 @@ export default function AdminPage() {
       const relativePath = (file as any).webkitRelativePath || file.name;
       const pathParts = relativePath.split('/');
       
-      // Bepaal het pad op de NAS op basis van de instelling
+      // Bepaal het pad op de NAS
       let adjustedPath = relativePath;
       if (!includeRootFolder && pathParts.length > 1) {
-        // We slaan de eerste mapnaam over als de gebruiker dat wil
         adjustedPath = pathParts.slice(1).join('/');
       }
       
       let detectedSeries = 'Onbekende Serie';
       if (pathParts.length > 1) {
-        // Gebruik de mapnaam boven het bestand als serie
         detectedSeries = pathParts[pathParts.length - 2] || detectedSeries;
         detectedSeries = detectedSeries.replace(/[_-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-        if (detectedSeries === pathParts[0] && !includeRootFolder) {
-           detectedSeries = "Algemeen";
-        }
       }
 
       let cleanName = file.name.split('.').slice(0, -1).join('.');
@@ -147,15 +141,11 @@ export default function AdminPage() {
     setTestResult('testing');
     const fullUrl = `${nasBaseUrl}${testFileName}?t=${Date.now()}`;
     
-    // We gebruiken fetch om de statuscode te kunnen zien (403 vs 404)
     fetch(fullUrl, { mode: 'no-cors' })
       .then(() => {
-        // no-cors fetch geeft geen statuscode terug, dus we gebruiken een Image als backup test
         const img = new window.Image();
         img.onload = () => setTestResult('success');
-        img.onerror = () => {
-          setTestResult('notfound');
-        };
+        img.onerror = () => setTestResult('forbidden');
         img.src = fullUrl;
       })
       .catch(() => {
@@ -242,15 +232,19 @@ export default function AdminPage() {
                 </div>
               </div>
               
-              {testResult === 'success' && <div className="flex items-center text-green-600 text-sm gap-2 font-bold bg-green-50 p-4 rounded-xl border border-green-200"><CheckCircle2 className="w-5 h-5"/> Verbinding geslaagd! De plaatjes zouden moeten werken.</div>}
+              {testResult === 'success' && <div className="flex items-center text-green-600 text-sm gap-2 font-bold bg-green-50 p-4 rounded-xl border border-green-200"><CheckCircle2 className="w-5 h-5"/> Verbinding geslaagd!</div>}
               
-              {testResult === 'notfound' && (
+              {testResult === 'forbidden' && (
                 <Alert variant="destructive" className="rounded-xl bg-destructive/5 border-destructive/20">
-                  <FileWarning className="h-4 w-4" />
-                  <AlertTitle className="font-bold">404: Bestand niet gevonden</AlertTitle>
-                  <AlertDescription className="text-xs">
-                    De link klopt wel met je NAS, maar het bestand <b>{testFileName}</b> staat niet in de map <b>web/portfolio/</b>.
-                    <br/>Check hoofdletters en spaties!
+                  <Lock className="h-4 w-4" />
+                  <AlertTitle className="font-bold">403: Toegang Geweigerd</AlertTitle>
+                  <AlertDescription className="text-xs space-y-2">
+                    <p>De NAS is gevonden, maar weigert toegang. Doe dit op de NAS:</p>
+                    <ol className="list-decimal ml-4 space-y-1">
+                      <li>Rechtermuis op map <b>web/portfolio</b> &rarr; Eigenschappen &rarr; Machtigingen.</li>
+                      <li>Voeg groep <b>http</b> toe met "Lezen" rechten.</li>
+                      <li><b>CRUCIAAL:</b> Vink aan: "Toepassen op deze map, submappen en bestanden".</li>
+                    </ol>
                   </AlertDescription>
                 </Alert>
               )}
@@ -258,13 +252,13 @@ export default function AdminPage() {
               {testResult === 'error' && (
                 <Alert className="rounded-xl bg-amber-50 border-amber-200">
                   <ShieldAlert className="h-4 w-4 text-amber-600" />
-                  <AlertTitle className="font-bold text-amber-800">Browserblokkade (SSL/Mixed Content)</AlertTitle>
+                  <AlertTitle className="font-bold text-amber-800">Browserblokkade (SSL)</AlertTitle>
                   <AlertDescription className="text-xs text-amber-700 space-y-2">
-                    <p>Je browser vertrouwt de directe verbinding met je NAS nog niet. Doe dit:</p>
+                    <p>Je browser blokkeert de verbinding. Doe dit:</p>
                     <ol className="list-decimal ml-4 space-y-1">
                       <li>Klik op <b>Open Direct</b> hierboven.</li>
-                      <li>Als je een waarschuwing krijgt, klik op 'Geavanceerd' en 'Doorgaan naar...'.</li>
-                      <li>Zie je de foto? Kom dan terug en test opnieuw.</li>
+                      <li>Klik op "Geavanceerd" en "Doorgaan naar...".</li>
+                      <li>Of typ op dat tabblad simpelweg: <b>thisisunsafe</b></li>
                     </ol>
                   </AlertDescription>
                 </Alert>
@@ -297,24 +291,10 @@ export default function AdminPage() {
                     <FolderOpen className="w-12 h-12" />
                   </div>
                   <h2 className="text-2xl font-headline">Selecteer je Portfolio Map</h2>
-                  <p className="text-muted-foreground text-sm">Selecteer de map op je computer. De app berekent de juiste links naar je NAS.</p>
-                  
                   <div className="flex items-center justify-center space-x-2 py-4 border-t border-b">
-                    <Switch 
-                      id="root-folder" 
-                      checked={includeRootFolder} 
-                      onCheckedChange={(val) => setIncludeRootFolder(val)} 
-                    />
-                    <Label htmlFor="root-folder" className="text-xs font-medium cursor-pointer">
-                      Inclusief naam van de gekozen map
-                    </Label>
+                    <Switch id="root-folder" checked={includeRootFolder} onCheckedChange={(val) => setIncludeRootFolder(val)} />
+                    <Label htmlFor="root-folder" className="text-xs font-medium cursor-pointer">Inclusief naam van de gekozen map</Label>
                   </div>
-                  <p className="text-[10px] text-muted-foreground italic">
-                    {includeRootFolder 
-                      ? "Link: .../portfolio/[Gekozen Map]/foto.jpg" 
-                      : "Link: .../portfolio/foto.jpg"}
-                  </p>
-
                   <Button size="lg" className="rounded-full h-16 px-12 text-lg shadow-xl hover:scale-105 transition-transform w-full" asChild>
                     <label htmlFor="file-scanner" className="cursor-pointer">Map Kiezen</label>
                   </Button>
@@ -326,7 +306,6 @@ export default function AdminPage() {
                   <CardTitle className="text-lg flex items-center gap-2">
                     <Search className="w-4 h-4" /> Live Link Preview
                   </CardTitle>
-                  <CardDescription className="text-xs italic">Kopieer één linkje naar je browser om te testen of hij werkt.</CardDescription>
                 </CardHeader>
                 <div className="flex-1 overflow-y-auto max-h-[300px] space-y-2 pr-2 custom-scrollbar">
                   {scannedArtworks.length > 0 ? (
@@ -337,16 +316,9 @@ export default function AdminPage() {
                       </div>
                     ))
                   ) : (
-                    <div className="h-full flex items-center justify-center text-muted-foreground italic text-xs">
-                      Geen bestanden gescand...
-                    </div>
+                    <div className="h-full flex items-center justify-center text-muted-foreground italic text-xs">Geen bestanden gescand...</div>
                   )}
                 </div>
-                {scannedArtworks.length > 0 && (
-                  <Button variant="ghost" className="mt-4 w-full text-xs" onClick={() => setActiveTab('import')}>
-                    Links kloppen? Ga naar Stap 3.
-                  </Button>
-                )}
               </Card>
             </div>
           </TabsContent>
@@ -366,9 +338,7 @@ export default function AdminPage() {
                   <Alert className="bg-blue-50 border-blue-200">
                     <Info className="h-4 w-4 text-blue-600" />
                     <AlertTitle>Laatste Check</AlertTitle>
-                    <AlertDescription className="text-xs">
-                      Je gaat <b>{scannedArtworks.length}</b> werken toevoegen. Let op: deze app kopieert je bestanden niet, hij maakt alleen een link naar je NAS.
-                    </AlertDescription>
+                    <AlertDescription className="text-xs">Je gaat <b>{scannedArtworks.length}</b> werken toevoegen.</AlertDescription>
                   </Alert>
                   <Button onClick={handleSaveAll} className="w-full h-24 text-2xl font-bold rounded-3xl shadow-2xl hover:scale-[1.02] transition-transform" disabled={scannedArtworks.length === 0}>
                     Nu {scannedArtworks.length} Werken Toevoegen
@@ -397,14 +367,10 @@ export default function AdminPage() {
                         }}
                       />
                       <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-2">
-                        <p className="text-[8px] text-white truncate w-full text-center">{art.title}</p>
-                        <Button variant="destructive" size="sm" className="rounded-full h-8 w-full" onClick={() => deleteDoc(doc(firestore!, 'artworks', art.id))}>
-                          Verwijder
-                        </Button>
+                        <Button variant="destructive" size="sm" className="rounded-full h-8 w-full" onClick={() => deleteDoc(doc(firestore!, 'artworks', art.id))}>Verwijder</Button>
                       </div>
                     </div>
                   ))}
-                  {artworks?.length === 0 && <div className="col-span-full py-20 text-center text-muted-foreground italic">Geen schilderijen in database.</div>}
                 </div>
               )}
             </Card>
