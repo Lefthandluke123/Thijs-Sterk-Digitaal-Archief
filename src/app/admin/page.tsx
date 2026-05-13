@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -142,7 +141,6 @@ export default function AdminPage() {
     const img = new window.Image();
     
     // We proberen een dummy plaatje of een bestand dat op je NAS zou kunnen staan
-    // Voor een betere test openen we de URL in een nieuw tabblad als het faalt
     img.onload = () => setTestResult('success');
     img.onerror = () => {
       setTestResult('error');
@@ -233,7 +231,7 @@ export default function AdminPage() {
                   Als de test faalt, komt dat vaak doordat de browser "beveiliging" dwarsboomt. 
                   <ol className="list-decimal ml-4 mt-2 space-y-1">
                     <li>Klik op de knop <b>'Open NAS direct'</b> hierboven.</li>
-                    <li>Als je een melding krijgt "Je verbinding is niet privé", klik op <b>Geavanceerd -> Doorgaan naar...</b></li>
+                    <li>Als je een melding krijgt "Je verbinding is niet privé", klik op <b>Geavanceerd -&gt; Doorgaan naar...</b></li>
                     <li>Kom terug naar deze pagina en probeer de test opnieuw.</li>
                   </ol>
                 </AlertDescription>
