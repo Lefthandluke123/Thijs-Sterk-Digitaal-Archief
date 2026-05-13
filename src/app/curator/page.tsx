@@ -33,7 +33,7 @@ export default function CuratorPage() {
 
   const filteredArtworks = useMemo(() => {
     if (!artworks) return [];
-    if (activeTags.length === 0) return []; // Start leeg voor focus op keuze
+    if (activeTags.length === 0) return [];
     
     return artworks.filter(art => {
       return activeTags.every(tag => art.tags?.includes(tag));
@@ -56,12 +56,12 @@ export default function CuratorPage() {
       {/* Curator Header */}
       <div className="w-full bg-accent/5 border-b border-border/10 py-16 md:py-24">
         <div className="container mx-auto px-6 max-w-5xl text-center">
-          <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-accent mb-4 block">Gecureerd Portfolio</span>
+          <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-accent mb-4 block">Uw Persoonlijke Selectie</span>
           <h1 className="font-headline text-5xl md:text-7xl font-light text-foreground tracking-tight mb-8">
             Stel <span className="italic">Uw Collectie</span> samen
           </h1>
           <p className="text-muted-foreground text-lg font-light max-w-2xl mx-auto leading-relaxed">
-            Ontdek het werk van Thijs Sterk door de thema's te selecteren die u het meest raken. Creëer een galerie die uw persoonlijke visie weerspiegelt.
+            Laat uw nieuwsgierigheid de vrije loop. Of u nu meer wilt zien van Groet of van stillevens met bloemen, dit is uw plek om een persoonlijke selectie te maken uit het werk van Thijs Sterk.
           </p>
         </div>
       </div>
@@ -76,7 +76,7 @@ export default function CuratorPage() {
             {/* Tag Cloud Selector */}
             <div className="flex flex-col items-center space-y-8">
               <h2 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-3">
-                <Sparkles className="w-3 h-3 text-accent" /> Kies uw thema's
+                <Sparkles className="w-3 h-3 text-accent" /> Kies de thema's
               </h2>
               <div className="flex flex-wrap justify-center gap-3 md:gap-4 max-w-4xl">
                 {allAvailableTags.length > 0 ? allAvailableTags.map(tag => (
