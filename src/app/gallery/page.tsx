@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button';
 import { Maximize2, Loader2, X, RefreshCcw, Info, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert } from "@/components/ui/alert";
 
 export default function GalleryPage() {
   const [selectedArtwork, setSelectedArtwork] = useState<any | null>(null);
@@ -158,57 +158,64 @@ export default function GalleryPage() {
       </div>
 
       <Dialog open={!!selectedArtwork} onOpenChange={() => setSelectedArtwork(null)}>
-        <DialogContent className="max-w-[95vw] w-full h-[90vh] p-0 flex flex-col md:flex-row bg-background/98 backdrop-blur-2xl border-none">
+        <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background/98 backdrop-blur-2xl border-none rounded-none outline-none">
           <div className="relative flex-1 bg-black/5 flex items-center justify-center overflow-hidden group">
             {selectedArtwork && (
               <Image
                 src={selectedArtwork.imageUrl}
                 alt={selectedArtwork.title}
                 fill
-                className="object-contain p-6 md:p-16"
+                className="object-contain p-4 md:p-12"
                 unoptimized={isExternalStorage(selectedArtwork.imageUrl)}
               />
             )}
             
-            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-4 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-4 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
               <button 
                 onClick={(e) => { e.stopPropagation(); navigateGallery('prev'); }}
-                className="p-3 rounded-full bg-background/20 backdrop-blur-md hover:bg-background/40 transition-colors"
+                className="p-3 rounded-full bg-background/20 backdrop-blur-md hover:bg-background/40 transition-colors pointer-events-auto"
               >
                 <ChevronLeft className="w-6 h-6 text-foreground" />
               </button>
               <button 
                 onClick={(e) => { e.stopPropagation(); navigateGallery('next'); }}
-                className="p-3 rounded-full bg-background/20 backdrop-blur-md hover:bg-background/40 transition-colors"
+                className="p-3 rounded-full bg-background/20 backdrop-blur-md hover:bg-background/40 transition-colors pointer-events-auto"
               >
                 <ChevronRight className="w-6 h-6 text-foreground" />
               </button>
             </div>
 
-            <DialogClose className="absolute top-6 left-6 z-10 p-2 hover:bg-black/5 rounded-full transition-colors">
+            <DialogClose className="absolute top-6 left-6 z-50 p-2 hover:bg-black/5 rounded-full transition-colors">
               <X className="w-4 h-4 opacity-40" />
             </DialogClose>
           </div>
-          <div className="w-full md:w-[320px] p-10 flex flex-col justify-center bg-background border-l border-border/30">
-            <div className="mb-8">
-              <div className="text-accent font-bold uppercase text-[9px] tracking-widest mb-3 opacity-60">{selectedArtwork?.series}</div>
-              <DialogTitle className="font-headline text-3xl font-light mb-3">{selectedArtwork?.title}</DialogTitle>
-              <DialogDescription className="text-[10px] uppercase tracking-widest text-muted-foreground border-l-2 border-accent/20 pl-4 py-1 italic">
-                {selectedArtwork?.medium} &bull; {selectedArtwork?.year}
-              </DialogDescription>
-            </div>
-            <div className="space-y-8">
-              <p className="text-muted-foreground leading-relaxed text-[13px] font-light">{selectedArtwork?.description}</p>
-              <div className="pt-8 border-t border-border/20 flex flex-col gap-3">
-                <Button variant="outline" className="rounded-full w-full text-[10px] uppercase tracking-widest h-11 border-muted">Interesse?</Button>
-                <div className="text-[8px] text-muted-foreground/40 break-all bg-muted/5 p-2 rounded italic">
-                  Ref: {selectedArtwork?.imageUrl}
+
+          <div className="w-full bg-background/90 backdrop-blur-md py-8 px-6 md:px-12 border-t border-border/20 animate-fade-in-up">
+            <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center md:items-start justify-between gap-8">
+              <div className="flex-1 text-center md:text-left">
+                <div className="text-accent font-bold uppercase text-[9px] tracking-widest mb-2 opacity-60">
+                  {selectedArtwork?.series}
+                </div>
+                <DialogTitle className="font-headline text-3xl font-light mb-2">
+                  {selectedArtwork?.title}
+                </DialogTitle>
+                <DialogDescription className="text-[10px] uppercase tracking-widest text-muted-foreground italic mb-4">
+                  {selectedArtwork?.medium} &bull; {selectedArtwork?.year}
+                </DialogDescription>
+                <p className="text-muted-foreground leading-relaxed text-[13px] font-light max-w-2xl">
+                  {selectedArtwork?.description}
+                </p>
+              </div>
+
+              <div className="flex flex-col items-center md:items-end gap-4 shrink-0 min-w-[200px]">
+                <Button variant="outline" className="rounded-full w-full text-[10px] uppercase tracking-widest h-11 border-muted px-8">
+                  Interesse?
+                </Button>
+                <div className="flex gap-6 text-[9px] uppercase tracking-widest text-muted-foreground/40 font-medium">
+                  <span>{filteredArtworks.findIndex(a => a.id === selectedArtwork?.id) + 1} / {filteredArtworks.length}</span>
+                  <span className="hidden md:inline">Pijltjes om te bladeren</span>
                 </div>
               </div>
-            </div>
-            <div className="mt-auto pt-6 flex justify-between text-[9px] uppercase tracking-widest text-muted-foreground/40">
-              <span>Pijltjes om te bladeren</span>
-              <span>{filteredArtworks.findIndex(a => a.id === selectedArtwork?.id) + 1} / {filteredArtworks.length}</span>
             </div>
           </div>
         </DialogContent>
