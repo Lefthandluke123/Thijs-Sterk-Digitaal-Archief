@@ -13,7 +13,7 @@ export function Navbar() {
   const navLinks = [
     { name: 'Home', href: '/' },
     { name: 'Galerie', href: '/gallery' },
-    { name: 'Samenstellen', href: '/curator' },
+    { name: 'Uw Collectie', href: '/curator' },
     { name: 'Over Thijs', href: '/#about' },
     { name: 'Contact', href: '/#contact' },
   ];

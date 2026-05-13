@@ -56,12 +56,12 @@ export default function CuratorPage() {
       {/* Curator Header */}
       <div className="w-full bg-accent/5 border-b border-border/10 py-16 md:py-24">
         <div className="container mx-auto px-6 max-w-5xl text-center">
-          <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-accent mb-4 block">Interactief Portfolio</span>
+          <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-accent mb-4 block">Gecureerd Portfolio</span>
           <h1 className="font-headline text-5xl md:text-7xl font-light text-foreground tracking-tight mb-8">
-            Stel je eigen <span className="italic">Collectie</span> samen
+            Stel <span className="italic">Uw Collectie</span> samen
           </h1>
           <p className="text-muted-foreground text-lg font-light max-w-2xl mx-auto leading-relaxed">
-            Kies de thema's die je aanspreken en ontdek de werken die de essentie van Thijs Sterk voor jou vangen.
+            Ontdek het werk van Thijs Sterk door de thema's te selecteren die u het meest raken. Creëer een galerie die uw persoonlijke visie weerspiegelt.
           </p>
         </div>
       </div>
@@ -76,7 +76,7 @@ export default function CuratorPage() {
             {/* Tag Cloud Selector */}
             <div className="flex flex-col items-center space-y-8">
               <h2 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-3">
-                <Sparkles className="w-3 h-3 text-accent" /> Selecteer Thema's
+                <Sparkles className="w-3 h-3 text-accent" /> Kies uw thema's
               </h2>
               <div className="flex flex-wrap justify-center gap-3 md:gap-4 max-w-4xl">
                 {allAvailableTags.length > 0 ? allAvailableTags.map(tag => (
@@ -101,7 +101,7 @@ export default function CuratorPage() {
                   onClick={() => setActiveTags([])} 
                   className="flex items-center gap-2 text-[10px] uppercase font-bold text-accent/60 hover:text-accent transition-colors"
                 >
-                  <X className="w-3 h-3" /> Wis alle keuzes
+                  <X className="w-3 h-3" /> Wis selectie
                 </button>
               )}
             </div>
@@ -110,7 +110,7 @@ export default function CuratorPage() {
             <div className="pt-8 border-t border-border/10">
               {activeTags.length === 0 ? (
                 <div className="text-center py-20 space-y-4 opacity-40">
-                  <p className="text-sm font-light italic">Kies hierboven een of meer thema's om je galerie te vullen.</p>
+                  <p className="text-sm font-light italic">Maak hierboven een keuze om uw persoonlijke galerie te vullen.</p>
                 </div>
               ) : filteredArtworks.length > 0 ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8 animate-fade-in-up">
@@ -130,7 +130,7 @@ export default function CuratorPage() {
                 </div>
               ) : (
                 <div className="py-20 text-center">
-                  <p className="text-muted-foreground font-light text-lg italic">Geen werken gevonden met deze combinatie van thema's.</p>
+                  <p className="text-muted-foreground font-light text-lg italic">Geen werken gevonden met deze specifieke combinatie.</p>
                 </div>
               )}
             </div>
