@@ -34,6 +34,13 @@
           "type": "string",
           "description": "Keywords voor zoekmachines"
         },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Tags voor filtering (bijv. Atmosferisch, Geometrisch)"
+        },
         "createdAt": {
           "type": "string",
           "format": "date-time",
