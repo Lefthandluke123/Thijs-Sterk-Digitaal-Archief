@@ -1,6 +1,7 @@
+
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useFirestore, useCollection } from '@/firebase';
 import { collection, doc, serverTimestamp, deleteDoc, addDoc, query, orderBy, updateDoc, getDocs } from 'firebase/firestore';
@@ -20,7 +21,14 @@ import {
   Home,
   RefreshCw,
   Loader2,
-  Tag
+  Tag,
+  Brush,
+  Minus,
+  Sun,
+  Crop,
+  ChevronLeft,
+  ChevronRight,
+  Maximize
 } from 'lucide-react';
 import Image from 'next/image';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -30,7 +38,9 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Slider } from '@/components/ui/slider';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { cn } from '@/lib/utils';
 
 const LOCAL_NAS_URL = 'https://192-168-178-15.doggyfew.direct.quickconnect.to/portfolio/';
 const EXTERNAL_NAS_URL = 'https://doggyfew.quickconnect.to/portfolio/';
@@ -51,6 +61,16 @@ export default function AdminPage() {
   const [nasBaseUrl, setNasBaseUrl] = useState(LOCAL_NAS_URL);
   const [includeRootFolder, setIncludeRootFolder] = useState(false);
   const [newTagInputs, setNewTagInputs] = useState<Record<string, string>>({});
+  
+  // Atelier State
+  const [selectedAtelierId, setSelectedAtelierId] = useState<string | null>(null);
+  const [editValues, setEditValues] = useState({
+    cropTop: 0,
+    cropBottom: 0,
+    cropLeft: 0,
+    cropRight: 0,
+    brightness: 100
+  });
 
   const artworksQuery = useMemo(() => {
     if (!firestore) return null;
@@ -58,6 +78,34 @@ export default function AdminPage() {
   }, [firestore]);
 
   const { data: artworks, loading: dbLoading } = useCollection(artworksQuery);
+
+  const selectedArtwork = useMemo(() => 
+    artworks?.find(a => a.id === selectedAtelierId), 
+  [artworks, selectedAtelierId]);
+
+  useEffect(() => {
+    if (selectedArtwork) {
+      setEditValues({
+        cropTop: selectedArtwork.cropTop || 0,
+        cropBottom: selectedArtwork.cropBottom || 0,
+        cropLeft: selectedArtwork.cropLeft || 0,
+        cropRight: selectedArtwork.cropRight || 0,
+        brightness: (selectedArtwork.brightness || 1) * 100
+      });
+    }
+  }, [selectedArtwork]);
+
+  const handleUpdateAtelier = (field: string, value: number) => {
+    const newVal = Math.max(0, Math.min(field === 'brightness' ? 200 : 50, value));
+    setEditValues(prev => ({ ...prev, [field]: newVal }));
+    
+    if (firestore && selectedAtelierId) {
+      const artRef = doc(firestore, 'artworks', selectedAtelierId);
+      updateDoc(artRef, { 
+        [field]: field === 'brightness' ? newVal / 100 : newVal 
+      });
+    }
+  };
 
   const generateImageUrl = (relativePath: string) => {
     const pathParts = relativePath.split('/');
@@ -106,7 +154,6 @@ export default function AdminPage() {
     try {
       for (let i = 0; i < PlaceHolderImages.length; i++) {
         const item = PlaceHolderImages[i];
-        const seedTags = i === 0 ? ["Groet", "Olieverf", "Water"] : i === 1 ? ["Amsterdam", "Monumentaal", "Portretten"] : ["Frankrijk", "Bloemen"];
         const data = {
           title: item.title || 'Ongetiteld',
           series: item.series || 'Voorbeeld Serie',
@@ -115,12 +162,17 @@ export default function AdminPage() {
           imageUrl: item.imageUrl,
           description: item.description,
           imageHint: item.imageHint,
-          tags: seedTags,
+          tags: [],
+          cropTop: 0,
+          cropBottom: 0,
+          cropLeft: 0,
+          cropRight: 0,
+          brightness: 1,
           createdAt: serverTimestamp(),
         };
         await addDoc(artworkCol, data);
       }
-      toast({ title: "Database gevuld", description: "Voorbeelddata is toegevoegd met standaard tags." });
+      toast({ title: "Database gevuld", description: "Voorbeelddata is toegevoegd zonder tags." });
       setActiveTab('db');
     } catch (error) {
       toast({ variant: "destructive", title: "Fout bij vullen" });
@@ -146,6 +198,11 @@ export default function AdminPage() {
           description: artwork.description,
           imageHint: artwork.imageHint,
           tags: [],
+          cropTop: 0,
+          cropBottom: 0,
+          cropLeft: 0,
+          cropRight: 0,
+          brightness: 1,
           createdAt: serverTimestamp(),
         };
         setCurrentUploadItem(i + 1);
@@ -223,6 +280,9 @@ export default function AdminPage() {
             <Button variant={activeTab === 'db' ? 'secondary' : 'ghost'} onClick={() => setActiveTab('db')} className="gap-2 h-9 px-4 font-bold rounded-full text-[10px] uppercase tracking-widest">
               <Archive className="w-3.5 h-3.5" /> Collectie
             </Button>
+            <Button variant={activeTab === 'atelier' ? 'secondary' : 'ghost'} onClick={() => setActiveTab('atelier')} className="gap-2 h-9 px-4 font-bold rounded-full text-[10px] uppercase tracking-widest">
+              <Brush className="w-3.5 h-3.5" /> Atelier
+            </Button>
             <Button variant={activeTab === 'scan' ? 'secondary' : 'ghost'} onClick={() => setActiveTab('scan')} className="gap-2 h-9 px-4 font-bold rounded-full text-[10px] uppercase tracking-widest">
               <Scan className="w-3.5 h-3.5" /> Import
             </Button>
@@ -260,8 +320,21 @@ export default function AdminPage() {
                 {artworks?.map((art: any) => (
                   <Card key={art.id} className="overflow-hidden bg-card border-border hover:shadow-xl transition-all group rounded-2xl">
                     <div className="relative aspect-[4/3] group/img">
-                      <Image src={art.imageUrl} alt={art.title} fill className="object-cover transition-transform duration-700 group-hover/img:scale-105" unoptimized={true} />
-                      <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Image 
+                        src={art.imageUrl} 
+                        alt={art.title} 
+                        fill 
+                        className="object-cover transition-transform duration-700 group-hover/img:scale-105" 
+                        unoptimized={true} 
+                        style={{
+                          clipPath: `inset(${art.cropTop || 0}% ${art.cropRight || 0}% ${art.cropBottom || 0}% ${art.cropLeft || 0}%)`,
+                          filter: `brightness(${art.brightness || 1})`
+                        }}
+                      />
+                      <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button variant="secondary" size="icon" onClick={() => { setActiveTab('atelier'); setSelectedAtelierId(art.id); }} className="rounded-full shadow-lg h-8 w-8">
+                          <Brush className="w-3.5 h-3.5" />
+                        </Button>
                         <Button variant="destructive" size="icon" onClick={() => { if(confirm("Zeker weten?")) deleteDoc(doc(firestore!, 'artworks', art.id))}} className="rounded-full shadow-lg h-8 w-8">
                           <Trash2 className="w-3.5 h-3.5" />
                         </Button>
@@ -306,7 +379,6 @@ export default function AdminPage() {
                             </Button>
                           </div>
                           
-                          {/* Snelkoppelingen naar standaard tags */}
                           <div className="flex flex-wrap gap-1">
                             {STANDARD_TAGS.filter(t => !art.tags?.includes(t)).slice(0, 8).map(tag => (
                               <button 
@@ -323,6 +395,147 @@ export default function AdminPage() {
                     </CardContent>
                   </Card>
                 ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'atelier' && (
+          <div className="space-y-12">
+            <div className="flex items-center justify-between border-b border-border pb-6">
+              <div className="space-y-1">
+                <h2 className="text-3xl font-headline font-light">Atelier</h2>
+                <p className="text-muted-foreground uppercase tracking-[0.2em] font-bold text-[9px]">Beeldbewerking & Optimalisatie</p>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => { setSelectedAtelierId(null); setActiveTab('db'); }} className="text-[9px] uppercase font-bold rounded-full h-8">Terug naar archief</Button>
+              </div>
+            </div>
+
+            {!selectedAtelierId ? (
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                {artworks?.map(art => (
+                  <button 
+                    key={art.id} 
+                    onClick={() => setSelectedAtelierId(art.id)}
+                    className="group relative aspect-square rounded-xl overflow-hidden border-2 border-transparent hover:border-primary transition-all"
+                  >
+                    <Image src={art.imageUrl} alt={art.title} fill className="object-cover" unoptimized />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center">
+                      <Brush className="text-white w-6 h-6" />
+                    </div>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="grid lg:grid-cols-12 gap-12">
+                <div className="lg:col-span-7 space-y-8">
+                  <div className="bg-muted/10 rounded-3xl border border-border overflow-hidden flex items-center justify-center p-8 min-h-[500px] relative">
+                    <div className="relative w-full h-full aspect-square max-h-[600px]">
+                      {selectedArtwork && (
+                        <Image 
+                          src={selectedArtwork.imageUrl} 
+                          alt={selectedArtwork.title} 
+                          fill 
+                          className="object-contain" 
+                          unoptimized 
+                          style={{
+                            clipPath: `inset(${editValues.cropTop}% ${editValues.cropRight}% ${editValues.cropBottom}% ${editValues.cropLeft}%)`,
+                            filter: `brightness(${editValues.brightness / 100})`
+                          }}
+                        />
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="lg:col-span-5 space-y-8">
+                  <Card className="rounded-3xl p-8 border-border bg-card/50 shadow-xl space-y-10">
+                    <div className="space-y-2">
+                      <h3 className="text-2xl font-headline font-light">{selectedArtwork?.title}</h3>
+                      <p className="text-[9px] font-bold uppercase tracking-widest text-accent">{selectedArtwork?.series} &bull; {selectedArtwork?.year}</p>
+                    </div>
+
+                    <div className="space-y-12">
+                      {/* Crop Controls */}
+                      <div className="space-y-8">
+                        <div className="flex items-center gap-2 mb-4">
+                          <Crop className="w-4 h-4 text-primary" />
+                          <h4 className="text-[10px] font-bold uppercase tracking-widest">Crop Instellingen (%)</h4>
+                        </div>
+
+                        {[
+                          { label: 'Boven', field: 'cropTop' },
+                          { label: 'Onder', field: 'cropBottom' },
+                          { label: 'Links', field: 'cropLeft' },
+                          { label: 'Rechts', field: 'cropRight' },
+                        ].map((c) => (
+                          <div key={c.field} className="space-y-4">
+                            <div className="flex justify-between items-center">
+                              <Label className="text-[9px] uppercase tracking-widest opacity-60">{c.label}</Label>
+                              <div className="flex items-center gap-1">
+                                <Button 
+                                  variant="outline" 
+                                  size="icon" 
+                                  className="h-6 w-6 rounded-md border-primary/20"
+                                  onClick={() => handleUpdateAtelier(c.field, editValues[c.field as keyof typeof editValues] - 1)}
+                                >
+                                  <Minus className="w-3 h-3" />
+                                </Button>
+                                <span className="text-[10px] font-mono font-bold min-w-[30px] text-center">
+                                  {editValues[c.field as keyof typeof editValues]}%
+                                </span>
+                                <Button 
+                                  variant="outline" 
+                                  size="icon" 
+                                  className="h-6 w-6 rounded-md border-primary/20"
+                                  onClick={() => handleUpdateAtelier(c.field, editValues[c.field as keyof typeof editValues] + 1)}
+                                >
+                                  <Plus className="w-3 h-3" />
+                                </Button>
+                              </div>
+                            </div>
+                            <Slider 
+                              value={[editValues[c.field as keyof typeof editValues]]} 
+                              max={50} 
+                              step={0.1}
+                              onValueChange={([val]) => handleUpdateAtelier(c.field, val)}
+                              className="mt-2"
+                            />
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Brightness Control */}
+                      <div className="space-y-6 pt-8 border-t border-border">
+                        <div className="flex items-center gap-2 mb-4">
+                          <Sun className="w-4 h-4 text-primary" />
+                          <h4 className="text-[10px] font-bold uppercase tracking-widest">Helderheid</h4>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <Label className="text-[9px] uppercase tracking-widest opacity-60">Belichting</Label>
+                          <span className="text-[10px] font-mono font-bold">{editValues.brightness}%</span>
+                        </div>
+                        <Slider 
+                          value={[editValues.brightness]} 
+                          max={200} 
+                          min={50}
+                          step={1}
+                          onValueChange={([val]) => handleUpdateAtelier('brightness', val)}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="pt-8">
+                      <Button 
+                        onClick={() => { setSelectedAtelierId(null); }} 
+                        className="w-full h-14 text-[10px] font-bold uppercase tracking-widest rounded-2xl"
+                      >
+                        Afronden & Bewaren
+                      </Button>
+                    </div>
+                  </Card>
+                </div>
               </div>
             )}
           </div>

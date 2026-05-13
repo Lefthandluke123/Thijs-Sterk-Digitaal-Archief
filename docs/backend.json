@@ -41,6 +41,26 @@
           },
           "description": "Tags voor filtering (bijv. Atmosferisch, Geometrisch)"
         },
+        "cropTop": {
+          "type": "number",
+          "description": "Percentage crop aan de bovenkant"
+        },
+        "cropBottom": {
+          "type": "number",
+          "description": "Percentage crop aan de onderkant"
+        },
+        "cropLeft": {
+          "type": "number",
+          "description": "Percentage crop aan de linkerkant"
+        },
+        "cropRight": {
+          "type": "number",
+          "description": "Percentage crop aan de rechterkant"
+        },
+        "brightness": {
+          "type": "number",
+          "description": "Helderheid factor (1.0 is standaard)"
+        },
         "createdAt": {
           "type": "string",
           "format": "date-time",

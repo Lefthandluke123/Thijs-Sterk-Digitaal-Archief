@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo } from 'react';
@@ -28,7 +29,6 @@ export default function CuratorPage() {
   const { data: artworks, loading } = useCollection(artworksQuery);
 
   const allAvailableTags = useMemo(() => {
-    // We tonen ALTIJD de standaard tags, plus eventuele extra tags uit de database
     const dbTags = new Set<string>();
     artworks?.forEach(art => {
       art.tags?.forEach((tag: string) => dbTags.add(tag));
@@ -60,7 +60,6 @@ export default function CuratorPage() {
 
   return (
     <main className="min-h-screen bg-background pt-14">
-      {/* Curator Header */}
       <div className="w-full bg-accent/5 border-b border-border/10 py-16 md:py-24">
         <div className="container mx-auto px-6 max-w-5xl text-center">
           <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-accent mb-4 block">Uw Persoonlijke Selectie</span>
@@ -75,7 +74,6 @@ export default function CuratorPage() {
 
       <div className="container mx-auto max-w-7xl px-6 py-12 pb-32">
         <div className="space-y-16">
-          {/* Tag Cloud Selector - ALTIJD in beeld */}
           <div className="flex flex-col items-center space-y-8">
             <h2 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-3">
               <Sparkles className="w-3 h-3 text-accent" /> Kies de thema's
@@ -110,7 +108,6 @@ export default function CuratorPage() {
             )}
           </div>
 
-          {/* Results Grid */}
           <div className="pt-8 border-t border-border/10">
             {loading ? (
               <div className="flex flex-col items-center justify-center py-20">
@@ -125,7 +122,17 @@ export default function CuratorPage() {
                 {filteredArtworks.map((item) => (
                   <div key={item.id} className="group relative cursor-pointer" onClick={() => setSelectedArtwork(item)}>
                     <div className="relative aspect-[4/5] overflow-hidden rounded-sm bg-muted/20">
-                      <Image src={item.imageUrl} alt={item.title} fill className="object-cover transition-all duration-700 ease-out group-hover:scale-[1.03]" unoptimized={isExternalStorage(item.imageUrl)} />
+                      <Image 
+                        src={item.imageUrl} 
+                        alt={item.title} 
+                        fill 
+                        className="object-cover transition-all duration-700 ease-out group-hover:scale-[1.03]" 
+                        unoptimized={isExternalStorage(item.imageUrl)} 
+                        style={{
+                          clipPath: `inset(${item.cropTop || 0}% ${item.cropRight || 0}% ${item.cropBottom || 0}% ${item.cropLeft || 0}%)`,
+                          filter: `brightness(${item.brightness || 1})`
+                        }}
+                      />
                       <div className="absolute inset-0 bg-background/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                         <Maximize2 className="text-white/60 w-6 h-6" />
                       </div>
@@ -149,7 +156,17 @@ export default function CuratorPage() {
         <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background/98 backdrop-blur-3xl border-none rounded-none">
           <div className="relative flex-1 flex items-center justify-center overflow-hidden group bg-black/5">
             {selectedArtwork && (
-              <Image src={selectedArtwork.imageUrl} alt={selectedArtwork.title} fill className="object-contain p-4 md:p-12" unoptimized={isExternalStorage(selectedArtwork.imageUrl)} />
+              <Image 
+                src={selectedArtwork.imageUrl} 
+                alt={selectedArtwork.title} 
+                fill 
+                className="object-contain p-4 md:p-12" 
+                unoptimized={isExternalStorage(selectedArtwork.imageUrl)} 
+                style={{
+                  clipPath: `inset(${selectedArtwork.cropTop || 0}% ${selectedArtwork.cropRight || 0}% ${selectedArtwork.cropBottom || 0}% ${selectedArtwork.cropLeft || 0}%)`,
+                  filter: `brightness(${selectedArtwork.brightness || 1})`
+                }}
+              />
             )}
             <DialogClose className="absolute top-8 right-8 z-50 p-2 bg-background/10 backdrop-blur-sm rounded-full hover:bg-background/20 transition-colors">
               <X className="w-5 h-5 opacity-50" />

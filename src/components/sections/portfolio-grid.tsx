@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo } from 'react';
@@ -56,6 +57,10 @@ export function PortfolioGrid() {
                     fill
                     className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                     unoptimized={isExternalStorage(art.imageUrl)}
+                    style={{
+                      clipPath: `inset(${art.cropTop || 0}% ${art.cropRight || 0}% ${art.cropBottom || 0}% ${art.cropLeft || 0}%)`,
+                      filter: `brightness(${art.brightness || 1})`
+                    }}
                   />
                   <div className="absolute inset-0 bg-primary/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100 flex items-center justify-center">
                     <Maximize2 className="text-white w-5 h-5" />
@@ -84,6 +89,10 @@ export function PortfolioGrid() {
                 fill
                 className="object-contain p-4 md:p-12"
                 unoptimized={isExternalStorage(selectedArtwork.imageUrl)}
+                style={{
+                  clipPath: `inset(${selectedArtwork.cropTop || 0}% ${selectedArtwork.cropRight || 0}% ${selectedArtwork.cropBottom || 0}% ${selectedArtwork.cropLeft || 0}%)`,
+                  filter: `brightness(${selectedArtwork.brightness || 1})`
+                }}
               />
             )}
             <DialogClose className="absolute top-4 left-4 z-10 p-1.5 bg-background/20 backdrop-blur-md rounded-full text-white hover:bg-background/40 transition-colors">
