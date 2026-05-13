@@ -23,15 +23,11 @@ export default function GalleryPage() {
     return query(collection(firestore, 'artworks'), orderBy('createdAt', 'desc'));
   }, [firestore]);
 
-  const { data: artworks, loading, error } = useCollection(artworksQuery);
+  const { data: artworks, loading } = useCollection(artworksQuery);
 
   const isExternalStorage = (url: string) => {
     if (!url) return false;
-    const lowerUrl = url.toLowerCase();
-    return lowerUrl.includes('quickconnect.to') || 
-           lowerUrl.includes('gofile.me') || 
-           lowerUrl.includes('192-168') || 
-           lowerUrl.includes('192.168');
+    return url.includes('quickconnect.to') || url.includes('gofile.me') || url.includes('192-168');
   };
 
   const seriesNames = useMemo(() => {
@@ -53,37 +49,29 @@ export default function GalleryPage() {
           <span className="text-accent font-medium tracking-widest uppercase text-xs mb-3 block">Portfolio</span>
           <h1 className="font-headline text-5xl md:text-6xl font-light mb-6">Kunst <span className="italic">Galerie</span></h1>
           
-          <div className="flex flex-col items-center gap-4">
-            <p className="text-muted-foreground text-base leading-relaxed max-w-xl mx-auto">
-              Ontdek de volledige collectie van Thijs Sterk.
-            </p>
-            
-            <Button 
-              variant="outline" 
-              size="lg" 
-              onClick={() => setShowHelp(!showHelp)}
-              className="mt-4 border-accent text-accent hover:bg-accent hover:text-white rounded-full px-8 bg-yellow-400/20 font-bold"
-            >
-              <HelpCircle className="w-5 h-5 mr-2" />
-              AFBEELDINGEN LADEN NIET? KLIK HIER
-            </Button>
-          </div>
+          <Button 
+            variant="outline" 
+            onClick={() => setShowHelp(!showHelp)}
+            className="rounded-full px-8 bg-yellow-400/20 font-bold border-yellow-500/50"
+          >
+            <HelpCircle className="w-5 h-5 mr-2" />
+            PROBLEMEN MET LADEN? KLIK HIER
+          </Button>
         </header>
 
         {(hasImageErrors || showHelp) && (
-          <Alert className="mb-12 bg-amber-50 border-amber-400 max-w-4xl mx-auto rounded-3xl shadow-xl border-4 p-8 animate-in fade-in slide-in-from-top-4 duration-500">
+          <Alert className="mb-12 bg-amber-50 border-amber-400 max-w-4xl mx-auto rounded-3xl shadow-xl p-8 border-4">
             <div className="flex items-start gap-4">
               <AlertCircle className="h-8 w-8 text-amber-600 shrink-0" />
               <div className="space-y-4 w-full">
-                <AlertTitle className="text-amber-900 text-2xl font-bold">Hulp bij het laden van afbeeldingen</AlertTitle>
+                <AlertTitle className="text-amber-900 text-2xl font-bold">Herstel je NAS Verbinding</AlertTitle>
                 <AlertDescription className="text-amber-800 text-sm space-y-4">
-                  <p className="font-medium italic">Krijg je &quot;403 Forbidden&quot; na het klikken op Stap 1? Dat is juist GOED!</p>
-                  <p>Browsers blokkeren de verbinding met je NAS. De 403 betekent dat de browser je NAS heeft gevonden. Volg nu deze stappen:</p>
+                  <p>Als je lege vakjes ziet, blokkeert je browser de verbinding met je NAS. Volg deze twee stappen:</p>
                   
                   <div className="grid md:grid-cols-2 gap-4 pt-2">
                     <div className="bg-white/50 p-4 rounded-xl border border-amber-200">
-                      <h4 className="font-bold mb-2 text-amber-900">Stap 1: Verbinding Openen</h4>
-                      <p className="mb-4 text-xs">Klik op de knop. Zie je een waarschuwing? Typ <b>thisisunsafe</b> blindelings op je toetsenbord. Zie je daarna &quot;403 Forbidden&quot;? Ga dan door naar Stap 2.</p>
+                      <h4 className="font-bold mb-2">Stap 1: Open de Link</h4>
+                      <p className="mb-4 text-xs">Klik op de knop. Zie je een rood scherm? Typ <b>thisisunsafe</b> op je toetsenbord. Zie je daarna &quot;403 Forbidden&quot;? Dat is goed! Ga dan naar Stap 2.</p>
                       <Button 
                         className="w-full bg-amber-600 hover:bg-amber-700 text-white"
                         onClick={() => window.open('https://192-168-178-15.doggyfew.direct.quickconnect.to/portfolio/', '_blank')}
@@ -93,14 +81,14 @@ export default function GalleryPage() {
                     </div>
                     
                     <div className="bg-white/50 p-4 rounded-xl border border-amber-200">
-                      <h4 className="font-bold mb-2 text-amber-900">Stap 2: Galerie Verversen</h4>
-                      <p className="mb-4 text-xs">Kom terug naar dit tabblad en klik op verversen. De browser &quot;vertrouwt&quot; de verbinding nu en de foto&apos;s verschijnen.</p>
+                      <h4 className="font-bold mb-2">Stap 2: Pagina Verversen</h4>
+                      <p className="mb-4 text-xs">Kom terug naar dit tabblad en klik op verversen. De browser &quot;vertrouwt&quot; de link nu en de foto&apos;s verschijnen.</p>
                       <Button 
                         variant="secondary"
                         className="w-full border-amber-300"
                         onClick={() => window.location.reload()}
                       >
-                        <RefreshCcw className="w-4 h-4 mr-2" /> Ververs deze Pagina
+                        <RefreshCcw className="w-4 h-4 mr-2" /> Ververs Pagina
                       </Button>
                     </div>
                   </div>
@@ -113,74 +101,60 @@ export default function GalleryPage() {
         {loading ? (
           <div className="flex flex-col items-center justify-center py-32 gap-4">
             <Loader2 className="w-8 h-8 animate-spin text-accent" />
-            <p className="text-muted-foreground animate-pulse text-[10px] uppercase tracking-[0.2em]">Collectie laden...</p>
+            <p className="text-muted-foreground animate-pulse text-[10px] uppercase tracking-widest">Collectie laden...</p>
           </div>
         ) : artworks && artworks.length > 0 ? (
           <>
-            <div className="sticky top-20 z-30 bg-background/60 backdrop-blur-md py-3 mb-10 border-y border-border/30">
-              <div className="flex items-center gap-4 overflow-x-auto no-scrollbar px-2">
-                <div className="flex gap-1.5">
-                  {seriesNames.map((name) => (
-                    <button
-                      key={name}
-                      onClick={() => setActiveSeries(name)}
-                      className={cn(
-                        "px-4 py-1.5 rounded-full text-[10px] font-semibold tracking-widest uppercase transition-all whitespace-nowrap",
-                        activeSeries === name 
-                          ? "bg-accent text-accent-foreground shadow-sm" 
-                          : "bg-secondary/30 text-muted-foreground hover:bg-secondary hover:text-foreground"
-                      )}
-                    >
-                      {name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-10">
-              <div className="flex items-center justify-between border-b border-border/50 pb-3">
-                <h2 className="text-xl font-light font-headline">
-                  {activeSeries === "Alle" ? "Volledige Collectie" : activeSeries} 
-                  <span className="text-muted-foreground text-xs ml-3 font-body opacity-60">({filteredArtworks.length} werken)</span>
-                </h2>
-              </div>
-
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-5">
-                {filteredArtworks.map((item) => (
-                  <div 
-                    key={item.id} 
-                    className="group relative cursor-pointer"
-                    onClick={() => setSelectedArtwork(item)}
+            <div className="sticky top-20 z-30 bg-background/60 backdrop-blur-md py-4 mb-10 border-y border-border/30">
+              <div className="flex gap-2 overflow-x-auto no-scrollbar px-2">
+                {seriesNames.map((name) => (
+                  <button
+                    key={name}
+                    onClick={() => setActiveSeries(name)}
+                    className={cn(
+                      "px-4 py-2 rounded-full text-[10px] font-bold uppercase transition-all whitespace-nowrap",
+                      activeSeries === name ? "bg-accent text-white" : "bg-secondary/30 text-muted-foreground"
+                    )}
                   >
-                    <div className="relative aspect-square overflow-hidden rounded-md bg-muted/30 transition-all duration-500 hover:shadow-lg">
-                      <Image
-                        src={item.imageUrl}
-                        alt={item.title}
-                        fill
-                        className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-                        unoptimized={isExternalStorage(item.imageUrl)}
-                        onError={() => setHasImageErrors(true)}
-                      />
-                      <div className="absolute inset-0 bg-black/30 opacity-0 transition-opacity duration-300 group-hover:opacity-100 flex flex-col items-center justify-center p-4">
-                        <Maximize2 className="text-white w-4 h-4" />
-                      </div>
-                    </div>
-                  </div>
+                    {name}
+                  </button>
                 ))}
               </div>
             </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-5">
+              {filteredArtworks.map((item) => (
+                <div 
+                  key={item.id} 
+                  className="group relative cursor-pointer"
+                  onClick={() => setSelectedArtwork(item)}
+                >
+                  <div className="relative aspect-square overflow-hidden rounded-md bg-muted/30">
+                    <Image
+                      src={item.imageUrl}
+                      alt={item.title}
+                      fill
+                      className="object-cover transition-transform group-hover:scale-105"
+                      unoptimized={isExternalStorage(item.imageUrl)}
+                      onError={() => setHasImageErrors(true)}
+                    />
+                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                      <Maximize2 className="text-white w-5 h-5" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </>
         ) : (
-          <div className="text-center py-24 border rounded-2xl border-dashed">
-            <h3 className="text-lg font-light mb-2">Geen schilderijen gevonden</h3>
-            <p className="text-muted-foreground text-sm max-w-xs mx-auto mb-6">Er staan nog geen werken in de database.</p>
+          <div className="text-center py-24 border-2 border-dashed rounded-3xl">
+            <h3 className="text-lg font-headline">Nog geen schilderijen</h3>
           </div>
         )}
       </div>
 
       <Dialog open={!!selectedArtwork} onOpenChange={() => setSelectedArtwork(null)}>
-        <DialogContent className="max-w-[95vw] w-full h-[90vh] p-0 overflow-hidden border-none bg-background/95 backdrop-blur-xl flex flex-col md:flex-row shadow-2xl">
+        <DialogContent className="max-w-[95vw] w-full h-[90vh] p-0 flex flex-col md:flex-row bg-background/95 backdrop-blur-xl border-none">
           <div className="relative flex-1 bg-black/90 flex items-center justify-center overflow-hidden">
             {selectedArtwork && (
               <Image
@@ -189,27 +163,27 @@ export default function GalleryPage() {
                 fill
                 className="object-contain p-4 md:p-12"
                 unoptimized={isExternalStorage(selectedArtwork.imageUrl)}
-                onError={() => setHasImageErrors(true)}
               />
             )}
-            <DialogClose className="absolute top-4 left-4 z-10 p-1.5 bg-background/20 backdrop-blur-md rounded-full text-white hover:bg-background/40 transition-colors">
+            <DialogClose className="absolute top-4 left-4 z-10 p-2 bg-black/50 rounded-full text-white">
               <X className="w-5 h-5" />
             </DialogClose>
           </div>
-          <div className="w-full md:w-[320px] p-8 flex flex-col justify-center bg-background border-l border-border/50 overflow-y-auto">
+          <div className="w-full md:w-[350px] p-8 flex flex-col justify-center bg-background border-l border-border/50">
             <DialogHeader className="mb-6">
-              <div className="text-accent font-semibold tracking-widest uppercase text-[9px] mb-2">{selectedArtwork?.series}</div>
-              <DialogTitle className="font-headline text-3xl font-light mb-2 leading-tight">{selectedArtwork?.title}</DialogTitle>
-              <DialogDescription className="text-muted-foreground text-xs border-l border-accent pl-3 italic">
+              <div className="text-accent font-bold uppercase text-[10px] mb-2">{selectedArtwork?.series}</div>
+              <DialogTitle className="font-headline text-3xl font-light mb-2">{selectedArtwork?.title}</DialogTitle>
+              <DialogDescription className="italic text-xs">
                 {selectedArtwork?.medium} &bull; {selectedArtwork?.year}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-6">
               <p className="text-foreground/80 leading-relaxed text-sm">{selectedArtwork?.description}</p>
-              <div className="pt-6 border-t border-border/50">
-                <Button className="bg-primary hover:bg-primary/90 text-white rounded-full h-10 w-full text-xs font-semibold shadow-md">
-                  Informeer nu
-                </Button>
+              <div className="pt-6 border-t border-border/50 flex flex-col gap-2">
+                <Button className="rounded-full w-full">Informeer nu</Button>
+                <div className="text-[9px] text-muted-foreground break-all bg-muted/50 p-2 rounded italic">
+                  Link: {selectedArtwork?.imageUrl}
+                </div>
               </div>
             </div>
           </div>
