@@ -4,47 +4,48 @@
 
 @layer base {
   :root {
-    /* Artistiek palet: Zacht gebroken wit met diep blauw en goud accent */
-    --background: 40 20% 98%;
+    /* Nieuwe achtergrondkleur: #d5dc96 vertaald naar HSL */
+    /* H: 66, S: 46%, L: 73% (afgerond van #d5dc96) */
+    --background: 66 46% 73%;
     --foreground: 201 30% 15%;
-    --card: 0 0% 100%;
+    --card: 66 46% 76%;
     --card-foreground: 201 30% 15%;
-    --popover: 0 0% 100%;
+    --popover: 66 46% 76%;
     --popover-foreground: 201 30% 15%;
     --primary: 201 30% 25%;
-    --primary-foreground: 40 20% 98%;
-    --secondary: 40 10% 94%;
-    --secondary-foreground: 201 30% 30%;
-    --muted: 40 5% 90%;
-    --muted-foreground: 201 15% 45%;
-    --accent: 35 50% 50%; /* Goud/Oker accent */
+    --primary-foreground: 66 46% 95%;
+    --secondary: 66 30% 65%;
+    --secondary-foreground: 201 30% 20%;
+    --muted: 66 20% 60%;
+    --muted-foreground: 201 15% 35%;
+    --accent: 35 50% 40%; /* Iets donkerder oker voor betere leesbaarheid op de groene achtergrond */
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 201 15% 88%;
-    --input: 201 15% 88%;
-    --ring: 35 50% 50%;
+    --border: 66 20% 60%;
+    --input: 66 20% 60%;
+    --ring: 35 50% 40%;
     --radius: 0.5rem;
   }
   .dark {
-    --background: 201 30% 5%;
-    --foreground: 40 20% 98%;
-    --card: 201 30% 8%;
-    --card-foreground: 40 20% 98%;
-    --popover: 201 30% 8%;
-    --popover-foreground: 40 20% 98%;
-    --primary: 40 20% 90%;
-    --primary-foreground: 201 30% 15%;
-    --secondary: 201 20% 15%;
-    --secondary-foreground: 40 20% 90%;
-    --muted: 201 20% 15%;
-    --muted-foreground: 201 15% 65%;
+    --background: 66 46% 5%;
+    --foreground: 66 46% 95%;
+    --card: 66 46% 8%;
+    --card-foreground: 66 46% 95%;
+    --popover: 66 46% 8%;
+    --popover-foreground: 66 46% 95%;
+    --primary: 66 46% 90%;
+    --primary-foreground: 66 46% 15%;
+    --secondary: 66 20% 15%;
+    --secondary-foreground: 66 46% 90%;
+    --muted: 66 20% 15%;
+    --muted-foreground: 66 15% 65%;
     --accent: 35 50% 50%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 201 20% 20%;
-    --input: 201 20% 20%;
+    --border: 66 20% 20%;
+    --input: 66 20% 20%;
     --ring: 35 50% 50%;
   }
 }
