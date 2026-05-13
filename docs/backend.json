@@ -1,0 +1,61 @@
+
+{
+  "entities": {
+    "Artwork": {
+      "title": "Artwork",
+      "description": "Een kunstwerk in het portfolio van de artiest.",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "De titel van het schilderij"
+        },
+        "series": {
+          "type": "string",
+          "description": "De collectie of serie waar het bij hoort"
+        },
+        "year": {
+          "type": "string",
+          "description": "Het jaar van creatie"
+        },
+        "medium": {
+          "type": "string",
+          "description": "Het gebruikte materiaal (bijv. Olieverf, Digitaal)"
+        },
+        "description": {
+          "type": "string",
+          "description": "Een beschrijving van het werk"
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "URL naar de afbeelding"
+        },
+        "imageHint": {
+          "type": "string",
+          "description": "Keywords voor zoekmachines"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Tijdstip van toevoegen"
+        }
+      },
+      "required": [
+        "title",
+        "series",
+        "imageUrl"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "google"
+    ]
+  },
+  "firestore": {
+    "/artworks/{artworkId}": {
+      "schema": "Artwork",
+      "description": "Collectie van alle kunstwerken"
+    }
+  }
+}

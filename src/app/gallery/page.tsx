@@ -1,24 +1,35 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import Image from 'next/image';
-import { PlaceHolderImages, ImagePlaceholder } from '@/lib/placeholder-images';
+import { useCollection, useFirestore } from '@/firebase';
+import { collection, query, orderBy } from 'firebase/firestore';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Maximize2, ArrowRight } from 'lucide-react';
+import { Maximize2, ArrowRight, Loader2 } from 'lucide-react';
 
 export default function GalleryPage() {
-  const [selectedArtwork, setSelectedArtwork] = useState<ImagePlaceholder | null>(null);
-  const artworks = PlaceHolderImages.filter(img => img.id.startsWith('artwork-'));
+  const [selectedArtwork, setSelectedArtwork] = useState<any | null>(null);
+  const firestore = useFirestore();
+  
+  const artworksQuery = useMemo(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'artworks'), orderBy('createdAt', 'desc'));
+  }, [firestore]);
+
+  const { data: artworks, loading } = useCollection(artworksQuery);
 
   // Groepeer kunstwerken per serie
-  const seriesGroups = artworks.reduce((acc: Record<string, ImagePlaceholder[]>, art) => {
-    const seriesName = art.series || "Andere";
-    if (!acc[seriesName]) acc[seriesName] = [];
-    acc[seriesName].push(art);
-    return acc;
-  }, {});
+  const seriesGroups = useMemo(() => {
+    if (!artworks) return {};
+    return artworks.reduce((acc: Record<string, any[]>, art) => {
+      const seriesName = art.series || "Andere";
+      if (!acc[seriesName]) acc[seriesName] = [];
+      acc[seriesName].push(art);
+      return acc;
+    }, {});
+  }, [artworks]);
 
   return (
     <main className="min-h-screen bg-background pt-32 pb-24 px-4">
@@ -31,51 +42,57 @@ export default function GalleryPage() {
           </p>
         </header>
 
-        <div className="space-y-32">
-          {Object.entries(seriesGroups).map(([seriesName, items]) => (
-            <section key={seriesName} className="relative">
-              <div className="flex items-center justify-between mb-10 border-b border-border pb-4">
-                <div>
-                  <h2 className="text-3xl font-light font-headline">{seriesName}</h2>
-                  <p className="text-muted-foreground text-sm mt-1 uppercase tracking-tighter">Collectie Series</p>
-                </div>
-                <div className="hidden sm:flex items-center gap-2 text-primary text-sm font-medium">
-                  <span>{items.length} Kunstwerken</span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-                {items.map((item) => (
-                  <div 
-                    key={item.id} 
-                    className="group relative cursor-pointer"
-                    onClick={() => setSelectedArtwork(item)}
-                  >
-                    <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-muted transition-all duration-500 hover:shadow-2xl">
-                      <Image
-                        src={item.imageUrl}
-                        alt={item.description}
-                        fill
-                        className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-                        data-ai-hint={item.imageHint}
-                      />
-                      <div className="absolute inset-0 bg-black/20 opacity-0 transition-opacity duration-300 group-hover:opacity-100 flex items-center justify-center">
-                        <Maximize2 className="text-white w-8 h-8" />
-                      </div>
-                    </div>
-                    <div className="mt-6">
-                      <h3 className="text-xl font-medium mb-1 group-hover:text-primary transition-colors">{item.title}</h3>
-                      <div className="flex items-center justify-between text-muted-foreground text-sm">
-                        <span>{item.medium}</span>
-                        <span>{item.year}</span>
-                      </div>
-                    </div>
+        {loading ? (
+          <div className="flex justify-center py-20">
+            <Loader2 className="w-10 h-10 animate-spin text-primary/50" />
+          </div>
+        ) : (
+          <div className="space-y-32">
+            {Object.entries(seriesGroups).map(([seriesName, items]) => (
+              <section key={seriesName} className="relative">
+                <div className="flex items-center justify-between mb-10 border-b border-border pb-4">
+                  <div>
+                    <h2 className="text-3xl font-light font-headline">{seriesName}</h2>
+                    <p className="text-muted-foreground text-sm mt-1 uppercase tracking-tighter">Collectie Series</p>
                   </div>
-                ))}
-              </div>
-            </section>
-          ))}
-        </div>
+                  <div className="hidden sm:flex items-center gap-2 text-primary text-sm font-medium">
+                    <span>{items.length} Kunstwerken</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                  {items.map((item) => (
+                    <div 
+                      key={item.id} 
+                      className="group relative cursor-pointer"
+                      onClick={() => setSelectedArtwork(item)}
+                    >
+                      <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-muted transition-all duration-500 hover:shadow-2xl">
+                        <Image
+                          src={item.imageUrl}
+                          alt={item.description || item.title}
+                          fill
+                          className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                          data-ai-hint={item.imageHint || "abstract artwork"}
+                        />
+                        <div className="absolute inset-0 bg-black/20 opacity-0 transition-opacity duration-300 group-hover:opacity-100 flex items-center justify-center">
+                          <Maximize2 className="text-white w-8 h-8" />
+                        </div>
+                      </div>
+                      <div className="mt-6">
+                        <h3 className="text-xl font-medium mb-1 group-hover:text-primary transition-colors">{item.title}</h3>
+                        <div className="flex items-center justify-between text-muted-foreground text-sm">
+                          <span>{item.medium}</span>
+                          <span>{item.year}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
+        )}
 
         <section className="mt-32 p-12 rounded-[3rem] bg-secondary/20 border border-border text-center">
           <h2 className="font-headline text-3xl font-light mb-6">Geïnteresseerd in een specifiek stuk?</h2>
@@ -95,7 +112,7 @@ export default function GalleryPage() {
               {selectedArtwork && (
                 <Image
                   src={selectedArtwork.imageUrl}
-                  alt={selectedArtwork.description}
+                  alt={selectedArtwork.description || selectedArtwork.title}
                   fill
                   className="object-cover"
                 />
