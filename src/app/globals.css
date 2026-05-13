@@ -4,8 +4,7 @@
 
 @layer base {
   :root {
-    /* Nieuwe achtergrondkleur: #d5dc96 vertaald naar HSL */
-    /* H: 66, S: 46%, L: 73% (afgerond van #d5dc96) */
+    /* Achtergrondkleur: #d5dc96 (H:66, S:46%, L:73%) */
     --background: 66 46% 73%;
     --foreground: 201 30% 15%;
     --card: 66 46% 76%;
@@ -18,13 +17,11 @@
     --secondary-foreground: 201 30% 20%;
     --muted: 66 20% 60%;
     --muted-foreground: 201 15% 35%;
-    --accent: 35 50% 40%; /* Iets donkerder oker voor betere leesbaarheid op de groene achtergrond */
+    --accent: 45 93% 41%; /* De kleur #cc9a07 vertaald naar HSL */
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
     --border: 66 20% 60%;
     --input: 66 20% 60%;
-    --ring: 35 50% 40%;
+    --ring: 45 93% 41%;
     --radius: 0.5rem;
   }
   .dark {
@@ -40,13 +37,13 @@
     --secondary-foreground: 66 46% 90%;
     --muted: 66 20% 15%;
     --muted-foreground: 66 15% 65%;
-    --accent: 35 50% 50%;
+    --accent: 45 93% 50%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
     --border: 66 20% 20%;
     --input: 66 20% 20%;
-    --ring: 35 50% 50%;
+    --ring: 45 93% 50%;
   }
 }
 

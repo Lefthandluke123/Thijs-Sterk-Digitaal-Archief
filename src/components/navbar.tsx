@@ -2,7 +2,6 @@
 
 import React from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
@@ -35,8 +34,10 @@ export function Navbar() {
               key={link.name}
               href={link.href}
               className={cn(
-                "text-sm font-medium tracking-wide transition-all hover:text-accent relative py-1",
-                pathname === link.href ? "text-foreground after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-accent" : "text-muted-foreground"
+                "text-sm font-medium tracking-wide transition-all relative py-1",
+                pathname === link.href 
+                  ? "text-accent after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-accent" 
+                  : "text-accent/70 hover:text-accent"
               )}
             >
               {link.name}
