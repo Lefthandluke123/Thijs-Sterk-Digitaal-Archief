@@ -37,7 +37,6 @@ export default function AdminPage() {
   const [baseUrl, setBaseUrl] = useState('https://192-168-178-15.doggyfew.direct.quickconnect.to:5001/portfolio/');
   const [defaultSeries, setDefaultSeries] = useState('Collectie 2024');
 
-  // We laden de collectie zonder orderBy voor de administratie, om te zien of er überhaupt iets in staat
   const artworksQuery = useMemo(() => {
     if (!firestore) return null;
     return collection(firestore, 'artworks');
@@ -187,9 +186,19 @@ export default function AdminPage() {
   return (
     <main className="min-h-screen bg-background pt-32 pb-24 px-4">
       <div className="container mx-auto max-w-5xl">
-        <header className="mb-8 text-center md:text-left">
-          <h1 className="text-4xl font-headline font-light mb-2">Portfolio <span className="italic">Beheer</span></h1>
-          <p className="text-muted-foreground">Beheer de collectie van Thijs Sterk.</p>
+        <header className="mb-8 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="text-center md:text-left">
+            <h1 className="text-4xl font-headline font-light mb-2">Portfolio <span className="italic">Beheer</span></h1>
+            <p className="text-muted-foreground">Beheer de collectie van Thijs Sterk.</p>
+          </div>
+          <Button 
+            variant="outline" 
+            className="rounded-full gap-2 border-accent text-accent hover:bg-accent/10"
+            onClick={() => window.location.reload()}
+          >
+            <RefreshCw className="w-4 h-4" />
+            Database Verversen
+          </Button>
         </header>
 
         {loading && importProgress.total > 0 && (
@@ -222,7 +231,6 @@ export default function AdminPage() {
                   <CardTitle className="font-light">Huidige Database</CardTitle>
                   <CardDescription>Totaal aantal items: {artworks?.length || 0}</CardDescription>
                 </div>
-                <Button variant="outline" size="icon" onClick={() => window.location.reload()}><RefreshCw className="w-4 h-4" /></Button>
               </CardHeader>
               <CardContent>
                 {loadingArtworks ? (
@@ -266,6 +274,10 @@ export default function AdminPage() {
                   <div className="text-center py-12 text-muted-foreground space-y-4">
                     <p>Nog geen werken in de database.</p>
                     {collectionError && <p className="text-destructive text-xs">Foutmelding: {collectionError.message}</p>}
+                    <Button variant="outline" onClick={() => window.location.reload()} className="rounded-full">
+                      <RefreshCw className="mr-2 w-4 h-4" />
+                      Forceer Verversen
+                    </Button>
                   </div>
                 )}
               </CardContent>

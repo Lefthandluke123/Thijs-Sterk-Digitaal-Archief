@@ -17,8 +17,6 @@ export default function GalleryPage() {
   
   const artworksQuery = useMemo(() => {
     if (!firestore) return null;
-    // We gebruiken orderBy alleen als we zeker weten dat er data is, 
-    // Firestore queries met orderBy kunnen soms documenten verbergen die de velden missen.
     return query(collection(firestore, 'artworks'), orderBy('createdAt', 'desc'));
   }, [firestore]);
 
@@ -123,11 +121,16 @@ export default function GalleryPage() {
           </>
         ) : (
           <div className="text-center py-24 border rounded-3xl border-dashed">
-            <h3 className="text-xl font-light mb-2">Geen werken gevonden</h3>
-            <p className="text-muted-foreground mb-6">Er staan op dit moment geen schilderijen in de database.</p>
-            <Button asChild variant="outline">
-              <a href="/admin">Ga naar Beheer om werken toe te voegen</a>
-            </Button>
+            <h3 className="text-xl font-light mb-2">Nog geen werken zichtbaar</h3>
+            <p className="text-muted-foreground mb-6">De database lijkt op dit moment geen kunstwerken te bevatten.</p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button variant="outline" onClick={() => window.location.reload()}>
+                <RefreshCcw className="mr-2 w-4 h-4" /> Ververs Pagina
+              </Button>
+              <Button asChild>
+                <a href="/admin">Ga naar Beheer</a>
+              </Button>
+            </div>
           </div>
         )}
 
