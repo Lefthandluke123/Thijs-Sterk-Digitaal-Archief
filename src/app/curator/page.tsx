@@ -11,7 +11,8 @@ import { Dialog, DialogContent, DialogTitle, DialogClose } from '@/components/ui
 
 const STANDARD_TAGS = [
   "Groet", "Schoorl", "Hargen", "Amsterdam", "Frankrijk", 
-  "Griekenland", "Olieverf", "Aquarel", "Monumentaal", "Glas in lood"
+  "Griekenland", "Olieverf", "Aquarel", "Monumentaal", "Glas in lood",
+  "Bloemen", "Dieren", "Water", "Portretten"
 ];
 
 export default function CuratorPage() {

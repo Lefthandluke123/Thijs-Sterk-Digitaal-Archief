@@ -37,7 +37,8 @@ const EXTERNAL_NAS_URL = 'https://doggyfew.quickconnect.to/portfolio/';
 
 const STANDARD_TAGS = [
   "Groet", "Schoorl", "Hargen", "Amsterdam", "Frankrijk", 
-  "Griekenland", "Olieverf", "Aquarel", "Monumentaal", "Glas in lood"
+  "Griekenland", "Olieverf", "Aquarel", "Monumentaal", "Glas in lood",
+  "Bloemen", "Dieren", "Water", "Portretten"
 ];
 
 export default function AdminPage() {
@@ -105,7 +106,7 @@ export default function AdminPage() {
     try {
       for (let i = 0; i < PlaceHolderImages.length; i++) {
         const item = PlaceHolderImages[i];
-        const seedTags = i === 0 ? ["Groet", "Olieverf"] : i === 1 ? ["Amsterdam", "Monumentaal"] : ["Frankrijk"];
+        const seedTags = i === 0 ? ["Groet", "Olieverf", "Water"] : i === 1 ? ["Amsterdam", "Monumentaal", "Portretten"] : ["Frankrijk", "Bloemen"];
         const data = {
           title: item.title || 'Ongetiteld',
           series: item.series || 'Voorbeeld Serie',
@@ -307,7 +308,7 @@ export default function AdminPage() {
                           
                           {/* Snelkoppelingen naar standaard tags */}
                           <div className="flex flex-wrap gap-1">
-                            {STANDARD_TAGS.filter(t => !art.tags?.includes(t)).slice(0, 5).map(tag => (
+                            {STANDARD_TAGS.filter(t => !art.tags?.includes(t)).slice(0, 8).map(tag => (
                               <button 
                                 key={tag}
                                 onClick={() => handleAddTag(art.id, art.tags, tag)}
