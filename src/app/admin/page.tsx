@@ -46,7 +46,7 @@ export default function AdminPage() {
       const relativePath = (file as any).webkitRelativePath || file.name;
       const pathParts = relativePath.split('/');
       
-      // Bepaal het pad op de NAS
+      // Bepaal het pad op de NAS: sla de eerste map over als de schakelaar uit staat
       let adjustedPath = relativePath;
       if (!includeRootFolder && pathParts.length > 1) {
         adjustedPath = pathParts.slice(1).join('/');
@@ -61,6 +61,7 @@ export default function AdminPage() {
       let cleanName = file.name.split('.').slice(0, -1).join('.');
       cleanName = cleanName.replace(/[_-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
       
+      // Encodeer alleen de delen van het pad om spaties op te vangen (%20)
       const encodedPath = adjustedPath.split('/').map(part => encodeURIComponent(part)).join('/');
       const fullUrl = `${nasBaseUrl}${encodedPath}`;
 
@@ -178,7 +179,7 @@ export default function AdminPage() {
         <Card className="mb-12 border-none shadow-lg rounded-3xl bg-white overflow-hidden">
           <CardHeader className="bg-primary/5 border-b border-primary/10">
             <CardTitle className="flex items-center gap-2">
-              <Wifi className="w-5 h-5 text-primary" /> 1. Stap: Controleer de Link
+              <Wifi className="w-5 h-5 text-primary" /> 1. Stap: Controleer de Verbinding
             </CardTitle>
             <CardDescription>
               Stel in hoe we je foto's kunnen vinden op de NAS.
@@ -191,7 +192,7 @@ export default function AdminPage() {
                 className={`p-6 rounded-2xl border-2 cursor-pointer transition-all ${nasBaseUrl === LOCAL_NAS_URL ? 'border-accent bg-accent/5' : 'border-border bg-transparent hover:border-accent/50'}`}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="font-bold text-sm">Lokale Link (Aanbevolen op eigen Wi-Fi)</span>
+                  <span className="font-bold text-sm">Lokale Link (Alleen thuis Wi-Fi)</span>
                   <Wifi className="w-4 h-4 text-accent" />
                 </div>
                 <code className="text-[10px] block p-2 bg-white rounded border truncate">{LOCAL_NAS_URL}</code>
@@ -211,7 +212,7 @@ export default function AdminPage() {
             <div className="bg-muted/30 p-6 rounded-2xl space-y-4 border">
               <div className="flex flex-col md:flex-row gap-4">
                 <div className="flex-1">
-                  <Label className="font-bold text-xs mb-2 block uppercase tracking-wider">Test een bestaand bestand (bijv. foto.jpg):</Label>
+                  <Label className="font-bold text-xs mb-2 block uppercase tracking-wider">Test een bestand (bijv. foto.jpg):</Label>
                   <div className="flex gap-2">
                     <Input 
                       value={testFileName} 
@@ -237,9 +238,9 @@ export default function AdminPage() {
               {testResult === 'forbidden' && (
                 <Alert variant="destructive" className="rounded-xl bg-destructive/5 border-destructive/20">
                   <Lock className="h-4 w-4" />
-                  <AlertTitle className="font-bold">403: Toegang Geweigerd</AlertTitle>
+                  <AlertTitle className="font-bold">403: Toegang Geweigerd op NAS</AlertTitle>
                   <AlertDescription className="text-xs space-y-2">
-                    <p>De NAS is gevonden, maar weigert toegang. Doe dit op de NAS:</p>
+                    <p>De NAS is gevonden, maar weigert toegang. Doe dit in File Station:</p>
                     <ol className="list-decimal ml-4 space-y-1">
                       <li>Rechtermuis op map <b>web/portfolio</b> &rarr; Eigenschappen &rarr; Machtigingen.</li>
                       <li>Voeg groep <b>http</b> toe met "Lezen" rechten.</li>
@@ -254,10 +255,10 @@ export default function AdminPage() {
                   <ShieldAlert className="h-4 w-4 text-amber-600" />
                   <AlertTitle className="font-bold text-amber-800">Browserblokkade (SSL)</AlertTitle>
                   <AlertDescription className="text-xs text-amber-700 space-y-2">
-                    <p>Je browser blokkeert de verbinding. Doe dit:</p>
+                    <p>Je browser blokkeert de onbeveiligde verbinding. Doe dit:</p>
                     <ol className="list-decimal ml-4 space-y-1">
                       <li>Klik op <b>Open Direct</b> hierboven.</li>
-                      <li>Klik op "Geavanceerd" en "Doorgaan naar...".</li>
+                      <li>Als je een waarschuwing ziet, klik op "Geavanceerd" en "Doorgaan".</li>
                       <li>Of typ op dat tabblad simpelweg: <b>thisisunsafe</b></li>
                     </ol>
                   </AlertDescription>
@@ -290,10 +291,10 @@ export default function AdminPage() {
                   <div className="w-24 h-24 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-6 text-accent">
                     <FolderOpen className="w-12 h-12" />
                   </div>
-                  <h2 className="text-2xl font-headline">Selecteer je Portfolio Map</h2>
+                  <h2 className="text-2xl font-headline">Kies je Portfolio Map</h2>
                   <div className="flex items-center justify-center space-x-2 py-4 border-t border-b">
                     <Switch id="root-folder" checked={includeRootFolder} onCheckedChange={(val) => setIncludeRootFolder(val)} />
-                    <Label htmlFor="root-folder" className="text-xs font-medium cursor-pointer">Inclusief naam van de gekozen map</Label>
+                    <Label htmlFor="root-folder" className="text-xs font-medium cursor-pointer">Mapnaam opnemen in link</Label>
                   </div>
                   <Button size="lg" className="rounded-full h-16 px-12 text-lg shadow-xl hover:scale-105 transition-transform w-full" asChild>
                     <label htmlFor="file-scanner" className="cursor-pointer">Map Kiezen</label>
@@ -316,7 +317,7 @@ export default function AdminPage() {
                       </div>
                     ))
                   ) : (
-                    <div className="h-full flex items-center justify-center text-muted-foreground italic text-xs">Geen bestanden gescand...</div>
+                    <div className="h-full flex items-center justify-center text-muted-foreground italic text-xs">Scan een map om de links te zien...</div>
                   )}
                 </div>
               </Card>
@@ -328,7 +329,7 @@ export default function AdminPage() {
               {loading ? (
                 <div className="py-12 space-y-6">
                   <div className="flex justify-between text-2xl font-headline italic">
-                    <span>Importeren...</span>
+                    <span>Bezig met uploaden...</span>
                     <span>{currentUploadItem} / {scannedArtworks.length}</span>
                   </div>
                   <Progress value={uploadProgress} className="h-8 rounded-full" />
@@ -337,8 +338,8 @@ export default function AdminPage() {
                 <div className="space-y-6">
                   <Alert className="bg-blue-50 border-blue-200">
                     <Info className="h-4 w-4 text-blue-600" />
-                    <AlertTitle>Laatste Check</AlertTitle>
-                    <AlertDescription className="text-xs">Je gaat <b>{scannedArtworks.length}</b> werken toevoegen.</AlertDescription>
+                    <AlertTitle>Bevestigen</AlertTitle>
+                    <AlertDescription className="text-xs">Je gaat <b>{scannedArtworks.length}</b> schilderijen toevoegen aan de online galerie.</AlertDescription>
                   </Alert>
                   <Button onClick={handleSaveAll} className="w-full h-24 text-2xl font-bold rounded-3xl shadow-2xl hover:scale-[1.02] transition-transform" disabled={scannedArtworks.length === 0}>
                     Nu {scannedArtworks.length} Werken Toevoegen

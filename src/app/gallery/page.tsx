@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Image from 'next/image';
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Maximize2, Loader2, X, Filter, RefreshCcw, AlertCircle, Info } from 'lucide-react';
+import { Maximize2, Loader2, X, Filter, RefreshCcw, AlertCircle, Info, HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -14,6 +14,7 @@ export default function GalleryPage() {
   const [selectedArtwork, setSelectedArtwork] = useState<any | null>(null);
   const [activeSeries, setActiveSeries] = useState<string>("Alle");
   const [hasImageErrors, setHasImageErrors] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
   const firestore = useFirestore();
   
   const artworksQuery = useMemo(() => {
@@ -25,8 +26,14 @@ export default function GalleryPage() {
 
   const isExternalStorage = (url: string) => {
     if (!url) return false;
-    return url.includes('quickconnect.to') || url.includes('direct.quickconnect.to') || url.includes('gofile.me') || url.includes('drive.google.com') || url.includes('192.168');
+    return url.includes('quickconnect.to') || url.includes('direct.quickconnect.to') || url.includes('gofile.me') || url.includes('192.168');
   };
+
+  // Toon hulp automatisch als we NAS afbeeldingen detecteren en er fouten zijn, 
+  // of als de gebruiker op de helpknop klikt.
+  const needsConnectionHelp = useMemo(() => {
+    return artworks?.some(art => isExternalStorage(art.imageUrl));
+  }, [artworks]);
 
   const seriesNames = useMemo(() => {
     if (!artworks) return ["Alle"];
@@ -49,22 +56,45 @@ export default function GalleryPage() {
           <p className="text-muted-foreground text-base leading-relaxed max-w-xl mx-auto">
             Ontdek de volledige collectie van Thijs Sterk.
           </p>
+          
+          {needsConnectionHelp && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setShowHelp(!showHelp)}
+              className="mt-6 text-[10px] uppercase tracking-widest text-accent hover:text-accent/80"
+            >
+              <HelpCircle className="w-3 h-3 mr-2" />
+              Problemen met laden?
+            </Button>
+          )}
         </header>
 
-        {hasImageErrors && (
-          <Alert className="mb-12 bg-amber-50 border-amber-200 max-w-4xl mx-auto rounded-xl">
+        {(hasImageErrors || showHelp) && (
+          <Alert className="mb-12 bg-amber-50 border-amber-200 max-w-4xl mx-auto rounded-xl shadow-sm border-2">
             <AlertCircle className="h-5 w-5 text-amber-600" />
-            <AlertTitle className="text-amber-800 text-sm">Probleem bij laden foto's</AlertTitle>
-            <AlertDescription className="text-amber-700 text-xs space-y-3">
-              <p>Sommige afbeeldingen van je NAS kunnen niet worden getoond. Dit komt meestal door een beveiligingsinstelling in je browser.</p>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="h-8 text-[10px] border-amber-400 text-amber-800 hover:bg-amber-100" onClick={() => window.open('https://192-168-178-15.doggyfew.direct.quickconnect.to/portfolio/', '_blank')}>
-                  Stap 1: Forceer Verbinding
+            <AlertTitle className="text-amber-800 font-bold mb-2">Hulp bij het laden van afbeeldingen</AlertTitle>
+            <AlertDescription className="text-amber-700 text-xs space-y-4">
+              <p>Sommige afbeeldingen van je NAS worden geblokkeerd door je browserbeveiliging. Volg deze twee stappen om de verbinding te forceren:</p>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="h-10 text-[11px] font-bold border-amber-400 text-amber-800 hover:bg-amber-100 flex-1" 
+                  onClick={() => window.open('https://192-168-178-15.doggyfew.direct.quickconnect.to/portfolio/', '_blank')}
+                >
+                  1. Open NAS & Forceer SSL
                 </Button>
-                <Button variant="secondary" size="sm" className="h-8 text-[10px]" onClick={() => window.location.reload()}>
-                  Stap 2: Ververs Pagina
+                <Button 
+                  variant="secondary" 
+                  size="sm" 
+                  className="h-10 text-[11px] font-bold flex-1" 
+                  onClick={() => window.location.reload()}
+                >
+                  2. Ververs deze Pagina
                 </Button>
               </div>
+              <p className="italic opacity-80">Tip: Als je een rood scherm ziet in stap 1, klik op 'Geavanceerd' en 'Doorgaan', of typ 'thisisunsafe' op je toetsenbord.</p>
             </AlertDescription>
           </Alert>
         )}
