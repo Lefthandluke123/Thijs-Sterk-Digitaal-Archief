@@ -24,7 +24,8 @@ export default function GalleryPage() {
 
   const isExternalStorage = (url: string) => {
     if (!url) return false;
-    return url.includes('drive.google.com') || url.includes('gofile.me') || url.includes('quickconnect.to');
+    // Forceer unoptimized voor Synology en andere externe links om laadproblemen te voorkomen
+    return url.includes('quickconnect.to') || url.includes('direct.quickconnect.to') || url.includes('gofile.me') || url.includes('drive.google.com');
   };
 
   const seriesNames = useMemo(() => {
@@ -46,7 +47,7 @@ export default function GalleryPage() {
           <span className="text-accent font-medium tracking-widest uppercase text-sm mb-4 block">Portfolio</span>
           <h1 className="font-headline text-5xl md:text-6xl font-light mb-6">Kunst <span className="italic">Galerie</span></h1>
           <p className="text-muted-foreground text-lg leading-relaxed">
-            Ontdek de collectie van Thijs Sterk.
+            Ontdek de volledige collectie van Thijs Sterk.
           </p>
         </header>
 
@@ -121,25 +122,18 @@ export default function GalleryPage() {
           </>
         ) : (
           <div className="text-center py-24 border rounded-3xl border-dashed">
-            <h3 className="text-xl font-light mb-2">Nog geen werken zichtbaar</h3>
-            <p className="text-muted-foreground mb-6">De database lijkt op dit moment geen kunstwerken te bevatten.</p>
+            <h3 className="text-xl font-light mb-2">Geen schilderijen gevonden</h3>
+            <p className="text-muted-foreground mb-6">Er staan momenteel 0 werken in de database.</p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button variant="outline" onClick={() => window.location.reload()}>
                 <RefreshCcw className="mr-2 w-4 h-4" /> Ververs Pagina
               </Button>
-              <Button asChild>
-                <a href="/admin">Ga naar Beheer</a>
+              <Button asChild className="bg-accent text-white hover:bg-accent/90">
+                <a href="/admin">Ga naar Beheer om werken toe te voegen</a>
               </Button>
             </div>
           </div>
         )}
-
-        <section className="mt-32 p-12 rounded-[3rem] bg-secondary/20 border border-border text-center">
-          <h2 className="font-headline text-3xl font-light mb-6">Een specifiek werk op het oog?</h2>
-          <Button size="lg" className="rounded-full px-8 h-14 bg-primary hover:bg-primary/90" asChild>
-            <a href="/#contact">Vraag Informatie Aan <ArrowRight className="ml-2 w-4 h-4" /></a>
-          </Button>
-        </section>
       </div>
 
       <Dialog open={!!selectedArtwork} onOpenChange={() => setSelectedArtwork(null)}>
