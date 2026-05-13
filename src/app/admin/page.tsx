@@ -11,7 +11,6 @@ import { toast } from '@/hooks/use-toast';
 import { 
   FolderOpen, 
   Trash2, 
-  CheckCircle2, 
   Settings, 
   Archive, 
   Scan, 
@@ -28,7 +27,7 @@ import {
   Crop,
   ChevronLeft,
   ChevronRight,
-  Maximize
+  UploadCloud
 } from 'lucide-react';
 import Image from 'next/image';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -96,6 +95,7 @@ export default function AdminPage() {
   }, [selectedArtwork]);
 
   const handleUpdateAtelier = (field: string, value: number) => {
+    // We allow fine-grained decimals for "pixel" feel
     const newVal = Math.max(0, Math.min(field === 'brightness' ? 200 : 50, value));
     setEditValues(prev => ({ ...prev, [field]: newVal }));
     
@@ -105,6 +105,18 @@ export default function AdminPage() {
         [field]: field === 'brightness' ? newVal / 100 : newVal 
       });
     }
+  };
+
+  const navigateAtelier = (direction: 'next' | 'prev') => {
+    if (!artworks || !selectedAtelierId) return;
+    const currentIndex = artworks.findIndex(a => a.id === selectedAtelierId);
+    let nextIndex;
+    if (direction === 'next') {
+      nextIndex = (currentIndex + 1) % artworks.length;
+    } else {
+      nextIndex = (currentIndex - 1 + artworks.length) % artworks.length;
+    }
+    setSelectedAtelierId(artworks[nextIndex].id);
   };
 
   const generateImageUrl = (relativePath: string) => {
@@ -172,7 +184,7 @@ export default function AdminPage() {
         };
         await addDoc(artworkCol, data);
       }
-      toast({ title: "Database gevuld", description: "Voorbeelddata is toegevoegd zonder tags." });
+      toast({ title: "Database gevuld", description: "Voorbeelddata toegevoegd." });
       setActiveTab('db');
     } catch (error) {
       toast({ variant: "destructive", title: "Fout bij vullen" });
@@ -273,18 +285,18 @@ export default function AdminPage() {
               />
               <span className="relative z-10">T</span>
             </div>
-            <span className="font-bold text-sm leading-none uppercase tracking-widest hidden sm:block">Studio Beheer</span>
+            <span className="font-bold text-sm leading-none uppercase tracking-widest hidden sm:block">Beheer</span>
           </Link>
           
           <nav className="flex items-center gap-1">
             <Button variant={activeTab === 'db' ? 'secondary' : 'ghost'} onClick={() => setActiveTab('db')} className="gap-2 h-9 px-4 font-bold rounded-full text-[10px] uppercase tracking-widest">
-              <Archive className="w-3.5 h-3.5" /> Collectie
+              <Archive className="w-3.5 h-3.5" /> Archief
             </Button>
             <Button variant={activeTab === 'atelier' ? 'secondary' : 'ghost'} onClick={() => setActiveTab('atelier')} className="gap-2 h-9 px-4 font-bold rounded-full text-[10px] uppercase tracking-widest">
               <Brush className="w-3.5 h-3.5" /> Atelier
             </Button>
             <Button variant={activeTab === 'scan' ? 'secondary' : 'ghost'} onClick={() => setActiveTab('scan')} className="gap-2 h-9 px-4 font-bold rounded-full text-[10px] uppercase tracking-widest">
-              <Scan className="w-3.5 h-3.5" /> Import
+              <UploadCloud className="w-3.5 h-3.5" /> Foto's Invoeren
             </Button>
             <Button variant={activeTab === 'settings' ? 'secondary' : 'ghost'} onClick={() => setActiveTab('settings')} className="gap-2 h-9 px-4 font-bold rounded-full text-[10px] uppercase tracking-widest">
               <Settings className="w-3.5 h-3.5" /> NAS
@@ -314,6 +326,13 @@ export default function AdminPage() {
               <div className="flex flex-col items-center justify-center py-40 gap-4">
                 <Loader2 className="w-10 h-10 animate-spin text-primary/20" />
                 <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Laden...</p>
+              </div>
+            ) : artworks?.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-40 gap-6 border-2 border-dashed border-border rounded-3xl">
+                <p className="text-muted-foreground font-light text-lg">Uw archief is nog leeg.</p>
+                <Button onClick={() => setActiveTab('scan')} className="rounded-full px-8 uppercase tracking-widest font-bold text-xs h-12">
+                  <Plus className="mr-2 w-4 h-4" /> Voeg uw eerste foto's toe
+                </Button>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -407,26 +426,41 @@ export default function AdminPage() {
                 <h2 className="text-3xl font-headline font-light">Atelier</h2>
                 <p className="text-muted-foreground uppercase tracking-[0.2em] font-bold text-[9px]">Beeldbewerking & Optimalisatie</p>
               </div>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => { setSelectedAtelierId(null); setActiveTab('db'); }} className="text-[9px] uppercase font-bold rounded-full h-8">Terug naar archief</Button>
+              <div className="flex gap-3">
+                {selectedAtelierId && (
+                  <>
+                    <Button variant="outline" size="sm" onClick={() => navigateAtelier('prev')} className="h-8 w-8 p-0 rounded-full"><ChevronLeft className="w-4 h-4" /></Button>
+                    <Button variant="outline" size="sm" onClick={() => navigateAtelier('next')} className="h-8 w-8 p-0 rounded-full"><ChevronRight className="w-4 h-4" /></Button>
+                  </>
+                )}
+                <Button variant="outline" size="sm" onClick={() => { setSelectedAtelierId(null); setActiveTab('db'); }} className="text-[9px] uppercase font-bold rounded-full h-8 px-6">Terug naar archief</Button>
               </div>
             </div>
 
             {!selectedAtelierId ? (
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {artworks?.map(art => (
-                  <button 
-                    key={art.id} 
-                    onClick={() => setSelectedAtelierId(art.id)}
-                    className="group relative aspect-square rounded-xl overflow-hidden border-2 border-transparent hover:border-primary transition-all"
-                  >
-                    <Image src={art.imageUrl} alt={art.title} fill className="object-cover" unoptimized />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center">
-                      <Brush className="text-white w-6 h-6" />
-                    </div>
-                  </button>
-                ))}
-              </div>
+              artworks && artworks.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                  {artworks.map(art => (
+                    <button 
+                      key={art.id} 
+                      onClick={() => setSelectedAtelierId(art.id)}
+                      className="group relative aspect-square rounded-xl overflow-hidden border-2 border-transparent hover:border-primary transition-all"
+                    >
+                      <Image src={art.imageUrl} alt={art.title} fill className="object-cover" unoptimized />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center">
+                        <Brush className="text-white w-6 h-6" />
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-40 gap-6 border-2 border-dashed border-border rounded-3xl bg-muted/5">
+                  <p className="text-muted-foreground font-light text-lg">Importeer eerst schilderijen om ze te bewerken.</p>
+                  <Button onClick={() => setActiveTab('scan')} className="rounded-full px-8 uppercase tracking-widest font-bold text-xs h-12">
+                    <UploadCloud className="mr-2 w-4 h-4" /> Foto's Invoeren
+                  </Button>
+                </div>
+              )
             ) : (
               <div className="grid lg:grid-cols-12 gap-12">
                 <div className="lg:col-span-7 space-y-8">
@@ -477,19 +511,19 @@ export default function AdminPage() {
                                 <Button 
                                   variant="outline" 
                                   size="icon" 
-                                  className="h-6 w-6 rounded-md border-primary/20"
-                                  onClick={() => handleUpdateAtelier(c.field, editValues[c.field as keyof typeof editValues] - 1)}
+                                  className="h-7 w-7 rounded-md border-primary/20 hover:bg-primary/5"
+                                  onClick={() => handleUpdateAtelier(c.field, editValues[c.field as keyof typeof editValues] - 0.1)}
                                 >
                                   <Minus className="w-3 h-3" />
                                 </Button>
-                                <span className="text-[10px] font-mono font-bold min-w-[30px] text-center">
-                                  {editValues[c.field as keyof typeof editValues]}%
+                                <span className="text-[10px] font-mono font-bold min-w-[50px] text-center">
+                                  {editValues[c.field as keyof typeof editValues].toFixed(1)}%
                                 </span>
                                 <Button 
                                   variant="outline" 
                                   size="icon" 
-                                  className="h-6 w-6 rounded-md border-primary/20"
-                                  onClick={() => handleUpdateAtelier(c.field, editValues[c.field as keyof typeof editValues] + 1)}
+                                  className="h-7 w-7 rounded-md border-primary/20 hover:bg-primary/5"
+                                  onClick={() => handleUpdateAtelier(c.field, editValues[c.field as keyof typeof editValues] + 0.1)}
                                 >
                                   <Plus className="w-3 h-3" />
                                 </Button>
@@ -526,12 +560,19 @@ export default function AdminPage() {
                       </div>
                     </div>
 
-                    <div className="pt-8">
+                    <div className="pt-8 flex gap-4">
                       <Button 
-                        onClick={() => { setSelectedAtelierId(null); }} 
-                        className="w-full h-14 text-[10px] font-bold uppercase tracking-widest rounded-2xl"
+                        onClick={() => navigateAtelier('next')} 
+                        className="flex-1 h-14 text-[10px] font-bold uppercase tracking-widest rounded-2xl"
                       >
-                        Afronden & Bewaren
+                        Volgende Schilderij
+                      </Button>
+                      <Button 
+                        variant="outline"
+                        onClick={() => { setSelectedAtelierId(null); }} 
+                        className="flex-1 h-14 text-[10px] font-bold uppercase tracking-widest rounded-2xl border-primary/20"
+                      >
+                        Klaar
                       </Button>
                     </div>
                   </Card>
@@ -543,11 +584,16 @@ export default function AdminPage() {
 
         {activeTab === 'scan' && (
           <div className="space-y-12">
+            <div className="flex flex-col items-center justify-center text-center space-y-4 mb-12">
+              <h2 className="text-4xl font-headline font-light">Foto's Invoeren</h2>
+              <p className="text-muted-foreground text-sm uppercase tracking-widest font-bold">Importeer een serie schilderijen van je NAS</p>
+            </div>
+
             <div className="grid lg:grid-cols-2 gap-12">
               <div className="space-y-8">
-                <div className="border-2 border-dashed border-border rounded-3xl p-16 bg-muted/5 flex flex-col items-center justify-center text-center">
+                <div className="border-2 border-dashed border-border rounded-3xl p-16 bg-muted/5 flex flex-col items-center justify-center text-center transition-all hover:bg-muted/10 hover:border-primary/50 group">
                   <input type="file" multiple className="hidden" id="file-scanner" onChange={handleFileScan} accept="image/*" {...({ webkitdirectory: "", directory: "" } as any)} />
-                  <FolderOpen className="w-16 h-16 text-primary/20 mb-6" />
+                  <FolderOpen className="w-16 h-16 text-primary/20 mb-6 transition-colors group-hover:text-primary/40" />
                   <Button size="lg" className="h-14 px-12 rounded-full font-bold uppercase tracking-widest text-xs" asChild>
                     <label htmlFor="file-scanner" className="cursor-pointer">Map Selecteren</label>
                   </Button>
@@ -555,9 +601,9 @@ export default function AdminPage() {
                 </div>
 
                 <div className="bg-card p-8 rounded-3xl border border-border shadow-sm space-y-6">
-                  <h3 className="font-headline text-xl flex items-center gap-3"><Settings className="w-5 h-5 text-accent" /> Instellingen</h3>
+                  <h3 className="font-headline text-xl flex items-center gap-3"><Settings className="w-5 h-5 text-accent" /> Import Instellingen</h3>
                   <div className="space-y-4">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest leading-relaxed">Werken worden standaard zonder tags geïmporteerd voor een schone administratie.</p>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest leading-relaxed">De mapnaam wordt automatisch als 'Serie' herkend. Bestandsnamen worden de 'Titel'.</p>
                     <div className="flex items-center justify-between p-4 bg-muted/20 rounded-xl border border-border/50">
                       <Label htmlFor="root-folder" className="text-xs font-bold uppercase tracking-widest">Hoofdmap in URL</Label>
                       <Switch id="root-folder" checked={includeRootFolder} onCheckedChange={setIncludeRootFolder} />
@@ -570,18 +616,31 @@ export default function AdminPage() {
                 <div className="space-y-6">
                   <Card className="border-primary/20 shadow-2xl bg-primary/5 rounded-3xl p-8 space-y-8">
                     <div className="space-y-2">
-                      <h3 className="text-3xl font-headline font-light flex items-center gap-4"><CheckCircle2 className="w-8 h-8 text-primary" /> Scan Gereed</h3>
-                      <p className="text-sm uppercase tracking-widest text-muted-foreground">{scannedFiles.length} kunstwerken gevonden.</p>
+                      <h3 className="text-3xl font-headline font-light flex items-center gap-4 text-primary">Scan Gereed</h3>
+                      <p className="text-sm uppercase tracking-widest text-muted-foreground font-bold">{scannedFiles.length} kunstwerken gevonden.</p>
                     </div>
                     {loading ? (
                       <div className="space-y-4">
                         <Progress value={uploadProgress} className="h-4 rounded-full" />
-                        <p className="text-center font-bold text-[10px] uppercase tracking-widest">{currentUploadItem} / {scannedFiles.length}</p>
+                        <p className="text-center font-bold text-[10px] uppercase tracking-widest">Bezig met importeren: {currentUploadItem} / {scannedFiles.length}</p>
                       </div>
                     ) : (
-                      <Button onClick={handleSaveAll} className="w-full h-16 text-lg font-bold rounded-2xl uppercase tracking-widest">Import Starten</Button>
+                      <div className="space-y-4">
+                        <Button onClick={handleSaveAll} className="w-full h-16 text-lg font-bold rounded-2xl uppercase tracking-widest shadow-xl">Start Import</Button>
+                        <Button variant="ghost" onClick={() => setScannedFiles([])} className="w-full text-[10px] uppercase font-bold tracking-widest">Annuleren</Button>
+                      </div>
                     )}
                   </Card>
+                  
+                  <div className="max-h-[400px] overflow-y-auto space-y-2 pr-2">
+                    {scannedFiles.slice(0, 10).map((f, i) => (
+                      <div key={i} className="flex items-center justify-between p-3 bg-card border border-border rounded-lg text-[10px] uppercase tracking-widest font-bold">
+                        <span className="truncate flex-1">{f.title}</span>
+                        <span className="text-accent opacity-60 ml-4 shrink-0">{f.series}</span>
+                      </div>
+                    ))}
+                    {scannedFiles.length > 10 && <p className="text-center text-[9px] uppercase tracking-widest opacity-40">... en nog {scannedFiles.length - 10} meer</p>}
+                  </div>
                 </div>
               )}
             </div>
@@ -620,7 +679,7 @@ export default function AdminPage() {
                     <h3 className="text-xl font-headline font-light">Voorbeelden Herstellen</h3>
                     <p className="text-[9px] text-muted-foreground uppercase tracking-widest">Vult de database met de standaard collectie</p>
                   </div>
-                  <Button onClick={handleSeedDatabase} disabled={loading} className="h-12 px-8 rounded-xl gap-2 font-bold text-[10px] uppercase tracking-widest bg-accent">
+                  <Button onClick={handleSeedDatabase} disabled={loading} className="h-12 px-8 rounded-xl gap-2 font-bold text-[10px] uppercase tracking-widest bg-accent text-accent-foreground">
                     {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
                     Seed DB
                   </Button>
