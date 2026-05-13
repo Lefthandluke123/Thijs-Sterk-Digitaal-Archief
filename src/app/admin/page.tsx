@@ -46,11 +46,8 @@ export default function AdminPage() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [currentUploadItem, setCurrentUploadItem] = useState(0);
   const [activeTab, setActiveTab] = useState('db');
-  const [testResult, setTestResult] = useState<'success' | 'error' | 'testing' | null>(null);
   const [nasBaseUrl, setNasBaseUrl] = useState(LOCAL_NAS_URL);
-  const [testFileName, setTestFileName] = useState('1.jpg');
   const [includeRootFolder, setIncludeRootFolder] = useState(false);
-  const [importTags, setImportTags] = useState<string>("");
   const [newTagInputs, setNewTagInputs] = useState<Record<string, string>>({});
 
   const artworksQuery = useMemo(() => {
@@ -92,7 +89,7 @@ export default function AdminPage() {
         fileName: file.name,
         description: `Werk uit de serie ${detectedSeries}.`,
         imageHint: "painting art",
-        tags: importTags.split(',').map(t => t.trim()).filter(t => t !== "")
+        tags: [] // Schilderijen starten altijd zonder tags
       };
     });
     setScannedFiles(scanned);
@@ -114,7 +111,7 @@ export default function AdminPage() {
           imageUrl: item.imageUrl,
           description: item.description,
           imageHint: item.imageHint,
-          tags: [], // Altijd zonder tags beginnen zoals gevraagd
+          tags: [], // Altijd zonder tags beginnen
           createdAt: serverTimestamp(),
         };
         await addDoc(artworkCol, data);
@@ -144,7 +141,7 @@ export default function AdminPage() {
           imageUrl: generateImageUrl(artwork.relativePath),
           description: artwork.description,
           imageHint: artwork.imageHint,
-          tags: importTags.split(',').map(t => t.trim()).filter(t => t !== ""),
+          tags: [], // Altijd zonder tags beginnen bij import
           createdAt: serverTimestamp(),
         };
         setCurrentUploadItem(i + 1);
@@ -314,12 +311,9 @@ export default function AdminPage() {
                 </div>
 
                 <div className="bg-card p-10 rounded-[2rem] border border-border shadow-sm space-y-8">
-                  <h3 className="font-headline text-2xl flex items-center gap-3"><TagIcon className="w-6 h-6 text-accent" /> Import Instellingen</h3>
+                  <h3 className="font-headline text-2xl flex items-center gap-3"><Settings className="w-6 h-6 text-accent" /> Import Instellingen</h3>
                   <div className="space-y-6">
-                    <div className="space-y-3">
-                      <Label htmlFor="tags" className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Standaard Tags (Optioneel)</Label>
-                      <Input id="tags" placeholder="bijv. Atmosferisch, Geometrisch" value={importTags} onChange={(e) => setImportTags(e.target.value)} className="h-12 text-lg rounded-xl" />
-                    </div>
+                    <p className="text-sm text-muted-foreground italic">Opmerking: Werken worden standaard zonder tags geïmporteerd zodat je ze in het archief kunt labelen.</p>
                     <div className="flex items-center justify-between p-6 bg-muted/20 rounded-2xl border border-border/50">
                       <Label htmlFor="root-folder" className="text-base font-bold">Inclusief hoofdmap in URL</Label>
                       <Switch id="root-folder" checked={includeRootFolder} onCheckedChange={setIncludeRootFolder} />
@@ -379,7 +373,7 @@ export default function AdminPage() {
               <div className="flex items-center justify-between p-10 bg-background rounded-3xl border border-border">
                 <div className="space-y-2">
                   <h3 className="text-2xl font-headline font-light">Voorbeelddata Herstellen</h3>
-                  <p className="text-sm text-muted-foreground">Vult de database met de standaard portfolio-werken.</p>
+                  <p className="text-sm text-muted-foreground">Vult de database met de standaard portfolio-werken (zonder tags).</p>
                 </div>
                 <Button onClick={handleSeedDatabase} disabled={loading} className="h-16 px-10 rounded-2xl gap-3 font-bold text-lg bg-accent">
                   {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : <RefreshCw className="w-6 h-6" />}

@@ -7,9 +7,8 @@ import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { Dialog, DialogContent, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Maximize2, Loader2, X, ChevronLeft, ChevronRight, Info, RefreshCcw, Sparkles } from 'lucide-react';
+import { Maximize2, Loader2, X, ChevronLeft, ChevronRight, Info, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Alert } from "@/components/ui/alert";
 
 export default function GalleryPage() {
   const [selectedArtwork, setSelectedArtwork] = useState<any | null>(null);
