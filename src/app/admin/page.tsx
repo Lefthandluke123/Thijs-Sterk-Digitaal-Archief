@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
-import { PlusCircle, Database, FileJson, Loader2, Wand2, Trash2, FolderOpen, Image as ImageIcon, Info, Link as LinkIcon } from 'lucide-react';
+import { PlusCircle, Database, FileJson, Loader2, Wand2, Trash2, FolderOpen, Image as ImageIcon, Info, Link as LinkIcon, HardDrive } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Image from 'next/image';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -149,22 +149,26 @@ export default function AdminPage() {
           <p className="text-muted-foreground">Beheer de database van Thijs Sterk.</p>
         </header>
 
-        {/* HELP SECTIE: HIER STAAN DE VOORBEELDEN */}
         <div className="grid gap-6 mb-12">
           <Alert className="bg-accent/10 border-accent/20 border-l-4 border-l-accent">
             <LinkIcon className="h-5 w-5 text-accent" />
             <div className="ml-2">
               <AlertTitle className="text-lg font-headline font-semibold text-accent">Hoe werkt een Directe Link naar je foto?</AlertTitle>
               <AlertDescription className="mt-2 space-y-3 text-sm leading-relaxed">
-                <p>Een directe link verwijst rechtstreeks naar de foto. Een gewone 'Deel link' (van Drive) of een 'Pagina link' werkt niet in de galerie.</p>
-                <div className="grid md:grid-cols-2 gap-4 mt-4">
+                <p>Een directe link verwijst rechtstreeks naar de foto. Een gewone 'Deel link' werkt niet.</p>
+                <div className="grid md:grid-cols-3 gap-4 mt-4">
                   <div className="bg-background/50 p-3 rounded-lg border border-border">
                     <p className="font-bold mb-1">Google Drive:</p>
-                    <code className="text-[11px] block break-all text-muted-foreground">https://drive.google.com/uc?export=view&id=FILENAAM_ID</code>
+                    <code className="text-[10px] block break-all text-muted-foreground">https://drive.google.com/uc?export=view&id=FILENAAM_ID</code>
+                  </div>
+                  <div className="bg-background/50 p-3 rounded-lg border border-border">
+                    <p className="font-bold mb-1">Synology Drive:</p>
+                    <code className="text-[10px] block break-all text-muted-foreground">https://gofile.me/6xYmB/xyz...</code>
+                    <p className="text-[9px] mt-1 italic">Gebruik de 'Openbare Deel-link' uit Synology Photos/Drive.</p>
                   </div>
                   <div className="bg-background/50 p-3 rounded-lg border border-border">
                     <p className="font-bold mb-1">Eigen website / NAS:</p>
-                    <code className="text-[11px] block break-all text-muted-foreground">https://jouwdomein.nl/foto-1.jpg</code>
+                    <code className="text-[10px] block break-all text-muted-foreground">https://jouwdomein.nl/foto-1.jpg</code>
                   </div>
                 </div>
               </AlertDescription>
@@ -218,7 +222,7 @@ export default function AdminPage() {
                                   alt="" 
                                   fill 
                                   className="object-cover"
-                                  unoptimized={art.imageUrl.includes('drive.google.com')}
+                                  unoptimized={art.imageUrl.includes('drive.google.com') || art.imageUrl.includes('gofile.me')}
                                 />
                               </div>
                             </td>
@@ -300,7 +304,7 @@ export default function AdminPage() {
                     <Label htmlFor="imageUrl">Afbeelding URL (Gebruik een directe link!)</Label>
                     <Input 
                       id="imageUrl" 
-                      placeholder="https://drive.google.com/uc?export=view&id=..."
+                      placeholder="https://gofile.me/... of https://drive.google.com/..."
                       value={singleArtwork.imageUrl} 
                       onChange={e => setSingleArtwork({...singleArtwork, imageUrl: e.target.value})} 
                       required 
