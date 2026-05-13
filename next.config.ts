@@ -49,13 +49,11 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: '*.quickconnect.to',
-        port: '',
         pathname: '/**',
       },
       {
         protocol: 'https',
         hostname: '*.direct.quickconnect.to',
-        port: '',
         pathname: '/**',
       },
     ],
