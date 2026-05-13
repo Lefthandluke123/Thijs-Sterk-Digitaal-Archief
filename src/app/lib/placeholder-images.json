@@ -1,26 +1,35 @@
+
 {
   "placeholderImages": [
     {
-      "id": "hero-image",
-      "description": "Abstract atmosferisch landschapsschilderij",
-      "imageUrl": "https://picsum.photos/seed/thijs1/1200/800",
-      "imageHint": "abstract landscape"
-    },
-    {
       "id": "artwork-1",
-      "title": "Cerulean Depths",
-      "series": "Oceanic Whispers",
+      "title": "Stille Getuige",
+      "series": "Fragmenten",
       "year": "2023",
-      "medium": "Gemengde Techniek",
-      "description": "Een verkenning van de gelaagde mysteries in diepe oceaanstromingen.",
-      "imageUrl": "https://picsum.photos/seed/thijs2/800/800",
-      "imageHint": "blue abstract"
+      "medium": "Olieverf op doek",
+      "description": "Een diepgaand onderzoek naar de vergankelijkheid van licht op oude muren.",
+      "imageUrl": "https://picsum.photos/seed/art1/800/1000",
+      "imageHint": "fine art painting"
     },
     {
-      "id": "artist-portrait",
-      "description": "Portret van de kunstenaar Thijs Sterk",
-      "imageUrl": "https://picsum.photos/seed/thijs-portrait/600/800",
-      "imageHint": "artist portrait"
+      "id": "artwork-2",
+      "title": "Geometrische Echo",
+      "series": "Abstracties",
+      "year": "2024",
+      "medium": "Gemengde techniek",
+      "description": "Het samenspel tussen harde lijnen en zachte overgangen in kleur.",
+      "imageUrl": "https://picsum.photos/seed/art2/800/1000",
+      "imageHint": "abstract geometric painting"
+    },
+    {
+      "id": "artwork-3",
+      "title": "Horizon in Blauw",
+      "series": "Fragmenten",
+      "year": "2023",
+      "medium": "Olieverf",
+      "description": "De grens tussen lucht en water, vervaagd door de herinnering.",
+      "imageUrl": "https://picsum.photos/seed/art3/800/1000",
+      "imageHint": "landscape painting"
     }
   ]
 }

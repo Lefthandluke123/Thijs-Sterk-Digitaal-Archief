@@ -90,7 +90,6 @@ export default function GalleryPage() {
 
   return (
     <main className="min-h-screen bg-background pt-14">
-      {/* Titelstrook */}
       <div className="w-full bg-secondary/10 border-b border-border/10 py-12 md:py-20">
         <div className="container mx-auto px-6 max-w-7xl">
           <h1 className="font-headline text-5xl md:text-7xl font-light text-foreground text-center tracking-tight">Galerie</h1>
@@ -105,7 +104,6 @@ export default function GalleryPage() {
           </div>
         ) : (
           <>
-            {/* Filter Paneel */}
             <div className="bg-background/80 backdrop-blur-md sticky top-14 z-30 border-b border-border/10 py-8 mb-12 space-y-8">
               <div className="flex flex-col md:flex-row items-center justify-between gap-6">
                 <div className="flex gap-6 overflow-x-auto no-scrollbar w-full md:w-auto">
@@ -122,7 +120,7 @@ export default function GalleryPage() {
                     </button>
                   ))}
                 </div>
-                <button onClick={() => setShowHelp(!showHelp)} className="text-[9px] uppercase tracking-widest text-muted-foreground flex items-center gap-2 hover:text-foreground transition-colors">
+                <button onClick={() => setShowHelp(!showHelp)} className="text-[9px] uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                   <Info className="w-3 h-3" /> Verbindingshulp
                 </button>
               </div>
@@ -149,55 +147,32 @@ export default function GalleryPage() {
                       </button>
                     ))}
                     {activeTags.length > 0 && (
-                      <button onClick={() => setActiveTags([])} className="text-[9px] uppercase font-bold text-accent ml-2 hover:underline">Wis filters</button>
+                      <button onClick={() => setActiveTags([])} className="text-[9px] uppercase font-bold text-accent ml-2">Wis filters</button>
                     )}
                   </div>
                 </div>
               )}
             </div>
 
-            {showHelp && (
-              <Alert className="mb-12 bg-secondary/20 border-none max-w-2xl mx-auto rounded-3xl p-6 shadow-sm">
-                <div className="flex flex-col gap-4 text-center">
-                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Laden mislukt?</p>
-                  <div className="flex gap-3 justify-center">
-                    <Button variant="outline" size="sm" className="rounded-full text-[9px] uppercase px-6" onClick={() => window.open('https://192-168-178-15.doggyfew.direct.quickconnect.to/portfolio/', '_blank')}>Verbinding Openen</Button>
-                    <Button variant="ghost" size="sm" className="rounded-full text-[9px] uppercase px-6" onClick={() => window.location.reload()}><RefreshCcw className="w-3 h-3 mr-2" /> Verversen</Button>
-                  </div>
-                </div>
-              </Alert>
-            )}
-
             {filteredArtworks.length > 0 ? (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8">
                 {filteredArtworks.map((item) => (
-                  <div 
-                    key={item.id} 
-                    className="group relative cursor-pointer"
-                    onClick={() => setSelectedArtwork(item)}
-                  >
+                  <div key={item.id} className="group relative cursor-pointer" onClick={() => setSelectedArtwork(item)}>
                     <div className="relative aspect-[4/5] overflow-hidden rounded-sm bg-muted/20">
-                      <Image
-                        src={item.imageUrl}
-                        alt={item.title}
-                        fill
-                        className="object-cover transition-all duration-700 ease-out group-hover:scale-[1.03]"
-                        unoptimized={isExternalStorage(item.imageUrl)}
-                      />
+                      <Image src={item.imageUrl} alt={item.title} fill className="object-cover transition-all duration-700 ease-out group-hover:scale-[1.03]" unoptimized={isExternalStorage(item.imageUrl)} />
                       <div className="absolute inset-0 bg-background/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                         <Maximize2 className="text-white/60 w-6 h-6" />
                       </div>
                     </div>
                     <div className="mt-4 text-center">
-                      <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-foreground transition-colors">{item.title}</h3>
+                      <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-foreground">{item.title}</h3>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
               <div className="py-32 text-center">
-                <p className="text-muted-foreground font-light text-xl italic">Geen werken gevonden met deze combinatie.</p>
-                <Button variant="ghost" className="mt-6 uppercase text-[10px] tracking-widest" onClick={() => {setActiveSeries("Alle"); setActiveTags([]);}}>Wis alle filters</Button>
+                <p className="text-muted-foreground font-light text-xl italic">Geen werken gevonden.</p>
               </div>
             )}
           </>
@@ -205,40 +180,24 @@ export default function GalleryPage() {
       </div>
 
       <Dialog open={!!selectedArtwork} onOpenChange={() => setSelectedArtwork(null)}>
-        <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background/98 backdrop-blur-3xl border-none rounded-none outline-none">
+        <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background/98 backdrop-blur-3xl border-none rounded-none">
           <div className="relative flex-1 flex items-center justify-center overflow-hidden group bg-black/5">
             {selectedArtwork && (
-              <Image
-                src={selectedArtwork.imageUrl}
-                alt={selectedArtwork.title}
-                fill
-                className="object-contain p-4 md:p-12"
-                unoptimized={isExternalStorage(selectedArtwork.imageUrl)}
-              />
+              <Image src={selectedArtwork.imageUrl} alt={selectedArtwork.title} fill className="object-contain p-4 md:p-12" unoptimized={isExternalStorage(selectedArtwork.imageUrl)} />
             )}
-            
-            {/* Navigatieknoppen die alleen verschijnen bij hover */}
             <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-6 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-              <button 
-                onClick={(e) => { e.stopPropagation(); navigateGallery('prev'); }}
-                className="p-3 rounded-full bg-background/10 backdrop-blur-md hover:bg-background/40 transition-colors pointer-events-auto"
-              >
+              <button onClick={(e) => { e.stopPropagation(); navigateGallery('prev'); }} className="p-3 rounded-full bg-background/10 backdrop-blur-md pointer-events-auto">
                 <ChevronLeft className="w-6 h-6 text-foreground" />
               </button>
-              <button 
-                onClick={(e) => { e.stopPropagation(); navigateGallery('next'); }}
-                className="p-3 rounded-full bg-background/10 backdrop-blur-md hover:bg-background/40 transition-colors pointer-events-auto"
-              >
+              <button onClick={(e) => { e.stopPropagation(); navigateGallery('next'); }} className="p-3 rounded-full bg-background/10 backdrop-blur-md pointer-events-auto">
                 <ChevronRight className="w-6 h-6 text-foreground" />
               </button>
             </div>
-
-            <DialogClose className="absolute top-8 right-8 z-50 p-2 hover:bg-black/5 rounded-full transition-colors bg-background/10 backdrop-blur-sm">
+            <DialogClose className="absolute top-8 right-8 z-50 p-2 bg-background/10 backdrop-blur-sm rounded-full">
               <X className="w-5 h-5 opacity-50" />
             </DialogClose>
           </div>
 
-          {/* Super compacte onderbalk */}
           <div className="w-full bg-background/90 backdrop-blur-md py-4 px-10 border-t border-border/10">
             <div className="max-w-6xl mx-auto flex items-center justify-between gap-8">
               <div className="flex-1">
@@ -263,14 +222,9 @@ export default function GalleryPage() {
                   )}
                 </div>
               </div>
-              <div className="flex gap-4">
-                <Button variant="outline" size="sm" className="rounded-full text-[9px] uppercase tracking-widest px-8 h-9 border-border/50 hover:bg-accent hover:text-accent-foreground hover:border-accent">
-                  Interesse?
-                </Button>
-                <Button variant="ghost" size="sm" onClick={() => setSelectedArtwork(null)} className="rounded-full text-[9px] uppercase tracking-widest px-8 h-9">
-                  Sluiten
-                </Button>
-              </div>
+              <Button variant="outline" size="sm" className="rounded-full text-[9px] uppercase tracking-widest px-8 h-9">
+                Interesse?
+              </Button>
             </div>
           </div>
         </DialogContent>

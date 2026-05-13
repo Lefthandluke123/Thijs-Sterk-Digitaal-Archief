@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useFirestore, useCollection } from '@/firebase';
 import { collection, doc, serverTimestamp, deleteDoc, addDoc, query, orderBy, updateDoc, getDocs } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
 import { 
   FolderOpen, 
@@ -114,7 +114,7 @@ export default function AdminPage() {
           imageUrl: item.imageUrl,
           description: item.description,
           imageHint: item.imageHint,
-          tags: [], // Beginnen zonder tags zoals gevraagd
+          tags: [], // Altijd zonder tags beginnen zoals gevraagd
           createdAt: serverTimestamp(),
         };
         await addDoc(artworkCol, data);
@@ -128,35 +128,27 @@ export default function AdminPage() {
     }
   };
 
-  const finalArtworks = useMemo(() => {
-    return scannedFiles.map(file => ({
-      ...file,
-      imageUrl: generateImageUrl(file.relativePath),
-      tags: importTags.split(',').map(t => t.trim()).filter(t => t !== "")
-    }));
-  }, [scannedFiles, nasBaseUrl, includeRootFolder, importTags]);
-
   const handleSaveAll = async () => {
-    if (!firestore || finalArtworks.length === 0) return;
+    if (!firestore || scannedFiles.length === 0) return;
     setLoading(true);
     const artworkCol = collection(firestore, 'artworks');
     
     try {
-      for (let i = 0; i < finalArtworks.length; i++) {
-        const artwork = finalArtworks[i];
+      for (let i = 0; i < scannedFiles.length; i++) {
+        const artwork = scannedFiles[i];
         const data = { 
           title: artwork.title,
           series: artwork.series,
           year: artwork.year,
           medium: artwork.medium,
-          imageUrl: artwork.imageUrl,
+          imageUrl: generateImageUrl(artwork.relativePath),
           description: artwork.description,
           imageHint: artwork.imageHint,
-          tags: artwork.tags,
+          tags: importTags.split(',').map(t => t.trim()).filter(t => t !== ""),
           createdAt: serverTimestamp(),
         };
         setCurrentUploadItem(i + 1);
-        setUploadProgress(((i + 1) / finalArtworks.length) * 100);
+        setUploadProgress(((i + 1) / scannedFiles.length) * 100);
         
         addDoc(artworkCol, data).catch(async (err) => {
           const permissionError = new FirestorePermissionError({
@@ -197,7 +189,7 @@ export default function AdminPage() {
 
   const handleRemoveTag = async (artId: string, tagToRemove: string, currentTags: string[]) => {
     if (!firestore) return;
-    const updatedTags = currentTags.filter(t => t !== tagToRemove);
+    const updatedTags = (currentTags || []).filter(t => t !== tagToRemove);
     const artRef = doc(firestore, 'artworks', artId);
     updateDoc(artRef, { tags: updatedTags })
       .then(() => toast({ title: "Tag verwijderd" }));
@@ -244,9 +236,6 @@ export default function AdminPage() {
                 <h2 className="text-5xl font-headline font-light">Mijn Collectie</h2>
                 <p className="text-muted-foreground uppercase tracking-[0.3em] font-bold text-xs">{artworks?.length || 0} Geregistreerde werken</p>
               </div>
-              <Button variant="outline" className="gap-2 rounded-full h-12 px-8 border-accent text-accent hover:bg-accent/5 font-bold" onClick={() => window.open(nasBaseUrl, '_blank')}>
-                <ExternalLink className="w-4 h-4" /> NAS Verbinding Openen
-              </Button>
             </div>
 
             {dbLoading ? (
@@ -272,11 +261,10 @@ export default function AdminPage() {
                         <p className="text-xs text-accent font-bold uppercase tracking-[0.2em]">{art.series} &bull; {art.year}</p>
                       </div>
                       
-                      {/* Zwevende Tag Balk sectie binnen de kaart */}
                       <div className="space-y-4 pt-4 border-t border-border">
                         <div className="flex flex-wrap gap-2 min-h-[32px]">
                           {art.tags?.length > 0 ? art.tags.map((tag: string) => (
-                            <Badge key={tag} variant="secondary" className="gap-2 pr-1.5 py-1 px-3 rounded-full text-[10px] font-bold uppercase tracking-widest bg-primary/5 text-primary border-primary/10 hover:bg-primary/10 group/tag">
+                            <Badge key={tag} variant="secondary" className="gap-2 pr-1.5 py-1 px-3 rounded-full text-[10px] font-bold uppercase tracking-widest bg-primary/5 text-primary border-primary/10 hover:bg-primary/10">
                               {tag}
                               <button onClick={() => handleRemoveTag(art.id, tag, art.tags)} className="text-primary/40 hover:text-destructive transition-colors">
                                 <X className="w-3.5 h-3.5" />
@@ -293,13 +281,13 @@ export default function AdminPage() {
                             onChange={(e) => setNewTagInputs(prev => ({ ...prev, [art.id]: e.target.value }))}
                             onKeyDown={(e) => { if (e.key === 'Enter') handleAddTag(art.id, art.tags) }}
                             placeholder="Nieuwe tag..." 
-                            className="h-9 text-xs rounded-full bg-background/50 border-border focus:bg-background"
+                            className="h-9 text-xs rounded-full bg-background/50 border-border"
                           />
                           <Button 
                             variant="outline" 
                             size="icon" 
                             onClick={() => handleAddTag(art.id, art.tags)}
-                            className="h-9 w-9 shrink-0 rounded-full border-primary/20 hover:bg-primary hover:text-white"
+                            className="h-9 w-9 rounded-full border-primary/20"
                           >
                             <Plus className="w-4 h-4" />
                           </Button>
@@ -317,13 +305,12 @@ export default function AdminPage() {
           <div className="space-y-12">
             <div className="grid lg:grid-cols-2 gap-12">
               <div className="space-y-8">
-                <div className="border-2 border-dashed border-border rounded-[2.5rem] p-16 bg-muted/5 flex flex-col items-center justify-center text-center hover:bg-muted/10 transition-colors">
+                <div className="border-2 border-dashed border-border rounded-[2.5rem] p-16 bg-muted/5 flex flex-col items-center justify-center text-center">
                   <input type="file" multiple className="hidden" id="file-scanner" onChange={handleFileScan} accept="image/*" {...({ webkitdirectory: "", directory: "" } as any)} />
                   <FolderOpen className="w-20 h-20 text-primary/20 mb-8" />
-                  <Button size="lg" className="h-16 px-16 rounded-full font-bold text-xl shadow-xl" asChild>
+                  <Button size="lg" className="h-16 px-16 rounded-full font-bold text-xl" asChild>
                     <label htmlFor="file-scanner" className="cursor-pointer">Kies Map</label>
                   </Button>
-                  <p className="mt-6 text-sm text-muted-foreground font-bold uppercase tracking-[0.2em]">Selecteer een lokale map om te scannen</p>
                 </div>
 
                 <div className="bg-card p-10 rounded-[2rem] border border-border shadow-sm space-y-8">
@@ -332,13 +319,9 @@ export default function AdminPage() {
                     <div className="space-y-3">
                       <Label htmlFor="tags" className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Standaard Tags (Optioneel)</Label>
                       <Input id="tags" placeholder="bijv. Atmosferisch, Geometrisch" value={importTags} onChange={(e) => setImportTags(e.target.value)} className="h-12 text-lg rounded-xl" />
-                      <p className="text-xs text-muted-foreground italic">Komma-gescheiden lijst met tags. Leeg laten voor geen tags.</p>
                     </div>
                     <div className="flex items-center justify-between p-6 bg-muted/20 rounded-2xl border border-border/50">
-                      <div className="space-y-1">
-                        <Label htmlFor="root-folder" className="text-base font-bold">Inclusief hoofdmap in URL</Label>
-                        <p className="text-sm text-muted-foreground">Is de mapnaam onderdeel van het pad op de NAS?</p>
-                      </div>
+                      <Label htmlFor="root-folder" className="text-base font-bold">Inclusief hoofdmap in URL</Label>
                       <Switch id="root-folder" checked={includeRootFolder} onCheckedChange={setIncludeRootFolder} />
                     </div>
                   </div>
@@ -347,29 +330,19 @@ export default function AdminPage() {
 
               {scannedFiles.length > 0 && (
                 <div className="space-y-6">
-                  <Card className="border-primary/20 shadow-2xl bg-primary/5 rounded-[3rem] overflow-hidden">
-                    <CardHeader className="p-10 pb-4">
-                      <CardTitle className="flex items-center gap-4 text-4xl font-headline font-light">
-                        <CheckCircle2 className="w-10 h-10 text-primary" /> Klaar voor Import
-                      </CardTitle>
-                      <CardDescription className="text-lg">{scannedFiles.length} kunstwerken gedetecteerd.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="p-10 pt-0 space-y-10">
-                      {loading ? (
-                        <div className="space-y-6 py-10">
-                          <div className="flex justify-between items-end">
-                            <div className="space-y-1">
-                              <span className="text-sm font-bold uppercase tracking-widest text-primary">Bezig met verwerken...</span>
-                              <p className="text-2xl font-headline">{finalArtworks[currentUploadItem-1]?.title}</p>
-                            </div>
-                            <span className="text-xl font-bold font-mono">{currentUploadItem} / {finalArtworks.length}</span>
-                          </div>
-                          <Progress value={uploadProgress} className="h-6 rounded-full" />
-                        </div>
-                      ) : (
-                        <Button onClick={handleSaveAll} className="w-full h-20 text-2xl font-bold rounded-2xl shadow-2xl hover:scale-[1.02] transition-transform">Start Importeren</Button>
-                      )}
-                    </CardContent>
+                  <Card className="border-primary/20 shadow-2xl bg-primary/5 rounded-[3rem] p-10 space-y-10">
+                    <div className="space-y-2">
+                      <h3 className="text-4xl font-headline font-light flex items-center gap-4"><CheckCircle2 className="w-10 h-10 text-primary" /> Klaar voor Import</h3>
+                      <p className="text-lg">{scannedFiles.length} kunstwerken gedetecteerd.</p>
+                    </div>
+                    {loading ? (
+                      <div className="space-y-6">
+                        <Progress value={uploadProgress} className="h-6 rounded-full" />
+                        <p className="text-center font-bold">{currentUploadItem} / {scannedFiles.length}</p>
+                      </div>
+                    ) : (
+                      <Button onClick={handleSaveAll} className="w-full h-20 text-2xl font-bold rounded-2xl">Start Importeren</Button>
+                    )}
                   </Card>
                 </div>
               )}
@@ -379,47 +352,19 @@ export default function AdminPage() {
 
         {activeTab === 'settings' && (
           <div className="max-w-3xl mx-auto">
-            <Card className="border-border shadow-2xl rounded-[3rem] bg-card/50 overflow-hidden">
-              <CardHeader className="p-12 md:p-16 border-b border-border bg-muted/5">
-                <CardTitle className="text-5xl font-headline font-light mb-4">NAS Setup</CardTitle>
-                <CardDescription className="text-lg">Configureer de verbinding met je fysieke opslag.</CardDescription>
-              </CardHeader>
-              <CardContent className="p-12 md:p-16 space-y-16">
-                <div className="space-y-8">
-                  <Label className="text-xs font-bold uppercase tracking-[0.3em] text-muted-foreground">Netwerk Locatie</Label>
-                  <div className="grid grid-cols-2 gap-6">
-                    <Button variant={nasBaseUrl === LOCAL_NAS_URL ? "default" : "outline"} onClick={() => setNasBaseUrl(LOCAL_NAS_URL)} className="h-20 text-lg font-bold rounded-2xl">Lokaal Netwerk</Button>
-                    <Button variant={nasBaseUrl === EXTERNAL_NAS_URL ? "default" : "outline"} onClick={() => setNasBaseUrl(EXTERNAL_NAS_URL)} className="h-20 text-lg font-bold rounded-2xl">QuickConnect</Button>
-                  </div>
-                  <Input value={nasBaseUrl} onChange={(e) => setNasBaseUrl(e.target.value)} className="font-mono h-14 text-lg rounded-xl bg-background border-border" />
+            <Card className="border-border shadow-2xl rounded-[3rem] p-12 md:p-16 space-y-16 bg-card/50">
+              <div className="space-y-4">
+                <h2 className="text-5xl font-headline font-light">NAS Setup</h2>
+                <p className="text-lg text-muted-foreground">Configureer de verbinding met je fysieke opslag.</p>
+              </div>
+              <div className="space-y-8">
+                <Label className="text-xs font-bold uppercase tracking-[0.3em] text-muted-foreground">Netwerk Locatie</Label>
+                <div className="grid grid-cols-2 gap-6">
+                  <Button variant={nasBaseUrl === LOCAL_NAS_URL ? "default" : "outline"} onClick={() => setNasBaseUrl(LOCAL_NAS_URL)} className="h-20 text-lg font-bold rounded-2xl">Lokaal Netwerk</Button>
+                  <Button variant={nasBaseUrl === EXTERNAL_NAS_URL ? "default" : "outline"} onClick={() => setNasBaseUrl(EXTERNAL_NAS_URL)} className="h-20 text-lg font-bold rounded-2xl">QuickConnect</Button>
                 </div>
-
-                <div className="p-10 bg-primary/5 rounded-[2.5rem] border border-primary/10 space-y-8">
-                  <div className="space-y-2">
-                    <Label className="font-bold uppercase tracking-widest text-primary text-xs">Verbinding Testen</Label>
-                    <p className="text-sm text-muted-foreground">Test of een specifiek bestand bereikbaar is vanaf deze locatie.</p>
-                  </div>
-                  <div className="flex gap-4">
-                    <Input value={testFileName} onChange={(e) => setTestFileName(e.target.value)} placeholder="bijv. 1.jpg" className="h-14 text-lg bg-background rounded-xl" />
-                    <Button onClick={() => {
-                      setTestResult('testing');
-                      const img = new window.Image();
-                      img.onload = () => setTestResult('success');
-                      img.onerror = () => setTestResult('error');
-                      img.src = `${nasBaseUrl}${testFileName}?t=${Date.now()}`;
-                    }} disabled={testResult === 'testing'} className="h-14 px-10 rounded-xl font-bold">Start Test</Button>
-                  </div>
-                  {testResult && (
-                    <div className={cn("p-6 rounded-2xl flex items-center gap-4 font-bold text-lg animate-in fade-in slide-in-from-top-4", 
-                      testResult === 'success' ? "bg-green-500/10 text-green-700 border border-green-500/20" : 
-                      testResult === 'testing' ? "bg-muted text-muted-foreground" :
-                      "bg-destructive/10 text-destructive border border-destructive/20")}>
-                      {testResult === 'success' ? <CheckCircle2 className="w-8 h-8" /> : <AlertCircle className="w-8 h-8" />}
-                      {testResult === 'success' ? "Verbinding geslaagd!" : testResult === 'testing' ? "Testen..." : "Geen verbinding mogelijk."}
-                    </div>
-                  )}
-                </div>
-              </CardContent>
+                <Input value={nasBaseUrl} onChange={(e) => setNasBaseUrl(e.target.value)} className="font-mono h-14 text-lg rounded-xl" />
+              </div>
             </Card>
           </div>
         )}
@@ -428,55 +373,36 @@ export default function AdminPage() {
           <div className="max-w-3xl mx-auto space-y-12">
             <div className="space-y-4 text-center">
               <h2 className="text-5xl font-headline font-light">Systeembeheer</h2>
-              <p className="text-muted-foreground max-w-lg mx-auto">Gereedschappen om je database te onderhouden en snel te vullen voor tests.</p>
+              <p className="text-muted-foreground">Onderhoud je database en herstel testdata.</p>
             </div>
-
-            <Card className="border-border shadow-xl rounded-[2.5rem] bg-card/30 overflow-hidden">
-              <CardContent className="p-12 space-y-10">
-                <div className="flex flex-col md:flex-row items-center justify-between gap-8 p-10 bg-background rounded-3xl border border-border shadow-inner">
-                  <div className="space-y-2 text-center md:text-left">
-                    <h3 className="text-2xl font-headline font-light">Voorbeelddata Herstellen</h3>
-                    <p className="text-sm text-muted-foreground max-w-sm">
-                      Zijn je schilderijen weg na een update? Gebruik deze knop om de database direct te vullen met de standaard portfolio-werken.
-                    </p>
-                  </div>
-                  <Button 
-                    onClick={handleSeedDatabase} 
-                    disabled={loading}
-                    className="h-16 px-10 rounded-2xl gap-3 font-bold text-lg bg-accent hover:bg-accent/90 shadow-xl"
-                  >
-                    {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : <RefreshCw className="w-6 h-6" />}
-                    Vul Database
-                  </Button>
+            <Card className="border-border shadow-xl rounded-[2.5rem] p-12 space-y-10 bg-card/30">
+              <div className="flex items-center justify-between p-10 bg-background rounded-3xl border border-border">
+                <div className="space-y-2">
+                  <h3 className="text-2xl font-headline font-light">Voorbeelddata Herstellen</h3>
+                  <p className="text-sm text-muted-foreground">Vult de database met de standaard portfolio-werken.</p>
                 </div>
-
-                <div className="flex flex-col md:flex-row items-center justify-between gap-8 p-10 bg-destructive/5 rounded-3xl border border-destructive/10">
-                  <div className="space-y-2 text-center md:text-left">
-                    <h3 className="text-2xl font-headline font-light text-destructive">Database Leegmaken</h3>
-                    <p className="text-sm text-muted-foreground max-w-sm">
-                      Verwijder ALLE schilderijen uit de database. Let op: dit kan niet ongedaan worden gemaakt.
-                    </p>
-                  </div>
-                  <Button 
-                    variant="outline"
-                    onClick={async () => {
-                      if(confirm("Weet je zeker dat je ALLE data wilt wissen?")) {
-                        setLoading(true);
-                        const snaps = await getDocs(collection(firestore!, 'artworks'));
-                        for (const d of snaps.docs) {
-                          await deleteDoc(d.ref);
-                        }
-                        toast({ title: "Database gewist" });
-                        setLoading(false);
-                      }
-                    }}
-                    disabled={loading}
-                    className="h-16 px-10 rounded-2xl border-destructive text-destructive hover:bg-destructive/10 font-bold"
-                  >
-                    Alles Wissen
-                  </Button>
+                <Button onClick={handleSeedDatabase} disabled={loading} className="h-16 px-10 rounded-2xl gap-3 font-bold text-lg bg-accent">
+                  {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : <RefreshCw className="w-6 h-6" />}
+                  Vul Database
+                </Button>
+              </div>
+              <div className="flex items-center justify-between p-10 bg-destructive/5 rounded-3xl border border-destructive/10">
+                <div className="space-y-2">
+                  <h3 className="text-2xl font-headline font-light text-destructive">Database Leegmaken</h3>
+                  <p className="text-sm text-muted-foreground">Verwijder ALLE schilderijen uit de database.</p>
                 </div>
-              </CardContent>
+                <Button variant="outline" onClick={async () => {
+                  if(confirm("Alles wissen?")) {
+                    setLoading(true);
+                    const snaps = await getDocs(collection(firestore!, 'artworks'));
+                    for (const d of snaps.docs) await deleteDoc(d.ref);
+                    toast({ title: "Database gewist" });
+                    setLoading(false);
+                  }
+                }} disabled={loading} className="h-16 px-10 rounded-2xl border-destructive text-destructive font-bold">
+                  Alles Wissen
+                </Button>
+              </div>
             </Card>
           </div>
         )}
