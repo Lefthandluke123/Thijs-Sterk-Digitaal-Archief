@@ -19,17 +19,21 @@ export function PortfolioGrid() {
 
   const { data: artworks, loading } = useCollection(artworksQuery);
 
+  const isExternalStorage = (url: string) => {
+    if (!url) return false;
+    return url.includes('drive.google.com') || url.includes('gofile.me') || url.includes('quickconnect.to');
+  };
+
   return (
     <section className="py-24 bg-background px-4" id="portfolio">
       <div className="container mx-auto">
         <div className="flex flex-col md:flex-row items-end justify-between mb-16 gap-4">
           <div className="max-w-xl">
             <h2 className="font-headline text-4xl md:text-5xl font-light mb-4">Geselecteerde Werken</h2>
-            <p className="text-muted-foreground text-lg">Een collectie recente verkenningen van textuur, licht en de abstracte interpretatie van de natuurlijke wereld.</p>
+            <p className="text-muted-foreground text-lg">Een collectie recente verkenningen van textuur en licht.</p>
           </div>
           <div className="flex gap-8 text-sm font-medium tracking-widest uppercase">
-            <button className="text-accent border-b border-accent pb-1">Recent</button>
-            <a href="/gallery" className="text-muted-foreground hover:text-foreground transition-colors pb-1">Bekijk Alles</a>
+            <a href="/gallery" className="text-muted-foreground hover:text-foreground transition-colors pb-1 border-b border-transparent hover:border-accent">Bekijk Alles</a>
           </div>
         </div>
 
@@ -48,10 +52,10 @@ export function PortfolioGrid() {
                 <div className="relative aspect-square overflow-hidden rounded-xl bg-muted transition-all duration-500 group-hover:shadow-xl">
                   <Image
                     src={art.imageUrl}
-                    alt={art.description || art.title}
+                    alt={art.title}
                     fill
                     className="object-cover transition-transform duration-700 ease-out group-hover:scale-110 group-hover:brightness-90"
-                    data-ai-hint={art.imageHint || "abstract painting"}
+                    unoptimized={isExternalStorage(art.imageUrl)}
                   />
                   <div className="absolute inset-0 bg-primary/20 opacity-0 transition-opacity duration-300 group-hover:opacity-100 flex items-center justify-center">
                     <div className="bg-white/10 backdrop-blur-md p-3 rounded-full border border-white/20 transform translate-y-4 transition-transform duration-300 group-hover:translate-y-0">
@@ -67,7 +71,7 @@ export function PortfolioGrid() {
           </div>
         ) : (
           <div className="text-center py-20 border border-dashed border-border rounded-3xl">
-            <p className="text-muted-foreground">Nog geen kunstwerken toegevoegd. Ga naar de admin-pagina om te beginnen.</p>
+            <p className="text-muted-foreground">Nog geen kunstwerken toegevoegd.</p>
           </div>
         )}
       </div>
@@ -78,9 +82,10 @@ export function PortfolioGrid() {
             {selectedArtwork && (
               <Image
                 src={selectedArtwork.imageUrl}
-                alt={selectedArtwork.description || selectedArtwork.title}
+                alt={selectedArtwork.title}
                 fill
                 className="object-contain p-4"
+                unoptimized={isExternalStorage(selectedArtwork.imageUrl)}
               />
             )}
             <DialogClose className="absolute top-4 left-4 z-10 p-2 bg-background/20 backdrop-blur-md rounded-full text-white hover:bg-background/40 transition-colors">
@@ -95,12 +100,8 @@ export function PortfolioGrid() {
                 {selectedArtwork?.medium} &bull; {selectedArtwork?.year}
               </DialogDescription>
             </DialogHeader>
-            
             <div className="space-y-6">
-              <p className="text-foreground/80 leading-relaxed text-lg">
-                {selectedArtwork?.description}
-              </p>
-              
+              <p className="text-foreground/80 leading-relaxed text-lg">{selectedArtwork?.description}</p>
               <div className="pt-6 border-t border-border flex flex-col gap-4">
                 <Button className="bg-primary hover:bg-primary/90 rounded-full px-6 w-full">Informeer over dit stuk</Button>
                 <Button variant="outline" className="rounded-full px-6 w-full" onClick={() => setSelectedArtwork(null)}>Sluiten</Button>

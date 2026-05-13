@@ -19,7 +19,11 @@ export default function GalleryPage() {
 
   const { data: artworks, loading } = useCollection(artworksQuery);
 
-  // Groepeer kunstwerken per serie
+  const isExternalStorage = (url: string) => {
+    if (!url) return false;
+    return url.includes('drive.google.com') || url.includes('gofile.me') || url.includes('quickconnect.to');
+  };
+
   const seriesGroups = useMemo(() => {
     if (!artworks) return {};
     return artworks.reduce((acc: Record<string, any[]>, art) => {
@@ -54,9 +58,6 @@ export default function GalleryPage() {
                     <h2 className="text-3xl font-light font-headline">{seriesName}</h2>
                     <p className="text-muted-foreground text-sm mt-1 uppercase tracking-tighter">Collectie Series</p>
                   </div>
-                  <div className="hidden sm:flex items-center gap-2 text-primary text-sm font-medium">
-                    <span>{items.length} Kunstwerken</span>
-                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
@@ -69,14 +70,13 @@ export default function GalleryPage() {
                       <div className="relative aspect-square overflow-hidden rounded-lg bg-muted transition-all duration-500 hover:shadow-lg">
                         <Image
                           src={item.imageUrl}
-                          alt={item.description || item.title}
+                          alt={item.title}
                           fill
                           className="object-cover transition-transform duration-700 ease-out group-hover:scale-110"
-                          data-ai-hint={item.imageHint || "abstract artwork"}
+                          unoptimized={isExternalStorage(item.imageUrl)}
                         />
                         <div className="absolute inset-0 bg-black/40 opacity-0 transition-opacity duration-300 group-hover:opacity-100 flex flex-col items-center justify-center p-4 text-center">
                           <Maximize2 className="text-white w-6 h-6 mb-2" />
-                          <p className="text-white text-xs font-medium uppercase tracking-widest hidden md:block">{item.title}</p>
                         </div>
                       </div>
                     </div>
@@ -88,10 +88,7 @@ export default function GalleryPage() {
         )}
 
         <section className="mt-32 p-12 rounded-[3rem] bg-secondary/20 border border-border text-center">
-          <h2 className="font-headline text-3xl font-light mb-6">Geïnteresseerd in een specifiek stuk?</h2>
-          <p className="text-muted-foreground mb-8 max-w-xl mx-auto">
-            Veel van deze werken zijn beschikbaar als limited edition prints of originele doeken. Neem contact op voor prijsinformatie en beschikbaarheid.
-          </p>
+          <h2 className="font-headline text-3xl font-light mb-6">Geïnteresseerd?</h2>
           <Button size="lg" className="rounded-full px-8" asChild>
             <a href="/#contact">Neem Contact Op <ArrowRight className="ml-2 w-4 h-4" /></a>
           </Button>
@@ -104,9 +101,10 @@ export default function GalleryPage() {
             {selectedArtwork && (
               <Image
                 src={selectedArtwork.imageUrl}
-                alt={selectedArtwork.description || selectedArtwork.title}
+                alt={selectedArtwork.title}
                 fill
                 className="object-contain p-4"
+                unoptimized={isExternalStorage(selectedArtwork.imageUrl)}
               />
             )}
             <DialogClose className="absolute top-4 left-4 z-10 p-2 bg-background/20 backdrop-blur-md rounded-full text-white hover:bg-background/40 transition-colors">
@@ -121,15 +119,11 @@ export default function GalleryPage() {
                 {selectedArtwork?.medium} &bull; {selectedArtwork?.year}
               </DialogDescription>
             </DialogHeader>
-            
             <div className="space-y-8">
-              <p className="text-foreground/80 leading-relaxed text-lg">
-                {selectedArtwork?.description}
-              </p>
-              
+              <p className="text-foreground/80 leading-relaxed text-lg">{selectedArtwork?.description}</p>
               <div className="pt-8 border-t border-border flex flex-col gap-4">
                 <Button className="bg-primary hover:bg-primary/90 rounded-full px-8 w-full">Informeer over dit stuk</Button>
-                <Button variant="outline" className="rounded-full px-8 w-full" onClick={() => setSelectedArtwork(null)}>Terug naar Galerie</Button>
+                <Button variant="outline" className="rounded-full px-8 w-full" onClick={() => setSelectedArtwork(null)}>Terug</Button>
               </div>
             </div>
           </div>
