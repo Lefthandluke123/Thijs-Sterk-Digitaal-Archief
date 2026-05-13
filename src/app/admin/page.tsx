@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -101,8 +100,13 @@ export default function AdminPage() {
     
     if (firestore && selectedAtelierId) {
       const artRef = doc(firestore, 'artworks', selectedAtelierId);
-      updateDoc(artRef, { 
-        [field]: field === 'brightness' ? newVal / 100 : newVal 
+      const data = { [field]: field === 'brightness' ? newVal / 100 : newVal };
+      updateDoc(artRef, data).catch(async (err) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: artRef.path,
+          operation: 'update',
+          requestResourceData: data
+        }));
       });
     }
   };
@@ -111,7 +115,14 @@ export default function AdminPage() {
     setEditValues(prev => ({ ...prev, [field]: value }));
     if (firestore && selectedAtelierId) {
       const artRef = doc(firestore, 'artworks', selectedAtelierId);
-      updateDoc(artRef, { [field]: value });
+      const data = { [field]: value };
+      updateDoc(artRef, data).catch(async (err) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: artRef.path,
+          operation: 'update',
+          requestResourceData: data
+        }));
+      });
     }
   };
 
@@ -190,7 +201,13 @@ export default function AdminPage() {
           brightness: 1,
           createdAt: serverTimestamp(),
         };
-        await addDoc(artworkCol, data);
+        addDoc(artworkCol, data).catch(async (err) => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: artworkCol.path,
+            operation: 'create',
+            requestResourceData: data
+          }));
+        });
       }
       toast({ title: "Database gevuld", description: "Voorbeelddata toegevoegd." });
       setActiveTab('db');
@@ -264,6 +281,13 @@ export default function AdminPage() {
       .then(() => {
         if (!tagToAdd) setNewTagInputs(prev => ({ ...prev, [artId]: "" }));
         toast({ title: "Tag toegevoegd" });
+      })
+      .catch(async (err) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: artRef.path,
+          operation: 'update',
+          requestResourceData: { tags: updatedTags }
+        }));
       });
   };
 
@@ -272,7 +296,46 @@ export default function AdminPage() {
     const updatedTags = (currentTags || []).filter(t => t !== tagToRemove);
     const artRef = doc(firestore, 'artworks', artId);
     updateDoc(artRef, { tags: updatedTags })
-      .then(() => toast({ title: "Tag verwijderd" }));
+      .then(() => toast({ title: "Tag verwijderd" }))
+      .catch(async (err) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: artRef.path,
+          operation: 'update',
+          requestResourceData: { tags: updatedTags }
+        }));
+      });
+  };
+
+  const handleDeleteArtwork = (artId: string) => {
+    if (!firestore || !confirm("Zeker weten?")) return;
+    const artRef = doc(firestore, 'artworks', artId);
+    deleteDoc(artRef).catch(async (err) => {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: artRef.path,
+        operation: 'delete'
+      }));
+    });
+  };
+
+  const handleClearDatabase = async () => {
+    if (!firestore || !confirm("Weet je zeker dat je ALLES wilt wissen?")) return;
+    setLoading(true);
+    try {
+      const snaps = await getDocs(collection(firestore, 'artworks'));
+      snaps.docs.forEach((d) => {
+        deleteDoc(d.ref).catch(async (err) => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: d.ref.path,
+            operation: 'delete'
+          }));
+        });
+      });
+      toast({ title: "Database opschonen gestart" });
+    } catch (err) {
+      toast({ variant: "destructive", title: "Fout bij ophalen documenten" });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -362,7 +425,7 @@ export default function AdminPage() {
                         <Button variant="secondary" size="icon" onClick={() => { setActiveTab('atelier'); setSelectedAtelierId(art.id); }} className="rounded-full shadow-lg h-8 w-8">
                           <Brush className="w-3.5 h-3.5" />
                         </Button>
-                        <Button variant="destructive" size="icon" onClick={() => { if(confirm("Zeker weten?")) deleteDoc(doc(firestore!, 'artworks', art.id))}} className="rounded-full shadow-lg h-8 w-8">
+                        <Button variant="destructive" size="icon" onClick={() => handleDeleteArtwork(art.id)} className="rounded-full shadow-lg h-8 w-8">
                           <Trash2 className="w-3.5 h-3.5" />
                         </Button>
                       </div>
@@ -720,15 +783,7 @@ export default function AdminPage() {
                   <h3 className="text-xl font-headline font-light text-destructive">Database Wissen</h3>
                   <p className="text-[9px] text-destructive/60 uppercase tracking-widest">Verwijder alle geregistreerde werken</p>
                 </div>
-                <Button variant="outline" onClick={async () => {
-                  if(confirm("Weet je zeker dat je ALLES wilt wissen?")) {
-                    setLoading(true);
-                    const snaps = await getDocs(collection(firestore!, 'artworks'));
-                    for (const d of snaps.docs) await deleteDoc(d.ref);
-                    toast({ title: "Database gewist" });
-                    setLoading(false);
-                  }
-                }} disabled={loading} className="h-12 px-8 rounded-xl border-destructive text-destructive font-bold text-[10px] uppercase tracking-widest">
+                <Button variant="outline" onClick={handleClearDatabase} disabled={loading} className="h-12 px-8 rounded-xl border-destructive text-destructive font-bold text-[10px] uppercase tracking-widest">
                   Reset DB
                 </Button>
               </div>

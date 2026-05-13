@@ -34,7 +34,7 @@ export function ArtistBio() {
             
             <div className="space-y-6 text-lg text-muted-foreground leading-relaxed">
               <p>
-                Thijs Sterk (1913-1988) wijdde zijn leven aan het doorgronden van de atmosferische kwaliteiten van de Lage Landen. Geboren in een tijd van grote verandering, vond hij zijn rust in de uitgestrekte waterpartijen en het immer veranderende licht boven het polderlandschap.
+                Thijs Sterk (1913-1982) wijdde zijn leven aan het doorgronden van de atmosferische kwaliteiten van de Lage Landen. Geboren in een tijd van grote verandering, vond hij zijn rust in de uitgestrekte waterpartijen en het immer veranderende licht boven het polderlandschap.
               </p>
               <p>
                 Zijn vroege werk kenmerkt zich door een meesterlijke beheersing van de figuratieve traditie, maar gedurende zijn carrière bewoog hij zich steeds verder naar de kern. Hij liet de details varen om de ruimte en de emotie van de plek te vangen in brede, textuurrijke streken.
