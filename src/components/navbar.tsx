@@ -28,16 +28,16 @@ export function Navbar() {
           </div>
         </Link>
         
-        <div className="flex items-center gap-8">
+        <div className="flex items-center gap-3">
           {navLinks.map((link) => (
             <Link 
               key={link.name}
               href={link.href}
               className={cn(
-                "text-sm font-medium tracking-wide transition-all relative py-1",
+                "px-5 py-2 rounded-full text-xs font-semibold tracking-widest uppercase transition-all duration-300 shadow-sm",
                 pathname === link.href 
-                  ? "text-accent after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-accent" 
-                  : "text-accent/70 hover:text-accent"
+                  ? "bg-accent text-accent-foreground scale-105 shadow-md" 
+                  : "bg-accent/90 text-accent-foreground/90 hover:bg-accent hover:text-accent-foreground hover:scale-105"
               )}
             >
               {link.name}
