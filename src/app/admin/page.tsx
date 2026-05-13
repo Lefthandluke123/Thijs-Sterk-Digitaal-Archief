@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo } from 'react';
@@ -20,7 +19,8 @@ import {
   X,
   Home,
   RefreshCw,
-  Loader2
+  Loader2,
+  Tag
 } from 'lucide-react';
 import Image from 'next/image';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -34,6 +34,11 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 const LOCAL_NAS_URL = 'https://192-168-178-15.doggyfew.direct.quickconnect.to/portfolio/';
 const EXTERNAL_NAS_URL = 'https://doggyfew.quickconnect.to/portfolio/';
+
+const STANDARD_TAGS = [
+  "Groet", "Schoorl", "Hargen", "Amsterdam", "Frankrijk", 
+  "Griekenland", "Olieverf", "Aquarel", "Monumentaal", "Glas in lood"
+];
 
 export default function AdminPage() {
   const firestore = useFirestore();
@@ -85,7 +90,7 @@ export default function AdminPage() {
         fileName: file.name,
         description: `Werk uit de serie ${detectedSeries}.`,
         imageHint: "painting art",
-        tags: [] // Altijd zonder tags
+        tags: []
       };
     });
     setScannedFiles(scanned);
@@ -98,7 +103,9 @@ export default function AdminPage() {
     const artworkCol = collection(firestore, 'artworks');
     
     try {
-      for (const item of PlaceHolderImages) {
+      for (let i = 0; i < PlaceHolderImages.length; i++) {
+        const item = PlaceHolderImages[i];
+        const seedTags = i === 0 ? ["Groet", "Olieverf"] : i === 1 ? ["Amsterdam", "Monumentaal"] : ["Frankrijk"];
         const data = {
           title: item.title || 'Ongetiteld',
           series: item.series || 'Voorbeeld Serie',
@@ -107,12 +114,12 @@ export default function AdminPage() {
           imageUrl: item.imageUrl,
           description: item.description,
           imageHint: item.imageHint,
-          tags: [], // Altijd zonder tags
+          tags: seedTags,
           createdAt: serverTimestamp(),
         };
         await addDoc(artworkCol, data);
       }
-      toast({ title: "Database gevuld", description: "Voorbeelddata is toegevoegd." });
+      toast({ title: "Database gevuld", description: "Voorbeelddata is toegevoegd met standaard tags." });
       setActiveTab('db');
     } catch (error) {
       toast({ variant: "destructive", title: "Fout bij vullen" });
@@ -137,7 +144,7 @@ export default function AdminPage() {
           imageUrl: generateImageUrl(artwork.relativePath),
           description: artwork.description,
           imageHint: artwork.imageHint,
-          tags: [], // Altijd zonder tags
+          tags: [],
           createdAt: serverTimestamp(),
         };
         setCurrentUploadItem(i + 1);
@@ -165,17 +172,19 @@ export default function AdminPage() {
     }
   };
 
-  const handleAddTag = async (artId: string, currentTags: string[]) => {
+  const handleAddTag = async (artId: string, currentTags: string[], tagToAdd?: string) => {
     if (!firestore) return;
-    const tagValue = newTagInputs[artId]?.trim();
+    const tagValue = tagToAdd || newTagInputs[artId]?.trim();
     if (!tagValue) return;
+    
+    if (currentTags?.includes(tagValue)) return;
     
     const updatedTags = [...(currentTags || []), tagValue];
     const artRef = doc(firestore, 'artworks', artId);
     
     updateDoc(artRef, { tags: updatedTags })
       .then(() => {
-        setNewTagInputs(prev => ({ ...prev, [artId]: "" }));
+        if (!tagToAdd) setNewTagInputs(prev => ({ ...prev, [artId]: "" }));
         toast({ title: "Tag toegevoegd" });
       });
   };
@@ -190,7 +199,6 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col pt-14">
-      {/* Admin Navigatie - Geen zijbalk meer */}
       <header className="h-16 border-b border-border bg-background/95 backdrop-blur-sm sticky top-14 z-40 px-8 flex items-center justify-between">
         <div className="flex items-center gap-8">
           <Link href="/" className="flex items-center gap-3 group">
@@ -264,7 +272,6 @@ export default function AdminPage() {
                         <p className="text-[9px] text-accent font-bold uppercase tracking-[0.2em]">{art.series} &bull; {art.year}</p>
                       </div>
                       
-                      {/* Zwevende Tag Sectie */}
                       <div className="space-y-3 pt-3 border-t border-border">
                         <div className="flex flex-wrap gap-1.5 min-h-[24px]">
                           {art.tags?.length > 0 ? art.tags.map((tag: string) => (
@@ -279,22 +286,37 @@ export default function AdminPage() {
                           )}
                         </div>
                         
-                        <div className="flex gap-2">
-                          <Input 
-                            value={newTagInputs[art.id] || ""} 
-                            onChange={(e) => setNewTagInputs(prev => ({ ...prev, [art.id]: e.target.value }))}
-                            onKeyDown={(e) => { if (e.key === 'Enter') handleAddTag(art.id, art.tags) }}
-                            placeholder="Tag toevoegen..." 
-                            className="h-8 text-[9px] rounded-full bg-background/50 border-border"
-                          />
-                          <Button 
-                            variant="outline" 
-                            size="icon" 
-                            onClick={() => handleAddTag(art.id, art.tags)}
-                            className="h-8 w-8 rounded-full border-primary/20 shrink-0"
-                          >
-                            <Plus className="w-3.5 h-3.5" />
-                          </Button>
+                        <div className="space-y-2">
+                          <div className="flex gap-2">
+                            <Input 
+                              value={newTagInputs[art.id] || ""} 
+                              onChange={(e) => setNewTagInputs(prev => ({ ...prev, [art.id]: e.target.value }))}
+                              onKeyDown={(e) => { if (e.key === 'Enter') handleAddTag(art.id, art.tags) }}
+                              placeholder="Tag toevoegen..." 
+                              className="h-8 text-[9px] rounded-full bg-background/50 border-border"
+                            />
+                            <Button 
+                              variant="outline" 
+                              size="icon" 
+                              onClick={() => handleAddTag(art.id, art.tags)}
+                              className="h-8 w-8 rounded-full border-primary/20 shrink-0"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
+                          
+                          {/* Snelkoppelingen naar standaard tags */}
+                          <div className="flex flex-wrap gap-1">
+                            {STANDARD_TAGS.filter(t => !art.tags?.includes(t)).slice(0, 5).map(tag => (
+                              <button 
+                                key={tag}
+                                onClick={() => handleAddTag(art.id, art.tags, tag)}
+                                className="text-[7px] uppercase font-bold tracking-tighter text-muted-foreground hover:text-accent transition-colors border border-border px-1.5 py-0.5 rounded-sm"
+                              >
+                                + {tag}
+                              </button>
+                            ))}
+                          </div>
                         </div>
                       </div>
                     </CardContent>
@@ -305,7 +327,6 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* Andere tabs blijven zoals ze waren */}
         {activeTab === 'scan' && (
           <div className="space-y-12">
             <div className="grid lg:grid-cols-2 gap-12">
@@ -379,15 +400,25 @@ export default function AdminPage() {
               <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Beheer de database status</p>
             </div>
             <Card className="border-border shadow-xl rounded-3xl p-8 space-y-6 bg-card/30">
-              <div className="flex items-center justify-between p-6 bg-background rounded-2xl border border-border">
-                <div className="space-y-1">
-                  <h3 className="text-xl font-headline font-light">Voorbeelden Herstellen</h3>
-                  <p className="text-[9px] text-muted-foreground uppercase tracking-widest">Vult de database met de standaard collectie</p>
+              <div className="p-6 bg-background rounded-2xl border border-border space-y-6">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <h3 className="text-xl font-headline font-light">Voorbeelden Herstellen</h3>
+                    <p className="text-[9px] text-muted-foreground uppercase tracking-widest">Vult de database met de standaard collectie</p>
+                  </div>
+                  <Button onClick={handleSeedDatabase} disabled={loading} className="h-12 px-8 rounded-xl gap-2 font-bold text-[10px] uppercase tracking-widest bg-accent">
+                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                    Seed DB
+                  </Button>
                 </div>
-                <Button onClick={handleSeedDatabase} disabled={loading} className="h-12 px-8 rounded-xl gap-2 font-bold text-[10px] uppercase tracking-widest bg-accent">
-                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                  Seed DB
-                </Button>
+                <div className="space-y-3 pt-4 border-t border-border">
+                  <h4 className="text-[9px] font-bold uppercase tracking-widest flex items-center gap-2"><Tag className="w-3 h-3" /> Standaard Tags</h4>
+                  <div className="flex flex-wrap gap-1.5">
+                    {STANDARD_TAGS.map(t => (
+                      <Badge key={t} variant="outline" className="text-[8px] uppercase tracking-widest border-primary/20 bg-primary/5">{t}</Badge>
+                    ))}
+                  </div>
+                </div>
               </div>
               <div className="flex items-center justify-between p-6 bg-destructive/5 rounded-2xl border border-destructive/10">
                 <div className="space-y-1">

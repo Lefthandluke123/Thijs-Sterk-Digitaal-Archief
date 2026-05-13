@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo } from 'react';
@@ -9,6 +8,11 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Sparkles, X, Maximize2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogTitle, DialogClose } from '@/components/ui/dialog';
+
+const STANDARD_TAGS = [
+  "Groet", "Schoorl", "Hargen", "Amsterdam", "Frankrijk", 
+  "Griekenland", "Olieverf", "Aquarel", "Monumentaal", "Glas in lood"
+];
 
 export default function CuratorPage() {
   const [activeTags, setActiveTags] = useState<string[]>([]);
@@ -23,12 +27,14 @@ export default function CuratorPage() {
   const { data: artworks, loading } = useCollection(artworksQuery);
 
   const allAvailableTags = useMemo(() => {
-    if (!artworks) return [];
-    const tags = new Set<string>();
-    artworks.forEach(art => {
-      art.tags?.forEach((tag: string) => tags.add(tag));
+    // We tonen ALTIJD de standaard tags, plus eventuele extra tags uit de database
+    const dbTags = new Set<string>();
+    artworks?.forEach(art => {
+      art.tags?.forEach((tag: string) => dbTags.add(tag));
     });
-    return Array.from(tags).sort();
+    
+    const combined = new Set([...STANDARD_TAGS, ...Array.from(dbTags)]);
+    return Array.from(combined).sort();
   }, [artworks]);
 
   const filteredArtworks = useMemo(() => {
@@ -67,19 +73,16 @@ export default function CuratorPage() {
       </div>
 
       <div className="container mx-auto max-w-7xl px-6 py-12 pb-32">
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <Loader2 className="w-6 h-6 animate-spin text-accent/40" />
-          </div>
-        ) : (
-          <div className="space-y-16">
-            {/* Tag Cloud Selector */}
-            <div className="flex flex-col items-center space-y-8">
-              <h2 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-3">
-                <Sparkles className="w-3 h-3 text-accent" /> Kies de thema's
-              </h2>
-              <div className="flex flex-wrap justify-center gap-3 md:gap-4 max-w-4xl">
-                {allAvailableTags.length > 0 ? allAvailableTags.map(tag => (
+        <div className="space-y-16">
+          {/* Tag Cloud Selector - ALTIJD in beeld */}
+          <div className="flex flex-col items-center space-y-8">
+            <h2 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-3">
+              <Sparkles className="w-3 h-3 text-accent" /> Kies de thema's
+            </h2>
+            <div className="flex flex-wrap justify-center gap-3 md:gap-4 max-w-4xl">
+              {allAvailableTags.map(tag => {
+                const isPresentInDb = artworks?.some(art => art.tags?.includes(tag));
+                return (
                   <button
                     key={tag}
                     onClick={() => toggleTag(tag)}
@@ -87,55 +90,58 @@ export default function CuratorPage() {
                       "px-6 py-2.5 rounded-full text-xs font-bold uppercase tracking-[0.15em] transition-all border shadow-sm",
                       activeTags.includes(tag) 
                         ? "bg-primary text-primary-foreground border-primary scale-105 shadow-md" 
-                        : "bg-background text-muted-foreground border-border hover:border-accent hover:text-accent"
+                        : "bg-background text-muted-foreground border-border hover:border-accent hover:text-accent",
+                      !isPresentInDb && "opacity-40 grayscale"
                     )}
                   >
                     {tag}
                   </button>
-                )) : (
-                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground italic opacity-50">Nog geen thema's beschikbaar...</p>
-                )}
-              </div>
-              {activeTags.length > 0 && (
-                <button 
-                  onClick={() => setActiveTags([])} 
-                  className="flex items-center gap-2 text-[10px] uppercase font-bold text-accent/60 hover:text-accent transition-colors"
-                >
-                  <X className="w-3 h-3" /> Wis selectie
-                </button>
-              )}
+                );
+              })}
             </div>
+            {activeTags.length > 0 && (
+              <button 
+                onClick={() => setActiveTags([])} 
+                className="flex items-center gap-2 text-[10px] uppercase font-bold text-accent/60 hover:text-accent transition-colors"
+              >
+                <X className="w-3 h-3" /> Wis selectie
+              </button>
+            )}
+          </div>
 
-            {/* Results Grid */}
-            <div className="pt-8 border-t border-border/10">
-              {activeTags.length === 0 ? (
-                <div className="text-center py-20 space-y-4 opacity-40">
-                  <p className="text-sm font-light italic">Maak hierboven een keuze om uw persoonlijke galerie te vullen.</p>
-                </div>
-              ) : filteredArtworks.length > 0 ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8 animate-fade-in-up">
-                  {filteredArtworks.map((item) => (
-                    <div key={item.id} className="group relative cursor-pointer" onClick={() => setSelectedArtwork(item)}>
-                      <div className="relative aspect-[4/5] overflow-hidden rounded-sm bg-muted/20">
-                        <Image src={item.imageUrl} alt={item.title} fill className="object-cover transition-all duration-700 ease-out group-hover:scale-[1.03]" unoptimized={isExternalStorage(item.imageUrl)} />
-                        <div className="absolute inset-0 bg-background/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <Maximize2 className="text-white/60 w-6 h-6" />
-                        </div>
-                      </div>
-                      <div className="mt-4 text-center">
-                        <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-foreground">{item.title}</h3>
+          {/* Results Grid */}
+          <div className="pt-8 border-t border-border/10">
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-20">
+                <Loader2 className="w-6 h-6 animate-spin text-accent/40" />
+              </div>
+            ) : activeTags.length === 0 ? (
+              <div className="text-center py-20 space-y-4 opacity-40">
+                <p className="text-sm font-light italic">Maak hierboven een keuze om uw persoonlijke galerie te vullen.</p>
+              </div>
+            ) : filteredArtworks.length > 0 ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8 animate-fade-in-up">
+                {filteredArtworks.map((item) => (
+                  <div key={item.id} className="group relative cursor-pointer" onClick={() => setSelectedArtwork(item)}>
+                    <div className="relative aspect-[4/5] overflow-hidden rounded-sm bg-muted/20">
+                      <Image src={item.imageUrl} alt={item.title} fill className="object-cover transition-all duration-700 ease-out group-hover:scale-[1.03]" unoptimized={isExternalStorage(item.imageUrl)} />
+                      <div className="absolute inset-0 bg-background/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <Maximize2 className="text-white/60 w-6 h-6" />
                       </div>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="py-20 text-center">
-                  <p className="text-muted-foreground font-light text-lg italic">Geen werken gevonden met deze specifieke combinatie.</p>
-                </div>
-              )}
-            </div>
+                    <div className="mt-4 text-center">
+                      <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-foreground">{item.title}</h3>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-20 text-center">
+                <p className="text-muted-foreground font-light text-lg italic">Geen werken gevonden met deze specifieke combinatie.</p>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
 
       <Dialog open={!!selectedArtwork} onOpenChange={() => setSelectedArtwork(null)}>
