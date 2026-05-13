@@ -1,13 +1,12 @@
-
 "use client";
 
 import React, { useState, useMemo } from 'react';
 import Image from 'next/image';
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Maximize2, Loader2 } from 'lucide-react';
+import { Maximize2, Loader2, X } from 'lucide-react';
 
 export function PortfolioGrid() {
   const [selectedArtwork, setSelectedArtwork] = useState<any | null>(null);
@@ -15,7 +14,7 @@ export function PortfolioGrid() {
 
   const artworksQuery = useMemo(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'artworks'), orderBy('createdAt', 'desc'), limit(6));
+    return query(collection(firestore, 'artworks'), orderBy('createdAt', 'desc'), limit(12));
   }, [firestore]);
 
   const { data: artworks, loading } = useCollection(artworksQuery);
@@ -29,9 +28,8 @@ export function PortfolioGrid() {
             <p className="text-muted-foreground text-lg">Een collectie recente verkenningen van textuur, licht en de abstracte interpretatie van de natuurlijke wereld.</p>
           </div>
           <div className="flex gap-8 text-sm font-medium tracking-widest uppercase">
-            <button className="text-accent border-b border-accent pb-1">Alles</button>
-            <button className="text-muted-foreground hover:text-foreground transition-colors pb-1">Series</button>
-            <button className="text-muted-foreground hover:text-foreground transition-colors pb-1">Archief</button>
+            <button className="text-accent border-b border-accent pb-1">Recent</button>
+            <a href="/gallery" className="text-muted-foreground hover:text-foreground transition-colors pb-1">Bekijk Alles</a>
           </div>
         </div>
 
@@ -40,7 +38,7 @@ export function PortfolioGrid() {
             <Loader2 className="w-10 h-10 animate-spin text-primary/50" />
           </div>
         ) : artworks && artworks.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-8">
             {artworks.map((art) => (
               <div 
                 key={art.id} 
@@ -61,11 +59,8 @@ export function PortfolioGrid() {
                     </div>
                   </div>
                 </div>
-                <div className="mt-4 flex justify-between items-start">
-                  <div>
-                    <h3 className="font-medium text-lg text-foreground group-hover:text-primary transition-colors">{art.title}</h3>
-                    <p className="text-muted-foreground text-sm">{art.series} &bull; {art.year}</p>
-                  </div>
+                <div className="mt-4 hidden md:block">
+                  <h3 className="font-medium text-sm text-foreground group-hover:text-primary transition-colors truncate">{art.title}</h3>
                 </div>
               </div>
             ))}
@@ -78,36 +73,37 @@ export function PortfolioGrid() {
       </div>
 
       <Dialog open={!!selectedArtwork} onOpenChange={() => setSelectedArtwork(null)}>
-        <DialogContent className="max-w-4xl p-0 overflow-hidden border-none bg-background/95 backdrop-blur-xl">
-          <div className="grid md:grid-cols-2">
-            <div className="relative aspect-square md:aspect-auto h-full min-h-[400px]">
-              {selectedArtwork && (
-                <Image
-                  src={selectedArtwork.imageUrl}
-                  alt={selectedArtwork.description || selectedArtwork.title}
-                  fill
-                  className="object-cover"
-                />
-              )}
-            </div>
-            <div className="p-8 md:p-12 flex flex-col justify-center">
-              <DialogHeader className="mb-6">
-                <div className="text-accent font-medium tracking-widest uppercase text-xs mb-2">{selectedArtwork?.series}</div>
-                <DialogTitle className="font-headline text-3xl md:text-4xl font-light mb-2">{selectedArtwork?.title}</DialogTitle>
-                <DialogDescription className="text-muted-foreground">
-                  {selectedArtwork?.medium} &bull; {selectedArtwork?.year}
-                </DialogDescription>
-              </DialogHeader>
+        <DialogContent className="max-w-[95vw] w-full h-[90vh] p-0 overflow-hidden border-none bg-background/95 backdrop-blur-xl flex flex-col md:flex-row">
+          <div className="relative flex-1 bg-black flex items-center justify-center overflow-hidden">
+            {selectedArtwork && (
+              <Image
+                src={selectedArtwork.imageUrl}
+                alt={selectedArtwork.description || selectedArtwork.title}
+                fill
+                className="object-contain p-4"
+              />
+            )}
+            <DialogClose className="absolute top-4 left-4 z-10 p-2 bg-background/20 backdrop-blur-md rounded-full text-white hover:bg-background/40 transition-colors">
+              <X className="w-6 h-6" />
+            </DialogClose>
+          </div>
+          <div className="w-full md:w-96 p-8 md:p-12 flex flex-col justify-center bg-background border-l border-border overflow-y-auto">
+            <DialogHeader className="mb-6">
+              <div className="text-accent font-medium tracking-widest uppercase text-xs mb-2">{selectedArtwork?.series}</div>
+              <DialogTitle className="font-headline text-3xl md:text-4xl font-light mb-2">{selectedArtwork?.title}</DialogTitle>
+              <DialogDescription className="text-muted-foreground">
+                {selectedArtwork?.medium} &bull; {selectedArtwork?.year}
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-6">
+              <p className="text-foreground/80 leading-relaxed text-lg">
+                {selectedArtwork?.description}
+              </p>
               
-              <div className="space-y-6">
-                <p className="text-foreground/80 leading-relaxed text-lg">
-                  {selectedArtwork?.description}
-                </p>
-                
-                <div className="pt-6 border-t border-border flex flex-wrap gap-4">
-                  <Button className="bg-primary hover:bg-primary/90 rounded-full px-6">Informeer over dit stuk</Button>
-                  <Button variant="outline" className="rounded-full px-6">Download Specificaties</Button>
-                </div>
+              <div className="pt-6 border-t border-border flex flex-col gap-4">
+                <Button className="bg-primary hover:bg-primary/90 rounded-full px-6 w-full">Informeer over dit stuk</Button>
+                <Button variant="outline" className="rounded-full px-6 w-full" onClick={() => setSelectedArtwork(null)}>Sluiten</Button>
               </div>
             </div>
           </div>
