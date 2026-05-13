@@ -6,7 +6,7 @@ import { collection, addDoc, doc, serverTimestamp, deleteDoc, writeBatch, getDoc
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
-import { PlusCircle, Loader2, FolderOpen, RefreshCw, Info, AlertTriangle, CheckCircle2, Trash2, Database, Globe, Wifi } from 'lucide-react';
+import { PlusCircle, Loader2, FolderOpen, RefreshCw, Info, AlertTriangle, CheckCircle2, Trash2, Database, Globe, Wifi, ShieldAlert } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Image from 'next/image';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -45,7 +45,6 @@ export default function AdminPage() {
       const relativePath = (file as any).webkitRelativePath || file.name;
       const pathParts = relativePath.split('/');
       
-      // Sla de hoofdmap over die geselecteerd is op de computer
       const adjustedPath = pathParts.length > 1 ? pathParts.slice(1).join('/') : relativePath;
       
       let detectedSeries = 'Onbekende Serie';
@@ -93,19 +92,15 @@ export default function AdminPage() {
       setCurrentUploadItem(i + 1);
       setUploadProgress(((i + 1) / total) * 100);
 
-      try {
-        addDoc(artworkCol, data).catch(async (err) => {
-          const permissionError = new FirestorePermissionError({
-            path: artworkCol.path,
-            operation: 'create',
-            requestResourceData: data
-          });
-          errorEmitter.emit('permission-error', permissionError);
+      setDoc(doc(artworkCol), data).catch(async (err) => {
+        const permissionError = new FirestorePermissionError({
+          path: artworkCol.path,
+          operation: 'create',
+          requestResourceData: data
         });
-        successCount++;
-      } catch (err) {
-        console.error("Fout bij opslaan", i, err);
-      }
+        errorEmitter.emit('permission-error', permissionError);
+      });
+      successCount++;
     }
     
     setTimeout(() => {
@@ -140,14 +135,13 @@ export default function AdminPage() {
     setTestResult('testing');
     const img = new window.Image();
     
-    // We proberen een dummy plaatje of een bestand dat op je NAS zou kunnen staan
     img.onload = () => setTestResult('success');
     img.onerror = () => {
       setTestResult('error');
       toast({
         variant: "destructive",
         title: "Verbinding mislukt",
-        description: "De browser blokkeert de toegang. Klik op 'Open NAS direct' om de toegang te forceren."
+        description: "De browser blokkeert de toegang. Volg de instructies hieronder."
       });
     };
     
@@ -182,7 +176,7 @@ export default function AdminPage() {
               <Wifi className="w-5 h-5 text-primary" /> NAS Verbinding Instellen
             </CardTitle>
             <CardDescription>
-              Kies welk adres de website moet gebruiken om de foto's op te halen.
+              Kies welk adres de website moet gebruiken om de foto&apos;s op te halen.
             </CardDescription>
           </CardHeader>
           <CardContent className="p-8 space-y-6">
@@ -224,18 +218,33 @@ export default function AdminPage() {
             </div>
 
             {testResult === 'error' && (
-              <Alert variant="destructive" className="mt-4 rounded-2xl">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>Hulp bij verbinding</AlertTitle>
-                <AlertDescription className="text-xs">
-                  Als de test faalt, komt dat vaak doordat de browser "beveiliging" dwarsboomt. 
-                  <ol className="list-decimal ml-4 mt-2 space-y-1">
-                    <li>Klik op de knop <b>'Open NAS direct'</b> hierboven.</li>
-                    <li>Als je een melding krijgt "Je verbinding is niet privé", klik op <b>Geavanceerd -&gt; Doorgaan naar...</b></li>
-                    <li>Kom terug naar deze pagina en probeer de test opnieuw.</li>
+              <div className="mt-8 space-y-4">
+                <Alert variant="destructive" className="rounded-2xl">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>Browser blokkeert de NAS</AlertTitle>
+                  <AlertDescription className="text-xs">
+                    Je browser ziet je NAS als &quot;onveilig&quot; omdat het certificaat niet officieel is. Dit moet je één keer handmatig omzeilen.
+                  </AlertDescription>
+                </Alert>
+                
+                <div className="bg-amber-50 border border-amber-200 p-6 rounded-2xl space-y-4">
+                  <h4 className="font-bold text-amber-900 flex items-center gap-2 text-sm">
+                    <ShieldAlert className="w-4 h-4" /> Geen knop &quot;Geavanceerd&quot;? Probeer dit:
+                  </h4>
+                  <ol className="list-decimal ml-5 text-xs text-amber-800 space-y-3">
+                    <li>Klik hierboven op <b>&apos;Open NAS direct in nieuw tabblad&apos;</b>.</li>
+                    <li>Je ziet nu een groot rood/grijs scherm met een waarschuwing.</li>
+                    <li>
+                      <b>De truc:</b> Klik ergens op de achtergrond van die pagina (zodat het venster actief is) en typ op je toetsenbord de volgende letters: 
+                      <br/>
+                      <code className="bg-white px-2 py-1 rounded border border-amber-300 font-mono text-sm mt-1 inline-block">thisisunsafe</code>
+                      <br/>
+                      <i>(Je ziet niet wat je typt, maar zodra je de laatste &apos;e&apos; typt, ververst de pagina automatisch.)</i>
+                    </li>
+                    <li>De pagina opent nu wél. Kom dan terug naar deze pagina en klik opnieuw op <b>&apos;Test Deze Verbinding&apos;</b>.</li>
                   </ol>
-                </AlertDescription>
-              </Alert>
+                </div>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -263,7 +272,7 @@ export default function AdminPage() {
                   <FolderOpen className="w-12 h-12" />
                 </div>
                 <h2 className="text-2xl font-headline">Selecteer je Portfolio Map</h2>
-                <p className="text-muted-foreground text-sm">Selecteer de map op je computer waar al je foto's in staan. Wij bouwen de linkjes voor je NAS automatisch op.</p>
+                <p className="text-muted-foreground text-sm">Selecteer de map op je computer waar al je foto&apos;s in staan. Wij bouwen de linkjes voor je NAS automatisch op.</p>
                 <Button size="lg" className="rounded-full h-16 px-12 text-lg shadow-xl" asChild>
                   <label htmlFor="file-scanner" className="cursor-pointer">Map Kiezen</label>
                 </Button>
