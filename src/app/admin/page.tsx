@@ -18,7 +18,9 @@ import {
   Scan, 
   AlertCircle,
   Database,
-  ArrowLeft
+  ArrowLeft,
+  ExternalLink,
+  RefreshCcw
 } from 'lucide-react';
 import Image from 'next/image';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -168,6 +170,7 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col pt-14">
+      {/* Horizontale Bovenbalk in plaats van Zijbalk */}
       <header className="h-20 border-b border-border/10 flex items-center justify-between px-8 bg-background/80 backdrop-blur-md sticky top-14 z-40">
         <div className="flex items-center gap-8">
           <Link href="/" className="flex items-center gap-2 group">
@@ -275,6 +278,9 @@ export default function AdminPage() {
                   <h2 className="text-3xl font-bold tracking-tight">Mijn Collectie</h2>
                   <p className="text-muted-foreground text-lg">{artworks?.length || 0} kunstwerken in de database.</p>
                 </div>
+                <Button variant="outline" className="gap-2" onClick={() => window.open(nasBaseUrl, '_blank')}>
+                  <ExternalLink className="w-4 h-4" /> Herstel Verbinding
+                </Button>
               </div>
 
               {dbLoading ? (

@@ -150,7 +150,7 @@ export default function GalleryPage() {
                 src={selectedArtwork.imageUrl}
                 alt={selectedArtwork.title}
                 fill
-                className="object-contain p-4 md:p-12"
+                className="object-contain p-4 md:p-8"
                 unoptimized={isExternalStorage(selectedArtwork.imageUrl)}
               />
             )}
@@ -158,39 +158,43 @@ export default function GalleryPage() {
             <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-4 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
               <button 
                 onClick={(e) => { e.stopPropagation(); navigateGallery('prev'); }}
-                className="p-3 rounded-full bg-background/20 backdrop-blur-md hover:bg-background/40 transition-colors pointer-events-auto"
+                className="p-2 rounded-full bg-background/10 backdrop-blur-md hover:bg-background/30 transition-colors pointer-events-auto"
               >
-                <ChevronLeft className="w-6 h-6 text-foreground" />
+                <ChevronLeft className="w-5 h-5 text-foreground opacity-50" />
               </button>
               <button 
                 onClick={(e) => { e.stopPropagation(); navigateGallery('next'); }}
-                className="p-3 rounded-full bg-background/20 backdrop-blur-md hover:bg-background/40 transition-colors pointer-events-auto"
+                className="p-2 rounded-full bg-background/10 backdrop-blur-md hover:bg-background/30 transition-colors pointer-events-auto"
               >
-                <ChevronRight className="w-6 h-6 text-foreground" />
+                <ChevronRight className="w-5 h-5 text-foreground opacity-50" />
               </button>
             </div>
 
-            <DialogClose className="absolute top-6 left-6 z-50 p-2 hover:bg-black/10 rounded-full transition-colors bg-background/20 backdrop-blur-sm">
-              <X className="w-5 h-5 opacity-60" />
+            <DialogClose className="absolute top-6 left-6 z-50 p-2 hover:bg-black/10 rounded-full transition-colors bg-background/10 backdrop-blur-sm">
+              <X className="w-4 h-4 opacity-40" />
             </DialogClose>
           </div>
 
-          <div className="w-full bg-background/90 backdrop-blur-md py-10 px-6 border-t border-border/20">
-            <div className="max-w-4xl mx-auto text-center space-y-4">
-              <div className="text-accent font-bold uppercase text-[9px] tracking-[0.3em] opacity-60">
-                {selectedArtwork?.series}
+          {/* Onderbalk: nu veel lager en compacter */}
+          <div className="w-full bg-background/80 backdrop-blur-md py-3 px-8 border-t border-border/10">
+            <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="text-center sm:text-left">
+                <DialogTitle className="font-headline text-lg md:text-xl font-light text-foreground leading-none mb-1">
+                  {selectedArtwork?.title}
+                </DialogTitle>
+                <div className="text-[9px] uppercase tracking-widest text-muted-foreground opacity-70 flex gap-2 justify-center sm:justify-start">
+                  <span>{selectedArtwork?.series}</span>
+                  <span>&bull;</span>
+                  <span>{selectedArtwork?.medium}</span>
+                  <span>&bull;</span>
+                  <span>{selectedArtwork?.year}</span>
+                </div>
               </div>
-              <DialogTitle className="font-headline text-3xl font-light text-foreground">
-                {selectedArtwork?.title}
-              </DialogTitle>
-              <DialogDescription className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground italic">
-                {selectedArtwork?.medium} &bull; {selectedArtwork?.year}
-              </DialogDescription>
-              <div className="pt-4 flex justify-center gap-4">
-                <Button variant="outline" className="rounded-full text-[10px] uppercase tracking-widest px-10 h-11">
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" className="rounded-full text-[9px] uppercase tracking-widest px-6 h-8 border-border/30">
                   Interesse?
                 </Button>
-                <Button variant="ghost" onClick={() => setSelectedArtwork(null)} className="rounded-full text-[10px] uppercase tracking-widest px-10 h-11">
+                <Button variant="ghost" size="sm" onClick={() => setSelectedArtwork(null)} className="rounded-full text-[9px] uppercase tracking-widest px-6 h-8">
                   Sluiten
                 </Button>
               </div>
