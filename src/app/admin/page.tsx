@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo } from 'react';
@@ -6,7 +7,7 @@ import { collection, doc, serverTimestamp, deleteDoc, writeBatch, getDocs, setDo
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
-import { PlusCircle, Loader2, FolderOpen, RefreshCw, AlertTriangle, CheckCircle2, Trash2, Database, Globe, Wifi, ShieldAlert, Lock, ExternalLink, Search, FileWarning, Info } from 'lucide-react';
+import { PlusCircle, Loader2, FolderOpen, RefreshCw, AlertTriangle, CheckCircle2, Trash2, Database, Globe, Wifi, ShieldAlert, Lock, ExternalLink, Search, Info } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Image from 'next/image';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -27,7 +28,7 @@ export default function AdminPage() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [currentUploadItem, setCurrentUploadItem] = useState(0);
   const [activeTab, setActiveTab] = useState('scan');
-  const [testResult, setTestResult] = useState<'success' | 'error' | 'testing' | 'forbidden' | 'notfound' | null>(null);
+  const [testResult, setTestResult] = useState<'success' | 'error' | 'testing' | 'forbidden' | null>(null);
   const [nasBaseUrl, setNasBaseUrl] = useState(LOCAL_NAS_URL);
   const [testFileName, setTestFileName] = useState('test.jpg');
   const [includeRootFolder, setIncludeRootFolder] = useState(false);
@@ -46,7 +47,6 @@ export default function AdminPage() {
       const relativePath = (file as any).webkitRelativePath || file.name;
       const pathParts = relativePath.split('/');
       
-      // Bepaal het pad op de NAS: sla de eerste map over als de schakelaar uit staat
       let adjustedPath = relativePath;
       if (!includeRootFolder && pathParts.length > 1) {
         adjustedPath = pathParts.slice(1).join('/');
@@ -61,7 +61,6 @@ export default function AdminPage() {
       let cleanName = file.name.split('.').slice(0, -1).join('.');
       cleanName = cleanName.replace(/[_-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
       
-      // Encodeer alleen de delen van het pad om spaties op te vangen (%20)
       const encodedPath = adjustedPath.split('/').map(part => encodeURIComponent(part)).join('/');
       const fullUrl = `${nasBaseUrl}${encodedPath}`;
 
@@ -142,16 +141,10 @@ export default function AdminPage() {
     setTestResult('testing');
     const fullUrl = `${nasBaseUrl}${testFileName}?t=${Date.now()}`;
     
-    fetch(fullUrl, { mode: 'no-cors' })
-      .then(() => {
-        const img = new window.Image();
-        img.onload = () => setTestResult('success');
-        img.onerror = () => setTestResult('forbidden');
-        img.src = fullUrl;
-      })
-      .catch(() => {
-        setTestResult('error');
-      });
+    const img = new window.Image();
+    img.onload = () => setTestResult('success');
+    img.onerror = () => setTestResult('forbidden');
+    img.src = fullUrl;
 
     setTimeout(() => {
       if (testResult === 'testing') setTestResult('error');
@@ -171,8 +164,13 @@ export default function AdminPage() {
               <p className="text-muted-foreground">{artworks?.length || 0} schilderijen in database</p>
             </div>
           </div>
-          <Button variant="destructive" onClick={handleDeleteAll} disabled={loading} className="rounded-full h-12 px-6 font-bold shadow-lg hover:shadow-xl transition-all">
-            <Trash2 className="w-5 h-5 mr-2" /> Leeg Hele Database
+          <Button 
+            variant="destructive" 
+            onClick={handleDeleteAll} 
+            disabled={loading} 
+            className="rounded-full h-14 px-8 font-bold shadow-xl hover:scale-105 transition-all bg-red-600 hover:bg-red-700 text-white"
+          >
+            <Trash2 className="w-6 h-6 mr-2" /> LEEG HELE DATABASE
           </Button>
         </header>
 
@@ -240,12 +238,7 @@ export default function AdminPage() {
                   <Lock className="h-4 w-4" />
                   <AlertTitle className="font-bold">403: Toegang Geweigerd op NAS</AlertTitle>
                   <AlertDescription className="text-xs space-y-2">
-                    <p>De NAS is gevonden, maar weigert toegang. Doe dit in File Station:</p>
-                    <ol className="list-decimal ml-4 space-y-1">
-                      <li>Rechtermuis op map <b>web/portfolio</b> &rarr; Eigenschappen &rarr; Machtigingen.</li>
-                      <li>Voeg groep <b>http</b> toe met "Lezen" rechten.</li>
-                      <li><b>CRUCIAAL:</b> Vink aan: "Toepassen op deze map, submappen en bestanden".</li>
-                    </ol>
+                    <p>De NAS weigert toegang. Controleer de machtigingen op de map <b>web/portfolio</b> en zorg dat de groep <b>http</b> leesrechten heeft.</p>
                   </AlertDescription>
                 </Alert>
               )}
@@ -255,12 +248,7 @@ export default function AdminPage() {
                   <ShieldAlert className="h-4 w-4 text-amber-600" />
                   <AlertTitle className="font-bold text-amber-800">Browserblokkade (SSL)</AlertTitle>
                   <AlertDescription className="text-xs text-amber-700 space-y-2">
-                    <p>Je browser blokkeert de onbeveiligde verbinding. Doe dit:</p>
-                    <ol className="list-decimal ml-4 space-y-1">
-                      <li>Klik op <b>Open Direct</b> hierboven.</li>
-                      <li>Als je een waarschuwing ziet, klik op "Geavanceerd" en "Doorgaan".</li>
-                      <li>Of typ op dat tabblad simpelweg: <b>thisisunsafe</b></li>
-                    </ol>
+                    <p>Klik op <b>Open Direct</b> hierboven en typ <b>thisisunsafe</b> op de geopende pagina.</p>
                   </AlertDescription>
                 </Alert>
               )}
@@ -339,7 +327,7 @@ export default function AdminPage() {
                   <Alert className="bg-blue-50 border-blue-200">
                     <Info className="h-4 w-4 text-blue-600" />
                     <AlertTitle>Bevestigen</AlertTitle>
-                    <AlertDescription className="text-xs">Je gaat <b>{scannedArtworks.length}</b> schilderijen toevoegen aan de online galerie.</AlertDescription>
+                    <AlertDescription className="text-xs">Je gaat <b>{scannedArtworks.length}</b> schilderijen toevoegen.</AlertDescription>
                   </Alert>
                   <Button onClick={handleSaveAll} className="w-full h-24 text-2xl font-bold rounded-3xl shadow-2xl hover:scale-[1.02] transition-transform" disabled={scannedArtworks.length === 0}>
                     Nu {scannedArtworks.length} Werken Toevoegen
