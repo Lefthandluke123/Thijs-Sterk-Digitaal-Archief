@@ -7,7 +7,7 @@ import { collection, doc, serverTimestamp, deleteDoc, writeBatch, getDocs, setDo
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
-import { PlusCircle, Loader2, FolderOpen, RefreshCw, AlertTriangle, CheckCircle2, Trash2, Database, Globe, Wifi, ShieldAlert, Lock, ExternalLink, Search, Info } from 'lucide-react';
+import { PlusCircle, Loader2, FolderOpen, RefreshCw, AlertTriangle, CheckCircle2, Trash2, Database, Globe, Wifi, ShieldAlert, Lock, ExternalLink, Search, Info, Settings } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Image from 'next/image';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -61,7 +61,6 @@ export default function AdminPage() {
       let cleanName = file.name.split('.').slice(0, -1).join('.');
       cleanName = cleanName.replace(/[_-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
       
-      // Belangrijk: spaties vervangen door %20
       const encodedPath = adjustedPath.split('/').map(part => encodeURIComponent(part)).join('/');
       const fullUrl = `${nasBaseUrl}${encodedPath}`;
 
@@ -138,7 +137,6 @@ export default function AdminPage() {
 
   const testConnection = () => {
     setTestResult('testing');
-    // Test direct op een bestand, niet op de map (map geeft altijd 403)
     const fullUrl = `${nasBaseUrl}${testFileName}?t=${Date.now()}`;
     
     const img = new window.Image();
@@ -180,7 +178,7 @@ export default function AdminPage() {
               <Wifi className="w-5 h-5 text-primary" /> Stap 1: NAS Verbinding Testen
             </CardTitle>
             <CardDescription>
-              Test of de website bij je foto's op de NAS kan.
+              Zorg dat de website bij de foto&apos;s op de NAS kan.
             </CardDescription>
           </CardHeader>
           <CardContent className="p-6 space-y-6">
@@ -236,30 +234,28 @@ export default function AdminPage() {
                 </div>
               )}
               
-              {testResult === 'forbidden' && (
+              {(testResult === 'forbidden' || testResult === 'error') && (
                 <Alert variant="destructive" className="rounded-xl border-destructive/20 bg-destructive/5">
-                  <Lock className="h-4 w-4" />
-                  <AlertTitle className="font-bold">403: NAS weigert toegang</AlertTitle>
-                  <AlertDescription className="text-xs space-y-3">
-                    <p>De NAS is gevonden, maar de foto mag niet worden getoond.</p>
-                    <p className="font-bold">Oplossing op je NAS:</p>
-                    <ol className="list-decimal ml-4 space-y-1">
-                      <li>Open <b>File Station</b>.</li>
-                      <li>Rechtermuis op map <b>web/portfolio</b> → <b>Eigenschappen</b>.</li>
-                      <li>Tabblad <b>Machtigingen</b> → Klik op <b>Maken</b>.</li>
-                      <li>Zoek groep <b>http</b> (of <b>Everyone</b>).</li>
-                      <li>Vink <b>Lezen</b> aan en vink onderaan <b>"Toepassen op submappen en bestanden"</b> aan!</li>
+                  <Settings className="h-4 w-4" />
+                  <AlertTitle className="font-bold">Synology Instellingen Nodig</AlertTitle>
+                  <AlertDescription className="text-xs space-y-3 mt-2">
+                    <p>Als je een <b>403</b> of <b>404</b> krijgt, controleer dan deze stappen op je NAS:</p>
+                    <ol className="list-decimal ml-4 space-y-2">
+                      <li>
+                        <b>Machtigingen (File Station):</b><br/>
+                        Rechtermuis op map <b>web/portfolio</b> → <b>Eigenschappen</b> → <b>Machtigingen</b>.<br/>
+                        Voeg de groep <b>http</b> toe met &quot;Lezen&quot;. <br/>
+                        <span className="font-bold text-accent underline italic">Vink &quot;Toepassen op submappen en bestanden&quot; aan!</span>
+                      </li>
+                      <li>
+                        <b>Web Station:</b><br/>
+                        Een Virtual Host is niet nodig als de map in &quot;web&quot; staat, maar controleer of de mapnaam precies klopt (hoofdlettergevoelig!).
+                      </li>
+                      <li>
+                        <b>Browser SSL:</b><br/>
+                        Klik op &quot;Open Bestand Direct&quot;. Als je een rood scherm ziet, typ <b>thisisunsafe</b> op je toetsenbord om de blokkade te verbreken.
+                      </li>
                     </ol>
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              {testResult === 'error' && (
-                <Alert className="rounded-xl bg-amber-50 border-amber-200">
-                  <ShieldAlert className="h-4 w-4 text-amber-600" />
-                  <AlertTitle className="font-bold text-amber-800">Browserblokkade (SSL)</AlertTitle>
-                  <AlertDescription className="text-xs text-amber-700">
-                    <p>Klik op <b>Open Bestand Direct</b>. Zie je een rode waarschuwing? Typ dan <b>thisisunsafe</b> op je toetsenbord om door te gaan.</p>
                   </AlertDescription>
                 </Alert>
               )}
