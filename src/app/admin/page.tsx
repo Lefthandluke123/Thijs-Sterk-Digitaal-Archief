@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useFirestore, useCollection } from '@/firebase';
-import { collection, addDoc, doc, serverTimestamp, deleteDoc, writeBatch, getDocs } from 'firebase/firestore';
+import { collection, addDoc, doc, serverTimestamp, deleteDoc, writeBatch, getDocs, setDoc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
-import { PlusCircle, Loader2, FolderOpen, RefreshCw, Info, AlertTriangle, CheckCircle2, Trash2, Database, Globe, Wifi, ShieldAlert } from 'lucide-react';
+import { PlusCircle, Loader2, FolderOpen, RefreshCw, AlertTriangle, CheckCircle2, Trash2, Database, Globe, Wifi, ShieldAlert, Lock } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Image from 'next/image';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -14,9 +14,7 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { Progress } from "@/components/ui/progress";
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 
-// JOUW ADRESSEN
 const LOCAL_NAS_URL = 'https://192-168-178-15.doggyfew.direct.quickconnect.to/portfolio/';
 const EXTERNAL_NAS_URL = 'https://doggyfew.quickconnect.to/portfolio/';
 
@@ -27,8 +25,9 @@ export default function AdminPage() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [currentUploadItem, setCurrentUploadItem] = useState(0);
   const [activeTab, setActiveTab] = useState('scan');
-  const [testResult, setTestResult] = useState<'success' | 'error' | 'testing' | null>(null);
+  const [testResult, setTestResult] = useState<'success' | 'error' | 'testing' | 'forbidden' | null>(null);
   const [nasBaseUrl, setNasBaseUrl] = useState(LOCAL_NAS_URL);
+  const [testFileName, setTestFileName] = useState('test.jpg');
 
   const artworksQuery = useMemo(() => {
     if (!firestore) return null;
@@ -137,15 +136,17 @@ export default function AdminPage() {
     
     img.onload = () => setTestResult('success');
     img.onerror = () => {
-      setTestResult('error');
+      // Bij een 403 of SSL fout zal dit triggeren
+      setTestResult('forbidden');
       toast({
         variant: "destructive",
-        title: "Verbinding mislukt",
-        description: "De browser blokkeert de toegang. Volg de instructies hieronder."
+        title: "Toegang geweigerd (403)",
+        description: "De NAS weigert de toegang. Volg de rechten-instructies hieronder."
       });
     };
     
-    img.src = `${nasBaseUrl}favicon.ico?t=${Date.now()}`;
+    // Test met een specifiek bestand of favicon
+    img.src = `${nasBaseUrl}${testFileName}?t=${Date.now()}`;
     
     setTimeout(() => {
       if (testResult === 'testing') setTestResult('error');
@@ -173,10 +174,10 @@ export default function AdminPage() {
         <Card className="mb-12 border-none shadow-lg rounded-3xl bg-white overflow-hidden">
           <CardHeader className="bg-primary/5 border-b border-primary/10">
             <CardTitle className="flex items-center gap-2">
-              <Wifi className="w-5 h-5 text-primary" /> NAS Verbinding Instellen
+              <Wifi className="w-5 h-5 text-primary" /> 1. Verbinding & Rechten
             </CardTitle>
             <CardDescription>
-              Kies welk adres de website moet gebruiken om de foto&apos;s op te halen.
+              Stel in hoe de website verbinding maakt met je Synology.
             </CardDescription>
           </CardHeader>
           <CardContent className="p-8 space-y-6">
@@ -189,7 +190,6 @@ export default function AdminPage() {
                   <span className="font-bold">Lokale Link (WiFi)</span>
                   <Wifi className="w-4 h-4 text-accent" />
                 </div>
-                <p className="text-xs text-muted-foreground mb-4">Snelste methode als je thuis bent op je eigen netwerk.</p>
                 <code className="text-[10px] block p-2 bg-white rounded border truncate">{LOCAL_NAS_URL}</code>
               </div>
               <div 
@@ -197,63 +197,61 @@ export default function AdminPage() {
                 className={`p-6 rounded-2xl border-2 cursor-pointer transition-all ${nasBaseUrl === EXTERNAL_NAS_URL ? 'border-accent bg-accent/5' : 'border-border bg-transparent hover:border-accent/50'}`}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="font-bold">Externe Link (Altijd)</span>
+                  <span className="font-bold">Externe Link (Wereld)</span>
                   <Globe className="w-4 h-4 text-accent" />
                 </div>
-                <p className="text-xs text-muted-foreground mb-4">Werkt ook als je niet thuis bent, maar kan iets trager zijn.</p>
                 <code className="text-[10px] block p-2 bg-white rounded border truncate">{EXTERNAL_NAS_URL}</code>
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-4 pt-4">
-               <Button variant="outline" size="lg" className="rounded-full" onClick={testConnection} disabled={testResult === 'testing'}>
-                 {testResult === 'testing' ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-                 Test Deze Verbinding
-               </Button>
-               <Button variant="ghost" className="text-xs" onClick={() => window.open(nasBaseUrl, '_blank')}>
-                 Open NAS direct in nieuw tabblad
-               </Button>
-               {testResult === 'success' && <div className="flex items-center text-green-600 text-sm gap-2 font-bold px-4 py-2 bg-green-50 rounded-full"><CheckCircle2 className="w-5 h-5"/> Verbinding geslaagd!</div>}
-               {testResult === 'error' && <div className="flex items-center text-destructive text-sm gap-2 font-bold px-4 py-2 bg-red-50 rounded-full"><AlertTriangle className="w-5 h-5"/> Kan NAS niet bereiken</div>}
-            </div>
-
-            {testResult === 'error' && (
-              <div className="mt-8 space-y-4">
-                <Alert variant="destructive" className="rounded-2xl">
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertTitle>Browser blokkeert de NAS</AlertTitle>
-                  <AlertDescription className="text-xs">
-                    Je browser ziet je NAS als &quot;onveilig&quot; omdat het certificaat niet officieel is. Dit moet je één keer handmatig omzeilen.
-                  </AlertDescription>
-                </Alert>
-                
-                <div className="bg-amber-50 border border-amber-200 p-6 rounded-2xl space-y-4">
-                  <h4 className="font-bold text-amber-900 flex items-center gap-2 text-sm">
-                    <ShieldAlert className="w-4 h-4" /> Geen knop &quot;Geavanceerd&quot;? Probeer dit:
-                  </h4>
-                  <ol className="list-decimal ml-5 text-xs text-amber-800 space-y-3">
-                    <li>Klik hierboven op <b>&apos;Open NAS direct in nieuw tabblad&apos;</b>.</li>
-                    <li>Je ziet nu een groot rood/grijs scherm met een waarschuwing.</li>
-                    <li>
-                      <b>De truc:</b> Klik ergens op de achtergrond van die pagina (zodat het venster actief is) en typ op je toetsenbord de volgende letters: 
-                      <br/>
-                      <code className="bg-white px-2 py-1 rounded border border-amber-300 font-mono text-sm mt-1 inline-block">thisisunsafe</code>
-                      <br/>
-                      <i>(Je ziet niet wat je typt, maar zodra je de laatste &apos;e&apos; typt, ververst de pagina automatisch.)</i>
-                    </li>
-                    <li>De pagina opent nu wél. Kom dan terug naar deze pagina en klik opnieuw op <b>&apos;Test Deze Verbinding&apos;</b>.</li>
-                  </ol>
-                </div>
+            <div className="bg-muted/30 p-6 rounded-2xl space-y-4">
+              <h4 className="font-bold text-sm">Test een specifiek bestand:</h4>
+              <div className="flex gap-4">
+                <Input 
+                  value={testFileName} 
+                  onChange={(e) => setTestFileName(e.target.value)}
+                  placeholder="bijv. foto1.jpg"
+                  className="bg-white"
+                />
+                <Button variant="outline" onClick={testConnection} disabled={testResult === 'testing'}>
+                  {testResult === 'testing' ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+                  Test Link
+                </Button>
               </div>
-            )}
+              
+              {testResult === 'success' && <div className="flex items-center text-green-600 text-sm gap-2 font-bold"><CheckCircle2 className="w-5 h-5"/> Verbinding geslaagd!</div>}
+              {testResult === 'forbidden' && (
+                <div className="space-y-4">
+                  <Alert variant="destructive" className="rounded-xl">
+                    <Lock className="h-4 w-4" />
+                    <AlertTitle>403 Forbidden - Toegang Geweigerd</AlertTitle>
+                    <AlertDescription className="text-xs">
+                      Je NAS zegt dat de website niet naar binnen mag. Dit los je op in je Synology instellingen:
+                    </AlertDescription>
+                  </Alert>
+                  <div className="bg-white p-4 rounded-xl border border-destructive/20 text-xs space-y-3">
+                    <p className="font-bold">Oplossing (doe dit op je NAS):</p>
+                    <ol className="list-decimal ml-5 space-y-2">
+                      <li>Open <b>File Station</b>.</li>
+                      <li>Rechtermuisknop op de map <code>web</code> (of de map <code>portfolio</code>).</li>
+                      <li>Kies <b>Eigenschappen</b> en ga naar het tabblad <b>Machtigingen</b>.</li>
+                      <li>Klik op <b>Maken</b>, kies de gebruiker/groep <b>http</b>.</li>
+                      <li>Vink <b>Lezen</b> aan bij 'Machtigingen'.</li>
+                      <li>Vink onderaan aan: <b>Toepassen op deze map, submappen en bestanden</b>.</li>
+                      <li>Klik op OK. Probeer daarna de testknop hierboven opnieuw.</li>
+                    </ol>
+                  </div>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-3 mb-12 h-14 bg-muted/30 p-1 rounded-2xl">
-            <TabsTrigger value="scan" className="rounded-xl data-[state=active]:bg-white">1. Map Scannen</TabsTrigger>
-            <TabsTrigger value="import" className="rounded-xl data-[state=active]:bg-white">2. Opslaan ({scannedArtworks.length})</TabsTrigger>
-            <TabsTrigger value="db" className="rounded-xl data-[state=active]:bg-white">3. Database Check</TabsTrigger>
+            <TabsTrigger value="scan" className="rounded-xl data-[state=active]:bg-white">2. Map Scannen</TabsTrigger>
+            <TabsTrigger value="import" className="rounded-xl data-[state=active]:bg-white">3. Opslaan ({scannedArtworks.length})</TabsTrigger>
+            <TabsTrigger value="db" className="rounded-xl data-[state=active]:bg-white">4. Database Check</TabsTrigger>
           </TabsList>
 
           <TabsContent value="scan">
@@ -272,7 +270,7 @@ export default function AdminPage() {
                   <FolderOpen className="w-12 h-12" />
                 </div>
                 <h2 className="text-2xl font-headline">Selecteer je Portfolio Map</h2>
-                <p className="text-muted-foreground text-sm">Selecteer de map op je computer waar al je foto&apos;s in staan. Wij bouwen de linkjes voor je NAS automatisch op.</p>
+                <p className="text-muted-foreground text-sm">Kies de map op je computer. De app maakt automatisch linkjes voor je NAS op basis van de gekozen Basis URL.</p>
                 <Button size="lg" className="rounded-full h-16 px-12 text-lg shadow-xl" asChild>
                   <label htmlFor="file-scanner" className="cursor-pointer">Map Kiezen</label>
                 </Button>
@@ -285,7 +283,7 @@ export default function AdminPage() {
               {loading ? (
                 <div className="py-12 space-y-6">
                   <div className="flex justify-between text-2xl font-headline italic">
-                    <span>Bezig met uploaden naar database...</span>
+                    <span>Importeren in database...</span>
                     <span>{currentUploadItem} / {scannedArtworks.length}</span>
                   </div>
                   <Progress value={uploadProgress} className="h-8 rounded-full" />
@@ -293,8 +291,8 @@ export default function AdminPage() {
               ) : (
                 <div className="space-y-6">
                   <div className="p-6 bg-muted/20 rounded-2xl border space-y-2">
-                    <p className="text-xs font-bold text-primary uppercase">Link Preview:</p>
-                    <code className="text-[10px] block truncate">{scannedArtworks[0]?.imageUrl}</code>
+                    <p className="text-xs font-bold text-primary uppercase">Link Preview (Controleer op .jpg):</p>
+                    <code className="text-[10px] block truncate text-accent">{scannedArtworks[0]?.imageUrl}</code>
                   </div>
                   <Button onClick={handleSaveAll} className="w-full h-24 text-2xl font-bold rounded-3xl shadow-2xl" disabled={scannedArtworks.length === 0}>
                     Nu {scannedArtworks.length} Schilderijen Toevoegen
