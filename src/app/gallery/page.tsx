@@ -217,6 +217,7 @@ export default function GalleryPage() {
               />
             )}
             
+            {/* Navigatieknoppen die alleen verschijnen bij hover */}
             <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-6 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
               <button 
                 onClick={(e) => { e.stopPropagation(); navigateGallery('prev'); }}
@@ -237,6 +238,7 @@ export default function GalleryPage() {
             </DialogClose>
           </div>
 
+          {/* Super compacte onderbalk */}
           <div className="w-full bg-background/90 backdrop-blur-md py-4 px-10 border-t border-border/10">
             <div className="max-w-6xl mx-auto flex items-center justify-between gap-8">
               <div className="flex-1">

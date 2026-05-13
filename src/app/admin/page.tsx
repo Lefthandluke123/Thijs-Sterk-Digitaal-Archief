@@ -4,7 +4,7 @@
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useFirestore, useCollection } from '@/firebase';
-import { collection, doc, serverTimestamp, deleteDoc, addDoc, setDoc, query, orderBy, updateDoc } from 'firebase/firestore';
+import { collection, doc, serverTimestamp, deleteDoc, addDoc, query, orderBy, updateDoc, getDocs } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
@@ -200,7 +200,7 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Navigatiebalk */}
+      {/* Brede Navigatiebalk aan de bovenkant */}
       <header className="h-20 border-b border-border bg-background/95 backdrop-blur-sm sticky top-0 z-50 px-8 flex items-center justify-between">
         <div className="flex items-center gap-12">
           <Link href="/" className="flex items-center gap-4 group">
