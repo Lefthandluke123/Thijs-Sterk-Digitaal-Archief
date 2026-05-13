@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo } from 'react';
@@ -9,14 +10,17 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
-import { PlusCircle, Loader2, Wand2, Trash2, FolderOpen, Zap, Info, Layers } from 'lucide-react';
+import { PlusCircle, Loader2, Wand2, Trash2, FolderOpen, Zap, Info, Layers, RefreshCw } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Image from 'next/image';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 export default function AdminPage() {
   const firestore = useFirestore();
   const [loading, setLoading] = useState(false);
+  const [importProgress, setImportProgress] = useState({ current: 0, total: 0 });
   
   const [singleArtwork, setSingleArtwork] = useState({
     title: '',
@@ -33,12 +37,13 @@ export default function AdminPage() {
   const [baseUrl, setBaseUrl] = useState('https://192-168-178-15.doggyfew.direct.quickconnect.to:5001/portfolio/');
   const [defaultSeries, setDefaultSeries] = useState('Collectie 2024');
 
+  // We laden de collectie zonder orderBy voor de administratie, om te zien of er überhaupt iets in staat
   const artworksQuery = useMemo(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'artworks'), orderBy('createdAt', 'desc'));
+    return collection(firestore, 'artworks');
   }, [firestore]);
 
-  const { data: artworks, loading: loadingArtworks } = useCollection(artworksQuery);
+  const { data: artworks, loading: loadingArtworks, error: collectionError } = useCollection(artworksQuery);
 
   const isExternalStorage = (url: string) => {
     if (!url) return false;
@@ -50,26 +55,31 @@ export default function AdminPage() {
     if (!firestore) return;
 
     setLoading(true);
-    try {
-      await addDoc(collection(firestore, 'artworks'), {
-        ...singleArtwork,
-        createdAt: serverTimestamp()
-      });
-      toast({ title: "Succes", description: "Schilderij toegevoegd." });
-      setSingleArtwork({ 
-        title: '', 
-        series: singleArtwork.series,
-        year: new Date().getFullYear().toString(), 
-        medium: 'Olieverf op doek', 
-        description: '', 
-        imageUrl: '', 
-        imageHint: 'abstract painting' 
-      });
-    } catch (error) {
-      toast({ variant: "destructive", title: "Fout", description: "Kon niet opslaan." });
-    } finally {
-      setLoading(false);
-    }
+    const artworkCol = collection(firestore, 'artworks');
+    const data = { ...singleArtwork, createdAt: serverTimestamp() };
+
+    addDoc(artworkCol, data)
+      .then(() => {
+        toast({ title: "Succes", description: "Schilderij toegevoegd." });
+        setSingleArtwork({ 
+          title: '', 
+          series: singleArtwork.series,
+          year: new Date().getFullYear().toString(), 
+          medium: 'Olieverf op doek', 
+          description: '', 
+          imageUrl: '', 
+          imageHint: 'abstract painting' 
+        });
+      })
+      .catch(async (err) => {
+        const permissionError = new FirestorePermissionError({
+          path: artworkCol.path,
+          operation: 'create',
+          requestResourceData: data
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      })
+      .finally(() => setLoading(false));
   };
 
   const handleAddBulk = async () => {
@@ -79,31 +89,49 @@ export default function AdminPage() {
     try {
       const artworksData = JSON.parse(bulkJson);
       const artworkCol = collection(firestore, 'artworks');
+      setImportProgress({ current: 0, total: artworksData.length });
       
+      let count = 0;
       for (const art of artworksData) {
-        addDoc(artworkCol, { 
-          ...art, 
-          createdAt: serverTimestamp() 
-        });
+        const data = { ...art, createdAt: serverTimestamp() };
+        addDoc(artworkCol, data)
+          .then(() => {
+            count++;
+            setImportProgress(prev => ({ ...prev, current: count }));
+          })
+          .catch(async () => {
+             const permissionError = new FirestorePermissionError({
+               path: artworkCol.path,
+               operation: 'create',
+               requestResourceData: data
+             });
+             errorEmitter.emit('permission-error', permissionError);
+          });
       }
       
-      toast({ title: "Bulk Succes", description: `${artworksData.length} schilderijen worden toegevoegd.` });
+      toast({ title: "Bulk Import Gestart", description: "De schilderijen worden een voor een toegevoegd." });
       setBulkJson('');
     } catch (error: any) {
       toast({ variant: "destructive", title: "Fout in JSON", description: "Controleer of de JSON code correct is." });
     } finally {
-      setLoading(false);
+      setTimeout(() => {
+        setLoading(false);
+        setImportProgress({ current: 0, total: 0 });
+      }, 2000);
     }
   };
 
   const handleDelete = async (id: string) => {
     if (!firestore || !confirm("Weet je zeker dat je dit kunstwerk wilt verwijderen?")) return;
-    try {
-      await deleteDoc(doc(firestore, 'artworks', id));
-      toast({ title: "Verwijderd" });
-    } catch (error) {
-      toast({ variant: "destructive", title: "Fout bij verwijderen" });
-    }
+    deleteDoc(doc(firestore, 'artworks', id))
+      .then(() => toast({ title: "Verwijderd" }))
+      .catch(async () => {
+        const permissionError = new FirestorePermissionError({
+          path: `artworks/${id}`,
+          operation: 'delete'
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
   };
 
   const handleFileScan = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -111,16 +139,13 @@ export default function AdminPage() {
     if (!files) return;
     
     const scanned = Array.from(files).map(file => {
-      // webkitRelativePath bevat het pad, bijv "mijn-werk/Serie A/foto.jpg"
       let relativePath = (file as any).webkitRelativePath || file.name;
       const pathParts = relativePath.split('/');
       
-      // Als er mappen zijn, verwijderen we de eerste (de geselecteerde hoofdmap)
       if (pathParts.length > 1) {
         relativePath = pathParts.slice(1).join('/');
       }
 
-      // Probeer de serie te raden uit de mapnaam vlak boven het bestand
       let detectedSeries = defaultSeries;
       if (pathParts.length > 2) {
         detectedSeries = pathParts[pathParts.length - 2].replace(/[_-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
@@ -167,36 +192,41 @@ export default function AdminPage() {
           <p className="text-muted-foreground">Beheer de collectie van Thijs Sterk.</p>
         </header>
 
-        <div className="grid gap-6 mb-12">
-          <Alert className="bg-accent/10 border-accent/20 border-l-4 border-l-accent">
-            <Zap className="h-5 w-5 text-accent" />
-            <div className="ml-2">
-              <AlertTitle className="text-lg font-headline font-semibold text-accent">Slimme Scanner: Mappen & Submappen</AlertTitle>
-              <AlertDescription className="mt-2 space-y-3 text-sm leading-relaxed">
-                <p>Ondersteuning voor mappen op je Synology! Gebruik de <strong>Map Scanner</strong> om een hele map (inclusief submappen) te selecteren. De app herkent automatisch de submappen als 'Series'.</p>
-                <div className="bg-background/50 p-4 rounded-lg border border-border mt-2">
-                  <p className="font-bold mb-1 flex items-center gap-2">Jouw Synology URL: <Info className="w-3 h-3" /></p>
-                  <code className="text-xs break-all text-primary">{baseUrl}</code>
-                </div>
-              </AlertDescription>
+        {loading && importProgress.total > 0 && (
+          <div className="mb-8 p-6 bg-accent/20 rounded-2xl border border-accent/30 animate-pulse">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium">Import Bezig...</span>
+              <span className="text-sm font-bold">{importProgress.current} / {importProgress.total}</span>
             </div>
-          </Alert>
-        </div>
+            <div className="w-full bg-secondary h-2 rounded-full overflow-hidden">
+              <div 
+                className="bg-accent h-full transition-all duration-300" 
+                style={{ width: `${(importProgress.current / importProgress.total) * 100}%` }}
+              />
+            </div>
+          </div>
+        )}
 
         <Tabs defaultValue="overview" className="w-full">
           <TabsList className="grid w-full grid-cols-4 mb-8">
-            <TabsTrigger value="overview">Collectie</TabsTrigger>
-            <TabsTrigger value="helper">Mappen Scannen</TabsTrigger>
+            <TabsTrigger value="overview">Database ({artworks?.length || 0})</TabsTrigger>
+            <TabsTrigger value="helper">Scan Mappen</TabsTrigger>
             <TabsTrigger value="bulk">Bulk Import</TabsTrigger>
             <TabsTrigger value="single">Enkel Item</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview">
             <Card>
-              <CardHeader><CardTitle className="font-light">Huidige Database ({artworks?.length || 0})</CardTitle></CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="font-light">Huidige Database</CardTitle>
+                  <CardDescription>Totaal aantal items: {artworks?.length || 0}</CardDescription>
+                </div>
+                <Button variant="outline" size="icon" onClick={() => window.location.reload()}><RefreshCw className="w-4 h-4" /></Button>
+              </CardHeader>
               <CardContent>
                 {loadingArtworks ? (
-                  <div className="flex justify-center py-12"><Loader2 className="animate-spin" /></div>
+                  <div className="flex justify-center py-12"><Loader2 className="animate-spin text-accent" /></div>
                 ) : artworks && artworks.length > 0 ? (
                   <div className="overflow-x-auto">
                     <table className="w-full text-left">
@@ -232,7 +262,12 @@ export default function AdminPage() {
                       </tbody>
                     </table>
                   </div>
-                ) : <div className="text-center py-12 text-muted-foreground">Nog geen werken in de database.</div>}
+                ) : (
+                  <div className="text-center py-12 text-muted-foreground space-y-4">
+                    <p>Nog geen werken in de database.</p>
+                    {collectionError && <p className="text-destructive text-xs">Foutmelding: {collectionError.message}</p>}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -241,7 +276,7 @@ export default function AdminPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="font-light">Stap 1: Map Selecteren</CardTitle>
-                <CardDescription>Selecteer de hoofdmap 'portfolio' op je computer. De app herkent submappen automatisch als series.</CardDescription>
+                <CardDescription>Selecteer de hoofdmap 'portfolio' op je computer.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="p-10 border-2 border-dashed rounded-2xl text-center bg-muted/20 border-accent/20">
@@ -257,54 +292,24 @@ export default function AdminPage() {
                   <Button variant="outline" size="lg" className="rounded-full px-10 border-accent text-accent hover:bg-accent/10" asChild>
                     <label htmlFor="file-scanner" className="cursor-pointer">
                       <FolderOpen className="mr-2 h-5 w-5" />
-                      Selecteer Hoofdmap (portfolio)
+                      Selecteer Hoofdmap
                     </label>
                   </Button>
-                  <p className="text-xs text-muted-foreground mt-4">Tip: Kies de map waar al je schilderijen in staan. Submappen worden behouden in de link.</p>
                 </div>
 
                 {rawFiles.length > 0 && (
                   <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
                     <div className="grid md:grid-cols-2 gap-6">
                       <div className="space-y-2">
-                        <Label>Basis URL (Jouw Synology)</Label>
-                        <Input 
-                          placeholder="https://.../portfolio/" 
-                          value={baseUrl} 
-                          onChange={e => setBaseUrl(e.target.value)} 
-                          className="bg-muted/30"
-                        />
+                        <Label>Basis URL (Synology)</Label>
+                        <Input value={baseUrl} onChange={e => setBaseUrl(e.target.value)} className="bg-muted/30" />
                       </div>
                       <div className="space-y-2">
-                        <Label>Standaard Serie (als geen map gevonden)</Label>
-                        <Input 
-                          value={defaultSeries} 
-                          onChange={e => setDefaultSeries(e.target.value)} 
-                        />
+                        <Label>Standaard Serie</Label>
+                        <Input value={defaultSeries} onChange={e => setDefaultSeries(e.target.value)} />
                       </div>
                     </div>
                     
-                    <div className="border rounded-xl p-4 bg-muted/10">
-                      <p className="text-xs font-bold mb-3 flex items-center justify-between">
-                        Gescande bestanden ({rawFiles.length}):
-                        <span className="text-accent">Preview van submappen</span>
-                      </p>
-                      <div className="max-h-48 overflow-y-auto space-y-2">
-                        {rawFiles.slice(0, 8).map((f, i) => (
-                          <div key={i} className="text-[10px] p-2 bg-background rounded border border-border/50 flex justify-between items-center gap-2">
-                            <div className="truncate flex-1">
-                              <span className="font-bold text-accent">{f.cleanName}</span><br/>
-                              <span className="text-muted-foreground italic truncate">{baseUrl}{f.name}</span>
-                            </div>
-                            <div className="flex items-center gap-1 text-[9px] bg-secondary px-2 py-0.5 rounded text-secondary-foreground whitespace-nowrap">
-                              <Layers className="w-2 h-2" /> {f.series}
-                            </div>
-                          </div>
-                        ))}
-                        {rawFiles.length > 8 && <p className="text-center text-[10px] text-muted-foreground pt-2">...en nog {rawFiles.length - 8} andere bestanden.</p>}
-                      </div>
-                    </div>
-
                     <Button onClick={generateBulkJson} className="w-full h-14 rounded-full bg-accent hover:bg-accent/90 text-lg">
                       <Wand2 className="mr-2 h-5 w-5" />
                       Stap 2: Maak JSON Lijst
@@ -319,21 +324,20 @@ export default function AdminPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="font-light">Stap 3: Bulk Import</CardTitle>
-                <CardDescription>Controleer de lijst hieronder en sla alles op in de database.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <Textarea 
-                  className="min-h-[300px] font-mono text-[10px] leading-tight bg-muted/10" 
+                  className="min-h-[300px] font-mono text-[10px] bg-muted/10" 
                   value={bulkJson} 
                   onChange={e => setBulkJson(e.target.value)} 
-                  placeholder='Klik eerst op "Maak JSON Lijst" in de Scanner tab...'
+                  placeholder='JSON code komt hier...'
                 />
                 <Button 
                   onClick={handleAddBulk} 
                   className="w-full h-14 rounded-full bg-primary hover:bg-primary/90 text-lg" 
                   disabled={loading || !bulkJson}
                 >
-                  <PlusCircle className="mr-2 h-5 w-5" />
+                  {loading ? <Loader2 className="animate-spin mr-2" /> : <PlusCircle className="mr-2 h-5 w-5" />}
                   Stap 4: Alles definitief opslaan
                 </Button>
               </CardContent>
@@ -342,22 +346,15 @@ export default function AdminPage() {
 
           <TabsContent value="single">
             <Card>
-              <CardHeader><CardTitle className="font-light">Handmatig item toevoegen</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="font-light">Handmatig toevoegen</CardTitle></CardHeader>
               <CardContent>
                 <form onSubmit={handleAddSingle} className="space-y-4">
                   <div className="grid md:grid-cols-2 gap-4">
-                    <div className="space-y-2"><Label>Titel</Label><Input value={singleArtwork.title} onChange={e => setSingleArtwork({...singleArtwork, title: e.target.value})} required placeholder="Bijv. Stilleven in Blauw" /></div>
-                    <div className="space-y-2"><Label>Serie</Label><Input value={singleArtwork.series} onChange={e => setSingleArtwork({...singleArtwork, series: e.target.value})} required placeholder="Bijv. Abstract 2024" /></div>
+                    <div className="space-y-2"><Label>Titel</Label><Input value={singleArtwork.title} onChange={e => setSingleArtwork({...singleArtwork, title: e.target.value})} required /></div>
+                    <div className="space-y-2"><Label>Serie</Label><Input value={singleArtwork.series} onChange={e => setSingleArtwork({...singleArtwork, series: e.target.value})} required /></div>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Directe Afbeelding URL</Label>
-                    <Input placeholder="https://jouwnas.nl/foto.jpg" value={singleArtwork.imageUrl} onChange={e => setSingleArtwork({...singleArtwork, imageUrl: e.target.value})} required />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Beschrijving</Label>
-                    <Textarea value={singleArtwork.description} onChange={e => setSingleArtwork({...singleArtwork, description: e.target.value})} placeholder="Vertel iets over het werk..." />
-                  </div>
-                  <Button type="submit" className="w-full h-12 rounded-full" disabled={loading}>Opslaan in Database</Button>
+                  <div className="space-y-2"><Label>URL</Label><Input value={singleArtwork.imageUrl} onChange={e => setSingleArtwork({...singleArtwork, imageUrl: e.target.value})} required /></div>
+                  <Button type="submit" className="w-full h-12 rounded-full" disabled={loading}>Opslaan</Button>
                 </form>
               </CardContent>
             </Card>
