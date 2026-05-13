@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
-import { PlusCircle, Database, FileJson, Loader2, Wand2, Trash2, FolderOpen, Image as ImageIcon, HelpCircle } from 'lucide-react';
+import { PlusCircle, Database, FileJson, Loader2, Wand2, Trash2, FolderOpen, Image as ImageIcon, HelpCircle, Link as LinkIcon } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Image from 'next/image';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -149,13 +149,20 @@ export default function AdminPage() {
           <p className="text-muted-foreground">Beheer de eigen database van Thijs Sterk.</p>
         </header>
 
-        <Alert className="mb-8 bg-accent/10 border-accent/20">
-          <HelpCircle className="h-4 w-4 text-accent" />
-          <AlertTitle>Hosting Tip</AlertTitle>
-          <AlertDescription>
-            Gebruik je Google Drive of een NAS? Zorg dat je <strong>directe</strong> linkjes gebruikt. Voor Google Drive vervang je <code>file/d/ID/view</code> door <code>uc?export=view&id=ID</code>.
-          </AlertDescription>
-        </Alert>
+        <div className="grid gap-6 mb-12">
+          <Alert className="bg-accent/10 border-accent/20">
+            <LinkIcon className="h-4 w-4 text-accent" />
+            <AlertTitle>Hoe werkt een Directe Link?</AlertTitle>
+            <AlertDescription className="space-y-2">
+              <p>Een directe link verwijst rechtstreeks naar de foto. Voorbeelden:</p>
+              <ul className="list-disc list-inside text-xs font-mono text-muted-foreground space-y-1 mt-2">
+                <li><strong>Google Drive:</strong> https://drive.google.com/uc?export=view&id=FILENAAM_ID</li>
+                <li><strong>Eigen website/NAS:</strong> https://jouwdomein.nl/foto-1.jpg</li>
+              </ul>
+              <p className="text-xs italic mt-2">Let op: Een gewone 'Deel link' van Google Drive werkt niet!</p>
+            </AlertDescription>
+          </Alert>
+        </div>
 
         <Tabs defaultValue="overview" className="w-full">
           <TabsList className="grid w-full grid-cols-4 mb-8">
