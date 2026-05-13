@@ -7,7 +7,7 @@ import { collection, doc, serverTimestamp, deleteDoc, writeBatch, getDocs, setDo
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
-import { PlusCircle, Loader2, FolderOpen, RefreshCw, AlertTriangle, CheckCircle2, Trash2, Database, Globe, Wifi, ShieldAlert, Lock, ExternalLink, Search, Info, Settings } from 'lucide-react';
+import { PlusCircle, Loader2, FolderOpen, RefreshCw, AlertTriangle, CheckCircle2, Trash2, Database, Globe, Wifi, ShieldAlert, Lock, ExternalLink, Search, Info, Settings, ArrowRight } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Image from 'next/image';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -48,6 +48,7 @@ export default function AdminPage() {
       const pathParts = relativePath.split('/');
       
       let adjustedPath = relativePath;
+      // Als we de root folder niet willen (bijv. 'MijnSchilderijen/serie1/foto.jpg' wordt 'serie1/foto.jpg')
       if (!includeRootFolder && pathParts.length > 1) {
         adjustedPath = pathParts.slice(1).join('/');
       }
@@ -239,18 +240,22 @@ export default function AdminPage() {
                   <Settings className="h-4 w-4" />
                   <AlertTitle className="font-bold">Hulp bij 403 / 404 Fout</AlertTitle>
                   <AlertDescription className="text-xs space-y-3 mt-2">
-                    <p className="font-bold text-foreground">Krijg je 403 Forbidden bij de knop &quot;Open Bestand Direct&quot;?</p>
-                    <p>Dit betekent dat de browser de NAS wel vindt, maar de NAS de toegang blokkeert. Volg deze stappen op je NAS:</p>
+                    <p className="font-bold text-foreground">Krijg je 403 Forbidden of 404 Not Found?</p>
+                    <p>Dit betekent dat de browser de NAS wel vindt, maar de NAS of het pad niet klopt. Volg deze stappen:</p>
                     <ol className="list-decimal ml-4 space-y-2">
                       <li>
                         <b>Machtigingen (File Station):</b><br/>
-                        Rechtermuis op map <b>web/portfolio</b> → <b>Eigenschappen</b> → <b>Machtigingen</b>.<br/>
+                        Rechtermuis op map <b>web/portfolio</b> &rarr; <b>Eigenschappen</b> &rarr; <b>Machtigingen</b>.<br/>
                         Voeg de groep <b>http</b> toe met &quot;Lezen&quot;.<br/>
                         <span className="font-bold text-accent underline italic">Vink &quot;Toepassen op submappen en bestanden&quot; aan!</span>
                       </li>
                       <li>
                         <b>Browser Blokkeert?</b><br/>
                         Als je een rood scherm ziet na het klikken op de knop, typ dan <b>thisisunsafe</b> blindelings op je toetsenbord om de verbinding te forceren.
+                      </li>
+                      <li>
+                        <b>Pad Fout (404)?</b><br/>
+                        Controleer of de mapnaam op de NAS exact hetzelfde is (geen hoofdletters waar ze niet horen).
                       </li>
                     </ol>
                   </AlertDescription>
