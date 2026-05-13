@@ -18,12 +18,12 @@ import {
   AlertCircle,
   Database,
   ExternalLink,
-  Tag as TagIcon,
   Plus,
   X,
   Home,
   RefreshCw,
-  Loader2
+  Loader2,
+  Tag as TagIcon
 } from 'lucide-react';
 import Image from 'next/image';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -45,12 +45,13 @@ export default function AdminPage() {
   const [scannedFiles, setScannedFiles] = useState<any[]>([]);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [currentUploadItem, setCurrentUploadItem] = useState(0);
-  const [activeTab, setActiveTab] = useState('scan');
+  const [activeTab, setActiveTab] = useState('db');
   const [testResult, setTestResult] = useState<'success' | 'error' | 'testing' | null>(null);
   const [nasBaseUrl, setNasBaseUrl] = useState(LOCAL_NAS_URL);
   const [testFileName, setTestFileName] = useState('1.jpg');
   const [includeRootFolder, setIncludeRootFolder] = useState(false);
-  const [importTags, setImportTags] = useState<string>("2024, Nieuw");
+  const [importTags, setImportTags] = useState<string>("");
+  const [newTagInputs, setNewTagInputs] = useState<Record<string, string>>({});
 
   const artworksQuery = useMemo(() => {
     if (!firestore) return null;
@@ -113,7 +114,7 @@ export default function AdminPage() {
           imageUrl: item.imageUrl,
           description: item.description,
           imageHint: item.imageHint,
-          tags: ['Voorbeeld', item.series].filter(Boolean) as string[],
+          tags: [], // Beginnen zonder tags zoals gevraagd
           createdAt: serverTimestamp(),
         };
         await addDoc(artworkCol, data);
@@ -121,7 +122,7 @@ export default function AdminPage() {
       toast({ title: "Database gevuld", description: "Voorbeelddata is toegevoegd aan je collectie." });
       setActiveTab('db');
     } catch (error) {
-      toast({ variant: "destructive", title: "Fout bij vullen", description: "Kon de voorbeelddata niet toevoegen." });
+      toast({ variant: "destructive", title: "Fout bij vullen" });
     } finally {
       setLoading(false);
     }
@@ -179,15 +180,19 @@ export default function AdminPage() {
     }
   };
 
-  const handleUpdateTags = async (artId: string, currentTags: string[]) => {
+  const handleAddTag = async (artId: string, currentTags: string[]) => {
     if (!firestore) return;
-    const newTag = prompt("Voeg een tag toe:");
-    if (!newTag) return;
-    const updatedTags = [...(currentTags || []), newTag.trim()];
+    const tagValue = newTagInputs[artId]?.trim();
+    if (!tagValue) return;
     
+    const updatedTags = [...(currentTags || []), tagValue];
     const artRef = doc(firestore, 'artworks', artId);
+    
     updateDoc(artRef, { tags: updatedTags })
-      .then(() => toast({ title: "Tags bijgewerkt" }));
+      .then(() => {
+        setNewTagInputs(prev => ({ ...prev, [artId]: "" }));
+        toast({ title: "Tag toegevoegd" });
+      });
   };
 
   const handleRemoveTag = async (artId: string, tagToRemove: string, currentTags: string[]) => {
@@ -200,7 +205,6 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Brede Navigatiebalk aan de bovenkant */}
       <header className="h-20 border-b border-border bg-background/95 backdrop-blur-sm sticky top-0 z-50 px-8 flex items-center justify-between">
         <div className="flex items-center gap-12">
           <Link href="/" className="flex items-center gap-4 group">
@@ -212,11 +216,11 @@ export default function AdminPage() {
           </Link>
           
           <nav className="flex items-center gap-2">
-            <Button variant={activeTab === 'scan' ? 'default' : 'ghost'} onClick={() => setActiveTab('scan')} className="gap-2 h-11 px-6 font-bold rounded-full">
-              <Scan className="w-4 h-4" /> Importeer
-            </Button>
             <Button variant={activeTab === 'db' ? 'default' : 'ghost'} onClick={() => setActiveTab('db')} className="gap-2 h-11 px-6 font-bold rounded-full">
               <Archive className="w-4 h-4" /> Collectie
+            </Button>
+            <Button variant={activeTab === 'scan' ? 'default' : 'ghost'} onClick={() => setActiveTab('scan')} className="gap-2 h-11 px-6 font-bold rounded-full">
+              <Scan className="w-4 h-4" /> Importeer
             </Button>
             <Button variant={activeTab === 'settings' ? 'default' : 'ghost'} onClick={() => setActiveTab('settings')} className="gap-2 h-11 px-6 font-bold rounded-full">
               <Settings className="w-4 h-4" /> NAS
@@ -233,6 +237,82 @@ export default function AdminPage() {
       </header>
 
       <main className="flex-1 p-8 md:p-16 max-w-7xl mx-auto w-full">
+        {activeTab === 'db' && (
+          <div className="space-y-12">
+            <div className="flex items-center justify-between border-b border-border pb-10">
+              <div className="space-y-2">
+                <h2 className="text-5xl font-headline font-light">Mijn Collectie</h2>
+                <p className="text-muted-foreground uppercase tracking-[0.3em] font-bold text-xs">{artworks?.length || 0} Geregistreerde werken</p>
+              </div>
+              <Button variant="outline" className="gap-2 rounded-full h-12 px-8 border-accent text-accent hover:bg-accent/5 font-bold" onClick={() => window.open(nasBaseUrl, '_blank')}>
+                <ExternalLink className="w-4 h-4" /> NAS Verbinding Openen
+              </Button>
+            </div>
+
+            {dbLoading ? (
+              <div className="flex flex-col items-center justify-center py-40 gap-4">
+                <Loader2 className="w-12 h-12 animate-spin text-primary/30" />
+                <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Collectie laden...</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {artworks?.map((art: any) => (
+                  <Card key={art.id} className="overflow-hidden bg-card border-border hover:shadow-2xl transition-all group rounded-[2rem]">
+                    <div className="relative aspect-[4/3] group/img">
+                      <Image src={art.imageUrl} alt={art.title} fill className="object-cover transition-transform duration-700 group-hover/img:scale-105" unoptimized={true} />
+                      <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button variant="destructive" size="icon" onClick={() => { if(confirm("Zeker weten?")) deleteDoc(doc(firestore!, 'artworks', art.id))}} className="rounded-full shadow-lg h-10 w-10">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    <CardContent className="p-8 space-y-6">
+                      <div className="space-y-1">
+                        <h4 className="font-headline text-2xl font-light leading-tight">{art.title}</h4>
+                        <p className="text-xs text-accent font-bold uppercase tracking-[0.2em]">{art.series} &bull; {art.year}</p>
+                      </div>
+                      
+                      {/* Zwevende Tag Balk sectie binnen de kaart */}
+                      <div className="space-y-4 pt-4 border-t border-border">
+                        <div className="flex flex-wrap gap-2 min-h-[32px]">
+                          {art.tags?.length > 0 ? art.tags.map((tag: string) => (
+                            <Badge key={tag} variant="secondary" className="gap-2 pr-1.5 py-1 px-3 rounded-full text-[10px] font-bold uppercase tracking-widest bg-primary/5 text-primary border-primary/10 hover:bg-primary/10 group/tag">
+                              {tag}
+                              <button onClick={() => handleRemoveTag(art.id, tag, art.tags)} className="text-primary/40 hover:text-destructive transition-colors">
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </Badge>
+                          )) : (
+                            <span className="text-[10px] text-muted-foreground uppercase tracking-widest italic opacity-50">Geen tags</span>
+                          )}
+                        </div>
+                        
+                        <div className="flex gap-2">
+                          <Input 
+                            value={newTagInputs[art.id] || ""} 
+                            onChange={(e) => setNewTagInputs(prev => ({ ...prev, [art.id]: e.target.value }))}
+                            onKeyDown={(e) => { if (e.key === 'Enter') handleAddTag(art.id, art.tags) }}
+                            placeholder="Nieuwe tag..." 
+                            className="h-9 text-xs rounded-full bg-background/50 border-border focus:bg-background"
+                          />
+                          <Button 
+                            variant="outline" 
+                            size="icon" 
+                            onClick={() => handleAddTag(art.id, art.tags)}
+                            className="h-9 w-9 shrink-0 rounded-full border-primary/20 hover:bg-primary hover:text-white"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {activeTab === 'scan' && (
           <div className="space-y-12">
             <div className="grid lg:grid-cols-2 gap-12">
@@ -250,9 +330,9 @@ export default function AdminPage() {
                   <h3 className="font-headline text-2xl flex items-center gap-3"><TagIcon className="w-6 h-6 text-accent" /> Import Instellingen</h3>
                   <div className="space-y-6">
                     <div className="space-y-3">
-                      <Label htmlFor="tags" className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Standaard Tags</Label>
+                      <Label htmlFor="tags" className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Standaard Tags (Optioneel)</Label>
                       <Input id="tags" placeholder="bijv. Atmosferisch, Geometrisch" value={importTags} onChange={(e) => setImportTags(e.target.value)} className="h-12 text-lg rounded-xl" />
-                      <p className="text-xs text-muted-foreground italic">Komma-gescheiden lijst met tags voor alle nieuwe werken.</p>
+                      <p className="text-xs text-muted-foreground italic">Komma-gescheiden lijst met tags. Leeg laten voor geen tags.</p>
                     </div>
                     <div className="flex items-center justify-between p-6 bg-muted/20 rounded-2xl border border-border/50">
                       <div className="space-y-1">
@@ -294,62 +374,6 @@ export default function AdminPage() {
                 </div>
               )}
             </div>
-          </div>
-        )}
-
-        {activeTab === 'db' && (
-          <div className="space-y-12">
-            <div className="flex items-center justify-between border-b border-border pb-10">
-              <div className="space-y-2">
-                <h2 className="text-5xl font-headline font-light">Mijn Collectie</h2>
-                <p className="text-muted-foreground uppercase tracking-[0.3em] font-bold text-xs">{artworks?.length || 0} Geregistreerde werken</p>
-              </div>
-              <Button variant="outline" className="gap-2 rounded-full h-12 px-8 border-accent text-accent hover:bg-accent/5 font-bold" onClick={() => window.open(nasBaseUrl, '_blank')}>
-                <ExternalLink className="w-4 h-4" /> NAS Verbinding Openen
-              </Button>
-            </div>
-
-            {dbLoading ? (
-              <div className="flex flex-col items-center justify-center py-40 gap-4">
-                <Loader2 className="w-12 h-12 animate-spin text-primary/30" />
-                <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Collectie laden...</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {artworks?.map((art: any) => (
-                  <Card key={art.id} className="overflow-hidden bg-card border-border hover:shadow-2xl transition-all group rounded-[1.5rem]">
-                    <div className="relative aspect-[4/3]">
-                      <Image src={art.imageUrl} alt={art.title} fill className="object-cover transition-transform duration-700 group-hover:scale-105" unoptimized={true} />
-                      <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button variant="destructive" size="icon" onClick={() => { if(confirm("Zeker weten?")) deleteDoc(doc(firestore!, 'artworks', art.id))}} className="rounded-full shadow-lg">
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                    <CardContent className="p-8 space-y-6">
-                      <div className="space-y-1">
-                        <h4 className="font-headline text-2xl font-light leading-tight">{art.title}</h4>
-                        <p className="text-xs text-accent font-bold uppercase tracking-[0.2em]">{art.series}</p>
-                      </div>
-                      
-                      <div className="flex flex-wrap gap-2 pt-6 border-t border-border">
-                        {art.tags?.map((tag: string) => (
-                          <Badge key={tag} variant="secondary" className="gap-2 pr-2 py-1.5 px-4 rounded-full text-[10px] font-bold uppercase tracking-widest bg-primary/5 text-primary border-primary/10">
-                            {tag}
-                            <button onClick={() => handleRemoveTag(art.id, tag, art.tags)} className="hover:text-destructive transition-colors">
-                              <X className="w-3 h-3" />
-                            </button>
-                          </Badge>
-                        ))}
-                        <Button variant="outline" size="sm" onClick={() => handleUpdateTags(art.id, art.tags)} className="h-8 px-4 text-[10px] font-bold uppercase tracking-widest rounded-full border-primary/20">
-                          <Plus className="w-3 h-3 mr-2" /> Tag Toevoegen
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
           </div>
         )}
 
