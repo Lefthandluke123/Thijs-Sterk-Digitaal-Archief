@@ -69,12 +69,16 @@ export default function GalleryPage() {
   }, [selectedArtwork, navigateGallery]);
 
   return (
-    <main className="min-h-screen bg-background pt-32 pb-24 px-6">
-      <div className="container mx-auto max-w-7xl">
-        <header className="mb-16 text-center">
-          <h1 className="font-headline text-5xl md:text-6xl font-light mb-4 text-foreground">Galerie</h1>
-        </header>
+    <main className="min-h-screen bg-background pt-14">
+      {/* Titelstrook */}
+      <div className="w-full bg-secondary/10 border-b border-border/10 py-12 md:py-20 mb-12">
+        <div className="container mx-auto px-6 max-w-7xl">
+          <h1 className="font-headline text-5xl md:text-7xl font-light text-foreground text-center tracking-tight">Galerie</h1>
+          <p className="text-center text-muted-foreground mt-4 uppercase tracking-[0.3em] text-[10px] font-medium">Beeldend Kunstenaar Portfolio</p>
+        </div>
+      </div>
 
+      <div className="container mx-auto max-w-7xl px-6 pb-24">
         {showHelp && (
           <Alert className="mb-12 bg-secondary/20 border-none max-w-2xl mx-auto rounded-3xl p-6 shadow-sm">
             <div className="flex flex-col gap-4 text-center">
@@ -93,27 +97,27 @@ export default function GalleryPage() {
           </div>
         ) : (
           <>
-            <div className="sticky top-14 z-30 bg-background/40 backdrop-blur-md py-6 mb-12 border-y border-border/20 flex flex-col md:flex-row items-center justify-between gap-4">
-              <div className="flex gap-6 overflow-x-auto no-scrollbar">
+            <div className="sticky top-14 z-30 bg-background/80 backdrop-blur-md py-4 mb-12 border-y border-border/10 flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="flex gap-8 overflow-x-auto no-scrollbar px-4">
                 {seriesNames.map((name) => (
                   <button
                     key={name}
                     onClick={() => setActiveSeries(name)}
                     className={cn(
                       "text-[10px] font-bold uppercase tracking-widest transition-all whitespace-nowrap pb-1 border-b-2",
-                      activeSeries === name ? "border-accent text-foreground" : "border-transparent text-muted-foreground"
+                      activeSeries === name ? "border-accent text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"
                     )}
                   >
                     {name}
                   </button>
                 ))}
               </div>
-              <button onClick={() => setShowHelp(!showHelp)} className="text-[9px] uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                <Info className="w-3 h-3" /> Hulp bij laden
+              <button onClick={() => setShowHelp(!showHelp)} className="text-[9px] uppercase tracking-widest text-muted-foreground flex items-center gap-2 px-4 hover:text-foreground transition-colors">
+                <Info className="w-3 h-3" /> Verbindingshulp
               </button>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8">
               {filteredArtworks.map((item) => (
                 <div 
                   key={item.id} 
@@ -128,8 +132,8 @@ export default function GalleryPage() {
                       className="object-cover transition-all duration-700 ease-out group-hover:scale-[1.03]"
                       unoptimized={isExternalStorage(item.imageUrl)}
                     />
-                    <div className="absolute inset-0 bg-background/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <Maximize2 className="text-white/40 w-5 h-5" />
+                    <div className="absolute inset-0 bg-background/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <Maximize2 className="text-white/60 w-6 h-6" />
                     </div>
                   </div>
                   <div className="mt-4 text-center">
@@ -143,58 +147,57 @@ export default function GalleryPage() {
       </div>
 
       <Dialog open={!!selectedArtwork} onOpenChange={() => setSelectedArtwork(null)}>
-        <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background/98 backdrop-blur-2xl border-none rounded-none outline-none">
+        <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background/98 backdrop-blur-3xl border-none rounded-none outline-none">
           <div className="relative flex-1 flex items-center justify-center overflow-hidden group bg-black/5">
             {selectedArtwork && (
               <Image
                 src={selectedArtwork.imageUrl}
                 alt={selectedArtwork.title}
                 fill
-                className="object-contain p-4 md:p-8"
+                className="object-contain p-4 md:p-12"
                 unoptimized={isExternalStorage(selectedArtwork.imageUrl)}
               />
             )}
             
-            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-4 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-6 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
               <button 
                 onClick={(e) => { e.stopPropagation(); navigateGallery('prev'); }}
-                className="p-2 rounded-full bg-background/10 backdrop-blur-md hover:bg-background/30 transition-colors pointer-events-auto"
+                className="p-3 rounded-full bg-background/10 backdrop-blur-md hover:bg-background/40 transition-colors pointer-events-auto"
               >
-                <ChevronLeft className="w-5 h-5 text-foreground opacity-50" />
+                <ChevronLeft className="w-6 h-6 text-foreground" />
               </button>
               <button 
                 onClick={(e) => { e.stopPropagation(); navigateGallery('next'); }}
-                className="p-2 rounded-full bg-background/10 backdrop-blur-md hover:bg-background/30 transition-colors pointer-events-auto"
+                className="p-3 rounded-full bg-background/10 backdrop-blur-md hover:bg-background/40 transition-colors pointer-events-auto"
               >
-                <ChevronRight className="w-5 h-5 text-foreground opacity-50" />
+                <ChevronRight className="w-6 h-6 text-foreground" />
               </button>
             </div>
 
-            <DialogClose className="absolute top-6 left-6 z-50 p-2 hover:bg-black/10 rounded-full transition-colors bg-background/10 backdrop-blur-sm">
-              <X className="w-4 h-4 opacity-40" />
+            <DialogClose className="absolute top-8 right-8 z-50 p-2 hover:bg-black/5 rounded-full transition-colors bg-background/10 backdrop-blur-sm">
+              <X className="w-5 h-5 opacity-50" />
             </DialogClose>
           </div>
 
-          {/* Onderbalk: nu veel lager en compacter */}
-          <div className="w-full bg-background/80 backdrop-blur-md py-3 px-8 border-t border-border/10">
-            <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="text-center sm:text-left">
-                <DialogTitle className="font-headline text-lg md:text-xl font-light text-foreground leading-none mb-1">
+          <div className="w-full bg-background/90 backdrop-blur-md py-4 px-10 border-t border-border/10">
+            <div className="max-w-6xl mx-auto flex items-center justify-between gap-8">
+              <div className="flex-1">
+                <DialogTitle className="font-headline text-xl md:text-2xl font-light text-foreground leading-none mb-1">
                   {selectedArtwork?.title}
                 </DialogTitle>
-                <div className="text-[9px] uppercase tracking-widest text-muted-foreground opacity-70 flex gap-2 justify-center sm:justify-start">
+                <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground opacity-80 flex gap-3">
                   <span>{selectedArtwork?.series}</span>
-                  <span>&bull;</span>
+                  <span className="opacity-30">|</span>
                   <span>{selectedArtwork?.medium}</span>
-                  <span>&bull;</span>
+                  <span className="opacity-30">|</span>
                   <span>{selectedArtwork?.year}</span>
                 </div>
               </div>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="rounded-full text-[9px] uppercase tracking-widest px-6 h-8 border-border/30">
+              <div className="flex gap-4">
+                <Button variant="outline" size="sm" className="rounded-full text-[9px] uppercase tracking-widest px-8 h-9 border-border/50 hover:bg-accent hover:text-accent-foreground hover:border-accent">
                   Interesse?
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => setSelectedArtwork(null)} className="rounded-full text-[9px] uppercase tracking-widest px-6 h-8">
+                <Button variant="ghost" size="sm" onClick={() => setSelectedArtwork(null)} className="rounded-full text-[9px] uppercase tracking-widest px-8 h-9">
                   Sluiten
                 </Button>
               </div>

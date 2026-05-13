@@ -18,9 +18,7 @@ import {
   Scan, 
   AlertCircle,
   Database,
-  ArrowLeft,
-  ExternalLink,
-  RefreshCcw
+  ExternalLink
 } from 'lucide-react';
 import Image from 'next/image';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -170,34 +168,35 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col pt-14">
-      {/* Horizontale Bovenbalk in plaats van Zijbalk */}
-      <header className="h-20 border-b border-border/10 flex items-center justify-between px-8 bg-background/80 backdrop-blur-md sticky top-14 z-40">
-        <div className="flex items-center gap-8">
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-10 h-10 rounded bg-primary flex items-center justify-center text-white font-bold text-xl group-hover:scale-105 transition-transform">T</div>
-            <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground group-hover:text-foreground transition-colors hidden sm:block">Terug naar site</span>
+      {/* Navigatiebalk bovenin */}
+      <header className="h-16 border-b border-border/10 flex items-center justify-between px-8 bg-background sticky top-14 z-40">
+        <div className="flex items-center gap-12">
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white font-headline font-bold text-xl group-hover:scale-105 transition-transform">T</div>
+            <span className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground hidden md:block">Studio Beheer</span>
           </Link>
+          
           <nav className="flex items-center gap-2">
             <Button 
               variant={activeTab === 'scan' ? 'secondary' : 'ghost'} 
-              className={cn("gap-2 px-4 h-11", activeTab === 'scan' && "font-bold")}
+              className={cn("gap-2 px-6 h-10 rounded-full", activeTab === 'scan' && "font-bold")}
               onClick={() => setActiveTab('scan')}
             >
-              <Scan className="w-4 h-4" /> Import
+              <Scan className="w-4 h-4" /> Importeer
             </Button>
             <Button 
               variant={activeTab === 'db' ? 'secondary' : 'ghost'} 
-              className={cn("gap-2 px-4 h-11", activeTab === 'db' && "font-bold")}
+              className={cn("gap-2 px-6 h-10 rounded-full", activeTab === 'db' && "font-bold")}
               onClick={() => setActiveTab('db')}
             >
               <Archive className="w-4 h-4" /> Collectie
             </Button>
             <Button 
               variant={activeTab === 'settings' ? 'secondary' : 'ghost'} 
-              className={cn("gap-2 px-4 h-11", activeTab === 'settings' && "font-bold")}
+              className={cn("gap-2 px-6 h-10 rounded-full", activeTab === 'settings' && "font-bold")}
               onClick={() => setActiveTab('settings')}
             >
-              <Settings className="w-4 h-4" /> Instellingen
+              <Settings className="w-4 h-4" /> NAS Setup
             </Button>
           </nav>
         </div>
@@ -206,63 +205,57 @@ export default function AdminPage() {
           variant="ghost" 
           size="icon" 
           onClick={handleDeleteAll} 
-          className="text-destructive h-10 w-10 hover:bg-destructive/10"
+          className="text-destructive h-10 w-10 hover:bg-destructive/10 rounded-full"
           title="Database Wissen"
         >
           <Trash2 className="w-5 h-5" />
         </Button>
       </header>
 
-      <main className="flex-1 p-8 md:p-12 overflow-y-auto">
+      <main className="flex-1 p-8 md:p-16 overflow-y-auto">
         <div className="max-w-6xl mx-auto">
           {activeTab === 'scan' && (
             <div className="space-y-12">
-              <Card className="border-border/50 shadow-sm">
-                <CardHeader>
-                  <CardTitle className="text-2xl">Map Scannen</CardTitle>
-                  <CardDescription>Selecteer de map op je computer die overeenkomt met de map op je NAS.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-8">
-                  <div className="flex flex-col items-center justify-center border-2 border-dashed border-border/30 rounded-2xl p-20 bg-muted/5 hover:bg-muted/10 transition-colors">
-                    <input type="file" multiple className="hidden" id="file-scanner" onChange={handleFileScan} accept="image/*" {...({ webkitdirectory: "", directory: "" } as any)} />
-                    <FolderOpen className="w-16 h-16 text-primary/20 mb-6" />
-                    <Button size="lg" className="px-12 font-bold text-lg" asChild>
-                      <label htmlFor="file-scanner" className="cursor-pointer">Selecteer Map</label>
-                    </Button>
-                    <p className="mt-6 text-sm text-muted-foreground font-medium">Kies de hoofdmap van je portfolio.</p>
-                  </div>
+              <div className="flex flex-col items-center justify-center border-2 border-dashed border-border/20 rounded-[2.5rem] p-24 bg-muted/5 hover:bg-muted/10 transition-colors">
+                <input type="file" multiple className="hidden" id="file-scanner" onChange={handleFileScan} accept="image/*" {...({ webkitdirectory: "", directory: "" } as any)} />
+                <FolderOpen className="w-20 h-20 text-primary/10 mb-8" />
+                <Button size="lg" className="px-16 h-14 rounded-full font-bold text-lg" asChild>
+                  <label htmlFor="file-scanner" className="cursor-pointer">Selecteer Lokale Map</label>
+                </Button>
+                <p className="mt-8 text-sm text-muted-foreground font-medium uppercase tracking-widest text-center">
+                  Kies de map op je computer die overeenkomt met je NAS structuur.
+                </p>
+              </div>
 
-                  <div className="flex items-center justify-between p-6 bg-muted/20 rounded-2xl border border-border/10">
-                    <div className="space-y-1">
-                      <Label htmlFor="root-folder" className="text-lg font-bold">Mapnaam in link opnemen</Label>
-                      <p className="text-sm text-muted-foreground">Gebruik dit als je de hoofdmap zelf hebt geselecteerd.</p>
-                    </div>
-                    <Switch id="root-folder" checked={includeRootFolder} onCheckedChange={setIncludeRootFolder} />
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="flex items-center justify-between p-8 bg-muted/10 rounded-3xl border border-border/10">
+                <div className="space-y-1">
+                  <Label htmlFor="root-folder" className="text-xl font-bold">Inclusief hoofdmap</Label>
+                  <p className="text-sm text-muted-foreground">Zet aan als de mapnaam zelf onderdeel moet zijn van de URL.</p>
+                </div>
+                <Switch id="root-folder" checked={includeRootFolder} onCheckedChange={setIncludeRootFolder} />
+              </div>
 
               {scannedFiles.length > 0 && (
-                <Card className="border-primary/20 shadow-lg bg-primary/5">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-3 text-2xl">
-                      <CheckCircle2 className="w-7 h-7 text-primary" /> 
-                      Start Import
+                <Card className="border-primary/20 shadow-2xl bg-primary/5 rounded-[2rem] overflow-hidden">
+                  <CardHeader className="p-10 pb-4">
+                    <CardTitle className="flex items-center gap-4 text-3xl font-light">
+                      <CheckCircle2 className="w-8 h-8 text-primary" /> 
+                      Klaar voor Import
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-8">
-                    <p className="text-xl">Klaar om <strong className="text-primary">{scannedFiles.length}</strong> kunstwerken toe te voegen.</p>
+                  <CardContent className="p-10 pt-4 space-y-10">
+                    <p className="text-2xl text-foreground/80"><strong className="text-primary font-bold">{scannedFiles.length}</strong> kunstwerken gedetecteerd.</p>
                     {loading ? (
-                      <div className="space-y-4">
-                        <div className="flex justify-between text-sm font-bold">
+                      <div className="space-y-6">
+                        <div className="flex justify-between text-sm font-bold uppercase tracking-widest">
                           <span>Verwerken...</span>
                           <span>{currentUploadItem} / {finalArtworks.length}</span>
                         </div>
-                        <Progress value={uploadProgress} className="h-4" />
+                        <Progress value={uploadProgress} className="h-6 rounded-full" />
                       </div>
                     ) : (
-                      <Button onClick={handleSaveAll} className="w-full h-18 text-2xl font-bold shadow-xl">
-                        Importeer nu
+                      <Button onClick={handleSaveAll} className="w-full h-20 text-2xl font-bold rounded-2xl shadow-xl hover:scale-[1.01] transition-transform">
+                        Start Importeren
                       </Button>
                     )}
                   </CardContent>
@@ -272,25 +265,25 @@ export default function AdminPage() {
           )}
 
           {activeTab === 'db' && (
-            <div className="space-y-10">
-              <div className="flex items-center justify-between">
+            <div className="space-y-12">
+              <div className="flex items-center justify-between border-b border-border/10 pb-8">
                 <div>
-                  <h2 className="text-3xl font-bold tracking-tight">Mijn Collectie</h2>
-                  <p className="text-muted-foreground text-lg">{artworks?.length || 0} kunstwerken in de database.</p>
+                  <h2 className="text-4xl font-headline font-light tracking-tight">Mijn Collectie</h2>
+                  <p className="text-muted-foreground mt-2 uppercase tracking-widest text-[11px] font-bold">{artworks?.length || 0} Werken in Archief</p>
                 </div>
-                <Button variant="outline" className="gap-2" onClick={() => window.open(nasBaseUrl, '_blank')}>
+                <Button variant="outline" className="gap-2 rounded-full h-12 px-8 border-border/30" onClick={() => window.open(nasBaseUrl, '_blank')}>
                   <ExternalLink className="w-4 h-4" /> Herstel Verbinding
                 </Button>
               </div>
 
               {dbLoading ? (
                 <div className="flex justify-center py-40">
-                  <Loader2 className="w-12 h-12 animate-spin text-primary" />
+                  <Loader2 className="w-12 h-12 animate-spin text-primary/30" />
                 </div>
               ) : artworks && artworks.length > 0 ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-8">
                   {artworks.map((art: any) => (
-                    <div key={art.id} className="group relative aspect-square rounded-2xl overflow-hidden bg-muted border border-border/30 shadow-sm hover:shadow-lg transition-all">
+                    <div key={art.id} className="group relative aspect-square rounded-2xl overflow-hidden bg-muted border border-border/20 shadow-sm hover:shadow-2xl transition-all duration-500">
                       <Image 
                         src={art.imageUrl} 
                         alt={art.title} 
@@ -298,19 +291,19 @@ export default function AdminPage() {
                         className="object-cover transition-transform duration-700 group-hover:scale-105" 
                         unoptimized={true} 
                       />
-                      <div className="absolute inset-0 bg-background/90 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-6 text-center">
-                        <span className="text-sm font-bold w-full mb-4 line-clamp-2">{art.title}</span>
+                      <div className="absolute inset-0 bg-background/95 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-6 text-center">
+                        <span className="text-xs font-bold w-full mb-6 uppercase tracking-wider line-clamp-2">{art.title}</span>
                         <Button variant="destructive" size="icon" className="h-12 w-12 rounded-full shadow-lg" onClick={() => deleteDoc(doc(firestore!, 'artworks', art.id))}>
-                          <Trash2 className="h-6 w-6" />
+                          <Trash2 className="h-5 w-5" />
                         </Button>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="border-2 border-dashed border-border/30 py-40 rounded-3xl text-center bg-muted/5">
-                  <Database className="w-20 h-20 mx-auto text-muted-foreground/10 mb-8" />
-                  <p className="text-2xl font-bold text-muted-foreground">Geen kunstwerken gevonden.</p>
+                <div className="border-2 border-dashed border-border/20 py-48 rounded-[3rem] text-center bg-muted/5">
+                  <Database className="w-24 h-24 mx-auto text-muted-foreground/10 mb-8" />
+                  <p className="text-2xl font-light text-muted-foreground">Geen kunstwerken gevonden in de database.</p>
                 </div>
               )}
             </div>
@@ -318,44 +311,48 @@ export default function AdminPage() {
 
           {activeTab === 'settings' && (
             <div className="max-w-3xl mx-auto space-y-12">
-              <Card className="border-border/50 shadow-sm overflow-hidden">
-                <CardHeader className="bg-muted/10 border-b border-border/10 pb-8">
-                  <CardTitle className="text-3xl">NAS Configuratie</CardTitle>
+              <Card className="border-border/50 shadow-2xl rounded-[2.5rem] overflow-hidden bg-card/50">
+                <CardHeader className="bg-muted/10 border-b border-border/10 p-12">
+                  <CardTitle className="text-4xl font-headline font-light">NAS Configuratie</CardTitle>
+                  <CardDescription className="text-lg">Stel in hoe de website verbinding maakt met je Synology NAS.</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-12 p-10">
-                  <div className="space-y-6">
-                    <Label className="text-xl font-bold">Verbindingsmethode</Label>
+                <CardContent className="p-12 space-y-16">
+                  <div className="space-y-8">
+                    <Label className="text-xl font-bold uppercase tracking-widest text-primary">Verbindingsmethode</Label>
                     <div className="grid grid-cols-2 gap-6">
                       <Button 
                         variant={nasBaseUrl === LOCAL_NAS_URL ? "default" : "outline"} 
-                        className="h-16 font-bold text-lg rounded-2xl"
+                        className="h-20 font-bold text-lg rounded-2xl border-2"
                         onClick={() => setNasBaseUrl(LOCAL_NAS_URL)}
                       >Thuis Netwerk</Button>
                       <Button 
                         variant={nasBaseUrl === EXTERNAL_NAS_URL ? "default" : "outline"} 
-                        className="h-16 font-bold text-lg rounded-2xl"
+                        className="h-20 font-bold text-lg rounded-2xl border-2"
                         onClick={() => setNasBaseUrl(EXTERNAL_NAS_URL)}
                       >QuickConnect</Button>
                     </div>
-                    <Input value={nasBaseUrl} onChange={(e) => setNasBaseUrl(e.target.value)} className="font-mono h-16 text-sm bg-muted/5 border-border/30" />
+                    <Input value={nasBaseUrl} onChange={(e) => setNasBaseUrl(e.target.value)} className="font-mono h-16 text-sm bg-background border-border/20 rounded-xl px-6" />
                   </div>
 
-                  <div className="space-y-6 p-10 bg-muted/10 rounded-3xl border border-border/10">
-                    <Label className="text-xl font-bold">Bestandstester</Label>
+                  <div className="space-y-8 p-12 bg-primary/5 rounded-[2rem] border border-primary/10">
+                    <Label className="text-xl font-bold uppercase tracking-widest text-primary">Status Tester</Label>
                     <div className="flex gap-4">
-                      <Input value={testFileName} onChange={(e) => setTestFileName(e.target.value)} placeholder="bijv. 1.jpg" className="h-16 text-lg" />
-                      <Button onClick={testConnection} className="h-16 px-12 font-bold text-lg" disabled={testResult === 'testing'}>
-                        {testResult === 'testing' ? <Loader2 className="animate-spin h-7 w-7" /> : "Test"}
+                      <Input value={testFileName} onChange={(e) => setTestFileName(e.target.value)} placeholder="bijv. 1.jpg" className="h-16 text-lg rounded-xl px-6" />
+                      <Button onClick={testConnection} className="h-16 px-12 font-bold text-lg rounded-xl" disabled={testResult === 'testing'}>
+                        {testResult === 'testing' ? <Loader2 className="animate-spin h-7 w-7" /> : "Test Verbinding"}
                       </Button>
                     </div>
                     
                     {testResult && (
                       <div className={cn(
-                        "mt-8 p-6 rounded-2xl flex items-center gap-5 font-bold text-lg shadow-sm border",
+                        "mt-10 p-8 rounded-2xl flex items-center gap-6 font-bold text-xl shadow-xl border-2",
                         testResult === 'success' ? "bg-green-500/10 text-green-700 border-green-200" : "bg-destructive/10 text-destructive border-destructive/20"
                       )}>
-                        {testResult === 'success' ? <CheckCircle2 className="w-8 h-8" /> : <AlertCircle className="w-8 h-8" />}
-                        <span>{testResult === 'success' ? "Bestand bereikbaar." : "Fout! Controleer NAS."}</span>
+                        {testResult === 'success' ? <CheckCircle2 className="w-10 h-10" /> : <AlertCircle className="w-10 h-10" />}
+                        <div className="flex flex-col">
+                          <span>{testResult === 'success' ? "NAS Bereikbaar!" : "Verbinding Mislukt"}</span>
+                          <span className="text-sm font-medium opacity-70">{testResult === 'success' ? "Je afbeeldingen laden nu correct." : "Controleer of je NAS aan staat en poorten open staan."}</span>
+                        </div>
                       </div>
                     )}
                   </div>
