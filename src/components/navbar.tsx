@@ -12,7 +12,7 @@ export function Navbar() {
   const navLinks = [
     { name: 'Home', href: '/' },
     { name: 'Galerie', href: '/gallery' },
-    { name: 'Over', href: '/#about' },
+    { name: 'Over Thijs', href: '/#about' },
     { name: 'Contact', href: '/#contact' },
   ];
 
@@ -20,12 +20,7 @@ export function Navbar() {
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/50">
       <div className="container mx-auto px-4 h-20 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-4 group">
-          {/* Logo Sectie: Vervang de 'T' div door een <Image /> component als je een bestand hebt */}
           <div className="relative w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-headline font-bold text-xl overflow-hidden transition-transform group-hover:scale-110">
-            {/* 
-              Als je een logo bestand hebt (bijv. public/logo.png), gebruik dan:
-              <Image src="/logo.png" alt="Thijs Sterk Logo" fill className="object-contain" />
-            */}
             T
           </div>
           <div className="flex flex-col">
