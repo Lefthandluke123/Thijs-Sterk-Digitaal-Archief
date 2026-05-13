@@ -13,7 +13,6 @@ import {
   Trash2, 
   Settings, 
   Archive, 
-  Scan, 
   Database,
   Plus,
   X,
@@ -27,7 +26,8 @@ import {
   Crop,
   ChevronLeft,
   ChevronRight,
-  UploadCloud
+  UploadCloud,
+  Type
 } from 'lucide-react';
 import Image from 'next/image';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -39,7 +39,6 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { cn } from '@/lib/utils';
 
 const LOCAL_NAS_URL = 'https://192-168-178-15.doggyfew.direct.quickconnect.to/portfolio/';
 const EXTERNAL_NAS_URL = 'https://doggyfew.quickconnect.to/portfolio/';
@@ -68,7 +67,8 @@ export default function AdminPage() {
     cropBottom: 0,
     cropLeft: 0,
     cropRight: 0,
-    brightness: 100
+    brightness: 100,
+    title: ""
   });
 
   const artworksQuery = useMemo(() => {
@@ -89,13 +89,13 @@ export default function AdminPage() {
         cropBottom: selectedArtwork.cropBottom || 0,
         cropLeft: selectedArtwork.cropLeft || 0,
         cropRight: selectedArtwork.cropRight || 0,
-        brightness: (selectedArtwork.brightness || 1) * 100
+        brightness: (selectedArtwork.brightness || 1) * 100,
+        title: selectedArtwork.title || ""
       });
     }
   }, [selectedArtwork]);
 
   const handleUpdateAtelier = (field: string, value: number) => {
-    // We allow fine-grained decimals for "pixel" feel
     const newVal = Math.max(0, Math.min(field === 'brightness' ? 200 : 50, value));
     setEditValues(prev => ({ ...prev, [field]: newVal }));
     
@@ -104,6 +104,14 @@ export default function AdminPage() {
       updateDoc(artRef, { 
         [field]: field === 'brightness' ? newVal / 100 : newVal 
       });
+    }
+  };
+
+  const handleUpdateText = (field: string, value: string) => {
+    setEditValues(prev => ({ ...prev, [field]: value }));
+    if (firestore && selectedAtelierId) {
+      const artRef = doc(firestore, 'artworks', selectedAtelierId);
+      updateDoc(artRef, { [field]: value });
     }
   };
 
@@ -485,9 +493,23 @@ export default function AdminPage() {
 
                 <div className="lg:col-span-5 space-y-8">
                   <Card className="rounded-3xl p-8 border-border bg-card/50 shadow-xl space-y-10">
-                    <div className="space-y-2">
-                      <h3 className="text-2xl font-headline font-light">{selectedArtwork?.title}</h3>
-                      <p className="text-[9px] font-bold uppercase tracking-widest text-accent">{selectedArtwork?.series} &bull; {selectedArtwork?.year}</p>
+                    <div className="space-y-6">
+                      <div className="flex items-center gap-2">
+                        <Type className="w-4 h-4 text-primary" />
+                        <h4 className="text-[10px] font-bold uppercase tracking-widest">Informatie</h4>
+                      </div>
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label className="text-[9px] uppercase tracking-widest opacity-60">Titel</Label>
+                          <Input 
+                            value={editValues.title} 
+                            onChange={(e) => handleUpdateText('title', e.target.value)}
+                            className="bg-background border-border"
+                            placeholder="Titel van het werk"
+                          />
+                        </div>
+                        <p className="text-[9px] font-bold uppercase tracking-widest text-accent">{selectedArtwork?.series} &bull; {selectedArtwork?.year}</p>
+                      </div>
                     </div>
 
                     <div className="space-y-12">

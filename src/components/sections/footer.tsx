@@ -1,17 +1,11 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 
 export function Footer() {
-  const [year, setYear] = useState<number | null>(null);
-
-  useEffect(() => {
-    setYear(new Date().getFullYear());
-  }, []);
-
   return (
     <footer className="py-12 border-t border-border bg-background px-4">
       <div className="container mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
@@ -32,8 +26,8 @@ export function Footer() {
           <span className="font-headline font-medium tracking-tight text-xl">Thijs Sterk</span>
         </div>
         
-        <p className="text-muted-foreground text-sm">
-          &copy; {year || '...'} Thijs Sterk. Alle rechten voorbehouden.
+        <p className="text-muted-foreground text-sm uppercase tracking-widest font-medium">
+          &copy; 2026 Erven Thijs Sterk. Alle rechten voorbehouden.
         </p>
         
         <div className="flex gap-8 text-sm font-medium">
