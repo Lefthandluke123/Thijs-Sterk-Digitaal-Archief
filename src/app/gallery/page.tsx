@@ -5,9 +5,9 @@ import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Maximize2, Loader2, X, RefreshCcw, Info, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Maximize2, Loader2, X, ChevronLeft, ChevronRight, Info, RefreshCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Alert } from "@/components/ui/alert";
 
@@ -73,38 +73,23 @@ export default function GalleryPage() {
       <div className="container mx-auto max-w-7xl">
         <header className="mb-16 text-center">
           <h1 className="font-headline text-5xl md:text-6xl font-light mb-4">Galerie</h1>
-          <p className="text-muted-foreground text-[10px] uppercase tracking-[0.3em] font-medium opacity-60">Overzicht van de collectie</p>
         </header>
 
         {showHelp && (
-          <Alert className="mb-12 bg-secondary/20 border-border/40 max-w-2xl mx-auto rounded-3xl p-6 border-none shadow-sm">
+          <Alert className="mb-12 bg-secondary/20 border-none max-w-2xl mx-auto rounded-3xl p-6 shadow-sm">
             <div className="flex flex-col gap-4 text-center">
-              <h4 className="text-sm font-headline italic">Laden van afbeeldingen mislukt?</h4>
-              <p className="text-[10px] leading-relaxed text-muted-foreground">
-                Je browser blokkeert soms de directe verbinding met de lokale opslag. Open de verbinding en ververs daarna deze pagina.
-              </p>
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Laden mislukt?</p>
               <div className="flex gap-3 justify-center">
-                <Button 
-                  variant="outline"
-                  size="sm"
-                  className="rounded-full text-[9px] uppercase tracking-widest px-6"
-                  onClick={() => window.open('https://192-168-178-15.doggyfew.direct.quickconnect.to/portfolio/', '_blank')}
-                >1. Verbinding Openen</Button>
-                <Button 
-                  variant="ghost"
-                  size="sm"
-                  className="rounded-full text-[9px] uppercase tracking-widest px-6"
-                  onClick={() => window.location.reload()}
-                ><RefreshCcw className="w-3 h-3 mr-2" /> 2. Verversen</Button>
+                <Button variant="outline" size="sm" className="rounded-full text-[9px] uppercase px-6" onClick={() => window.open('https://192-168-178-15.doggyfew.direct.quickconnect.to/portfolio/', '_blank')}>Verbinding Openen</Button>
+                <Button variant="ghost" size="sm" className="rounded-full text-[9px] uppercase px-6" onClick={() => window.location.reload()}><RefreshCcw className="w-3 h-3 mr-2" /> Verversen</Button>
               </div>
             </div>
           </Alert>
         )}
 
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-32 gap-4">
+          <div className="flex flex-col items-center justify-center py-32">
             <Loader2 className="w-6 h-6 animate-spin text-accent/40" />
-            <p className="text-muted-foreground text-[9px] uppercase tracking-[0.2em] opacity-40">Laden...</p>
           </div>
         ) : (
           <>
@@ -116,14 +101,14 @@ export default function GalleryPage() {
                     onClick={() => setActiveSeries(name)}
                     className={cn(
                       "text-[10px] font-bold uppercase tracking-widest transition-all whitespace-nowrap pb-1 border-b-2",
-                      activeSeries === name ? "border-accent text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"
+                      activeSeries === name ? "border-accent text-foreground" : "border-transparent text-muted-foreground"
                     )}
                   >
                     {name}
                   </button>
                 ))}
               </div>
-              <button onClick={() => setShowHelp(!showHelp)} className="text-[9px] uppercase tracking-widest text-muted-foreground flex items-center gap-2 hover:text-accent transition-colors">
+              <button onClick={() => setShowHelp(!showHelp)} className="text-[9px] uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                 <Info className="w-3 h-3" /> Hulp bij laden
               </button>
             </div>
@@ -140,7 +125,7 @@ export default function GalleryPage() {
                       src={item.imageUrl}
                       alt={item.title}
                       fill
-                      className="object-cover transition-all duration-700 ease-out group-hover:scale-[1.03] opacity-90 group-hover:opacity-100"
+                      className="object-cover transition-all duration-700 ease-out group-hover:scale-[1.03]"
                       unoptimized={isExternalStorage(item.imageUrl)}
                     />
                     <div className="absolute inset-0 bg-background/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -159,7 +144,7 @@ export default function GalleryPage() {
 
       <Dialog open={!!selectedArtwork} onOpenChange={() => setSelectedArtwork(null)}>
         <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background/98 backdrop-blur-2xl border-none rounded-none outline-none">
-          <div className="relative flex-1 bg-black/5 flex items-center justify-center overflow-hidden group">
+          <div className="relative flex-1 flex items-center justify-center overflow-hidden group bg-black/5">
             {selectedArtwork && (
               <Image
                 src={selectedArtwork.imageUrl}
@@ -190,31 +175,21 @@ export default function GalleryPage() {
             </DialogClose>
           </div>
 
-          <div className="w-full bg-background/90 backdrop-blur-md py-8 px-6 md:px-12 border-t border-border/20 animate-fade-in-up">
-            <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center md:items-start justify-between gap-8">
-              <div className="flex-1 text-center md:text-left">
-                <div className="text-accent font-bold uppercase text-[9px] tracking-widest mb-2 opacity-60">
-                  {selectedArtwork?.series}
-                </div>
-                <DialogTitle className="font-headline text-3xl font-light mb-2">
-                  {selectedArtwork?.title}
-                </DialogTitle>
-                <DialogDescription className="text-[10px] uppercase tracking-widest text-muted-foreground italic mb-4">
-                  {selectedArtwork?.medium} &bull; {selectedArtwork?.year}
-                </DialogDescription>
-                <p className="text-muted-foreground leading-relaxed text-[13px] font-light max-w-2xl">
-                  {selectedArtwork?.description}
-                </p>
+          <div className="w-full bg-background/90 backdrop-blur-md py-10 px-6 border-t border-border/20">
+            <div className="max-w-4xl mx-auto text-center space-y-4">
+              <div className="text-accent font-bold uppercase text-[9px] tracking-[0.3em] opacity-60">
+                {selectedArtwork?.series}
               </div>
-
-              <div className="flex flex-col items-center md:items-end gap-4 shrink-0 min-w-[200px]">
-                <Button variant="outline" className="rounded-full w-full text-[10px] uppercase tracking-widest h-11 border-muted px-8">
+              <DialogTitle className="font-headline text-3xl font-light">
+                {selectedArtwork?.title}
+              </DialogTitle>
+              <DialogDescription className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground italic">
+                {selectedArtwork?.medium} &bull; {selectedArtwork?.year}
+              </DialogDescription>
+              <div className="pt-4 flex justify-center">
+                <Button variant="outline" className="rounded-full text-[10px] uppercase tracking-widest px-10 h-11">
                   Interesse?
                 </Button>
-                <div className="flex gap-6 text-[9px] uppercase tracking-widest text-muted-foreground/40 font-medium">
-                  <span>{filteredArtworks.findIndex(a => a.id === selectedArtwork?.id) + 1} / {filteredArtworks.length}</span>
-                  <span className="hidden md:inline">Pijltjes om te bladeren</span>
-                </div>
               </div>
             </div>
           </div>

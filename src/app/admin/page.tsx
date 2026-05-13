@@ -168,7 +168,6 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Top Header Navigation */}
       <header className="h-20 border-b border-border/10 flex items-center justify-between px-8 bg-background/80 backdrop-blur-md sticky top-0 z-50">
         <div className="flex items-center gap-8">
           <div className="w-10 h-10 rounded bg-primary flex items-center justify-center text-white font-bold text-xl">T</div>
@@ -192,20 +191,12 @@ export default function AdminPage() {
               className={cn("gap-2 px-4 h-11", activeTab === 'settings' && "font-bold")}
               onClick={() => setActiveTab('settings')}
             >
-              <Settings className="w-4 h-4" /> NAS Instellingen
+              <Settings className="w-4 h-4" /> Instellingen
             </Button>
           </nav>
         </div>
         
         <div className="flex items-center gap-3">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => window.open(nasBaseUrl, '_blank')} 
-            className="gap-2 font-bold h-10"
-          >
-            <Wifi className="w-4 h-4 text-accent" /> Test NAS Link
-          </Button>
           <Button 
             variant="ghost" 
             size="icon" 
@@ -284,21 +275,18 @@ export default function AdminPage() {
                 <Card className="border-border/50 shadow-sm">
                   <CardHeader>
                     <CardTitle className="text-lg flex items-center gap-2">
-                      <Monitor className="w-5 h-5 text-accent" /> Controle Link-opbouw
+                      <Monitor className="w-5 h-5 text-accent" /> Link Preview
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {finalArtworks.length > 0 ? (
-                      <div className="space-y-3 max-h-[70vh] overflow-y-auto pr-3 custom-scrollbar">
+                      <div className="space-y-3 max-h-[70vh] overflow-y-auto pr-3">
                         {finalArtworks.slice(0, 10).map((art, i) => (
                           <div key={i} className="p-4 bg-muted/10 rounded-xl border border-border/10">
                             <p className="font-bold text-sm mb-1">{art.title}</p>
                             <p className="font-mono text-[10px] text-muted-foreground break-all">{art.imageUrl}</p>
                           </div>
                         ))}
-                        {finalArtworks.length > 10 && (
-                          <p className="text-center text-xs text-muted-foreground italic">En nog {finalArtworks.length - 10} meer...</p>
-                        )}
                       </div>
                     ) : (
                       <div className="py-20 text-center text-muted-foreground italic text-sm">
@@ -348,7 +336,6 @@ export default function AdminPage() {
                 <div className="border-2 border-dashed border-border/30 py-40 rounded-3xl text-center bg-muted/5">
                   <Database className="w-20 h-20 mx-auto text-muted-foreground/10 mb-8" />
                   <p className="text-2xl font-bold text-muted-foreground">Geen kunstwerken gevonden.</p>
-                  <Button variant="link" onClick={() => setActiveTab('scan')} className="mt-6 text-xl">Klik hier om te importeren</Button>
                 </div>
               )}
             </div>
@@ -359,7 +346,6 @@ export default function AdminPage() {
               <Card className="border-border/50 shadow-sm overflow-hidden">
                 <CardHeader className="bg-muted/10 border-b border-border/10 pb-8">
                   <CardTitle className="text-3xl">NAS Configuratie</CardTitle>
-                  <CardDescription className="text-lg">Zorg dat de website de afbeeldingen kan laden vanaf je Synology NAS.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-12 p-10">
                   <div className="space-y-6">
@@ -369,7 +355,7 @@ export default function AdminPage() {
                         variant={nasBaseUrl === LOCAL_NAS_URL ? "default" : "outline"} 
                         className="h-16 font-bold text-lg rounded-2xl"
                         onClick={() => setNasBaseUrl(LOCAL_NAS_URL)}
-                      >Thuis Netwerk (IP)</Button>
+                      >Thuis Netwerk</Button>
                       <Button 
                         variant={nasBaseUrl === EXTERNAL_NAS_URL ? "default" : "outline"} 
                         className="h-16 font-bold text-lg rounded-2xl"
@@ -379,13 +365,12 @@ export default function AdminPage() {
                     <Input value={nasBaseUrl} onChange={(e) => setNasBaseUrl(e.target.value)} className="font-mono h-16 text-sm bg-muted/5 border-border/30" />
                   </div>
 
-                  <div className="space-y-6 p-10 bg-muted/10 rounded-3xl border border-border/10 shadow-inner">
-                    <Label className="text-xl font-bold">Directe Bestandstest</Label>
-                    <p className="text-muted-foreground mb-6">Typ een bestandsnaam (bijv. 1.jpg) om de directe link te controleren.</p>
+                  <div className="space-y-6 p-10 bg-muted/10 rounded-3xl border border-border/10">
+                    <Label className="text-xl font-bold">Bestandstester</Label>
                     <div className="flex gap-4">
                       <Input value={testFileName} onChange={(e) => setTestFileName(e.target.value)} placeholder="bijv. 1.jpg" className="h-16 text-lg" />
                       <Button onClick={testConnection} className="h-16 px-12 font-bold text-lg" disabled={testResult === 'testing'}>
-                        {testResult === 'testing' ? <Loader2 className="animate-spin h-7 w-7" /> : "Test Bestand"}
+                        {testResult === 'testing' ? <Loader2 className="animate-spin h-7 w-7" /> : "Test"}
                       </Button>
                     </div>
                     
@@ -395,11 +380,7 @@ export default function AdminPage() {
                         testResult === 'success' ? "bg-green-500/10 text-green-700 border-green-200" : "bg-destructive/10 text-destructive border-destructive/20"
                       )}>
                         {testResult === 'success' ? <CheckCircle2 className="w-8 h-8" /> : <AlertCircle className="w-8 h-8" />}
-                        <span>
-                          {testResult === 'success' 
-                            ? "Succes! Het bestand is bereikbaar." 
-                            : "Fout! Controleer de NAS-rechten (http groep) of de SSL waarschuwing."}
-                        </span>
+                        <span>{testResult === 'success' ? "Bestand bereikbaar." : "Fout! Controleer NAS."}</span>
                       </div>
                     )}
                   </div>
