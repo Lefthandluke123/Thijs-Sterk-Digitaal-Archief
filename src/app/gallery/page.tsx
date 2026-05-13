@@ -168,8 +168,7 @@ export default function GalleryPage() {
                   </div>
                 ))}
               </div>
-            </div>
-          </>
+            </>
         ) : (
           <div className="text-center py-24 border rounded-2xl border-dashed">
             <h3 className="text-lg font-light mb-2">Geen schilderijen gevonden</h3>
