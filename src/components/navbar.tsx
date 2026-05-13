@@ -1,9 +1,11 @@
+
 "use client";
 
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import Image from 'next/image';
 
 export function Navbar() {
   const pathname = usePathname();
@@ -19,8 +21,19 @@ export function Navbar() {
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/60 backdrop-blur-sm border-b border-border/30">
       <div className="container mx-auto px-6 h-14 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-3 group">
-          <div className="relative w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-headline font-bold text-base overflow-hidden transition-transform group-hover:scale-105">
-            T
+          <div className="relative w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white overflow-hidden transition-transform group-hover:scale-105">
+            {/* Fallback naar 'T' als logo.png niet bestaat */}
+            <Image 
+              src="/logo.png" 
+              alt="Logo" 
+              fill 
+              className="object-contain p-1" 
+              onError={(e) => {
+                const target = e.target as HTMLElement;
+                target.style.display = 'none';
+              }}
+            />
+            <span className="font-headline font-bold text-base">T</span>
           </div>
           <div className="flex flex-col">
             <span className="font-headline font-bold tracking-tight text-lg leading-none">Thijs Sterk</span>

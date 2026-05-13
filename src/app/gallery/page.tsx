@@ -197,21 +197,19 @@ export default function GalleryPage() {
             </DialogClose>
           </div>
 
-          <div className="w-full bg-background/90 backdrop-blur-md py-4 px-10 border-t border-border/10">
-            <div className="max-w-6xl mx-auto flex items-center justify-between gap-8">
-              <div className="flex-1">
-                <DialogTitle className="font-headline text-xl md:text-2xl font-light text-foreground leading-none mb-1">
+          <div className="w-full bg-background/90 backdrop-blur-md py-2 px-10 border-t border-border/10 flex items-center justify-center min-h-[60px]">
+            <div className="max-w-6xl w-full flex items-center justify-between gap-8">
+              <div className="flex items-center gap-6">
+                <DialogTitle className="font-headline text-lg font-light text-foreground leading-none">
                   {selectedArtwork?.title}
                 </DialogTitle>
-                <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground opacity-80 flex gap-3 flex-wrap">
+                <div className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground opacity-80 flex gap-3 flex-wrap items-center">
                   <span>{selectedArtwork?.series}</span>
-                  <span className="opacity-30">|</span>
-                  <span>{selectedArtwork?.medium}</span>
-                  <span className="opacity-30">|</span>
+                  <span className="opacity-20">|</span>
                   <span>{selectedArtwork?.year}</span>
                   {selectedArtwork?.tags?.length > 0 && (
                     <>
-                      <span className="opacity-30">|</span>
+                      <span className="opacity-20">|</span>
                       <div className="flex gap-2">
                         {selectedArtwork.tags.map((t: string) => (
                           <span key={t} className="text-primary font-bold">#{t}</span>
@@ -221,7 +219,7 @@ export default function GalleryPage() {
                   )}
                 </div>
               </div>
-              <Button variant="outline" size="sm" className="rounded-full text-[9px] uppercase tracking-widest px-8 h-9">
+              <Button variant="outline" size="sm" className="rounded-full text-[8px] uppercase tracking-widest px-6 h-7">
                 Interesse?
               </Button>
             </div>

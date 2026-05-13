@@ -15,15 +15,12 @@ import {
   Settings, 
   Archive, 
   Scan, 
-  AlertCircle,
   Database,
-  ExternalLink,
   Plus,
   X,
   Home,
   RefreshCw,
-  Loader2,
-  Tag as TagIcon
+  Loader2
 } from 'lucide-react';
 import Image from 'next/image';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -32,7 +29,6 @@ import { Progress } from "@/components/ui/progress";
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
@@ -89,7 +85,7 @@ export default function AdminPage() {
         fileName: file.name,
         description: `Werk uit de serie ${detectedSeries}.`,
         imageHint: "painting art",
-        tags: [] // Schilderijen starten altijd zonder tags
+        tags: []
       };
     });
     setScannedFiles(scanned);
@@ -111,12 +107,12 @@ export default function AdminPage() {
           imageUrl: item.imageUrl,
           description: item.description,
           imageHint: item.imageHint,
-          tags: [], // Altijd zonder tags beginnen
+          tags: [],
           createdAt: serverTimestamp(),
         };
         await addDoc(artworkCol, data);
       }
-      toast({ title: "Database gevuld", description: "Voorbeelddata is toegevoegd aan je collectie." });
+      toast({ title: "Database gevuld", description: "Voorbeelddata is toegevoegd." });
       setActiveTab('db');
     } catch (error) {
       toast({ variant: "destructive", title: "Fout bij vullen" });
@@ -141,7 +137,7 @@ export default function AdminPage() {
           imageUrl: generateImageUrl(artwork.relativePath),
           description: artwork.description,
           imageHint: artwork.imageHint,
-          tags: [], // Altijd zonder tags beginnen bij import
+          tags: [],
           createdAt: serverTimestamp(),
         };
         setCurrentUploadItem(i + 1);
@@ -158,7 +154,7 @@ export default function AdminPage() {
       }
       
       setTimeout(() => {
-        toast({ title: "Import voltooid", description: "De database is bijgewerkt." });
+        toast({ title: "Import voltooid" });
         setScannedFiles([]);
         setLoading(false);
         setActiveTab('db');
@@ -197,7 +193,19 @@ export default function AdminPage() {
       <header className="h-20 border-b border-border bg-background/95 backdrop-blur-sm sticky top-0 z-50 px-8 flex items-center justify-between">
         <div className="flex items-center gap-12">
           <Link href="/" className="flex items-center gap-4 group">
-            <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center text-white font-headline font-bold text-2xl shadow-lg group-hover:scale-105 transition-transform">T</div>
+            <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center text-white font-headline font-bold text-2xl shadow-lg group-hover:scale-105 transition-transform relative overflow-hidden">
+              <Image 
+                src="/logo.png" 
+                alt="Logo" 
+                fill 
+                className="object-contain p-2" 
+                onError={(e) => {
+                  const target = e.target as HTMLElement;
+                  target.style.display = 'none';
+                }}
+              />
+              <span className="relative z-10">T</span>
+            </div>
             <div className="flex flex-col">
               <span className="font-bold text-lg leading-none uppercase tracking-widest">Studio Beheer</span>
               <span className="text-[10px] text-accent font-bold uppercase tracking-[0.2em]">Thijs Sterk</span>
@@ -238,7 +246,7 @@ export default function AdminPage() {
             {dbLoading ? (
               <div className="flex flex-col items-center justify-center py-40 gap-4">
                 <Loader2 className="w-12 h-12 animate-spin text-primary/30" />
-                <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Collectie laden...</p>
+                <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Laden...</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -298,6 +306,7 @@ export default function AdminPage() {
           </div>
         )}
 
+        {/* Andere tabs blijven hetzelfde voor functionaliteit */}
         {activeTab === 'scan' && (
           <div className="space-y-12">
             <div className="grid lg:grid-cols-2 gap-12">
@@ -313,7 +322,7 @@ export default function AdminPage() {
                 <div className="bg-card p-10 rounded-[2rem] border border-border shadow-sm space-y-8">
                   <h3 className="font-headline text-2xl flex items-center gap-3"><Settings className="w-6 h-6 text-accent" /> Import Instellingen</h3>
                   <div className="space-y-6">
-                    <p className="text-sm text-muted-foreground italic">Opmerking: Werken worden standaard zonder tags geïmporteerd zodat je ze in het archief kunt labelen.</p>
+                    <p className="text-sm text-muted-foreground italic">Werken worden zonder tags geïmporteerd.</p>
                     <div className="flex items-center justify-between p-6 bg-muted/20 rounded-2xl border border-border/50">
                       <Label htmlFor="root-folder" className="text-base font-bold">Inclusief hoofdmap in URL</Label>
                       <Switch id="root-folder" checked={includeRootFolder} onCheckedChange={setIncludeRootFolder} />
@@ -326,7 +335,7 @@ export default function AdminPage() {
                 <div className="space-y-6">
                   <Card className="border-primary/20 shadow-2xl bg-primary/5 rounded-[3rem] p-10 space-y-10">
                     <div className="space-y-2">
-                      <h3 className="text-4xl font-headline font-light flex items-center gap-4"><CheckCircle2 className="w-10 h-10 text-primary" /> Klaar voor Import</h3>
+                      <h3 className="text-4xl font-headline font-light flex items-center gap-4"><CheckCircle2 className="w-10 h-10 text-primary" /> Klaar</h3>
                       <p className="text-lg">{scannedFiles.length} kunstwerken gedetecteerd.</p>
                     </div>
                     {loading ? (
@@ -335,7 +344,7 @@ export default function AdminPage() {
                         <p className="text-center font-bold">{currentUploadItem} / {scannedFiles.length}</p>
                       </div>
                     ) : (
-                      <Button onClick={handleSaveAll} className="w-full h-20 text-2xl font-bold rounded-2xl">Start Importeren</Button>
+                      <Button onClick={handleSaveAll} className="w-full h-20 text-2xl font-bold rounded-2xl">Start Import</Button>
                     )}
                   </Card>
                 </div>
@@ -349,7 +358,6 @@ export default function AdminPage() {
             <Card className="border-border shadow-2xl rounded-[3rem] p-12 md:p-16 space-y-16 bg-card/50">
               <div className="space-y-4">
                 <h2 className="text-5xl font-headline font-light">NAS Setup</h2>
-                <p className="text-lg text-muted-foreground">Configureer de verbinding met je fysieke opslag.</p>
               </div>
               <div className="space-y-8">
                 <Label className="text-xs font-bold uppercase tracking-[0.3em] text-muted-foreground">Netwerk Locatie</Label>
@@ -367,13 +375,11 @@ export default function AdminPage() {
           <div className="max-w-3xl mx-auto space-y-12">
             <div className="space-y-4 text-center">
               <h2 className="text-5xl font-headline font-light">Systeembeheer</h2>
-              <p className="text-muted-foreground">Onderhoud je database en herstel testdata.</p>
             </div>
             <Card className="border-border shadow-xl rounded-[2.5rem] p-12 space-y-10 bg-card/30">
               <div className="flex items-center justify-between p-10 bg-background rounded-3xl border border-border">
                 <div className="space-y-2">
                   <h3 className="text-2xl font-headline font-light">Voorbeelddata Herstellen</h3>
-                  <p className="text-sm text-muted-foreground">Vult de database met de standaard portfolio-werken (zonder tags).</p>
                 </div>
                 <Button onClick={handleSeedDatabase} disabled={loading} className="h-16 px-10 rounded-2xl gap-3 font-bold text-lg bg-accent">
                   {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : <RefreshCw className="w-6 h-6" />}
@@ -383,7 +389,6 @@ export default function AdminPage() {
               <div className="flex items-center justify-between p-10 bg-destructive/5 rounded-3xl border border-destructive/10">
                 <div className="space-y-2">
                   <h3 className="text-2xl font-headline font-light text-destructive">Database Leegmaken</h3>
-                  <p className="text-sm text-muted-foreground">Verwijder ALLE schilderijen uit de database.</p>
                 </div>
                 <Button variant="outline" onClick={async () => {
                   if(confirm("Alles wissen?")) {
