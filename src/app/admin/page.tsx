@@ -7,12 +7,13 @@ import { collection, addDoc, deleteDoc, doc, serverTimestamp, query, orderBy } f
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
-import { PlusCircle, Database, FileJson, Loader2, Wand2, Trash2, FolderOpen, Image as ImageIcon } from 'lucide-react';
+import { PlusCircle, Database, FileJson, Loader2, Wand2, Trash2, FolderOpen, Image as ImageIcon, HelpCircle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Image from 'next/image';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function AdminPage() {
   const firestore = useFirestore();
@@ -56,7 +57,7 @@ export default function AdminPage() {
       toast({ title: "Succes", description: "Schilderij toegevoegd aan de database." });
       setSingleArtwork({ 
         title: '', 
-        series: singleArtwork.series, // Behou serie voor sneller invoeren
+        series: singleArtwork.series,
         year: new Date().getFullYear().toString(), 
         medium: 'Olieverf op doek', 
         description: '', 
@@ -132,7 +133,6 @@ export default function AdminPage() {
 
     const names = Array.from(files)
       .map(file => {
-        // Haal extensie weg en vervang underscores/streepjes door spaties
         let name = file.name.split('.').slice(0, -1).join('.');
         return name.replace(/[_-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
       });
@@ -146,8 +146,16 @@ export default function AdminPage() {
       <div className="container mx-auto max-w-5xl">
         <header className="mb-12">
           <h1 className="text-4xl font-headline font-light mb-2">Portfolio <span className="italic">Beheer</span></h1>
-          <p className="text-muted-foreground">Beheer de eigen database van de app.</p>
+          <p className="text-muted-foreground">Beheer de eigen database van Thijs Sterk.</p>
         </header>
+
+        <Alert className="mb-8 bg-accent/10 border-accent/20">
+          <HelpCircle className="h-4 w-4 text-accent" />
+          <AlertTitle>Hosting Tip</AlertTitle>
+          <AlertDescription>
+            Gebruik je Google Drive of een NAS? Zorg dat je <strong>directe</strong> linkjes gebruikt. Voor Google Drive vervang je <code>file/d/ID/view</code> door <code>uc?export=view&id=ID</code>.
+          </AlertDescription>
+        </Alert>
 
         <Tabs defaultValue="overview" className="w-full">
           <TabsList className="grid w-full grid-cols-4 mb-8">
@@ -189,8 +197,14 @@ export default function AdminPage() {
                         {artworks.map((art: any) => (
                           <tr key={art.id} className="group">
                             <td className="py-3">
-                              <div className="relative w-12 h-12 rounded overflow-hidden bg-muted">
-                                <Image src={art.imageUrl} alt="" fill className="object-cover" />
+                              <div className="relative w-12 h-12 rounded overflow-hidden bg-muted border border-border">
+                                <Image 
+                                  src={art.imageUrl} 
+                                  alt="" 
+                                  fill 
+                                  className="object-cover"
+                                  unoptimized={art.imageUrl.includes('drive.google.com')}
+                                />
                               </div>
                             </td>
                             <td className="py-3 font-medium">{art.title}</td>
@@ -268,10 +282,10 @@ export default function AdminPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="imageUrl">Afbeelding URL (Link naar de foto)</Label>
+                    <Label htmlFor="imageUrl">Afbeelding URL (Directe link naar de foto)</Label>
                     <Input 
                       id="imageUrl" 
-                      placeholder="https://jouw-site.nl/fotos/mijn-werk.jpg"
+                      placeholder="https://drive.google.com/uc?export=view&id=..."
                       value={singleArtwork.imageUrl} 
                       onChange={e => setSingleArtwork({...singleArtwork, imageUrl: e.target.value})} 
                       required 
