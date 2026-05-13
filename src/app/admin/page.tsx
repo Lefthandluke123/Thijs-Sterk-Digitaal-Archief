@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
-import { PlusCircle, Database, FileJson, Loader2 } from 'lucide-react';
+import { PlusCircle, Database, FileJson, Loader2, MagicWand, Copy } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function AdminPage() {
@@ -21,7 +21,7 @@ export default function AdminPage() {
   const [singleArtwork, setSingleArtwork] = useState({
     title: '',
     series: '',
-    year: '',
+    year: new Date().getFullYear().toString(),
     medium: '',
     description: '',
     imageUrl: '',
@@ -30,6 +30,9 @@ export default function AdminPage() {
 
   // Bulk entry state
   const [bulkJson, setBulkJson] = useState('');
+
+  // Generator state
+  const [rawList, setRawList] = useState('');
 
   const handleAddSingle = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,7 +45,7 @@ export default function AdminPage() {
         createdAt: serverTimestamp()
       });
       toast({ title: "Succes", description: "Schilderij toegevoegd aan de database." });
-      setSingleArtwork({ title: '', series: '', year: '', medium: '', description: '', imageUrl: '', imageHint: '' });
+      setSingleArtwork({ title: '', series: '', year: new Date().getFullYear().toString(), medium: '', description: '', imageUrl: '', imageHint: '' });
     } catch (error) {
       console.error(error);
       toast({ variant: "destructive", title: "Fout", description: "Kon schilderij niet opslaan." });
@@ -79,21 +82,39 @@ export default function AdminPage() {
     }
   };
 
+  const generateJsonFromList = () => {
+    const lines = rawList.split('\n').filter(line => line.trim() !== '');
+    const generated = lines.map((line, index) => ({
+      title: line.trim(),
+      series: "Nieuwe Collectie",
+      year: new Date().getFullYear().toString(),
+      medium: "Olieverf op doek",
+      imageUrl: `https://picsum.photos/seed/${index + 100}/800/800`,
+      description: `Beschrijving voor ${line.trim()}`,
+      imageHint: "abstract painting"
+    }));
+    setBulkJson(JSON.stringify(generated, null, 2));
+    toast({ title: "JSON Gegenereerd", description: "Bekijk de Bulk-tab om de resultaten te zien." });
+  };
+
   return (
     <main className="min-h-screen bg-background pt-32 pb-24 px-4">
       <div className="container mx-auto max-w-4xl">
         <header className="mb-12">
-          <h1 className="text-4xl font-headline font-light mb-2">Beheer je <span className="italic">Portfolio</span></h1>
-          <p className="text-muted-foreground">Voeg nieuwe werken toe aan de digitale galerie.</p>
+          <h1 className="text-4xl font-headline font-light mb-2">Portfolio <span className="italic">Beheer</span></h1>
+          <p className="text-muted-foreground">Voeg nieuwe werken toe aan de database.</p>
         </header>
 
         <Tabs defaultValue="single" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-8">
+          <TabsList className="grid w-full grid-cols-3 mb-8">
             <TabsTrigger value="single" className="flex items-center gap-2">
-              <PlusCircle className="w-4 h-4" /> Per stuk toevoegen
+              <PlusCircle className="w-4 h-4" /> Per stuk
             </TabsTrigger>
             <TabsTrigger value="bulk" className="flex items-center gap-2">
-              <FileJson className="w-4 h-4" /> Bulk toevoegen (JSON)
+              <FileJson className="w-4 h-4" /> Bulk Import
+            </TabsTrigger>
+            <TabsTrigger value="helper" className="flex items-center gap-2">
+              <MagicWand className="w-4 h-4" /> JSON Maker
             </TabsTrigger>
           </TabsList>
 
@@ -148,7 +169,7 @@ export default function AdminPage() {
                     <Label htmlFor="imageUrl">Afbeelding URL</Label>
                     <Input 
                       id="imageUrl" 
-                      placeholder="https://picsum.photos/..."
+                      placeholder="https://images.unsplash.com/..."
                       value={singleArtwork.imageUrl} 
                       onChange={e => setSingleArtwork({...singleArtwork, imageUrl: e.target.value})} 
                       required 
@@ -179,23 +200,52 @@ export default function AdminPage() {
                 <CardTitle className="text-xl font-light">Bulk Import</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <p className="text-sm text-muted-foreground mb-4">
-                  Plak hier een JSON array van objecten. Handig voor als je veel mappen tegelijk wilt invoeren.
+                <p className="text-sm text-muted-foreground">
+                  Plak hier een JSON array. Gebruik de <strong>JSON Maker</strong> tab als je nog geen JSON hebt.
                 </p>
                 <Textarea 
                   placeholder='[ { "title": "...", "series": "...", "imageUrl": "..." } ]'
-                  className="min-h-[300px] font-mono text-sm"
+                  className="min-h-[300px] font-mono text-xs"
                   value={bulkJson}
                   onChange={e => setBulkJson(e.target.value)}
                 />
                 <Button 
                   onClick={handleAddBulk} 
-                  variant="secondary" 
                   className="w-full h-12 rounded-full" 
                   disabled={loading || !bulkJson}
                 >
-                  {loading ? <Loader2 className="animate-spin" /> : <><Database className="mr-2 w-4 h-4" /> Bulk Uploaden</>}
+                  {loading ? <Loader2 className="animate-spin" /> : <><Database className="mr-2 w-4 h-4" /> Importeer Alles</>}
                 </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="helper">
+            <Card className="border-border/50">
+              <CardHeader>
+                <CardTitle className="text-xl font-light">JSON Maker Helper</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Plak hieronder een lijst met titels (elke titel op een nieuwe regel). De tool maakt er een JSON-sjabloon van.
+                </p>
+                <Textarea 
+                  placeholder="Zonsopgang&#10;Stille Oceaan&#10;Abstract Bos"
+                  className="min-h-[200px]"
+                  value={rawList}
+                  onChange={e => setRawList(e.target.value)}
+                />
+                <Button 
+                  onClick={generateJsonFromList} 
+                  variant="secondary"
+                  className="w-full h-12 rounded-full" 
+                  disabled={!rawList}
+                >
+                  <MagicWand className="mr-2 w-4 h-4" /> Genereer JSON Sjabloon
+                </Button>
+                <p className="text-xs text-muted-foreground italic mt-4 text-center">
+                  Let op: Na het genereren moet je in de Bulk-tab nog wel de juiste `imageUrl` voor elk schilderij invullen.
+                </p>
               </CardContent>
             </Card>
           </TabsContent>
