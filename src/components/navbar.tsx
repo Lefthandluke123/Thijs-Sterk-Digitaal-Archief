@@ -6,17 +6,16 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ChevronDown } from 'lucide-react';
 
 export function Navbar() {
   const pathname = usePathname();
-
-  const navLinks = [
-    { name: 'Home', href: '/' },
-    { name: 'Galerie', href: '/gallery' },
-    { name: 'Uw Collectie', href: '/curator' },
-    { name: 'Over Thijs', href: '/#about' },
-    { name: 'Contact', href: '/#contact' },
-  ];
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/60 backdrop-blur-sm border-b border-border/30">
@@ -42,20 +41,72 @@ export function Navbar() {
         </Link>
         
         <div className="flex items-center gap-1 sm:gap-2">
-          {navLinks.map((link) => (
-            <Link 
-              key={link.name}
-              href={link.href}
-              className={cn(
-                "px-2 sm:px-4 py-1.5 rounded-full text-[9px] sm:text-[10px] font-semibold tracking-widest uppercase transition-all duration-300",
-                pathname === link.href 
-                  ? "bg-accent/90 text-accent-foreground shadow-sm" 
-                  : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-              )}
-            >
-              {link.name}
-            </Link>
-          ))}
+          <Link 
+            href="/"
+            className={cn(
+              "px-2 sm:px-4 py-1.5 rounded-full text-[9px] sm:text-[10px] font-semibold tracking-widest uppercase transition-all duration-300",
+              pathname === "/" ? "bg-accent/90 text-accent-foreground shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+            )}
+          >
+            Home
+          </Link>
+          <Link 
+            href="/gallery"
+            className={cn(
+              "px-2 sm:px-4 py-1.5 rounded-full text-[9px] sm:text-[10px] font-semibold tracking-widest uppercase transition-all duration-300",
+              pathname === "/gallery" ? "bg-accent/90 text-accent-foreground shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+            )}
+          >
+            Galerie
+          </Link>
+          <Link 
+            href="/curator"
+            className={cn(
+              "px-2 sm:px-4 py-1.5 rounded-full text-[9px] sm:text-[10px] font-semibold tracking-widest uppercase transition-all duration-300",
+              pathname === "/curator" ? "bg-accent/90 text-accent-foreground shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+            )}
+          >
+            Uw Collectie
+          </Link>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className={cn(
+                  "px-2 sm:px-4 py-1.5 rounded-full text-[9px] sm:text-[10px] font-semibold tracking-widest uppercase transition-all duration-300 flex items-center gap-1 outline-none",
+                  pathname.includes('about') || pathname.includes('hanneke') || pathname.includes('beatrijs') || pathname.includes('peter-bes')
+                    ? "bg-secondary/80 text-foreground" 
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                )}
+              >
+                Over Thijs <ChevronDown className="w-3 h-3 opacity-50" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="bg-background/98 backdrop-blur-xl border-border/40 rounded-2xl min-w-[180px] p-2 shadow-2xl">
+              <DropdownMenuItem asChild className="text-[9px] uppercase font-bold tracking-[0.15em] focus:bg-accent focus:text-accent-foreground rounded-xl cursor-pointer p-3 mb-1">
+                <Link href="/#about">Thijs Sterk</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild className="text-[9px] uppercase font-bold tracking-[0.15em] focus:bg-accent focus:text-accent-foreground rounded-xl cursor-pointer p-3 mb-1">
+                <Link href="/hanneke">Hanneke Sterk</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild className="text-[9px] uppercase font-bold tracking-[0.15em] focus:bg-accent focus:text-accent-foreground rounded-xl cursor-pointer p-3 mb-1">
+                <Link href="/beatrijs">Beatrijs Sterk</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild className="text-[9px] uppercase font-bold tracking-[0.15em] focus:bg-accent focus:text-accent-foreground rounded-xl cursor-pointer p-3">
+                <Link href="/peter-bes">Peter Bes</Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Link 
+            href="/#contact"
+            className={cn(
+              "px-2 sm:px-4 py-1.5 rounded-full text-[9px] sm:text-[10px] font-semibold tracking-widest uppercase transition-all duration-300",
+              pathname.includes('contact') ? "bg-accent/90 text-accent-foreground shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+            )}
+          >
+            Contact
+          </Link>
         </div>
       </div>
     </nav>
