@@ -1,51 +1,51 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 198 33% 96%;
+    /* Artistiek palet: Zacht gebroken wit met diep blauw en goud accent */
+    --background: 40 20% 98%;
     --foreground: 201 30% 15%;
     --card: 0 0% 100%;
     --card-foreground: 201 30% 15%;
     --popover: 0 0% 100%;
     --popover-foreground: 201 30% 15%;
-    --primary: 201 30% 40%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 198 20% 90%;
+    --primary: 201 30% 25%;
+    --primary-foreground: 40 20% 98%;
+    --secondary: 40 10% 94%;
     --secondary-foreground: 201 30% 30%;
-    --muted: 198 15% 90%;
-    --muted-foreground: 201 20% 45%;
-    --accent: 165 58% 47%;
+    --muted: 40 5% 90%;
+    --muted-foreground: 201 15% 45%;
+    --accent: 35 50% 50%; /* Goud/Oker accent */
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 198 20% 88%;
-    --input: 198 20% 88%;
-    --ring: 165 58% 47%;
-    --radius: 0.75rem;
+    --border: 201 15% 88%;
+    --input: 201 15% 88%;
+    --ring: 35 50% 50%;
+    --radius: 0.5rem;
   }
   .dark {
     --background: 201 30% 5%;
-    --foreground: 198 33% 96%;
+    --foreground: 40 20% 98%;
     --card: 201 30% 8%;
-    --card-foreground: 198 33% 96%;
+    --card-foreground: 40 20% 98%;
     --popover: 201 30% 8%;
-    --popover-foreground: 198 33% 96%;
-    --primary: 198 33% 85%;
+    --popover-foreground: 40 20% 98%;
+    --primary: 40 20% 90%;
     --primary-foreground: 201 30% 15%;
     --secondary: 201 20% 15%;
-    --secondary-foreground: 198 33% 85%;
+    --secondary-foreground: 40 20% 90%;
     --muted: 201 20% 15%;
     --muted-foreground: 201 15% 65%;
-    --accent: 165 58% 47%;
+    --accent: 35 50% 50%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
     --border: 201 20% 20%;
     --input: 201 20% 20%;
-    --ring: 165 58% 47%;
+    --ring: 35 50% 50%;
   }
 }
 
@@ -55,5 +55,8 @@
   }
   body {
     @apply bg-background text-foreground font-body antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-headline;
   }
 }
