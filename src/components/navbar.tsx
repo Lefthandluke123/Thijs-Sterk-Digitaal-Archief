@@ -13,6 +13,7 @@ export function Navbar() {
   const navLinks = [
     { name: 'Home', href: '/' },
     { name: 'Galerie', href: '/gallery' },
+    { name: 'Samenstellen', href: '/curator' },
     { name: 'Over Thijs', href: '/#about' },
     { name: 'Contact', href: '/#contact' },
   ];
@@ -22,7 +23,6 @@ export function Navbar() {
       <div className="container mx-auto px-6 h-14 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-3 group">
           <div className="relative w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white overflow-hidden transition-transform group-hover:scale-105">
-            {/* Fallback naar 'T' als logo.png niet bestaat */}
             <Image 
               src="/logo.png" 
               alt="Logo" 
@@ -41,13 +41,13 @@ export function Navbar() {
           </div>
         </Link>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           {navLinks.map((link) => (
             <Link 
               key={link.name}
               href={link.href}
               className={cn(
-                "px-4 py-1.5 rounded-full text-[10px] font-semibold tracking-widest uppercase transition-all duration-300",
+                "px-2 sm:px-4 py-1.5 rounded-full text-[9px] sm:text-[10px] font-semibold tracking-widest uppercase transition-all duration-300",
                 pathname === link.href 
                   ? "bg-accent/90 text-accent-foreground shadow-sm" 
                   : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
