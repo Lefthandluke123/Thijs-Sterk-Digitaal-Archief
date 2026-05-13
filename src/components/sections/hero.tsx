@@ -19,28 +19,26 @@ export function Hero() {
       <div className="container mx-auto z-10 text-center">
         <div className="inline-block animate-fade-in-up">
           <span className="text-primary font-medium tracking-[0.2em] uppercase text-sm mb-4 block">
-            Thijs Sterk &bull; Beeldend Kunstenaar
+            Retrospectief &bull; Thijs Sterk (1913)
           </span>
         </div>
         
-        <h1 className="font-headline text-5xl md:text-7xl lg:text-8xl font-light tracking-tight text-foreground mb-6 max-w-5xl mx-auto leading-tight animate-fade-in-up delay-100">
-          Vangen van de Onzichtbare Essentie van <span className="italic">Natuur</span>
+        <h1 className="font-headline text-5xl md:text-7xl lg:text-8xl font-light tracking-tight text-foreground mb-10 max-w-6xl mx-auto leading-tight animate-fade-in-up delay-100">
+          Thijs Sterk: Schilder van <span className="italic">Licht, Ruimte en Water</span>
         </h1>
         
-        <h2 className="sr-only">Thijs Sterk Portfolio</h2>
-        
-        <p className="text-muted-foreground text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed animate-fade-in-up delay-200">
-          Een verkenning van de raakvlakken tussen abstracte geometrie en organische landschappen door middel van moderne schilderkunst en texturele experimenten.
+        <p className="text-muted-foreground text-lg md:text-2xl max-w-4xl mx-auto mb-12 leading-relaxed animate-fade-in-up delay-200 font-light">
+          Thijs Sterk (1913) wordt vaak herinnerd als de schilder die de natuur niet alleen afbeeldde, maar haar ook liet voelen. Zijn werk vormt een fascinerende reis van realistische landschappen naar bijna abstracte 'landschappen van de geest'.
         </p>
         
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up delay-300">
-          <Button size="lg" className="rounded-full px-8 bg-accent hover:bg-accent/90 text-accent-foreground font-medium h-12" asChild>
-            <a href="/gallery">Bekijk Portfolio</a>
+          <Button size="lg" className="rounded-full px-12 bg-accent hover:bg-accent/90 text-accent-foreground font-medium h-14 text-lg" asChild>
+            <a href="/gallery">Bekijk de Galerie</a>
           </Button>
-          <Button variant="outline" size="lg" className="rounded-full px-8 border-primary text-primary hover:bg-primary/5 font-medium h-12 group" asChild>
+          <Button variant="outline" size="lg" className="rounded-full px-12 border-primary text-primary hover:bg-primary/5 font-medium h-14 text-lg group" asChild>
             <a href="#about">
-              Over Thijs
-              <ArrowDownRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-0.5 group-hover:translate-y-0.5" />
+              De Kunstenaar
+              <ArrowDownRight className="ml-2 w-5 h-5 transition-transform group-hover:translate-x-0.5 group-hover:translate-y-0.5" />
             </a>
           </Button>
         </div>
@@ -51,11 +49,11 @@ export function Hero() {
           {heroImage && (
             <Image
               src={heroImage.imageUrl}
-              alt={heroImage.description}
+              alt="Representatief werk van Thijs Sterk"
               fill
               className="object-cover"
               priority
-              data-ai-hint={heroImage.imageHint}
+              data-ai-hint="atmospheric landscape painting"
             />
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-background/40 to-transparent" />

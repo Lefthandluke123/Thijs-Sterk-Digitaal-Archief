@@ -21,7 +21,7 @@ export function ArtistBio() {
                     alt="Portret van Thijs Sterk"
                     fill
                     className="object-cover"
-                    data-ai-hint="artist portrait"
+                    data-ai-hint="vintage artist portrait"
                   />
                 )}
               </div>
@@ -29,33 +29,33 @@ export function ArtistBio() {
           </div>
           
           <div className="lg:col-span-7 order-1 lg:order-2">
-            <span className="text-accent font-medium tracking-widest uppercase text-sm mb-4 block">De Kunstenaar</span>
-            <h2 className="font-headline text-4xl md:text-5xl font-light mb-8 leading-tight">Thijs Sterk: Synthese van <span className="italic">Textuur & Licht</span></h2>
+            <span className="text-accent font-medium tracking-widest uppercase text-sm mb-4 block">De Biografie</span>
+            <h2 className="font-headline text-4xl md:text-5xl font-light mb-8 leading-tight">Een leven gewijd aan de <span className="italic">Essentie</span></h2>
             
             <div className="space-y-6 text-lg text-muted-foreground leading-relaxed">
               <p>
-                Thijs Sterk is een hedendaagse beeldend kunstenaar wiens werk zich richt op het snijvlak van wiskundige precisie en organische chaos. Zijn praktijk is een voortdurende dialoog met de natuurlijke omgeving, specifiek de microscopische details die vaak door het menselijk oog over het hoofd worden gezien.
+                Thijs Sterk (1913-1988) wijdde zijn leven aan het doorgronden van de atmosferische kwaliteiten van de Lage Landen. Geboren in een tijd van grote verandering, vond hij zijn rust in de uitgestrekte waterpartijen en het immer veranderende licht boven het polderlandschap.
               </p>
               <p>
-                "Mijn filosofie is geworteld in de overtuiging dat de natuur de ultieme architect is. Ik probeer de visuele talen in rotsformaties, wolkenpatronen en schimmelgroei te ontcijferen en deze complexe systemen te vertalen naar doeken die uitnodigen tot meditatie."
+                Zijn vroege werk kenmerkt zich door een meesterlijke beheersing van de figuratieve traditie, maar gedurende zijn carrière bewoog hij zich steeds verder naar de kern. Hij liet de details varen om de ruimte en de emotie van de plek te vangen in brede, textuurrijke streken.
               </p>
               <p>
-                Met een achtergrond in zowel traditionele technieken als moderne experimenten, is het werk van Thijs tentoongesteld in diverse galeries. Zijn stukken bevinden zich in particuliere collecties, waar ze de brug slaan tussen technologische vooruitgang en oeroude verwondering.
+                "Licht is niet iets dat op een object valt," schreef hij in 1954 in zijn dagboek, "het is de ruimte die tussen mij en de wereld ademt." Vandaag de dag wordt zijn oeuvre beschouwd als een cruciale schakel in de overgang naar de naoorlogse abstractie in de Nederlandse schilderkunst.
               </p>
             </div>
             
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-8 mt-12 pt-12 border-t border-border">
               <div>
-                <h4 className="font-headline text-2xl font-light text-foreground mb-1">10+</h4>
-                <p className="text-sm uppercase tracking-tighter text-muted-foreground">Exposities</p>
+                <h4 className="font-headline text-2xl font-light text-foreground mb-1">1913</h4>
+                <p className="text-sm uppercase tracking-tighter text-muted-foreground">Geboortejaar</p>
               </div>
               <div>
-                <h4 className="font-headline text-2xl font-light text-foreground mb-1">150+</h4>
-                <p className="text-sm uppercase tracking-tighter text-muted-foreground">Werken Verkocht</p>
+                <h4 className="font-headline text-2xl font-light text-foreground mb-1">45+</h4>
+                <p className="text-sm uppercase tracking-tighter text-muted-foreground">Jaar actief</p>
               </div>
               <div>
-                <h4 className="font-headline text-2xl font-light text-foreground mb-1">12</h4>
-                <p className="text-sm uppercase tracking-tighter text-muted-foreground">Jaar Ervaring</p>
+                <h4 className="font-headline text-2xl font-light text-foreground mb-1">Nationaal</h4>
+                <p className="text-sm uppercase tracking-tighter text-muted-foreground">Erfgoed</p>
               </div>
             </div>
           </div>

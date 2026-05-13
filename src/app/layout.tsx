@@ -5,8 +5,8 @@ import { Footer } from '@/components/sections/footer';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 
 export const metadata: Metadata = {
-  title: 'Thijs Sterk | Beeldend Kunstenaar Portfolio',
-  description: 'Portfolio van Thijs Sterk, een hedendaagse kunstenaar die de grens tussen abstracte geometrie en organische landschappen verkent.',
+  title: 'Thijs Sterk | Schilder van Licht, Ruimte en Water',
+  description: 'Retrospectief portfolio van Thijs Sterk (1913), wiens werk de natuur niet alleen afbeeldde, maar haar ook liet voelen.',
 };
 
 export default function RootLayout({
@@ -19,7 +19,6 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        {/* Inter voor leesbaarheid, Bodoni Moda voor de klassieke Bodoni uitstraling */}
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased">
