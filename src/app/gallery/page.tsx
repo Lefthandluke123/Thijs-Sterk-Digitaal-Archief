@@ -170,7 +170,6 @@ export default function GalleryPage() {
               />
             )}
             
-            {/* Navigatieknoppen op overlay */}
             <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-4 opacity-0 group-hover:opacity-100 transition-opacity">
               <button 
                 onClick={(e) => { e.stopPropagation(); navigateGallery('prev'); }}

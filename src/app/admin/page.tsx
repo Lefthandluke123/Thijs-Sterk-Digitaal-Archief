@@ -45,7 +45,6 @@ import { cn } from '@/lib/utils';
 const LOCAL_NAS_URL = 'https://192-168-178-15.doggyfew.direct.quickconnect.to/portfolio/';
 const EXTERNAL_NAS_URL = 'https://doggyfew.quickconnect.to/portfolio/';
 
-// Subcomponent om useSidebar hook te kunnen gebruiken
 function AdminInnerContent() {
   const { toggleSidebar, state } = useSidebar();
   const firestore = useFirestore();
