@@ -6,7 +6,7 @@ import { collection, addDoc, doc, serverTimestamp, deleteDoc, writeBatch, getDoc
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
-import { PlusCircle, Loader2, FolderOpen, RefreshCw, AlertTriangle, CheckCircle2, Trash2, Database, Globe, Wifi, ShieldAlert, Lock } from 'lucide-react';
+import { PlusCircle, Loader2, FolderOpen, RefreshCw, AlertTriangle, CheckCircle2, Trash2, Database, Globe, Wifi, ShieldAlert, Lock, ExternalLink } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Image from 'next/image';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -44,6 +44,7 @@ export default function AdminPage() {
       const relativePath = (file as any).webkitRelativePath || file.name;
       const pathParts = relativePath.split('/');
       
+      // Sla de eerste mapnaam over (de map die de gebruiker kiest) om dubbele paden te voorkomen
       const adjustedPath = pathParts.length > 1 ? pathParts.slice(1).join('/') : relativePath;
       
       let detectedSeries = 'Onbekende Serie';
@@ -55,6 +56,7 @@ export default function AdminPage() {
       let cleanName = file.name.split('.').slice(0, -1).join('.');
       cleanName = cleanName.replace(/[_-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
       
+      // URL Encoding voor spaties en speciale tekens
       const encodedPath = adjustedPath.split('/').map(part => encodeURIComponent(part)).join('/');
       const fullUrl = `${nasBaseUrl}${encodedPath}`;
 
@@ -114,7 +116,7 @@ export default function AdminPage() {
 
   const handleDeleteAll = async () => {
     if (!firestore) return;
-    if (!confirm("Weet je zeker dat je ALLE werken wilt verwijderen?")) return;
+    if (!confirm("Weet je zeker dat je ALLE werken wilt verwijderen uit de database?")) return;
 
     setLoading(true);
     try {
@@ -136,16 +138,14 @@ export default function AdminPage() {
     
     img.onload = () => setTestResult('success');
     img.onerror = () => {
-      // Bij een 403 of SSL fout zal dit triggeren
       setTestResult('forbidden');
       toast({
         variant: "destructive",
         title: "Toegang geweigerd (403)",
-        description: "De NAS weigert de toegang. Volg de rechten-instructies hieronder."
+        description: "De NAS weigert nog steeds de toegang. Zie de checklist hieronder."
       });
     };
     
-    // Test met een specifiek bestand of favicon
     img.src = `${nasBaseUrl}${testFileName}?t=${Date.now()}`;
     
     setTimeout(() => {
@@ -166,7 +166,7 @@ export default function AdminPage() {
               <p className="text-muted-foreground">{artworks?.length || 0} schilderijen in database</p>
             </div>
           </div>
-          <Button variant="destructive" onClick={handleDeleteAll} disabled={loading} className="rounded-full h-12 px-6 font-bold">
+          <Button variant="destructive" onClick={handleDeleteAll} disabled={loading} className="rounded-full h-12 px-6 font-bold shadow-lg hover:shadow-xl transition-all">
             <Trash2 className="w-5 h-5 mr-2" /> Leeg Database
           </Button>
         </header>
@@ -174,10 +174,10 @@ export default function AdminPage() {
         <Card className="mb-12 border-none shadow-lg rounded-3xl bg-white overflow-hidden">
           <CardHeader className="bg-primary/5 border-b border-primary/10">
             <CardTitle className="flex items-center gap-2">
-              <Wifi className="w-5 h-5 text-primary" /> 1. Verbinding & Rechten
+              <Wifi className="w-5 h-5 text-primary" /> 1. Verbinding & Rechten (403 Fix)
             </CardTitle>
             <CardDescription>
-              Stel in hoe de website verbinding maakt met je Synology.
+              Stel in hoe de website verbinding maakt. Gebruik <b>nooit</b> poort 5001.
             </CardDescription>
           </CardHeader>
           <CardContent className="p-8 space-y-6">
@@ -187,7 +187,7 @@ export default function AdminPage() {
                 className={`p-6 rounded-2xl border-2 cursor-pointer transition-all ${nasBaseUrl === LOCAL_NAS_URL ? 'border-accent bg-accent/5' : 'border-border bg-transparent hover:border-accent/50'}`}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="font-bold">Lokale Link (WiFi)</span>
+                  <span className="font-bold">Lokale Link (Alleen thuis)</span>
                   <Wifi className="w-4 h-4 text-accent" />
                 </div>
                 <code className="text-[10px] block p-2 bg-white rounded border truncate">{LOCAL_NAS_URL}</code>
@@ -197,7 +197,7 @@ export default function AdminPage() {
                 className={`p-6 rounded-2xl border-2 cursor-pointer transition-all ${nasBaseUrl === EXTERNAL_NAS_URL ? 'border-accent bg-accent/5' : 'border-border bg-transparent hover:border-accent/50'}`}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="font-bold">Externe Link (Wereld)</span>
+                  <span className="font-bold">Externe Link (Altijd werkend)</span>
                   <Globe className="w-4 h-4 text-accent" />
                 </div>
                 <code className="text-[10px] block p-2 bg-white rounded border truncate">{EXTERNAL_NAS_URL}</code>
@@ -205,41 +205,53 @@ export default function AdminPage() {
             </div>
 
             <div className="bg-muted/30 p-6 rounded-2xl space-y-4">
-              <h4 className="font-bold text-sm">Test een specifiek bestand:</h4>
-              <div className="flex gap-4">
-                <Input 
-                  value={testFileName} 
-                  onChange={(e) => setTestFileName(e.target.value)}
-                  placeholder="bijv. foto1.jpg"
-                  className="bg-white"
-                />
-                <Button variant="outline" onClick={testConnection} disabled={testResult === 'testing'}>
-                  {testResult === 'testing' ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-                  Test Link
-                </Button>
+              <div className="flex flex-col md:flex-row gap-4">
+                <div className="flex-1">
+                  <h4 className="font-bold text-sm mb-2">Bestandsnaam om te testen:</h4>
+                  <Input 
+                    value={testFileName} 
+                    onChange={(e) => setTestFileName(e.target.value)}
+                    placeholder="bijv. mijnfoto.jpg"
+                    className="bg-white"
+                  />
+                </div>
+                <div className="flex items-end gap-2">
+                  <Button variant="outline" onClick={testConnection} disabled={testResult === 'testing'} className="h-10">
+                    {testResult === 'testing' ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+                    Test Link
+                  </Button>
+                  <Button variant="secondary" onClick={() => window.open(`${nasBaseUrl}${testFileName}`, '_blank')} className="h-10">
+                    <ExternalLink className="mr-2 h-4 w-4" /> Open Direct
+                  </Button>
+                </div>
               </div>
               
-              {testResult === 'success' && <div className="flex items-center text-green-600 text-sm gap-2 font-bold"><CheckCircle2 className="w-5 h-5"/> Verbinding geslaagd!</div>}
+              {testResult === 'success' && <div className="flex items-center text-green-600 text-sm gap-2 font-bold bg-green-50 p-4 rounded-xl border border-green-200"><CheckCircle2 className="w-5 h-5"/> Verbinding geslaagd! De plaatjes zullen nu zichtbaar zijn.</div>}
+              
               {testResult === 'forbidden' && (
-                <div className="space-y-4">
-                  <Alert variant="destructive" className="rounded-xl">
+                <div className="space-y-4 animate-fade-in-up">
+                  <Alert variant="destructive" className="rounded-xl bg-destructive/5 border-destructive/20">
                     <Lock className="h-4 w-4" />
-                    <AlertTitle>403 Forbidden - Toegang Geweigerd</AlertTitle>
+                    <AlertTitle className="font-bold">403 Forbidden - Toegang nog steeds geweigerd</AlertTitle>
                     <AlertDescription className="text-xs">
-                      Je NAS zegt dat de website niet naar binnen mag. Dit los je op in je Synology instellingen:
+                      Je NAS zegt dat de website niet naar binnen mag kijken. Hoewel "Lezen" aan staat, ontbreekt er waarschijnlijk één vinkje.
                     </AlertDescription>
                   </Alert>
-                  <div className="bg-white p-4 rounded-xl border border-destructive/20 text-xs space-y-3">
-                    <p className="font-bold">Oplossing (doe dit op je NAS):</p>
-                    <ol className="list-decimal ml-5 space-y-2">
-                      <li>Open <b>File Station</b>.</li>
-                      <li>Rechtermuisknop op de map <code>web</code> (of de map <code>portfolio</code>).</li>
-                      <li>Kies <b>Eigenschappen</b> en ga naar het tabblad <b>Machtigingen</b>.</li>
-                      <li>Klik op <b>Maken</b>, kies de gebruiker/groep <b>http</b>.</li>
-                      <li>Vink <b>Lezen</b> aan bij 'Machtigingen'.</li>
-                      <li>Vink onderaan aan: <b>Toepassen op deze map, submappen en bestanden</b>.</li>
-                      <li>Klik op OK. Probeer daarna de testknop hierboven opnieuw.</li>
+                  
+                  <div className="bg-white p-6 rounded-2xl border border-destructive/20 shadow-sm space-y-4">
+                    <p className="font-bold text-sm text-destructive underline">Checklist voor de 403 Fout:</p>
+                    <ol className="list-decimal ml-5 space-y-3 text-xs leading-relaxed">
+                      <li>Open <b>File Station</b> op je NAS.</li>
+                      <li>Rechtermuisknop op de map <b>web</b> -> <b>Eigenschappen</b> -> <b>Machtigingen</b>.</li>
+                      <li>Staat de gebruiker <b>http</b> erbij? Klik op <b>Bewerken</b>.</li>
+                      <li>Vink <b>Lezen</b> aan, maar controleer ook of <b>Map doorlopen/Bestand uitvoeren</b> aan staat.</li>
+                      <li><b>CRUCIAAL:</b> Vink onderaan aan: <b>"Toepassen op deze map, submappen en bestanden"</b>. Als je dit niet vinkt, hebben de foto's zelf geen rechten.</li>
+                      <li>Klik op OK.</li>
+                      <li>Ga naar <b>Configuratiescherm</b> -> <b>Web Station</b>. Controleer of de "Default server" of "Virtual Host" wel de juiste rechten heeft op de map.</li>
                     </ol>
+                    <div className="pt-2">
+                      <p className="text-[10px] text-muted-foreground italic">Tip: Als niets werkt, voeg dan de groep <b>Everyone</b> toe met "Lezen" rechten op de map `portfolio` (alleen voor testdoeleinden).</p>
+                    </div>
                   </div>
                 </div>
               )}
@@ -270,9 +282,9 @@ export default function AdminPage() {
                   <FolderOpen className="w-12 h-12" />
                 </div>
                 <h2 className="text-2xl font-headline">Selecteer je Portfolio Map</h2>
-                <p className="text-muted-foreground text-sm">Kies de map op je computer. De app maakt automatisch linkjes voor je NAS op basis van de gekozen Basis URL.</p>
-                <Button size="lg" className="rounded-full h-16 px-12 text-lg shadow-xl" asChild>
-                  <label htmlFor="file-scanner" className="cursor-pointer">Map Kiezen</label>
+                <p className="text-muted-foreground text-sm">Kies de map op je computer. De app plakt automatisch de juiste NAS-link voor elk bestand (inclusief %20 voor spaties).</p>
+                <Button size="lg" className="rounded-full h-16 px-12 text-lg shadow-xl hover:scale-105 transition-transform" asChild>
+                  <label htmlFor="file-scanner" className="cursor-pointer">Map Kiezen op Computer</label>
                 </Button>
               </div>
             </Card>
@@ -291,10 +303,11 @@ export default function AdminPage() {
               ) : (
                 <div className="space-y-6">
                   <div className="p-6 bg-muted/20 rounded-2xl border space-y-2">
-                    <p className="text-xs font-bold text-primary uppercase">Link Preview (Controleer op .jpg):</p>
-                    <code className="text-[10px] block truncate text-accent">{scannedArtworks[0]?.imageUrl}</code>
+                    <p className="text-xs font-bold text-primary uppercase">Link Voorbeeld (Controleer of dit klopt op de NAS):</p>
+                    <code className="text-[10px] block truncate text-accent bg-white p-3 rounded-lg border">{scannedArtworks[0]?.imageUrl}</code>
+                    <p className="text-[9px] text-muted-foreground italic mt-2">Spaties worden automatisch vervangen door %20</p>
                   </div>
-                  <Button onClick={handleSaveAll} className="w-full h-24 text-2xl font-bold rounded-3xl shadow-2xl" disabled={scannedArtworks.length === 0}>
+                  <Button onClick={handleSaveAll} className="w-full h-24 text-2xl font-bold rounded-3xl shadow-2xl hover:scale-[1.02] transition-transform" disabled={scannedArtworks.length === 0}>
                     Nu {scannedArtworks.length} Schilderijen Toevoegen
                   </Button>
                 </div>
@@ -320,13 +333,15 @@ export default function AdminPage() {
                           (e.target as any).src = 'https://placehold.co/400x400/d5dc96/2013025?text=Link+Fout';
                         }}
                       />
-                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+                        <p className="text-[8px] text-white px-2 truncate w-full text-center">{art.title}</p>
                         <Button variant="destructive" size="sm" className="rounded-full h-8" onClick={() => deleteDoc(doc(firestore!, 'artworks', art.id))}>
                           Verwijder
                         </Button>
                       </div>
                     </div>
                   ))}
+                  {artworks?.length === 0 && <div className="col-span-full py-20 text-center text-muted-foreground">Geen schilderijen in database.</div>}
                 </div>
               )}
             </Card>
