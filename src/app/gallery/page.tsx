@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -6,7 +7,7 @@ import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Maximize2, Loader2, X, Filter, RefreshCcw, AlertCircle, Info, HelpCircle } from 'lucide-react';
+import { Maximize2, Loader2, X, Filter, RefreshCcw, AlertCircle, HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -26,13 +27,16 @@ export default function GalleryPage() {
 
   const isExternalStorage = (url: string) => {
     if (!url) return false;
-    return url.includes('quickconnect.to') || url.includes('direct.quickconnect.to') || url.includes('gofile.me') || url.includes('192.168');
+    // Verbeterde check voor NAS url's (zowel met puntjes als streepjes)
+    return url.includes('quickconnect.to') || 
+           url.includes('direct.quickconnect.to') || 
+           url.includes('gofile.me') || 
+           url.includes('192-168') || 
+           url.includes('192.168');
   };
 
-  // Toon hulp automatisch als we NAS afbeeldingen detecteren en er fouten zijn, 
-  // of als de gebruiker op de helpknop klikt.
   const needsConnectionHelp = useMemo(() => {
-    return artworks?.some(art => isExternalStorage(art.imageUrl));
+    return artworks && artworks.length > 0 && artworks.some(art => isExternalStorage(art.imageUrl));
   }, [artworks]);
 
   const seriesNames = useMemo(() => {
@@ -113,7 +117,6 @@ export default function GalleryPage() {
           <>
             <div className="sticky top-20 z-30 bg-background/60 backdrop-blur-md py-3 mb-10 border-y border-border/30 animate-fade-in-up delay-100">
               <div className="flex items-center gap-4 overflow-x-auto no-scrollbar px-2">
-                <Filter className="w-3 h-3 text-muted-foreground shrink-0 hidden md:block" />
                 <div className="flex gap-1.5">
                   {seriesNames.map((name) => (
                     <button
