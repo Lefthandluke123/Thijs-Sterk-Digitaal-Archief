@@ -44,7 +44,6 @@ export default function AdminPage() {
       const relativePath = (file as any).webkitRelativePath || file.name;
       const pathParts = relativePath.split('/');
       
-      // Sla de eerste mapnaam over (de map die de gebruiker kiest) om dubbele paden te voorkomen
       const adjustedPath = pathParts.length > 1 ? pathParts.slice(1).join('/') : relativePath;
       
       let detectedSeries = 'Onbekende Serie';
@@ -56,7 +55,6 @@ export default function AdminPage() {
       let cleanName = file.name.split('.').slice(0, -1).join('.');
       cleanName = cleanName.replace(/[_-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
       
-      // URL Encoding voor spaties en speciale tekens
       const encodedPath = adjustedPath.split('/').map(part => encodeURIComponent(part)).join('/');
       const fullUrl = `${nasBaseUrl}${encodedPath}`;
 
@@ -82,7 +80,6 @@ export default function AdminPage() {
     setLoading(true);
     const artworkCol = collection(firestore, 'artworks');
     const total = scannedArtworks.length;
-    let successCount = 0;
 
     for (let i = 0; i < total; i++) {
       const data = { 
@@ -101,11 +98,10 @@ export default function AdminPage() {
         });
         errorEmitter.emit('permission-error', permissionError);
       });
-      successCount++;
     }
     
     setTimeout(() => {
-      toast({ title: "Importeren voltooid", description: `${successCount} werken toegevoegd.` });
+      toast({ title: "Importeren voltooid", description: "Alle werken zijn toegevoegd aan de database." });
       setScannedArtworks([]);
       setLoading(false);
       setUploadProgress(0);
@@ -234,7 +230,7 @@ export default function AdminPage() {
                     <Lock className="h-4 w-4" />
                     <AlertTitle className="font-bold">403 Forbidden - Toegang nog steeds geweigerd</AlertTitle>
                     <AlertDescription className="text-xs">
-                      Je NAS zegt dat de website niet naar binnen mag kijken. Hoewel "Lezen" aan staat, ontbreekt er waarschijnlijk één vinkje.
+                      Je NAS zegt dat de website niet naar binnen mag kijken. Hoewel &quot;Lezen&quot; aan staat, ontbreekt er waarschijnlijk één vinkje.
                     </AlertDescription>
                   </Alert>
                   
@@ -242,15 +238,15 @@ export default function AdminPage() {
                     <p className="font-bold text-sm text-destructive underline">Checklist voor de 403 Fout:</p>
                     <ol className="list-decimal ml-5 space-y-3 text-xs leading-relaxed">
                       <li>Open <b>File Station</b> op je NAS.</li>
-                      <li>Rechtermuisknop op de map <b>web</b> -> <b>Eigenschappen</b> -> <b>Machtigingen</b>.</li>
+                      <li>Rechtermuisknop op de map <b>web</b> &rarr; <b>Eigenschappen</b> &rarr; <b>Machtigingen</b>.</li>
                       <li>Staat de gebruiker <b>http</b> erbij? Klik op <b>Bewerken</b>.</li>
                       <li>Vink <b>Lezen</b> aan, maar controleer ook of <b>Map doorlopen/Bestand uitvoeren</b> aan staat.</li>
-                      <li><b>CRUCIAAL:</b> Vink onderaan aan: <b>"Toepassen op deze map, submappen en bestanden"</b>. Als je dit niet vinkt, hebben de foto's zelf geen rechten.</li>
+                      <li><b>CRUCIAAL:</b> Vink onderaan aan: <b>&quot;Toepassen op deze map, submappen en bestanden&quot;</b>. Als je dit niet vinkt, hebben de foto&apos;s zelf geen rechten.</li>
                       <li>Klik op OK.</li>
-                      <li>Ga naar <b>Configuratiescherm</b> -> <b>Web Station</b>. Controleer of de "Default server" of "Virtual Host" wel de juiste rechten heeft op de map.</li>
+                      <li>Ga naar <b>Configuratiescherm</b> &rarr; <b>Web Station</b>. Controleer of de &quot;Default server&quot; of &quot;Virtual Host&quot; wel de juiste rechten heeft op de map.</li>
                     </ol>
                     <div className="pt-2">
-                      <p className="text-[10px] text-muted-foreground italic">Tip: Als niets werkt, voeg dan de groep <b>Everyone</b> toe met "Lezen" rechten op de map `portfolio` (alleen voor testdoeleinden).</p>
+                      <p className="text-[10px] text-muted-foreground italic">Tip: Als niets werkt, voeg dan de groep <b>Everyone</b> toe met &quot;Lezen&quot; rechten op de map `portfolio` (alleen voor testdoeleinden).</p>
                     </div>
                   </div>
                 </div>
