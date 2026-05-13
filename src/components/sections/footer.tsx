@@ -1,11 +1,17 @@
 
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 export function Footer() {
-  const currentYear = new Date().getFullYear();
+  const [year, setYear] = useState<number | null>(null);
+
+  useEffect(() => {
+    // Stel het jaartal pas in na de eerste render aan de client-zijde
+    // om hydration mismatches met de server te voorkomen.
+    setYear(new Date().getFullYear());
+  }, []);
 
   return (
     <footer className="py-12 border-t border-border bg-background px-4">
@@ -16,7 +22,7 @@ export function Footer() {
         </div>
         
         <p className="text-muted-foreground text-sm">
-          &copy; {currentYear} Elena Vance. Alle rechten voorbehouden.
+          &copy; {year || '...'} Elena Vance. Alle rechten voorbehouden.
         </p>
         
         <div className="flex gap-8 text-sm font-medium">
