@@ -2,6 +2,7 @@
 "use client";
 
 import React from 'react';
+import Link from 'next/link';
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
@@ -15,13 +16,13 @@ export function Footer() {
         </div>
         
         <p className="text-muted-foreground text-sm">
-          &copy; {currentYear} Elena Vance. All rights reserved. Made for the curious mind.
+          &copy; {currentYear} Elena Vance. Alle rechten voorbehouden.
         </p>
         
         <div className="flex gap-8 text-sm font-medium">
+          <Link href="/admin" className="text-muted-foreground hover:text-foreground transition-colors">Beheer</Link>
           <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Privacy</a>
-          <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Terms</a>
-          <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Newsletter</a>
+          <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Nieuwsbrief</a>
         </div>
       </div>
     </footer>
