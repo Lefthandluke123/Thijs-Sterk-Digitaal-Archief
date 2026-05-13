@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo } from 'react';
@@ -7,17 +6,44 @@ import { collection, doc, serverTimestamp, deleteDoc, writeBatch, getDocs, setDo
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, FolderOpen, Trash2, Database, Wifi, CheckCircle2, Settings, ChevronRight, Info } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+  Loader2, 
+  FolderOpen, 
+  Trash2, 
+  Wifi, 
+  CheckCircle2, 
+  Settings, 
+  Info, 
+  Archive, 
+  Scan, 
+  CloudUpload,
+  ChevronLeft,
+  ChevronRight,
+  Monitor
+} from 'lucide-react';
 import Image from 'next/image';
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { Progress } from "@/components/ui/progress";
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarTrigger,
+  SidebarRail,
+} from "@/components/ui/sidebar";
+import { cn } from '@/lib/utils';
 
 const LOCAL_NAS_URL = 'https://192-168-178-15.doggyfew.direct.quickconnect.to/portfolio/';
 const EXTERNAL_NAS_URL = 'https://doggyfew.quickconnect.to/portfolio/';
@@ -28,8 +54,8 @@ export default function AdminPage() {
   const [scannedFiles, setScannedFiles] = useState<any[]>([]);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [currentUploadItem, setCurrentUploadItem] = useState(0);
-  const [activeTab, setActiveTab] = useState('scan');
-  const [testResult, setTestResult] = useState<'success' | 'error' | 'testing' | 'forbidden' | null>(null);
+  const [activeTab, setActiveTab] = useState<'scan' | 'import' | 'db'>('scan');
+  const [testResult, setTestResult] = useState<'success' | 'error' | 'testing' | null>(null);
   const [nasBaseUrl, setNasBaseUrl] = useState(LOCAL_NAS_URL);
   const [testFileName, setTestFileName] = useState('1.jpg');
   const [includeRootFolder, setIncludeRootFolder] = useState(false);
@@ -150,151 +176,244 @@ export default function AdminPage() {
   };
 
   return (
-    <main className="min-h-screen bg-background/30 pt-32 pb-24 px-6">
-      <div className="container mx-auto max-w-4xl">
-        <header className="mb-12 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-headline font-light tracking-tight">Collectie Beheer</h1>
-            <p className="text-muted-foreground text-[10px] uppercase tracking-widest mt-1">
-              {artworks?.length || 0} gearchiveerde werken
-            </p>
-          </div>
-          <div className="flex gap-3">
-            <Button variant="ghost" size="icon" onClick={() => setShowSettings(!showSettings)} className="rounded-full">
-              <Settings className="w-4 h-4 opacity-50" />
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleDeleteAll} disabled={loading} className="rounded-full text-[9px] uppercase tracking-widest px-4 border-muted">
-              Legen
-            </Button>
-          </div>
-        </header>
-
-        <Collapsible open={showSettings} onOpenChange={setShowSettings} className="mb-8">
-          <CollapsibleContent>
-            <Card className="border-none shadow-none bg-secondary/20 rounded-2xl overflow-hidden mb-8">
-              <CardHeader className="py-4">
-                <CardTitle className="text-xs uppercase tracking-widest font-bold flex items-center gap-2">
-                  <Wifi className="w-3 h-3" /> Verbinding Instellingen
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex gap-2">
-                  <Button 
-                    variant={nasBaseUrl === LOCAL_NAS_URL ? "secondary" : "ghost"} 
-                    size="sm" 
-                    onClick={() => setNasBaseUrl(LOCAL_NAS_URL)}
-                    className="flex-1 text-[9px]"
-                  >Lokaal</Button>
-                  <Button 
-                    variant={nasBaseUrl === EXTERNAL_NAS_URL ? "secondary" : "ghost"} 
-                    size="sm" 
-                    onClick={() => setNasBaseUrl(EXTERNAL_NAS_URL)}
-                    className="flex-1 text-[9px]"
-                  >Extern</Button>
-                </div>
-                <div className="flex gap-2">
-                  <Input 
-                    value={testFileName} 
-                    onChange={(e) => setTestFileName(e.target.value)}
-                    placeholder="Testbestand (bijv. 1.jpg)"
-                    className="bg-background/50 text-[10px] h-8"
-                  />
-                  <Button onClick={testConnection} size="sm" className="h-8 text-[9px]">
-                    {testResult === 'testing' ? <Loader2 className="animate-spin h-3 w-3" /> : "Test"}
-                  </Button>
-                </div>
-                {testResult === 'success' && <div className="text-[10px] text-green-600 flex items-center gap-1 font-medium"><CheckCircle2 className="w-3 h-3" /> Verbinding geslaagd</div>}
-                {testResult === 'error' && <div className="text-[10px] text-destructive flex items-center gap-1 font-medium"><Info className="w-3 h-3" /> Controleer de NAS rechten</div>}
-              </CardContent>
-            </Card>
-          </CollapsibleContent>
-        </Collapsible>
-
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="bg-transparent border-b border-border/40 w-full justify-start rounded-none h-auto p-0 mb-8">
-            <TabsTrigger value="scan" className="rounded-none border-b-2 border-transparent data-[state=active]:border-accent data-[state=active]:bg-transparent text-[10px] uppercase tracking-widest pb-3 px-6 h-auto">1. Scannen</TabsTrigger>
-            <TabsTrigger value="import" className="rounded-none border-b-2 border-transparent data-[state=active]:border-accent data-[state=active]:bg-transparent text-[10px] uppercase tracking-widest pb-3 px-6 h-auto">2. Importeren ({scannedFiles.length})</TabsTrigger>
-            <TabsTrigger value="db" className="rounded-none border-b-2 border-transparent data-[state=active]:border-accent data-[state=active]:bg-transparent text-[10px] uppercase tracking-widest pb-3 px-6 h-auto">3. Archief</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="scan">
-            <div className="grid md:grid-cols-5 gap-8">
-              <div className="md:col-span-2">
-                <div className="border border-dashed border-muted-foreground/30 rounded-3xl p-10 text-center bg-white/5 flex flex-col items-center justify-center min-h-[240px]">
-                  <input type="file" multiple className="hidden" id="file-scanner" onChange={handleFileScan} accept="image/*" {...({ webkitdirectory: "", directory: "" } as any)} />
-                  <FolderOpen className="w-8 h-8 text-muted-foreground/40 mb-4" />
-                  <div className="space-y-4 w-full">
-                    <div className="flex items-center justify-between px-2">
-                      <Label htmlFor="root-folder" className="text-[9px] uppercase tracking-widest opacity-60">Mapnaam behouden</Label>
-                      <Switch id="root-folder" checked={includeRootFolder} onCheckedChange={setIncludeRootFolder} />
-                    </div>
-                    <Button variant="outline" className="rounded-full w-full border-muted-foreground/20 text-[10px] uppercase tracking-widest h-10" asChild>
-                      <label htmlFor="file-scanner" className="cursor-pointer">Map Selecteren</label>
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="md:col-span-3">
-                <div className="bg-white/5 rounded-3xl p-6 border border-border/30 h-full">
-                  <h3 className="text-[9px] uppercase tracking-widest font-bold mb-4 opacity-40">Preview Links</h3>
-                  <div className="space-y-2 max-h-[160px] overflow-y-auto pr-2 text-[9px] font-mono text-muted-foreground">
-                    {finalArtworks.length > 0 ? (
-                      finalArtworks.slice(0, 5).map((art, i) => (
-                        <div key={i} className="pb-1 border-b border-border/10 truncate">
-                          <span className="text-accent">{art.title}</span> &rarr; {art.imageUrl}
-                        </div>
-                      ))
-                    ) : (
-                      <div className="italic">Kies een map om de links te controleren...</div>
-                    )}
-                    {finalArtworks.length > 5 && <div className="text-center pt-2">+{finalArtworks.length - 5} meer</div>}
-                  </div>
-                </div>
-              </div>
+    <SidebarProvider defaultOpen={true}>
+      <div className="flex min-h-screen bg-background/30 w-full overflow-hidden">
+        <Sidebar collapsible="icon" className="border-r border-border/20">
+          <SidebarHeader className="h-14 flex items-center px-4 border-b border-border/10">
+            <div className="flex items-center gap-3 overflow-hidden">
+              <div className="w-6 h-6 rounded-full bg-primary flex-shrink-0 flex items-center justify-center text-[10px] text-white font-bold">T</div>
+              <span className="font-headline text-xs font-bold tracking-tight whitespace-nowrap group-data-[collapsible=icon]:hidden">Studio Admin</span>
             </div>
-          </TabsContent>
+          </SidebarHeader>
+          <SidebarContent>
+            <SidebarGroup>
+              <SidebarGroupLabel className="text-[9px] uppercase tracking-widest opacity-40 group-data-[collapsible=icon]:hidden">Navigatie</SidebarGroupLabel>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton 
+                    isActive={activeTab === 'scan'} 
+                    onClick={() => setActiveTab('scan')}
+                    tooltip="Scannen"
+                  >
+                    <Scan className="w-4 h-4" />
+                    <span>Scannen</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton 
+                    isActive={activeTab === 'import'} 
+                    onClick={() => setActiveTab('import')}
+                    tooltip={`Importeren (${scannedFiles.length})`}
+                  >
+                    <CloudUpload className="w-4 h-4" />
+                    <span>Importeren</span>
+                    {scannedFiles.length > 0 && <span className="ml-auto text-[9px] bg-accent px-1.5 rounded-full text-white group-data-[collapsible=icon]:hidden">{scannedFiles.length}</span>}
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton 
+                    isActive={activeTab === 'db'} 
+                    onClick={() => setActiveTab('db')}
+                    tooltip="Archief"
+                  >
+                    <Archive className="w-4 h-4" />
+                    <span>Archief</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroup>
 
-          <TabsContent value="import">
-            <Card className="border-none bg-white/5 rounded-3xl p-12 text-center">
-              {loading ? (
-                <div className="space-y-6">
-                  <h3 className="font-headline text-xl italic">Wordt verwerkt...</h3>
-                  <div className="max-w-xs mx-auto space-y-2">
-                    <Progress value={uploadProgress} className="h-1 bg-muted/20" />
-                    <p className="text-[9px] uppercase tracking-widest text-muted-foreground">{currentUploadItem} / {finalArtworks.length}</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-6">
-                  <h3 className="font-headline text-2xl">Bijna klaar</h3>
-                  <p className="text-muted-foreground text-xs max-w-xs mx-auto italic">
-                    {finalArtworks.length} werken worden toegevoegd aan je online portfolio.
-                  </p>
-                  <Button onClick={handleSaveAll} className="rounded-full px-12 h-12 text-[10px] uppercase tracking-widest font-bold" disabled={finalArtworks.length === 0}>
-                    Toevoegen aan Archief
-                  </Button>
+            <SidebarGroup className="mt-auto">
+              <SidebarGroupLabel className="text-[9px] uppercase tracking-widest opacity-40 group-data-[collapsible=icon]:hidden">Systeem</SidebarGroupLabel>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton 
+                    isActive={showSettings} 
+                    onClick={() => setShowSettings(!showSettings)}
+                    tooltip="NAS Instellingen"
+                  >
+                    <Settings className="w-4 h-4" />
+                    <span>Instellingen</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton 
+                    onClick={handleDeleteAll} 
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                    tooltip="Database Legen"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span>Legen</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroup>
+          </SidebarContent>
+          <SidebarRail />
+        </Sidebar>
+
+        <main className="flex-1 flex flex-col min-w-0">
+          <header className="h-14 border-b border-border/10 flex items-center justify-between px-6 bg-background/40 backdrop-blur-sm sticky top-0 z-20">
+            <div className="flex items-center gap-4">
+              <SidebarTrigger className="h-8 w-8 opacity-40 hover:opacity-100" />
+              <div className="h-4 w-[1px] bg-border/20" />
+              <h1 className="text-xs uppercase tracking-[0.2em] font-medium opacity-60">
+                {activeTab === 'scan' ? 'Bestanden Scannen' : activeTab === 'import' ? 'Data Importeren' : 'Collectie Archief'}
+              </h1>
+            </div>
+          </header>
+
+          <div className="flex-1 overflow-y-auto p-8 lg:p-12">
+            <div className="max-w-5xl mx-auto">
+              {showSettings && (
+                <div className="mb-12 animate-in fade-in slide-in-from-top-4 duration-300">
+                  <Card className="border-none bg-secondary/10 rounded-2xl overflow-hidden shadow-none">
+                    <CardHeader className="py-4">
+                      <CardTitle className="text-[10px] uppercase tracking-widest font-bold flex items-center gap-2 opacity-60">
+                        <Wifi className="w-3 h-3" /> Verbinding Configuratie
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      <div className="grid sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-[9px] uppercase tracking-tighter opacity-40">NAS Basis URL</Label>
+                          <div className="flex gap-2">
+                            <Button 
+                              variant={nasBaseUrl === LOCAL_NAS_URL ? "secondary" : "ghost"} 
+                              size="sm" 
+                              onClick={() => setNasBaseUrl(LOCAL_NAS_URL)}
+                              className="flex-1 text-[9px] h-8"
+                            >Lokaal</Button>
+                            <Button 
+                              variant={nasBaseUrl === EXTERNAL_NAS_URL ? "secondary" : "ghost"} 
+                              size="sm" 
+                              onClick={() => setNasBaseUrl(EXTERNAL_NAS_URL)}
+                              className="flex-1 text-[9px] h-8"
+                            >Extern</Button>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[9px] uppercase tracking-tighter opacity-40">Test Bestand</Label>
+                          <div className="flex gap-2">
+                            <Input 
+                              value={testFileName} 
+                              onChange={(e) => setTestFileName(e.target.value)}
+                              placeholder="Testbestand (bijv. 1.jpg)"
+                              className="bg-background/50 text-[10px] h-8 border-none"
+                            />
+                            <Button onClick={testConnection} size="sm" className="h-8 text-[9px] px-6">
+                              {testResult === 'testing' ? <Loader2 className="animate-spin h-3 w-3" /> : "Test"}
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {testResult && (
+                        <div className={cn(
+                          "text-[10px] flex items-center gap-2 p-2 rounded-lg border",
+                          testResult === 'success' ? "bg-green-500/10 border-green-500/20 text-green-600" : "bg-destructive/10 border-destructive/20 text-destructive"
+                        )}>
+                          {testResult === 'success' ? <CheckCircle2 className="w-3 h-3" /> : <Info className="w-3 h-3" />}
+                          {testResult === 'success' ? "Verbinding met NAS is succesvol." : "NAS onbereikbaar. Controleer IP en rechten."}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
                 </div>
               )}
-            </Card>
-          </TabsContent>
 
-          <TabsContent value="db">
-            <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-3">
-              {artworks?.map((art: any) => (
-                <div key={art.id} className="relative aspect-square rounded-lg overflow-hidden group bg-muted/10 border border-border/30">
-                  <Image src={art.imageUrl} alt="" fill className="object-cover opacity-60 group-hover:opacity-100 transition-opacity" unoptimized={true} />
-                  <div className="absolute inset-0 bg-background/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => deleteDoc(doc(firestore!, 'artworks', art.id))}>
-                      <Trash2 className="h-3.3 w-3.3" />
-                    </Button>
+              {activeTab === 'scan' && (
+                <div className="grid lg:grid-cols-2 gap-12">
+                  <div className="space-y-8">
+                    <div className="group border border-dashed border-border/40 rounded-[2.5rem] p-16 text-center bg-white/5 hover:bg-white/10 transition-colors flex flex-col items-center justify-center min-h-[320px] relative overflow-hidden">
+                      <input type="file" multiple className="hidden" id="file-scanner" onChange={handleFileScan} accept="image/*" {...({ webkitdirectory: "", directory: "" } as any)} />
+                      <div className="absolute inset-0 bg-accent/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <FolderOpen className="w-10 h-10 text-primary/30 mb-6" />
+                      <div className="space-y-6 w-full max-w-[240px] relative z-10">
+                        <div className="flex items-center justify-between px-2">
+                          <Label htmlFor="root-folder" className="text-[9px] uppercase tracking-widest opacity-60">Mapnaam behouden</Label>
+                          <Switch id="root-folder" checked={includeRootFolder} onCheckedChange={setIncludeRootFolder} className="scale-75" />
+                        </div>
+                        <Button variant="outline" className="rounded-full w-full border-border/40 text-[10px] uppercase tracking-widest h-12 shadow-sm" asChild>
+                          <label htmlFor="file-scanner" className="cursor-pointer">Map Selecteren</label>
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white/5 rounded-[2.5rem] p-10 border border-border/20">
+                    <h3 className="text-[10px] uppercase tracking-widest font-bold mb-6 opacity-30 flex items-center gap-2">
+                      <Monitor className="w-3 h-3" /> Live Link Preview
+                    </h3>
+                    <div className="space-y-4 max-h-[300px] overflow-y-auto pr-4 custom-scrollbar text-[9px] font-mono leading-relaxed opacity-60">
+                      {finalArtworks.length > 0 ? (
+                        finalArtworks.slice(0, 8).map((art, i) => (
+                          <div key={i} className="pb-3 border-b border-border/5">
+                            <span className="text-accent/80 font-bold block mb-1">{art.title}</span>
+                            <span className="break-all opacity-60">{art.imageUrl}</span>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="italic py-12 text-center">Selecteer een lokale map om de link-generatie te controleren...</div>
+                      )}
+                      {finalArtworks.length > 8 && <div className="text-center pt-4 opacity-40 italic">+{finalArtworks.length - 8} meer items...</div>}
+                    </div>
                   </div>
                 </div>
-              ))}
+              )}
+
+              {activeTab === 'import' && (
+                <div className="max-w-2xl mx-auto py-12">
+                  <div className="bg-white/5 rounded-[3rem] p-16 text-center border border-border/20 shadow-sm">
+                    {loading ? (
+                      <div className="space-y-8">
+                        <div className="space-y-2">
+                          <h3 className="font-headline text-3xl italic font-light">Processing...</h3>
+                          <p className="text-[10px] uppercase tracking-widest opacity-40">Metadata wordt naar Firestore geschreven</p>
+                        </div>
+                        <div className="max-w-xs mx-auto space-y-3">
+                          <Progress value={uploadProgress} className="h-1 bg-muted/20" />
+                          <p className="text-[10px] font-mono opacity-60">{currentUploadItem} / {finalArtworks.length}</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-8">
+                        <div className="space-y-3">
+                          <h3 className="font-headline text-4xl font-light">Klaar voor import</h3>
+                          <p className="text-muted-foreground text-sm max-w-xs mx-auto italic font-light">
+                            {finalArtworks.length} geselecteerde werken zullen worden toegevoegd aan je online archief.
+                          </p>
+                        </div>
+                        <Button onClick={handleSaveAll} className="rounded-full px-12 h-14 text-[11px] uppercase tracking-widest font-bold shadow-xl" disabled={finalArtworks.length === 0}>
+                          Start Archivering
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'db' && (
+                <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-3 animate-in fade-in duration-500">
+                  {artworks?.map((art: any) => (
+                    <div key={art.id} className="relative aspect-square rounded-xl overflow-hidden group bg-muted/10 border border-border/20">
+                      <Image src={art.imageUrl} alt="" fill className="object-cover opacity-40 group-hover:opacity-100 transition-all duration-500 scale-110 group-hover:scale-100" unoptimized={true} />
+                      <div className="absolute inset-0 bg-background/90 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive/40 hover:text-destructive hover:bg-transparent" onClick={() => deleteDoc(doc(firestore!, 'artworks', art.id))}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                  {(!artworks || artworks.length === 0) && (
+                    <div className="col-span-full py-32 text-center opacity-20 italic">Geen items in archief</div>
+                  )}
+                </div>
+              )}
             </div>
-          </TabsContent>
-        </Tabs>
+          </div>
+        </main>
       </div>
-    </main>
+    </SidebarProvider>
   );
 }
