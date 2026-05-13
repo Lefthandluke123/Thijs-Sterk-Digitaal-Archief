@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
-import { PlusCircle, Database, FileJson, Loader2, MagicWand, Copy } from 'lucide-react';
+import { PlusCircle, Database, FileJson, Loader2, Wand2, Copy } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function AdminPage() {
@@ -114,7 +114,7 @@ export default function AdminPage() {
               <FileJson className="w-4 h-4" /> Bulk Import
             </TabsTrigger>
             <TabsTrigger value="helper" className="flex items-center gap-2">
-              <MagicWand className="w-4 h-4" /> JSON Maker
+              <Wand2 className="w-4 h-4" /> JSON Maker
             </TabsTrigger>
           </TabsList>
 
@@ -241,7 +241,7 @@ export default function AdminPage() {
                   className="w-full h-12 rounded-full" 
                   disabled={!rawList}
                 >
-                  <MagicWand className="mr-2 w-4 h-4" /> Genereer JSON Sjabloon
+                  <Wand2 className="mr-2 w-4 h-4" /> Genereer JSON Sjabloon
                 </Button>
                 <p className="text-xs text-muted-foreground italic mt-4 text-center">
                   Let op: Na het genereren moet je in de Bulk-tab nog wel de juiste `imageUrl` voor elk schilderij invullen.
