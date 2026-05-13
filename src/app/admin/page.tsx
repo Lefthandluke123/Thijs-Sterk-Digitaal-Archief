@@ -10,12 +10,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
-import { PlusCircle, Loader2, Wand2, Trash2, FolderOpen, RefreshCw, CheckCircle2, AlertCircle, Info } from 'lucide-react';
+import { PlusCircle, Loader2, Wand2, Trash2, FolderOpen, RefreshCw, CheckCircle2, AlertCircle, Info, ExternalLink, HelpCircle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Image from 'next/image';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 export default function AdminPage() {
   const firestore = useFirestore();
@@ -23,19 +24,9 @@ export default function AdminPage() {
   const [testUrl, setTestUrl] = useState('');
   const [testResult, setTestResult] = useState<'success' | 'error' | null>(null);
   
-  const [singleArtwork, setSingleArtwork] = useState({
-    title: '',
-    series: '',
-    year: new Date().getFullYear().toString(),
-    medium: 'Olieverf op doek',
-    description: '',
-    imageUrl: '',
-    imageHint: 'abstract painting'
-  });
-
   const [bulkJson, setBulkJson] = useState('');
   const [rawFiles, setRawFiles] = useState<{name: string, cleanName: string, series: string}[]>([]);
-  const [baseUrl, setBaseUrl] = useState('https://192-168-178-15.doggyfew.direct.quickconnect.to:5001/portfolio/');
+  const [baseUrl, setBaseUrl] = useState('https://doggyfew.direct.quickconnect.to/portfolio/');
   const [defaultSeries, setDefaultSeries] = useState('Collectie 2024');
 
   const artworksQuery = useMemo(() => {
@@ -109,7 +100,6 @@ export default function AdminPage() {
       let relativePath = (file as any).webkitRelativePath || file.name;
       const pathParts = relativePath.split('/');
       
-      // Map-naam detectie voor Series
       let detectedSeries = defaultSeries;
       if (pathParts.length > 1) {
         detectedSeries = pathParts[pathParts.length - 2] || defaultSeries;
@@ -159,15 +149,30 @@ export default function AdminPage() {
         </header>
 
         <Alert className="mb-8 bg-accent/10 border-accent/30">
-          <Info className="h-5 w-5 text-accent" />
-          <AlertTitle className="text-accent font-bold text-lg mb-2">Hoe werkt het met File Station?</AlertTitle>
-          <AlertDescription className="text-sm space-y-2">
-            <p>Je beheert je bestanden in <strong>File Station</strong>, maar voor de website hebben we een "Directe URL" nodig.</p>
-            <ul className="list-disc pl-5 space-y-1">
-              <li><strong>Stap A:</strong> Zet je map met foto's op de NAS (bijv. in een map genaamd <code>portfolio</code>).</li>
-              <li><strong>Stap B:</strong> Zorg dat deze map "publiek" bereikbaar is. De makkelijkste manier is via de <strong>Web Station</strong> app op je Synology.</li>
-              <li><strong>Stap C:</strong> Test hieronder in <em>Stap 1</em> of één foto werkt.</li>
-            </ul>
+          <HelpCircle className="h-5 w-5 text-accent" />
+          <AlertTitle className="text-accent font-bold text-lg mb-2">Hoe krijg ik directe links via Web Station?</AlertTitle>
+          <AlertDescription className="text-sm">
+            <Accordion type="single" collapsible className="w-full">
+              <AccordionItem value="step-1" className="border-accent/20">
+                <AccordionTrigger className="hover:no-underline">Stap A: Installeer Web Station</AccordionTrigger>
+                <AccordionContent>
+                  Ga op je Synology naar het <strong>Package Center</strong> en installeer de app <strong>Web Station</strong>. Dit zorgt ervoor dat je NAS bestanden kan "serveren" aan het internet.
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="step-2" className="border-accent/20">
+                <AccordionTrigger className="hover:no-underline">Stap B: Verplaats je foto's naar de map 'web'</AccordionTrigger>
+                <AccordionContent>
+                  Er is nu een nieuwe gedeelde map genaamd <code>web</code> op je NAS. Maak hierin een map <code>portfolio</code> en zet daar al je foto's in.
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="step-3" className="border-accent/20">
+                <AccordionTrigger className="hover:no-underline">Stap C: Je directe link is nu klaar</AccordionTrigger>
+                <AccordionContent>
+                  Je foto's zijn nu bereikbaar via: <code className="bg-accent/20 p-1 rounded">https://jouwnas.direct.quickconnect.to/portfolio/naam.jpg</code>. 
+                  Let op: Gebruik NIET poort 5001, maar de standaard URL. Test dit eerst in het tabblad 'Stap 1'.
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
           </AlertDescription>
         </Alert>
 
@@ -209,13 +214,13 @@ export default function AdminPage() {
           <TabsContent value="synology">
             <Card>
               <CardHeader>
-                <CardTitle>Test je Synology Link</CardTitle>
-                <CardDescription>Plak hier een directe link naar een foto op je NAS (moet eindigen op .jpg of .png).</CardDescription>
+                <CardTitle>Test je Web Station Link</CardTitle>
+                <CardDescription>Plak hier een directe link naar een foto op je NAS. Gebruik de link die je bij Stap C hebt gemaakt.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex gap-2">
                   <Input 
-                    placeholder="https://jouwnas.direct.quickconnect.to:5001/portfolio/foto1.jpg" 
+                    placeholder="https://doggyfew.direct.quickconnect.to/portfolio/foto1.jpg" 
                     value={testUrl} 
                     onChange={e => setTestUrl(e.target.value)}
                   />
@@ -226,7 +231,7 @@ export default function AdminPage() {
                     <CheckCircle2 className="w-6 h-6" /> 
                     <div>
                       <p className="font-bold">Gelukt! De link werkt.</p>
-                      <p className="text-xs">Je kunt nu verder naar Stap 2 met deze Basis URL.</p>
+                      <p className="text-xs">De website kan de foto rechtstreeks laden. Je kunt nu veilig alle 400 foto's toevoegen.</p>
                     </div>
                   </div>
                 )}
@@ -234,8 +239,8 @@ export default function AdminPage() {
                   <div className="p-4 bg-destructive/10 text-destructive rounded-lg flex items-center gap-3 border border-destructive/20">
                     <AlertCircle className="w-6 h-6" />
                     <div>
-                      <p className="font-bold">Deze link werkt niet.</p>
-                      <p className="text-xs">De website kan de foto niet direct laden. Controleer of de map "openbaar" is of gebruik Web Station.</p>
+                      <p className="font-bold">Deze link werkt nog niet.</p>
+                      <p className="text-xs">Controleer of Web Station aan staat en of je de foto in de map 'web' hebt gezet. Gebruik geen :5001 poort.</p>
                     </div>
                   </div>
                 )}
@@ -272,8 +277,8 @@ export default function AdminPage() {
                   <div className="space-y-4 p-6 border rounded-xl bg-accent/5">
                     <h4 className="font-bold text-accent">{rawFiles.length} bestanden gevonden</h4>
                     <div className="space-y-2">
-                      <Label>Basis URL (Deel van de link die voor elke foto hetzelfde is)</Label>
-                      <Input value={baseUrl} onChange={e => setBaseUrl(e.target.value)} placeholder="https://.../portfolio/" />
+                      <Label>Basis URL (Exact de URL uit Stap 1, maar dan zonder de bestandsnaam)</Label>
+                      <Input value={baseUrl} onChange={e => setBaseUrl(e.target.value)} placeholder="https://doggyfew.direct.quickconnect.to/portfolio/" />
                     </div>
                     <Button onClick={generateBulkJson} className="w-full bg-accent text-white h-12">Genereer JSON Lijst</Button>
                   </div>
