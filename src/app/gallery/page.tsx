@@ -72,7 +72,7 @@ export default function GalleryPage() {
     <main className="min-h-screen bg-background pt-32 pb-24 px-6">
       <div className="container mx-auto max-w-7xl">
         <header className="mb-16 text-center">
-          <h1 className="font-headline text-5xl md:text-6xl font-light mb-4">Galerie</h1>
+          <h1 className="font-headline text-5xl md:text-6xl font-light mb-4 text-foreground">Galerie</h1>
         </header>
 
         {showHelp && (
@@ -93,7 +93,7 @@ export default function GalleryPage() {
           </div>
         ) : (
           <>
-            <div className="sticky top-20 z-30 bg-background/40 backdrop-blur-md py-6 mb-12 border-y border-border/20 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="sticky top-14 z-30 bg-background/40 backdrop-blur-md py-6 mb-12 border-y border-border/20 flex flex-col md:flex-row items-center justify-between gap-4">
               <div className="flex gap-6 overflow-x-auto no-scrollbar">
                 {seriesNames.map((name) => (
                   <button
@@ -170,8 +170,8 @@ export default function GalleryPage() {
               </button>
             </div>
 
-            <DialogClose className="absolute top-6 left-6 z-50 p-2 hover:bg-black/5 rounded-full transition-colors">
-              <X className="w-4 h-4 opacity-40" />
+            <DialogClose className="absolute top-6 left-6 z-50 p-2 hover:bg-black/10 rounded-full transition-colors bg-background/20 backdrop-blur-sm">
+              <X className="w-5 h-5 opacity-60" />
             </DialogClose>
           </div>
 
@@ -180,15 +180,18 @@ export default function GalleryPage() {
               <div className="text-accent font-bold uppercase text-[9px] tracking-[0.3em] opacity-60">
                 {selectedArtwork?.series}
               </div>
-              <DialogTitle className="font-headline text-3xl font-light">
+              <DialogTitle className="font-headline text-3xl font-light text-foreground">
                 {selectedArtwork?.title}
               </DialogTitle>
               <DialogDescription className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground italic">
                 {selectedArtwork?.medium} &bull; {selectedArtwork?.year}
               </DialogDescription>
-              <div className="pt-4 flex justify-center">
+              <div className="pt-4 flex justify-center gap-4">
                 <Button variant="outline" className="rounded-full text-[10px] uppercase tracking-widest px-10 h-11">
                   Interesse?
+                </Button>
+                <Button variant="ghost" onClick={() => setSelectedArtwork(null)} className="rounded-full text-[10px] uppercase tracking-widest px-10 h-11">
+                  Sluiten
                 </Button>
               </div>
             </div>

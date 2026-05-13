@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useState, useMemo } from 'react';
+import Link from 'next/link';
 import { useFirestore, useCollection } from '@/firebase';
 import { collection, doc, serverTimestamp, deleteDoc, writeBatch, getDocs, setDoc, query, orderBy } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
@@ -11,14 +12,13 @@ import {
   Loader2, 
   FolderOpen, 
   Trash2, 
-  Wifi, 
   CheckCircle2, 
   Settings, 
   Archive, 
   Scan, 
-  Monitor,
   AlertCircle,
-  Database
+  Database,
+  ArrowLeft
 } from 'lucide-react';
 import Image from 'next/image';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -167,11 +167,14 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <header className="h-20 border-b border-border/10 flex items-center justify-between px-8 bg-background/80 backdrop-blur-md sticky top-0 z-50">
+    <div className="min-h-screen bg-background flex flex-col pt-14">
+      <header className="h-20 border-b border-border/10 flex items-center justify-between px-8 bg-background/80 backdrop-blur-md sticky top-14 z-40">
         <div className="flex items-center gap-8">
-          <div className="w-10 h-10 rounded bg-primary flex items-center justify-center text-white font-bold text-xl">T</div>
-          <nav className="flex items-center gap-1">
+          <Link href="/" className="flex items-center gap-2 group">
+            <div className="w-10 h-10 rounded bg-primary flex items-center justify-center text-white font-bold text-xl group-hover:scale-105 transition-transform">T</div>
+            <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground group-hover:text-foreground transition-colors hidden sm:block">Terug naar site</span>
+          </Link>
+          <nav className="flex items-center gap-2">
             <Button 
               variant={activeTab === 'scan' ? 'secondary' : 'ghost'} 
               className={cn("gap-2 px-4 h-11", activeTab === 'scan' && "font-bold")}
@@ -196,106 +199,72 @@ export default function AdminPage() {
           </nav>
         </div>
         
-        <div className="flex items-center gap-3">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={handleDeleteAll} 
-            className="text-destructive h-10 w-10 hover:bg-destructive/10"
-            title="Database Wissen"
-          >
-            <Trash2 className="w-5 h-5" />
-          </Button>
-        </div>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={handleDeleteAll} 
+          className="text-destructive h-10 w-10 hover:bg-destructive/10"
+          title="Database Wissen"
+        >
+          <Trash2 className="w-5 h-5" />
+        </Button>
       </header>
 
       <main className="flex-1 p-8 md:p-12 overflow-y-auto">
-        <div className="max-w-6xl mx-auto space-y-12">
-          
+        <div className="max-w-6xl mx-auto">
           {activeTab === 'scan' && (
-            <div className="grid lg:grid-cols-3 gap-12">
-              <div className="lg:col-span-2 space-y-8">
-                <Card className="border-border/50 shadow-sm">
-                  <CardHeader>
-                    <CardTitle className="text-2xl">1. Map Scannen</CardTitle>
-                    <CardDescription>Selecteer de map op je computer die overeenkomt met de map op je NAS.</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-8">
-                    <div className="flex flex-col items-center justify-center border-2 border-dashed border-border/30 rounded-2xl p-20 bg-muted/5 hover:bg-muted/10 transition-colors">
-                      <input type="file" multiple className="hidden" id="file-scanner" onChange={handleFileScan} accept="image/*" {...({ webkitdirectory: "", directory: "" } as any)} />
-                      <FolderOpen className="w-16 h-16 text-primary/20 mb-6" />
-                      <Button size="lg" className="px-12 font-bold text-lg" asChild>
-                        <label htmlFor="file-scanner" className="cursor-pointer">Selecteer Map</label>
-                      </Button>
-                      <p className="mt-6 text-sm text-muted-foreground font-medium">Kies de hoofdmap van je portfolio.</p>
+            <div className="space-y-12">
+              <Card className="border-border/50 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-2xl">Map Scannen</CardTitle>
+                  <CardDescription>Selecteer de map op je computer die overeenkomt met de map op je NAS.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-8">
+                  <div className="flex flex-col items-center justify-center border-2 border-dashed border-border/30 rounded-2xl p-20 bg-muted/5 hover:bg-muted/10 transition-colors">
+                    <input type="file" multiple className="hidden" id="file-scanner" onChange={handleFileScan} accept="image/*" {...({ webkitdirectory: "", directory: "" } as any)} />
+                    <FolderOpen className="w-16 h-16 text-primary/20 mb-6" />
+                    <Button size="lg" className="px-12 font-bold text-lg" asChild>
+                      <label htmlFor="file-scanner" className="cursor-pointer">Selecteer Map</label>
+                    </Button>
+                    <p className="mt-6 text-sm text-muted-foreground font-medium">Kies de hoofdmap van je portfolio.</p>
+                  </div>
+
+                  <div className="flex items-center justify-between p-6 bg-muted/20 rounded-2xl border border-border/10">
+                    <div className="space-y-1">
+                      <Label htmlFor="root-folder" className="text-lg font-bold">Mapnaam in link opnemen</Label>
+                      <p className="text-sm text-muted-foreground">Gebruik dit als je de hoofdmap zelf hebt geselecteerd.</p>
                     </div>
+                    <Switch id="root-folder" checked={includeRootFolder} onCheckedChange={setIncludeRootFolder} />
+                  </div>
+                </CardContent>
+              </Card>
 
-                    <div className="flex items-center justify-between p-6 bg-muted/20 rounded-2xl border border-border/10">
-                      <div className="space-y-1">
-                        <Label htmlFor="root-folder" className="text-lg font-bold">Mapnaam in link opnemen</Label>
-                        <p className="text-sm text-muted-foreground">Gebruik dit als je de hoofdmap zelf hebt geselecteerd.</p>
-                      </div>
-                      <Switch id="root-folder" checked={includeRootFolder} onCheckedChange={setIncludeRootFolder} />
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {scannedFiles.length > 0 && (
-                  <Card className="border-primary/20 shadow-lg bg-primary/5">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-3 text-2xl">
-                        <CheckCircle2 className="w-7 h-7 text-primary" /> 
-                        2. Start Import
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-8">
-                      <div className="p-6 bg-background rounded-2xl border border-primary/10">
-                        <p className="text-xl">Klaar om <strong className="text-primary">{scannedFiles.length}</strong> kunstwerken toe te voegen.</p>
-                      </div>
-                      
-                      {loading ? (
-                        <div className="space-y-4">
-                          <div className="flex justify-between text-sm font-bold">
-                            <span>Verwerken...</span>
-                            <span>{currentUploadItem} / {finalArtworks.length}</span>
-                          </div>
-                          <Progress value={uploadProgress} className="h-4" />
-                        </div>
-                      ) : (
-                        <Button onClick={handleSaveAll} className="w-full h-18 text-2xl font-bold shadow-xl" disabled={loading}>
-                          Importeer nu
-                        </Button>
-                      )}
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-
-              <div className="space-y-8">
-                <Card className="border-border/50 shadow-sm">
+              {scannedFiles.length > 0 && (
+                <Card className="border-primary/20 shadow-lg bg-primary/5">
                   <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <Monitor className="w-5 h-5 text-accent" /> Link Preview
+                    <CardTitle className="flex items-center gap-3 text-2xl">
+                      <CheckCircle2 className="w-7 h-7 text-primary" /> 
+                      Start Import
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    {finalArtworks.length > 0 ? (
-                      <div className="space-y-3 max-h-[70vh] overflow-y-auto pr-3">
-                        {finalArtworks.slice(0, 10).map((art, i) => (
-                          <div key={i} className="p-4 bg-muted/10 rounded-xl border border-border/10">
-                            <p className="font-bold text-sm mb-1">{art.title}</p>
-                            <p className="font-mono text-[10px] text-muted-foreground break-all">{art.imageUrl}</p>
-                          </div>
-                        ))}
+                  <CardContent className="space-y-8">
+                    <p className="text-xl">Klaar om <strong className="text-primary">{scannedFiles.length}</strong> kunstwerken toe te voegen.</p>
+                    {loading ? (
+                      <div className="space-y-4">
+                        <div className="flex justify-between text-sm font-bold">
+                          <span>Verwerken...</span>
+                          <span>{currentUploadItem} / {finalArtworks.length}</span>
+                        </div>
+                        <Progress value={uploadProgress} className="h-4" />
                       </div>
                     ) : (
-                      <div className="py-20 text-center text-muted-foreground italic text-sm">
-                        Geen map gescand om te controleren.
-                      </div>
+                      <Button onClick={handleSaveAll} className="w-full h-18 text-2xl font-bold shadow-xl">
+                        Importeer nu
+                      </Button>
                     )}
                   </CardContent>
                 </Card>
-              </div>
+              )}
             </div>
           )}
 
@@ -342,7 +311,7 @@ export default function AdminPage() {
           )}
 
           {activeTab === 'settings' && (
-            <div className="max-w-3xl mx-auto">
+            <div className="max-w-3xl mx-auto space-y-12">
               <Card className="border-border/50 shadow-sm overflow-hidden">
                 <CardHeader className="bg-muted/10 border-b border-border/10 pb-8">
                   <CardTitle className="text-3xl">NAS Configuratie</CardTitle>
