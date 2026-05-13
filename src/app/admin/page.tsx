@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
-import { PlusCircle, Database, FileJson, Loader2, Wand2, Trash2, FolderOpen, Image as ImageIcon, HelpCircle, Link as LinkIcon } from 'lucide-react';
+import { PlusCircle, Database, FileJson, Loader2, Wand2, Trash2, FolderOpen, Image as ImageIcon, Info, Link as LinkIcon } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Image from 'next/image';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -144,23 +144,31 @@ export default function AdminPage() {
   return (
     <main className="min-h-screen bg-background pt-32 pb-24 px-4">
       <div className="container mx-auto max-w-5xl">
-        <header className="mb-12">
+        <header className="mb-8">
           <h1 className="text-4xl font-headline font-light mb-2">Portfolio <span className="italic">Beheer</span></h1>
-          <p className="text-muted-foreground">Beheer de eigen database van Thijs Sterk.</p>
+          <p className="text-muted-foreground">Beheer de database van Thijs Sterk.</p>
         </header>
 
+        {/* HELP SECTIE: HIER STAAN DE VOORBEELDEN */}
         <div className="grid gap-6 mb-12">
-          <Alert className="bg-accent/10 border-accent/20">
-            <LinkIcon className="h-4 w-4 text-accent" />
-            <AlertTitle>Hoe werkt een Directe Link?</AlertTitle>
-            <AlertDescription className="space-y-2">
-              <p>Een directe link verwijst rechtstreeks naar de foto. Voorbeelden:</p>
-              <ul className="list-disc list-inside text-xs font-mono text-muted-foreground space-y-1 mt-2">
-                <li><strong>Google Drive:</strong> https://drive.google.com/uc?export=view&id=FILENAAM_ID</li>
-                <li><strong>Eigen website/NAS:</strong> https://jouwdomein.nl/foto-1.jpg</li>
-              </ul>
-              <p className="text-xs italic mt-2">Let op: Een gewone 'Deel link' van Google Drive werkt niet!</p>
-            </AlertDescription>
+          <Alert className="bg-accent/10 border-accent/20 border-l-4 border-l-accent">
+            <LinkIcon className="h-5 w-5 text-accent" />
+            <div className="ml-2">
+              <AlertTitle className="text-lg font-headline font-semibold text-accent">Hoe werkt een Directe Link naar je foto?</AlertTitle>
+              <AlertDescription className="mt-2 space-y-3 text-sm leading-relaxed">
+                <p>Een directe link verwijst rechtstreeks naar de foto. Een gewone 'Deel link' (van Drive) of een 'Pagina link' werkt niet in de galerie.</p>
+                <div className="grid md:grid-cols-2 gap-4 mt-4">
+                  <div className="bg-background/50 p-3 rounded-lg border border-border">
+                    <p className="font-bold mb-1">Google Drive:</p>
+                    <code className="text-[11px] block break-all text-muted-foreground">https://drive.google.com/uc?export=view&id=FILENAAM_ID</code>
+                  </div>
+                  <div className="bg-background/50 p-3 rounded-lg border border-border">
+                    <p className="font-bold mb-1">Eigen website / NAS:</p>
+                    <code className="text-[11px] block break-all text-muted-foreground">https://jouwdomein.nl/foto-1.jpg</code>
+                  </div>
+                </div>
+              </AlertDescription>
+            </div>
           </Alert>
         </div>
 
@@ -181,7 +189,7 @@ export default function AdminPage() {
           </TabsList>
 
           <TabsContent value="overview">
-            <Card className="border-border/50">
+            <Card className="border-border/50 shadow-sm">
               <CardHeader>
                 <CardTitle className="text-xl font-light">Database Inhoud</CardTitle>
               </CardHeader>
@@ -202,7 +210,7 @@ export default function AdminPage() {
                       </thead>
                       <tbody className="divide-y divide-border/50">
                         {artworks.map((art: any) => (
-                          <tr key={art.id} className="group">
+                          <tr key={art.id} className="group hover:bg-muted/30 transition-colors">
                             <td className="py-3">
                               <div className="relative w-12 h-12 rounded overflow-hidden bg-muted border border-border">
                                 <Image 
@@ -242,7 +250,7 @@ export default function AdminPage() {
           </TabsContent>
 
           <TabsContent value="single">
-            <Card className="border-border/50">
+            <Card className="border-border/50 shadow-sm">
               <CardHeader>
                 <CardTitle className="text-xl font-light">Nieuw Kunstwerk Toevoegen</CardTitle>
               </CardHeader>
@@ -289,7 +297,7 @@ export default function AdminPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="imageUrl">Afbeelding URL (Directe link naar de foto)</Label>
+                    <Label htmlFor="imageUrl">Afbeelding URL (Gebruik een directe link!)</Label>
                     <Input 
                       id="imageUrl" 
                       placeholder="https://drive.google.com/uc?export=view&id=..."
@@ -303,7 +311,7 @@ export default function AdminPage() {
                     <Label htmlFor="description">Beschrijving</Label>
                     <Textarea 
                       id="description" 
-                      className="min-h-[100px]"
+                      className="min-h-[100px] resize-none"
                       value={singleArtwork.description} 
                       onChange={e => setSingleArtwork({...singleArtwork, description: e.target.value})} 
                     />
@@ -318,7 +326,7 @@ export default function AdminPage() {
           </TabsContent>
 
           <TabsContent value="bulk">
-            <Card className="border-border/50">
+            <Card className="border-border/50 shadow-sm">
               <CardHeader>
                 <CardTitle className="text-xl font-light">Bulk Import</CardTitle>
               </CardHeader>
@@ -344,15 +352,15 @@ export default function AdminPage() {
           </TabsContent>
 
           <TabsContent value="helper">
-            <Card className="border-border/50">
+            <Card className="border-border/50 shadow-sm">
               <CardHeader>
                 <CardTitle className="text-xl font-light">Mappen Scanner & Helper</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="p-6 border-2 border-dashed border-border rounded-xl bg-secondary/10 text-center">
+                <div className="p-8 border-2 border-dashed border-border rounded-2xl bg-secondary/5 text-center transition-colors hover:bg-secondary/10">
                   <ImageIcon className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
                   <h3 className="text-lg font-medium mb-2">Scan je lokale mappen</h3>
-                  <p className="text-sm text-muted-foreground mb-4">Selecteer de foto's op je computer. Wij halen de namen eruit om een lijst te maken.</p>
+                  <p className="text-sm text-muted-foreground mb-6 max-w-sm mx-auto">Selecteer de foto's op je computer. Wij halen de namen eruit om een lijst te maken.</p>
                   <Input 
                     type="file" 
                     multiple 
@@ -361,7 +369,7 @@ export default function AdminPage() {
                     onChange={handleFileScan}
                     accept="image/*"
                   />
-                  <Button variant="outline" className="rounded-full" asChild>
+                  <Button variant="outline" className="rounded-full px-8" asChild>
                     <label htmlFor="file-scanner" className="cursor-pointer">
                       <FolderOpen className="mr-2 w-4 h-4" /> Selecteer Foto's
                     </label>
