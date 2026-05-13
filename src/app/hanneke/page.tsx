@@ -20,15 +20,15 @@ export default function HannekeSterkPage() {
             </div>
           </div>
           <div className="lg:col-span-7 space-y-8">
-            <span className="text-accent font-medium tracking-[0.2em] uppercase text-[10px] block">Familie & Nalatenschap</span>
+            <span className="text-accent font-medium tracking-[0.2em] uppercase text-[10px] block">Dochter & Nalatenschap</span>
             <h1 className="font-headline text-5xl md:text-6xl font-light leading-tight">Hanneke <span className="italic">Sterk</span></h1>
             
             <div className="space-y-6 text-lg text-muted-foreground leading-relaxed font-light">
               <p>
-                Hier komt de tekst over Hanneke Sterk en haar relatie tot Thijs en zijn werk. Je kunt hier beschrijven hoe zij betrokken is bij de nalatenschap of haar eigen herinneringen aan haar vader delen.
+                Als dochter van Thijs Sterk groeide Hanneke op te midden van de geur van olieverf en het strijklicht van het atelier. Haar perspectief op het werk van haar vader is diepgeworteld in persoonlijke herinneringen aan zijn scheppingsproces.
               </p>
               <p>
-                Dit is een placeholder tekst die je eenvoudig kunt vervangen door de definitieve teksten. De vormgeving zorgt ervoor dat het verhaal de aandacht krijgt die het verdient.
+                Samen met haar zus Beatrijs draagt zij zorg voor de artistieke nalatenschap, waarbij het ontsluiten van zijn oeuvre voor een nieuwe generatie centraal staat.
               </p>
             </div>
           </div>

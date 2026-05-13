@@ -20,15 +20,15 @@ export default function BeatrijsSterkPage() {
             </div>
           </div>
           <div className="lg:col-span-7 space-y-8">
-            <span className="text-accent font-medium tracking-[0.2em] uppercase text-[10px] block">Familie & Nalatenschap</span>
+            <span className="text-accent font-medium tracking-[0.2em] uppercase text-[10px] block">Dochter & Nalatenschap</span>
             <h1 className="font-headline text-5xl md:text-6xl font-light leading-tight">Beatrijs <span className="italic">Sterk</span></h1>
             
             <div className="space-y-6 text-lg text-muted-foreground leading-relaxed font-light">
               <p>
-                Hier komt de tekst over Beatrijs Sterk. Wat was haar rol, haar herinnering of haar visie op de kunst van Thijs? 
+                Beatrijs Sterk deelt als dochter de passie voor het landschap en de atmosferische rust die haar vaders werk zo typeert. Zij ziet het archief niet slechts als een verzameling beelden, maar als een levende geschiedenis van een kunstenaarsleven.
               </p>
               <p>
-                De website is nu klaar om deze verhalen te huisvesten. De serene achtergrondkleur en de klassieke typografie sluiten aan bij de tijdloze sfeer van het oeuvre.
+                Haar bijdrage aan dit retrospectief is essentieel voor het duiden van de intiemere momenten en de visie die Thijs Sterk had op de wereld om hem heen.
               </p>
             </div>
           </div>
