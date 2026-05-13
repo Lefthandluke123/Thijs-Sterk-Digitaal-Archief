@@ -188,7 +188,7 @@ export default function AdminPage() {
                 className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${nasBaseUrl === LOCAL_NAS_URL ? 'border-accent bg-accent/5' : 'border-border bg-transparent'}`}
               >
                 <div className="flex items-center justify-between mb-1">
-                  <span className="font-bold text-xs uppercase">Thuis Wi-Fi</span>
+                  <span className="font-bold text-xs uppercase">Thuis Wi-Fi (Snelst)</span>
                   <Wifi className="w-4 h-4" />
                 </div>
                 <code className="text-[10px] block truncate text-muted-foreground">{LOCAL_NAS_URL}</code>
@@ -237,23 +237,20 @@ export default function AdminPage() {
               {(testResult === 'forbidden' || testResult === 'error') && (
                 <Alert variant="destructive" className="rounded-xl border-destructive/20 bg-destructive/5">
                   <Settings className="h-4 w-4" />
-                  <AlertTitle className="font-bold">Synology Instellingen Nodig</AlertTitle>
+                  <AlertTitle className="font-bold">Hulp bij 403 / 404 Fout</AlertTitle>
                   <AlertDescription className="text-xs space-y-3 mt-2">
-                    <p>Als je een <b>403</b> of <b>404</b> krijgt, controleer dan deze stappen op je NAS:</p>
+                    <p className="font-bold text-foreground">Krijg je 403 Forbidden bij de knop &quot;Open Bestand Direct&quot;?</p>
+                    <p>Dit betekent dat de browser de NAS wel vindt, maar de NAS de toegang blokkeert. Volg deze stappen op je NAS:</p>
                     <ol className="list-decimal ml-4 space-y-2">
                       <li>
                         <b>Machtigingen (File Station):</b><br/>
                         Rechtermuis op map <b>web/portfolio</b> → <b>Eigenschappen</b> → <b>Machtigingen</b>.<br/>
-                        Voeg de groep <b>http</b> toe met &quot;Lezen&quot;. <br/>
+                        Voeg de groep <b>http</b> toe met &quot;Lezen&quot;.<br/>
                         <span className="font-bold text-accent underline italic">Vink &quot;Toepassen op submappen en bestanden&quot; aan!</span>
                       </li>
                       <li>
-                        <b>Web Station:</b><br/>
-                        Een Virtual Host is niet nodig als de map in &quot;web&quot; staat, maar controleer of de mapnaam precies klopt (hoofdlettergevoelig!).
-                      </li>
-                      <li>
-                        <b>Browser SSL:</b><br/>
-                        Klik op &quot;Open Bestand Direct&quot;. Als je een rood scherm ziet, typ <b>thisisunsafe</b> op je toetsenbord om de blokkade te verbreken.
+                        <b>Browser Blokkeert?</b><br/>
+                        Als je een rood scherm ziet na het klikken op de knop, typ dan <b>thisisunsafe</b> blindelings op je toetsenbord om de verbinding te forceren.
                       </li>
                     </ol>
                   </AlertDescription>

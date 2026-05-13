@@ -77,23 +77,24 @@ export default function GalleryPage() {
               <div className="space-y-4 w-full">
                 <AlertTitle className="text-amber-900 text-2xl font-bold">Hulp bij het laden van afbeeldingen</AlertTitle>
                 <AlertDescription className="text-amber-800 text-sm space-y-4">
-                  <p className="font-medium">Browsers blokkeren vaak de verbinding met een NAS. Volg deze stappen:</p>
+                  <p className="font-medium italic">Krijg je &quot;403 Forbidden&quot; na het klikken op Stap 1? Dat is juist GOED!</p>
+                  <p>Browsers blokkeren de verbinding met je NAS. De 403 betekent dat de browser je NAS heeft gevonden. Volg nu deze stappen:</p>
                   
                   <div className="grid md:grid-cols-2 gap-4 pt-2">
                     <div className="bg-white/50 p-4 rounded-xl border border-amber-200">
-                      <h4 className="font-bold mb-2">Stap 1: Verbinding Forceren</h4>
-                      <p className="mb-4 text-xs">Klik op de knop hieronder. Er opent een nieuw tabblad. Als je een waarschuwing krijgt, typ dan <b>thisisunsafe</b> op je toetsenbord (zonder ergens te klikken).</p>
+                      <h4 className="font-bold mb-2 text-amber-900">Stap 1: Verbinding Openen</h4>
+                      <p className="mb-4 text-xs">Klik op de knop. Zie je een waarschuwing? Typ <b>thisisunsafe</b> blindelings op je toetsenbord. Zie je daarna &quot;403 Forbidden&quot;? Ga dan door naar Stap 2.</p>
                       <Button 
                         className="w-full bg-amber-600 hover:bg-amber-700 text-white"
                         onClick={() => window.open('https://192-168-178-15.doggyfew.direct.quickconnect.to/portfolio/', '_blank')}
                       >
-                        Open NAS & Forceer SSL
+                        Open NAS Verbinding
                       </Button>
                     </div>
                     
                     <div className="bg-white/50 p-4 rounded-xl border border-amber-200">
-                      <h4 className="font-bold mb-2">Stap 2: Galerie Verversen</h4>
-                      <p className="mb-4 text-xs">Zodra je de NAS in het andere tabblad ziet (ook al staat er "403 Forbidden"), kom je terug en klik je op verversen.</p>
+                      <h4 className="font-bold mb-2 text-amber-900">Stap 2: Galerie Verversen</h4>
+                      <p className="mb-4 text-xs">Kom terug naar dit tabblad en klik op verversen. De browser &quot;vertrouwt&quot; de verbinding nu en de foto&apos;s verschijnen.</p>
                       <Button 
                         variant="secondary"
                         className="w-full border-amber-300"
@@ -168,7 +169,8 @@ export default function GalleryPage() {
                   </div>
                 ))}
               </div>
-            </>
+            </div>
+          </>
         ) : (
           <div className="text-center py-24 border rounded-2xl border-dashed">
             <h3 className="text-lg font-light mb-2">Geen schilderijen gevonden</h3>
