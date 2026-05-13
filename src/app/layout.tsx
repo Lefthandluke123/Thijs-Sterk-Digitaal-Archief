@@ -1,4 +1,3 @@
-
 import type { Metadata } from 'next';
 import './globals.css';
 import { Navbar } from '@/components/navbar';
@@ -6,8 +5,8 @@ import { Footer } from '@/components/sections/footer';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 
 export const metadata: Metadata = {
-  title: 'Aether Canvas | Elena Vance Artist Portfolio',
-  description: 'A contemporary visual artist exploring the intersections of abstract geometry and organic landscapes.',
+  title: 'Thijs Sterk | Beeldend Kunstenaar Portfolio',
+  description: 'Portfolio van Thijs Sterk, een hedendaagse kunstenaar die de grens tussen abstracte geometrie en organische landschappen verkent.',
 };
 
 export default function RootLayout({

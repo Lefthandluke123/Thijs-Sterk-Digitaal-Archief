@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from 'react';
@@ -20,24 +19,26 @@ export function Hero() {
       <div className="container mx-auto z-10 text-center">
         <div className="inline-block animate-fade-in-up">
           <span className="text-primary font-medium tracking-[0.2em] uppercase text-sm mb-4 block">
-            Elena Vance &bull; Visual Artist
+            Thijs Sterk &bull; Beeldend Kunstenaar
           </span>
         </div>
         
         <h1 className="font-headline text-5xl md:text-7xl lg:text-8xl font-light tracking-tight text-foreground mb-6 max-w-5xl mx-auto leading-tight animate-fade-in-up delay-100">
-          Capturing the Unseen Essence of <span className="italic">Nature</span>
+          Vangen van de Onzichtbare Essentie van <span className="italic">Natuur</span>
         </h1>
         
+        <h2 className="sr-only">Thijs Sterk Portfolio</h2>
+        
         <p className="text-muted-foreground text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed animate-fade-in-up delay-200">
-          Exploring the intersections of abstract geometry and organic landscapes through contemporary digital painting and textural experimentation.
+          Een verkenning van de raakvlakken tussen abstracte geometrie en organische landschappen door middel van moderne schilderkunst en texturele experimenten.
         </p>
         
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up delay-300">
           <Button size="lg" className="rounded-full px-8 bg-accent hover:bg-accent/90 text-accent-foreground font-medium h-12">
-            View Portfolio
+            Bekijk Portfolio
           </Button>
           <Button variant="outline" size="lg" className="rounded-full px-8 border-primary text-primary hover:bg-primary/5 font-medium h-12 group">
-            About Me
+            Over Mij
             <ArrowDownRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-0.5 group-hover:translate-y-0.5" />
           </Button>
         </div>

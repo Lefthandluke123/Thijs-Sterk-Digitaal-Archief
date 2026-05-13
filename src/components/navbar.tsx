@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from 'react';
@@ -20,8 +19,8 @@ export function Navbar() {
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/50">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white font-headline font-bold text-lg">A</div>
-          <span className="font-headline font-medium tracking-tight text-xl hidden sm:block">Aether Canvas</span>
+          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white font-headline font-bold text-lg">T</div>
+          <span className="font-headline font-medium tracking-tight text-xl hidden sm:block">Thijs Sterk</span>
         </Link>
         
         <div className="flex items-center gap-6 sm:gap-8">

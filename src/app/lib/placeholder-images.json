@@ -1,10 +1,9 @@
-
 {
   "placeholderImages": [
     {
       "id": "hero-image",
-      "description": "Abstract atmospheric landscape painting",
-      "imageUrl": "https://picsum.photos/seed/aether1/1200/800",
+      "description": "Abstract atmosferisch landschapsschilderij",
+      "imageUrl": "https://picsum.photos/seed/thijs1/1200/800",
       "imageHint": "abstract landscape"
     },
     {
@@ -12,65 +11,15 @@
       "title": "Cerulean Depths",
       "series": "Oceanic Whispers",
       "year": "2023",
-      "medium": "Digital Mixed Media",
-      "description": "An exploration of the layered mysteries found within deep oceanic currents.",
-      "imageUrl": "https://picsum.photos/seed/aether2/800/800",
+      "medium": "Gemengde Techniek",
+      "description": "Een verkenning van de gelaagde mysteries in diepe oceaanstromingen.",
+      "imageUrl": "https://picsum.photos/seed/thijs2/800/800",
       "imageHint": "blue abstract"
     },
     {
-      "id": "artwork-2",
-      "title": "Golden Hour Resilience",
-      "series": "Solar Cycle",
-      "year": "2024",
-      "medium": "Generative Paint",
-      "description": "Capturing the final moments of sunlight as it interacts with rugged landscapes.",
-      "imageUrl": "https://picsum.photos/seed/aether3/800/800",
-      "imageHint": "golden texture"
-    },
-    {
-      "id": "artwork-3",
-      "title": "Whispering Pines",
-      "series": "Flora Echoes",
-      "year": "2023",
-      "medium": "Digital Oil",
-      "description": "The rhythmic pattern of ancient forests translated into abstract vertical forms.",
-      "imageUrl": "https://picsum.photos/seed/aether4/800/1000",
-      "imageHint": "forest abstract"
-    },
-    {
-      "id": "artwork-4",
-      "title": "Ethereal Echoes",
-      "series": "Atmosphere",
-      "year": "2024",
-      "medium": "Mixed Media",
-      "description": "A delicate balance of light and shadow, representing fading memories.",
-      "imageUrl": "https://picsum.photos/seed/aether5/800/800",
-      "imageHint": "ethereal light"
-    },
-    {
-      "id": "artwork-5",
-      "title": "Tectonic Shift",
-      "series": "Geologic Time",
-      "year": "2023",
-      "medium": "Texture Collage",
-      "description": "The raw energy of shifting earth represented through layered textures.",
-      "imageUrl": "https://picsum.photos/seed/aether6/1000/800",
-      "imageHint": "rock texture"
-    },
-    {
-      "id": "artwork-6",
-      "title": "Midnight Bloom",
-      "series": "Night Garden",
-      "year": "2024",
-      "medium": "Digital Ink",
-      "description": "The quiet, vibrant life that thrives in the absence of sun.",
-      "imageUrl": "https://picsum.photos/seed/aether7/800/800",
-      "imageHint": "dark floral"
-    },
-    {
       "id": "artist-portrait",
-      "description": "Portrait of the artist Elena Vance",
-      "imageUrl": "https://picsum.photos/seed/artist/600/800",
+      "description": "Portret van de kunstenaar Thijs Sterk",
+      "imageUrl": "https://picsum.photos/seed/thijs-portrait/600/800",
       "imageHint": "artist portrait"
     }
   ]

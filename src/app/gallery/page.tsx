@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo } from 'react';
@@ -38,7 +37,7 @@ export default function GalleryPage() {
           <span className="text-accent font-medium tracking-widest uppercase text-sm mb-4 block">Portfolio</span>
           <h1 className="font-headline text-5xl md:text-6xl font-light mb-6">Kunst <span className="italic">Galeries</span></h1>
           <p className="text-muted-foreground text-lg leading-relaxed">
-            Ontdek de verschillende collecties van Elena Vance. Elk kunstwerk is een unieke verkenning van textuur, licht en natuurlijke fenomenen.
+            Ontdek de verschillende collecties van Thijs Sterk. Elk kunstwerk is een unieke verkenning van textuur, licht en natuurlijke fenomenen.
           </p>
         </header>
 

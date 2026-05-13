@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from 'react';
@@ -15,15 +14,14 @@ export function ArtistBio() {
           <div className="lg:col-span-5 order-2 lg:order-1">
             <div className="relative">
               <div className="absolute -top-6 -left-6 w-24 h-24 border-t-2 border-l-2 border-accent" />
-              <div className="absolute -bottom-6 -right-6 w-24 h-24 border-b-2 border-right-2 border-accent opacity-0" /> {/* Just decoration */}
               <div className="relative aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl">
                 {portrait && (
                   <Image
                     src={portrait.imageUrl}
-                    alt={portrait.description}
+                    alt="Portret van Thijs Sterk"
                     fill
                     className="object-cover"
-                    data-ai-hint={portrait.imageHint}
+                    data-ai-hint="artist portrait"
                   />
                 )}
               </div>
@@ -31,33 +29,33 @@ export function ArtistBio() {
           </div>
           
           <div className="lg:col-span-7 order-1 lg:order-2">
-            <span className="text-accent font-medium tracking-widest uppercase text-sm mb-4 block">The Artist</span>
-            <h2 className="font-headline text-4xl md:text-5xl font-light mb-8 leading-tight">Elena Vance: Synthesizing <span className="italic">Texture & Light</span></h2>
+            <span className="text-accent font-medium tracking-widest uppercase text-sm mb-4 block">De Kunstenaar</span>
+            <h2 className="font-headline text-4xl md:text-5xl font-light mb-8 leading-tight">Thijs Sterk: Synthese van <span className="italic">Textuur & Licht</span></h2>
             
             <div className="space-y-6 text-lg text-muted-foreground leading-relaxed">
               <p>
-                Based in the Pacific Northwest, Elena Vance is a contemporary visual artist whose work focuses on the intersection of mathematical precision and organic chaos. Her practice is a continuous dialogue with the natural environment, specifically the microscopic details often overlooked by the naked eye.
+                Thijs Sterk is een hedendaagse beeldend kunstenaar wiens werk zich richt op het snijvlak van wiskundige precisie en organische chaos. Zijn praktijk is een voortdurende dialoog met de natuurlijke omgeving, specifiek de microscopische details die vaak door het menselijk oog over het hoofd worden gezien.
               </p>
               <p>
-                "My philosophy is rooted in the belief that nature is the ultimate architect. I seek to decode the visual languages found in rock formations, cloud patterns, and fungal growth, translating these complex systems into digital canvases that invite meditation."
+                "Mijn filosofie is geworteld in de overtuiging dat de natuur de ultieme architect is. Ik probeer de visuele talen in rotsformaties, wolkenpatronen en schimmelgroei te ontcijferen en deze complexe systemen te vertalen naar doeken die uitnodigen tot meditatie."
               </p>
               <p>
-                With over a decade of experience in traditional oil painting and digital synthesis, Vance's work has been featured in solo exhibitions in Seattle, Vancouver, and Tokyo. Her pieces are held in private collections worldwide, bridging the gap between technological advancement and primordial wonder.
+                Met een achtergrond in zowel traditionele technieken als moderne experimenten, is het werk van Thijs tentoongesteld in diverse galeries. Zijn stukken bevinden zich in particuliere collecties, waar ze de brug slaan tussen technologische vooruitgang en oeroude verwondering.
               </p>
             </div>
             
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-8 mt-12 pt-12 border-t border-border">
               <div>
-                <h4 className="font-headline text-2xl font-light text-foreground mb-1">15+</h4>
-                <p className="text-sm uppercase tracking-tighter text-muted-foreground">Solo Exhibitions</p>
+                <h4 className="font-headline text-2xl font-light text-foreground mb-1">10+</h4>
+                <p className="text-sm uppercase tracking-tighter text-muted-foreground">Exposities</p>
               </div>
               <div>
-                <h4 className="font-headline text-2xl font-light text-foreground mb-1">200+</h4>
-                <p className="text-sm uppercase tracking-tighter text-muted-foreground">Works Sold</p>
+                <h4 className="font-headline text-2xl font-light text-foreground mb-1">150+</h4>
+                <p className="text-sm uppercase tracking-tighter text-muted-foreground">Werken Verkocht</p>
               </div>
               <div>
                 <h4 className="font-headline text-2xl font-light text-foreground mb-1">12</h4>
-                <p className="text-sm uppercase tracking-tighter text-muted-foreground">Years Experience</p>
+                <p className="text-sm uppercase tracking-tighter text-muted-foreground">Jaar Ervaring</p>
               </div>
             </div>
           </div>
