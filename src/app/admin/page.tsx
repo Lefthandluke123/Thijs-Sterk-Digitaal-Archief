@@ -1,22 +1,25 @@
 
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useFirestore, useCollection } from '@/firebase';
-import { collection, addDoc, doc, serverTimestamp, deleteDoc, writeBatch, getDocs, query } from 'firebase/firestore';
+import { collection, addDoc, doc, serverTimestamp, deleteDoc, writeBatch, getDocs } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
-import { PlusCircle, Loader2, FolderOpen, RefreshCw, HardDrive, Info, AlertTriangle, CheckCircle2, Trash2, Database } from 'lucide-react';
+import { PlusCircle, Loader2, FolderOpen, RefreshCw, Info, AlertTriangle, CheckCircle2, Trash2, Database, Globe, Wifi } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Image from 'next/image';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { Progress } from "@/components/ui/progress";
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
-// JOUW VASTE ADRES (WEB STATION)
-const FIXED_NAS_BASE_URL = 'https://192-168-178-15.doggyfew.direct.quickconnect.to/portfolio/';
+// JOUW ADRESSEN
+const LOCAL_NAS_URL = 'https://192-168-178-15.doggyfew.direct.quickconnect.to/portfolio/';
+const EXTERNAL_NAS_URL = 'https://doggyfew.quickconnect.to/portfolio/';
 
 export default function AdminPage() {
   const firestore = useFirestore();
@@ -25,7 +28,8 @@ export default function AdminPage() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [currentUploadItem, setCurrentUploadItem] = useState(0);
   const [activeTab, setActiveTab] = useState('scan');
-  const [testResult, setTestResult] = useState<'success' | 'error' | null>(null);
+  const [testResult, setTestResult] = useState<'success' | 'error' | 'testing' | null>(null);
+  const [nasBaseUrl, setNasBaseUrl] = useState(LOCAL_NAS_URL);
 
   const artworksQuery = useMemo(() => {
     if (!firestore) return null;
@@ -42,24 +46,20 @@ export default function AdminPage() {
       const relativePath = (file as any).webkitRelativePath || file.name;
       const pathParts = relativePath.split('/');
       
-      // FIX: Sla de allereerste mapnaam over (die jij op je computer selecteert)
-      // zodat we niet .../portfolio/Schilderijen/foto.jpg krijgen maar gewoon .../portfolio/foto.jpg
+      // Sla de hoofdmap over die geselecteerd is op de computer
       const adjustedPath = pathParts.length > 1 ? pathParts.slice(1).join('/') : relativePath;
       
-      // Bepaal de serie op basis van de ECHTE submapnaam op je NAS
-      let detectedSeries = 'Collectie 2024';
+      let detectedSeries = 'Onbekende Serie';
       if (pathParts.length > 2) {
         detectedSeries = pathParts[pathParts.length - 2] || detectedSeries;
         detectedSeries = detectedSeries.replace(/[_-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
       }
 
-      // Maak een nette titel van de bestandsnaam
       let cleanName = file.name.split('.').slice(0, -1).join('.');
       cleanName = cleanName.replace(/[_-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
       
-      // URL Encoding: spaties worden %20, browsers hebben dit nodig
       const encodedPath = adjustedPath.split('/').map(part => encodeURIComponent(part)).join('/');
-      const fullUrl = `${FIXED_NAS_BASE_URL}${encodedPath}`;
+      const fullUrl = `${nasBaseUrl}${encodedPath}`;
 
       return {
         title: cleanName,
@@ -85,7 +85,6 @@ export default function AdminPage() {
     const total = scannedArtworks.length;
     let successCount = 0;
 
-    // We voegen ze één voor één toe om de voortgangsbalk te laten werken
     for (let i = 0; i < total; i++) {
       const data = { 
         ...scannedArtworks[i], 
@@ -122,196 +121,209 @@ export default function AdminPage() {
 
   const handleDeleteAll = async () => {
     if (!firestore) return;
-    if (!confirm("Weet je zeker dat je ALLE werken uit de database wilt verwijderen? Dit is nodig om de 'Link Fouten' op te lossen.")) return;
+    if (!confirm("Weet je zeker dat je ALLE werken wilt verwijderen?")) return;
 
     setLoading(true);
     try {
       const querySnapshot = await getDocs(collection(firestore, 'artworks'));
       const batch = writeBatch(firestore);
-      
-      querySnapshot.forEach((doc) => {
-        batch.delete(doc.ref);
-      });
-      
+      querySnapshot.forEach((doc) => batch.delete(doc.ref));
       await batch.commit();
-      toast({ title: "Database geleegd", description: "Je kunt nu opnieuw scannen met de verbeterde linkjes." });
+      toast({ title: "Database geleegd" });
     } catch (err) {
-      toast({ variant: "destructive", title: "Fout bij het legen", description: "Probeer het nog eens." });
+      toast({ variant: "destructive", title: "Fout bij het legen" });
     } finally {
       setLoading(false);
     }
   };
 
   const testConnection = () => {
-    setTestResult(null);
+    setTestResult('testing');
     const img = new window.Image();
+    
+    // We proberen een dummy plaatje of een bestand dat op je NAS zou kunnen staan
+    // Voor een betere test openen we de URL in een nieuw tabblad als het faalt
     img.onload = () => setTestResult('success');
-    img.onerror = () => setTestResult('error');
-    // We testen even met een favicon of iets kleins dat op je NAS staat
-    img.src = `${FIXED_NAS_BASE_URL}favicon.ico?t=${Date.now()}`;
+    img.onerror = () => {
+      setTestResult('error');
+      toast({
+        variant: "destructive",
+        title: "Verbinding mislukt",
+        description: "De browser blokkeert de toegang. Klik op 'Open NAS direct' om de toegang te forceren."
+      });
+    };
+    
+    img.src = `${nasBaseUrl}favicon.ico?t=${Date.now()}`;
     
     setTimeout(() => {
-      if (!testResult) setTestResult('error');
+      if (testResult === 'testing') setTestResult('error');
     }, 5000);
   };
 
   return (
     <main className="min-h-screen bg-background pt-32 pb-24 px-4">
       <div className="container mx-auto max-w-5xl">
-        {/* HEADER MET DE RODE VERWIJDERKNOP */}
         <header className="mb-12 flex flex-col md:flex-row items-center justify-between gap-6 bg-white p-8 rounded-3xl shadow-sm border border-border/50">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-2xl bg-accent flex items-center justify-center text-white">
               <Database className="w-8 h-8" />
             </div>
             <div>
-              <h1 className="text-4xl font-headline font-light">Database <span className="italic">Beheer</span></h1>
-              <p className="text-muted-foreground">{artworks?.length || 0} schilderijen online</p>
+              <h1 className="text-4xl font-headline font-light">Portfolio <span className="italic">Beheer</span></h1>
+              <p className="text-muted-foreground">{artworks?.length || 0} schilderijen in database</p>
             </div>
           </div>
-          <div className="flex flex-col sm:flex-row gap-3">
-            <Button 
-              variant="destructive" 
-              onClick={handleDeleteAll} 
-              disabled={loading}
-              className="rounded-full h-12 px-6 font-bold shadow-lg shadow-red-200"
-            >
-              <Trash2 className="w-5 h-5 mr-2" /> Leeg Hele Database
-            </Button>
-            <Button variant="outline" onClick={() => window.location.reload()} className="rounded-full h-12 px-6">
-              <RefreshCw className="w-5 h-5 mr-2" /> Ververs Pagina
-            </Button>
-          </div>
+          <Button variant="destructive" onClick={handleDeleteAll} disabled={loading} className="rounded-full h-12 px-6 font-bold">
+            <Trash2 className="w-5 h-5 mr-2" /> Leeg Database
+          </Button>
         </header>
 
-        <Alert className="mb-12 bg-primary/5 border-primary/20 p-6 rounded-3xl">
-          <Info className="h-6 w-6 text-primary" />
-          <AlertTitle className="text-primary font-bold text-lg mb-2">FIX: Geen "Link Fouten" meer</AlertTitle>
-          <AlertDescription className="text-muted-foreground space-y-4">
-            <p>De nieuwe scanner slaat automatisch de mapnaam over die je op je computer selecteert. Hierdoor worden de linkjes naar je NAS nu 100% correct opgebouwd zonder dubbele mappen. Ook worden spaties nu automatisch vervangen door code (URL encoding).</p>
-            <div className="flex items-center gap-4 mt-4">
-               <Button variant="outline" size="sm" onClick={testConnection}>Test Verbinding met NAS</Button>
-               {testResult === 'success' && <div className="flex items-center text-green-600 text-sm gap-1 font-bold"><CheckCircle2 className="w-4 h-4"/> Verbinding OK!</div>}
-               {testResult === 'error' && <div className="flex items-center text-destructive text-sm gap-1 font-bold"><AlertTriangle className="w-4 h-4"/> NAS niet bereikbaar</div>}
+        <Card className="mb-12 border-none shadow-lg rounded-3xl bg-white overflow-hidden">
+          <CardHeader className="bg-primary/5 border-b border-primary/10">
+            <CardTitle className="flex items-center gap-2">
+              <Wifi className="w-5 h-5 text-primary" /> NAS Verbinding Instellen
+            </CardTitle>
+            <CardDescription>
+              Kies welk adres de website moet gebruiken om de foto's op te halen.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-8 space-y-6">
+            <div className="grid md:grid-cols-2 gap-4">
+              <div 
+                onClick={() => setNasBaseUrl(LOCAL_NAS_URL)}
+                className={`p-6 rounded-2xl border-2 cursor-pointer transition-all ${nasBaseUrl === LOCAL_NAS_URL ? 'border-accent bg-accent/5' : 'border-border bg-transparent hover:border-accent/50'}`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-bold">Lokale Link (WiFi)</span>
+                  <Wifi className="w-4 h-4 text-accent" />
+                </div>
+                <p className="text-xs text-muted-foreground mb-4">Snelste methode als je thuis bent op je eigen netwerk.</p>
+                <code className="text-[10px] block p-2 bg-white rounded border truncate">{LOCAL_NAS_URL}</code>
+              </div>
+              <div 
+                onClick={() => setNasBaseUrl(EXTERNAL_NAS_URL)}
+                className={`p-6 rounded-2xl border-2 cursor-pointer transition-all ${nasBaseUrl === EXTERNAL_NAS_URL ? 'border-accent bg-accent/5' : 'border-border bg-transparent hover:border-accent/50'}`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-bold">Externe Link (Altijd)</span>
+                  <Globe className="w-4 h-4 text-accent" />
+                </div>
+                <p className="text-xs text-muted-foreground mb-4">Werkt ook als je niet thuis bent, maar kan iets trager zijn.</p>
+                <code className="text-[10px] block p-2 bg-white rounded border truncate">{EXTERNAL_NAS_URL}</code>
+              </div>
             </div>
-          </AlertDescription>
-        </Alert>
+
+            <div className="flex flex-wrap items-center gap-4 pt-4">
+               <Button variant="outline" size="lg" className="rounded-full" onClick={testConnection} disabled={testResult === 'testing'}>
+                 {testResult === 'testing' ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+                 Test Deze Verbinding
+               </Button>
+               <Button variant="ghost" className="text-xs" onClick={() => window.open(nasBaseUrl, '_blank')}>
+                 Open NAS direct in nieuw tabblad
+               </Button>
+               {testResult === 'success' && <div className="flex items-center text-green-600 text-sm gap-2 font-bold px-4 py-2 bg-green-50 rounded-full"><CheckCircle2 className="w-5 h-5"/> Verbinding geslaagd!</div>}
+               {testResult === 'error' && <div className="flex items-center text-destructive text-sm gap-2 font-bold px-4 py-2 bg-red-50 rounded-full"><AlertTriangle className="w-5 h-5"/> Kan NAS niet bereiken</div>}
+            </div>
+
+            {testResult === 'error' && (
+              <Alert variant="destructive" className="mt-4 rounded-2xl">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Hulp bij verbinding</AlertTitle>
+                <AlertDescription className="text-xs">
+                  Als de test faalt, komt dat vaak doordat de browser "beveiliging" dwarsboomt. 
+                  <ol className="list-decimal ml-4 mt-2 space-y-1">
+                    <li>Klik op de knop <b>'Open NAS direct'</b> hierboven.</li>
+                    <li>Als je een melding krijgt "Je verbinding is niet privé", klik op <b>Geavanceerd -> Doorgaan naar...</b></li>
+                    <li>Kom terug naar deze pagina en probeer de test opnieuw.</li>
+                  </ol>
+                </AlertDescription>
+              </Alert>
+            )}
+          </CardContent>
+        </Card>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-3 mb-12 h-14 bg-muted/30 p-1 rounded-2xl">
             <TabsTrigger value="scan" className="rounded-xl data-[state=active]:bg-white">1. Map Scannen</TabsTrigger>
-            <TabsTrigger value="import" className="rounded-xl data-[state=active]:bg-white">2. Werken Opslaan</TabsTrigger>
+            <TabsTrigger value="import" className="rounded-xl data-[state=active]:bg-white">2. Opslaan ({scannedArtworks.length})</TabsTrigger>
             <TabsTrigger value="db" className="rounded-xl data-[state=active]:bg-white">3. Database Check</TabsTrigger>
           </TabsList>
 
           <TabsContent value="scan">
-            <Card className="border-none shadow-lg rounded-3xl">
-              <CardHeader>
-                <CardTitle>Stap 1: Map op je computer kiezen</CardTitle>
-                <CardDescription>Selecteer de map waar al je 178+ foto's in staan.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-8">
-                <div className="p-16 border-2 border-dashed rounded-3xl text-center bg-muted/20 border-accent/20 transition-colors hover:bg-muted/30">
-                  <input 
-                    type="file" 
-                    multiple 
-                    className="hidden" 
-                    id="file-scanner" 
-                    onChange={handleFileScan} 
-                    accept="image/*" 
-                    {...({ webkitdirectory: "", directory: "" } as any)} 
-                  />
-                  <Button variant="outline" size="lg" className="rounded-full border-accent text-accent h-20 px-12 text-xl shadow-md" asChild>
-                    <label htmlFor="file-scanner" className="cursor-pointer">
-                      <FolderOpen className="mr-3 h-8 w-8" /> Kies Map met Schilderijen
-                    </label>
-                  </Button>
+            <Card className="border-none shadow-lg rounded-3xl p-12 text-center bg-white">
+              <input 
+                type="file" 
+                multiple 
+                className="hidden" 
+                id="file-scanner" 
+                onChange={handleFileScan} 
+                accept="image/*" 
+                {...({ webkitdirectory: "", directory: "" } as any)} 
+              />
+              <div className="max-w-md mx-auto space-y-6">
+                <div className="w-24 h-24 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-6 text-accent">
+                  <FolderOpen className="w-12 h-12" />
                 </div>
-              </CardContent>
+                <h2 className="text-2xl font-headline">Selecteer je Portfolio Map</h2>
+                <p className="text-muted-foreground text-sm">Selecteer de map op je computer waar al je foto's in staan. Wij bouwen de linkjes voor je NAS automatisch op.</p>
+                <Button size="lg" className="rounded-full h-16 px-12 text-lg shadow-xl" asChild>
+                  <label htmlFor="file-scanner" className="cursor-pointer">Map Kiezen</label>
+                </Button>
+              </div>
             </Card>
           </TabsContent>
 
           <TabsContent value="import">
-            <Card className="border-none shadow-lg rounded-3xl">
-              <CardHeader>
-                <CardTitle>Stap 2: Alles online zetten</CardTitle>
-                <CardDescription>We hebben {scannedArtworks.length} schilderijen gevonden in de map.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {scannedArtworks.length > 0 && !loading && (
-                   <div className="max-h-60 overflow-y-auto border rounded-2xl p-6 bg-muted/10 space-y-3">
-                     <p className="text-xs font-bold text-primary mb-2 uppercase tracking-widest">Preview van de linkjes (automatisch gefixt):</p>
-                     {scannedArtworks.slice(0, 4).map((art, i) => (
-                       <div key={i} className="text-[10px] flex flex-col gap-1 border-b pb-3 last:border-0 border-border/50">
-                         <span className="font-bold text-sm text-foreground">{art.title}</span>
-                         <code className="text-muted-foreground break-all bg-white/50 p-2 rounded-lg text-[10px] border border-border/30">{art.imageUrl}</code>
-                       </div>
-                     ))}
-                     {scannedArtworks.length > 4 && <div className="text-center text-xs text-muted-foreground pt-2 font-medium">...en nog {scannedArtworks.length - 4} andere bestanden</div>}
-                   </div>
-                )}
-
-                {loading && (
-                  <div className="space-y-4 p-10 bg-accent/5 rounded-3xl border border-accent/20">
-                    <div className="flex justify-between text-lg font-bold text-accent">
-                      <span>Importeren...</span>
-                      <span>{currentUploadItem} / {scannedArtworks.length}</span>
-                    </div>
-                    <Progress value={uploadProgress} className="h-6" />
+            <Card className="border-none shadow-lg rounded-3xl bg-white p-8">
+              {loading ? (
+                <div className="py-12 space-y-6">
+                  <div className="flex justify-between text-2xl font-headline italic">
+                    <span>Bezig met uploaden naar database...</span>
+                    <span>{currentUploadItem} / {scannedArtworks.length}</span>
                   </div>
-                )}
-
-                <Button 
-                  onClick={handleSaveAll} 
-                  className="w-full h-24 bg-primary text-white text-2xl font-bold rounded-3xl shadow-2xl hover:scale-[1.02] transition-transform" 
-                  disabled={loading || scannedArtworks.length === 0}
-                >
-                  {loading ? <Loader2 className="animate-spin mr-3 h-10 w-10" /> : <PlusCircle className="mr-3 h-10 w-10" />}
-                  Nu {scannedArtworks.length} Schilderijen Toevoegen
-                </Button>
-              </CardContent>
+                  <Progress value={uploadProgress} className="h-8 rounded-full" />
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  <div className="p-6 bg-muted/20 rounded-2xl border space-y-2">
+                    <p className="text-xs font-bold text-primary uppercase">Link Preview:</p>
+                    <code className="text-[10px] block truncate">{scannedArtworks[0]?.imageUrl}</code>
+                  </div>
+                  <Button onClick={handleSaveAll} className="w-full h-24 text-2xl font-bold rounded-3xl shadow-2xl" disabled={scannedArtworks.length === 0}>
+                    Nu {scannedArtworks.length} Schilderijen Toevoegen
+                  </Button>
+                </div>
+              )}
             </Card>
           </TabsContent>
 
           <TabsContent value="db">
-            <Card className="border-none shadow-lg rounded-3xl">
-              <CardHeader>
-                <CardTitle>Database Overzicht ({artworks?.length || 0})</CardTitle>
-                <CardDescription>Hieronder zie je of de plaatjes nu wel laden.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {loadingArtworks ? (
-                  <div className="flex justify-center py-20"><Loader2 className="animate-spin text-accent h-12 w-12" /></div>
-                ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4">
-                    {artworks?.map((art: any) => (
-                      <div key={art.id} className="relative aspect-square border rounded-2xl overflow-hidden group bg-muted/30 shadow-sm">
-                        <Image 
-                          src={art.imageUrl} 
-                          alt="" 
-                          fill 
-                          className="object-cover" 
-                          unoptimized={true} 
-                          onError={(e) => {
-                            (e.target as any).src = 'https://placehold.co/400x400/d5dc96/2013025?text=Link+Fout';
-                          }}
-                        />
-                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-3 text-white text-center">
-                          <p className="text-[10px] font-bold mb-2">{art.title}</p>
-                          <Button 
-                            variant="destructive" 
-                            size="sm" 
-                            className="h-7 text-[10px] rounded-full" 
-                            onClick={() => deleteDoc(doc(firestore!, 'artworks', art.id))}
-                          >
-                            Verwijder
-                          </Button>
-                        </div>
+            <Card className="border-none shadow-lg rounded-3xl bg-white p-8">
+              {loadingArtworks ? (
+                <div className="flex justify-center py-20"><Loader2 className="animate-spin text-accent h-12 w-12" /></div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4">
+                  {artworks?.map((art: any) => (
+                    <div key={art.id} className="relative aspect-square border rounded-2xl overflow-hidden group bg-muted/30">
+                      <Image 
+                        src={art.imageUrl} 
+                        alt="" 
+                        fill 
+                        className="object-cover" 
+                        unoptimized={true} 
+                        onError={(e) => {
+                          (e.target as any).src = 'https://placehold.co/400x400/d5dc96/2013025?text=Link+Fout';
+                        }}
+                      />
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <Button variant="destructive" size="sm" className="rounded-full h-8" onClick={() => deleteDoc(doc(firestore!, 'artworks', art.id))}>
+                          Verwijder
+                        </Button>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
+                    </div>
+                  ))}
+                </div>
+              )}
             </Card>
           </TabsContent>
         </Tabs>
