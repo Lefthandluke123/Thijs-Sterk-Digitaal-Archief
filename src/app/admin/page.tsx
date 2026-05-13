@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo } from 'react';
@@ -9,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
-import { PlusCircle, Database, FileJson, Loader2, Wand2, Trash2, FolderOpen, Image as ImageIcon, Info, Link as LinkIcon, AlertTriangle } from 'lucide-react';
+import { PlusCircle, Database, FileJson, Loader2, Wand2, Trash2, FolderOpen, Image as ImageIcon, Info, Link as LinkIcon, AlertTriangle, Zap } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Image from 'next/image';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -29,7 +30,9 @@ export default function AdminPage() {
   });
 
   const [bulkJson, setBulkJson] = useState('');
-  const [rawList, setRawList] = useState('');
+  const [rawFiles, setRawFiles] = useState<{name: string, cleanName: string}[]>([]);
+  const [baseUrl, setBaseUrl] = useState('');
+  const [defaultSeries, setDefaultSeries] = useState('Nieuwe Collectie');
 
   const artworksQuery = useMemo(() => {
     if (!firestore) return null;
@@ -39,6 +42,7 @@ export default function AdminPage() {
   const { data: artworks, loading: loadingArtworks } = useCollection(artworksQuery);
 
   const isExternalStorage = (url: string) => {
+    if (!url) return false;
     return url.includes('drive.google.com') || url.includes('gofile.me') || url.includes('quickconnect.to');
   };
 
@@ -76,51 +80,63 @@ export default function AdminPage() {
     try {
       const artworksData = JSON.parse(bulkJson);
       const artworkCol = collection(firestore, 'artworks');
+      
+      // We doen dit in kleine batches om de browser niet te bevriezen
       for (const art of artworksData) {
-        await addDoc(artworkCol, { ...art, createdAt: serverTimestamp() });
+        addDoc(artworkCol, { ...art, createdAt: serverTimestamp() });
       }
-      toast({ title: "Bulk Succes", description: "Lijst toegevoegd." });
+      
+      toast({ title: "Bulk Succes", description: `${artworksData.length} schilderijen worden toegevoegd aan de database.` });
       setBulkJson('');
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Fout", description: error.message });
+      toast({ variant: "destructive", title: "Fout in JSON", description: "Controleer of de JSON code correct is." });
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!firestore || !confirm("Verwijderen?")) return;
+    if (!firestore || !confirm("Weet je zeker dat je dit kunstwerk wilt verwijderen?")) return;
     try {
       await deleteDoc(doc(firestore, 'artworks', id));
       toast({ title: "Verwijderd" });
     } catch (error) {
-      toast({ variant: "destructive", title: "Fout" });
+      toast({ variant: "destructive", title: "Fout bij verwijderen" });
     }
-  };
-
-  const generateJsonFromList = () => {
-    const lines = rawList.split('\n').filter(line => line.trim() !== '');
-    const generated = lines.map((line, index) => ({
-      title: line.trim(),
-      series: "Nieuwe Collectie",
-      year: new Date().getFullYear().toString(),
-      medium: "Olieverf op doek",
-      imageUrl: `https://picsum.photos/seed/${index + 100}/800/800`,
-      description: `Beschrijving voor ${line.trim()}`,
-      imageHint: "abstract painting"
-    }));
-    setBulkJson(JSON.stringify(generated, null, 2));
-    toast({ title: "JSON Gegenereerd" });
   };
 
   const handleFileScan = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
-    const names = Array.from(files).map(file => {
-      let name = file.name.split('.').slice(0, -1).join('.');
-      return name.replace(/[_-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    
+    const scanned = Array.from(files).map(file => {
+      let cleanName = file.name.split('.').slice(0, -1).join('.');
+      cleanName = cleanName.replace(/[_-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      return {
+        name: file.name,
+        cleanName: cleanName
+      };
     });
-    setRawList(prev => (prev ? prev + '\n' + names.join('\n') : names.join('\n')));
+    
+    setRawFiles(prev => [...prev, ...scanned]);
+    toast({ title: `${scanned.length} bestanden gescand` });
+  };
+
+  const generateBulkJson = () => {
+    if (rawFiles.length === 0) return;
+    
+    const generated = rawFiles.map((file) => ({
+      title: file.cleanName,
+      series: defaultSeries,
+      year: new Date().getFullYear().toString(),
+      medium: "Olieverf op doek",
+      imageUrl: baseUrl ? `${baseUrl.replace(/\/$/, '')}/${file.name}` : `https://picsum.photos/seed/${file.name}/800/800`,
+      description: `Een prachtig werk getiteld ${file.cleanName}.`,
+      imageHint: "painting art"
+    }));
+    
+    setBulkJson(JSON.stringify(generated, null, 2));
+    toast({ title: "JSON Gegenereerd", description: "Ga naar het tabblad 'Bulk Import' om het op te slaan." });
   };
 
   return (
@@ -133,19 +149,14 @@ export default function AdminPage() {
 
         <div className="grid gap-6 mb-12">
           <Alert className="bg-accent/10 border-accent/20 border-l-4 border-l-accent">
-            <LinkIcon className="h-5 w-5 text-accent" />
+            <Zap className="h-5 w-5 text-accent" />
             <div className="ml-2">
-              <AlertTitle className="text-lg font-headline font-semibold text-accent">Belangrijk: Synology & Directe Links</AlertTitle>
+              <AlertTitle className="text-lg font-headline font-semibold text-accent">Bulk Tip: Snel 400 werken toevoegen</AlertTitle>
               <AlertDescription className="mt-2 space-y-3 text-sm leading-relaxed">
-                <p>Een standaard <strong>gofile.me</strong> link van Synology is vaak een 'deel-pagina' en geen directe foto. </p>
-                <div className="bg-background/50 p-4 rounded-lg border border-border space-y-2">
-                  <p className="font-bold">Hoe krijg je de juiste link?</p>
-                  <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                    <li>Gebruik <strong>Synology Photos</strong> voor de beste resultaten.</li>
-                    <li>Kies 'Deel-instellingen' &gt; 'Openbare link inschakelen'.</li>
-                    <li>Rechtermuisknop op de geopende foto &gt; <strong>'Adres van afbeelding kopiëren'</strong>.</li>
-                    <li>De link moet eindigen op een bestandstype (zoals <code>.jpg</code>) of een directe stream-ID bevatten.</li>
-                  </ul>
+                <p>Je hoeft niet alles één voor één te doen. Gebruik de <strong>Scanner</strong> om je bestandsnamen op te halen, vul je <strong>Basis URL</strong> van je Synology in, en de app genereert de lijst voor je.</p>
+                <div className="bg-background/50 p-4 rounded-lg border border-border">
+                  <p className="font-bold mb-1">Hoe krijg je de Basis URL van Synology?</p>
+                  <p className="text-muted-foreground">Als je via Web Station of een gedeelde map werkt, is de link vaak: <code>https://jouwnas.direct.quickconnect.to/portfolio/</code>. De app plakt de bestandsnaam er dan zelf achteraan.</p>
                 </div>
               </AlertDescription>
             </div>
@@ -155,14 +166,14 @@ export default function AdminPage() {
         <Tabs defaultValue="overview" className="w-full">
           <TabsList className="grid w-full grid-cols-4 mb-8">
             <TabsTrigger value="overview">Database</TabsTrigger>
-            <TabsTrigger value="single">Nieuw</TabsTrigger>
+            <TabsTrigger value="single">Nieuw Item</TabsTrigger>
+            <TabsTrigger value="helper">Scanner & Generator</TabsTrigger>
             <TabsTrigger value="bulk">Bulk Import</TabsTrigger>
-            <TabsTrigger value="helper">Scan Mappen</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview">
             <Card>
-              <CardHeader><CardTitle className="font-light">Database Inhoud</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="font-light">Huidige Collectie ({artworks?.length || 0})</CardTitle></CardHeader>
               <CardContent>
                 {loadingArtworks ? (
                   <div className="flex justify-center py-12"><Loader2 className="animate-spin" /></div>
@@ -173,6 +184,7 @@ export default function AdminPage() {
                         <tr className="border-b text-sm text-muted-foreground">
                           <th className="pb-3">Beeld</th>
                           <th className="pb-3">Titel</th>
+                          <th className="pb-3">Serie</th>
                           <th className="pb-3 text-right">Acties</th>
                         </tr>
                       </thead>
@@ -191,60 +203,129 @@ export default function AdminPage() {
                               </div>
                             </td>
                             <td className="py-3 font-medium">{art.title}</td>
+                            <td className="py-3 text-muted-foreground text-xs">{art.series}</td>
                             <td className="py-3 text-right">
-                              <Button variant="ghost" size="icon" onClick={() => handleDelete(art.id)}><Trash2 className="w-4 h-4" /></Button>
+                              <Button variant="ghost" size="icon" onClick={() => handleDelete(art.id)} className="text-destructive"><Trash2 className="w-4 h-4" /></Button>
                             </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
-                ) : <div className="text-center py-12 text-muted-foreground">Leeg.</div>}
+                ) : <div className="text-center py-12 text-muted-foreground">Nog geen werken in de database.</div>}
               </CardContent>
             </Card>
           </TabsContent>
 
           <TabsContent value="single">
             <Card>
-              <CardHeader><CardTitle className="font-light">Toevoegen</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="font-light">Enkel item toevoegen</CardTitle></CardHeader>
               <CardContent>
                 <form onSubmit={handleAddSingle} className="space-y-4">
                   <div className="grid md:grid-cols-2 gap-4">
-                    <div className="space-y-2"><Label>Titel</Label><Input value={singleArtwork.title} onChange={e => setSingleArtwork({...singleArtwork, title: e.target.value})} required /></div>
-                    <div className="space-y-2"><Label>Serie</Label><Input value={singleArtwork.series} onChange={e => setSingleArtwork({...singleArtwork, series: e.target.value})} required /></div>
+                    <div className="space-y-2"><Label>Titel</Label><Input value={singleArtwork.title} onChange={e => setSingleArtwork({...singleArtwork, title: e.target.value})} required placeholder="Bijv. Stilleven in Blauw" /></div>
+                    <div className="space-y-2"><Label>Serie</Label><Input value={singleArtwork.series} onChange={e => setSingleArtwork({...singleArtwork, series: e.target.value})} required placeholder="Bijv. Abstract 2024" /></div>
                   </div>
                   <div className="space-y-2">
-                    <Label>Afbeelding URL</Label>
-                    <Input placeholder="https://..." value={singleArtwork.imageUrl} onChange={e => setSingleArtwork({...singleArtwork, imageUrl: e.target.value})} required />
+                    <Label>Directe Afbeelding URL</Label>
+                    <Input placeholder="https://jouwnas.nl/foto.jpg" value={singleArtwork.imageUrl} onChange={e => setSingleArtwork({...singleArtwork, imageUrl: e.target.value})} required />
                   </div>
-                  <Button type="submit" className="w-full h-12 rounded-full" disabled={loading}>Opslaan</Button>
+                  <div className="space-y-2">
+                    <Label>Beschrijving</Label>
+                    <Textarea value={singleArtwork.description} onChange={e => setSingleArtwork({...singleArtwork, description: e.target.value})} placeholder="Vertel iets over het werk..." />
+                  </div>
+                  <Button type="submit" className="w-full h-12 rounded-full" disabled={loading}>Opslaan in Database</Button>
                 </form>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="bulk">
-            <Card>
-              <CardHeader><CardTitle className="font-light">Bulk Import</CardTitle></CardHeader>
-              <CardContent className="space-y-4">
-                <Textarea className="min-h-[300px] font-mono text-xs" value={bulkJson} onChange={e => setBulkJson(e.target.value)} />
-                <Button onClick={handleAddBulk} className="w-full h-12 rounded-full" disabled={loading || !bulkJson}>Alles importeren</Button>
               </CardContent>
             </Card>
           </TabsContent>
 
           <TabsContent value="helper">
             <Card>
-              <CardHeader><CardTitle className="font-light">Mappen Scanner</CardTitle></CardHeader>
+              <CardHeader>
+                <CardTitle className="font-light">Mappen Scanner & Link Generator</CardTitle>
+                <CardDescription>Scan je lokale bestanden om titels te genereren en voeg je Synology URL toe.</CardDescription>
+              </CardHeader>
               <CardContent className="space-y-6">
-                <div className="p-8 border-2 border-dashed rounded-2xl text-center">
+                <div className="p-8 border-2 border-dashed rounded-2xl text-center bg-muted/20">
                   <Input type="file" multiple className="hidden" id="file-scanner" onChange={handleFileScan} accept="image/*" />
-                  <Button variant="outline" className="rounded-full" asChild>
-                    <label htmlFor="file-scanner" className="cursor-pointer">Selecteer Foto's van computer</label>
+                  <Button variant="outline" className="rounded-full px-8" asChild>
+                    <label htmlFor="file-scanner" className="cursor-pointer">
+                      <FolderOpen className="mr-2 h-4 w-4" />
+                      Selecteer foto's van je computer
+                    </label>
                   </Button>
+                  <p className="text-xs text-muted-foreground mt-4">Geen zorgen, de foto's worden niet geüpload, we lezen alleen de namen.</p>
                 </div>
-                <Textarea placeholder="Titels..." className="min-h-[150px]" value={rawList} onChange={e => setRawList(e.target.value)} />
-                <Button onClick={generateJsonFromList} variant="secondary" className="w-full h-12 rounded-full" disabled={!rawList}>Genereer JSON</Button>
+
+                {rawFiles.length > 0 && (
+                  <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Basis URL (Synology/Hosting)</Label>
+                        <Input 
+                          placeholder="https://jouwnas.nl/mijn-map/" 
+                          value={baseUrl} 
+                          onChange={e => setBaseUrl(e.target.value)} 
+                        />
+                        <p className="text-[10px] text-muted-foreground">De bestandsnaam wordt hier automatisch achter geplakt.</p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Standaard Serie Naam</Label>
+                        <Input 
+                          value={defaultSeries} 
+                          onChange={e => setDefaultSeries(e.target.value)} 
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="max-h-40 overflow-y-auto border rounded-lg p-2 bg-muted/10">
+                      <p className="text-xs font-bold mb-2">Gevonden bestanden ({rawFiles.length}):</p>
+                      <ul className="text-[10px] space-y-1">
+                        {rawFiles.slice(0, 10).map((f, i) => (
+                          <li key={i} className="flex justify-between border-b pb-1">
+                            <span>{f.name}</span>
+                            <span className="italic text-accent">Wordt: {f.cleanName}</span>
+                          </li>
+                        ))}
+                        {rawFiles.length > 10 && <li className="text-muted-foreground">...en nog {rawFiles.length - 10} meer.</li>}
+                      </ul>
+                    </div>
+
+                    <div className="flex gap-4">
+                      <Button onClick={generateBulkJson} className="flex-1 h-12 rounded-full">
+                        <Wand2 className="mr-2 h-4 w-4" />
+                        Genereer JSON Lijst
+                      </Button>
+                      <Button onClick={() => setRawFiles([])} variant="ghost" className="h-12 rounded-full">Lijst wissen</Button>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="bulk">
+            <Card>
+              <CardHeader>
+                <CardTitle className="font-light">Bulk Import</CardTitle>
+                <CardDescription>Plak hier de JSON code of gebruik de Generator tab om deze te vullen.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Textarea 
+                  className="min-h-[300px] font-mono text-[10px] leading-tight" 
+                  value={bulkJson} 
+                  onChange={e => setBulkJson(e.target.value)} 
+                  placeholder='[ { "title": "Naam", "imageUrl": "..." }, ... ]'
+                />
+                <Button 
+                  onClick={handleAddBulk} 
+                  className="w-full h-12 rounded-full bg-accent hover:bg-accent/90" 
+                  disabled={loading || !bulkJson}
+                >
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Alles naar Database Sturen
+                </Button>
               </CardContent>
             </Card>
           </TabsContent>
