@@ -10,14 +10,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
-import { PlusCircle, Loader2, Wand2, Trash2, FolderOpen, RefreshCw, CheckCircle2, AlertCircle, Info, ExternalLink, HelpCircle, Eye } from 'lucide-react';
+import { PlusCircle, Loader2, Trash2, FolderOpen, RefreshCw, CheckCircle2, AlertCircle, HelpCircle, Info } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Image from 'next/image';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export default function AdminPage() {
   const firestore = useFirestore();
@@ -27,7 +26,8 @@ export default function AdminPage() {
   
   const [bulkJson, setBulkJson] = useState('');
   const [rawFiles, setRawFiles] = useState<{name: string, cleanName: string, series: string}[]>([]);
-  const [baseUrl, setBaseUrl] = useState('https://doggyfew.direct.quickconnect.to/portfolio/');
+  // We halen :5001 weg voor de Web Station link
+  const [baseUrl, setBaseUrl] = useState('https://192-168-178-15.doggyfew.direct.quickconnect.to/portfolio/');
   const [defaultSeries, setDefaultSeries] = useState('Collectie 2024');
 
   const artworksQuery = useMemo(() => {
@@ -73,19 +73,19 @@ export default function AdminPage() {
         count++;
       }
       
-      toast({ title: "Bulk Import Gestart", description: `${count} schilderijen worden toegevoegd aan de database.` });
+      toast({ title: "Bulk Import Gestart", description: `${count} schilderijen worden toegevoegd.` });
       setBulkJson('');
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Fout in JSON", description: "De gegenereerde code bevat een fout. Probeer opnieuw te scannen." });
+      toast({ variant: "destructive", title: "Fout in JSON", description: "Controleer de tekst in het vak." });
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!firestore || !confirm("Weet je zeker dat je dit werk wilt verwijderen uit de database?")) return;
+    if (!firestore || !confirm("Weet je zeker dat je dit werk wilt verwijderen?")) return;
     deleteDoc(doc(firestore, 'artworks', id))
-      .then(() => toast({ title: "Verwijderd uit database" }))
+      .then(() => toast({ title: "Verwijderd" }))
       .catch(async () => {
         const permissionError = new FirestorePermissionError({
           path: `artworks/${id}`,
@@ -120,7 +120,7 @@ export default function AdminPage() {
     });
     
     setRawFiles(scanned);
-    toast({ title: "Scan voltooid", description: `${scanned.length} bestanden gevonden in de geselecteerde map.` });
+    toast({ title: "Scan voltooid", description: `${scanned.length} bestanden gevonden.` });
   };
 
   const generateBulkJson = () => {
@@ -136,7 +136,7 @@ export default function AdminPage() {
       imageHint: "painting art"
     }));
     setBulkJson(JSON.stringify(generated, null, 2));
-    toast({ title: "JSON Gegenereerd", description: "Controleer de lijst in de 'Stap 3' tab." });
+    toast({ title: "Lijst klaar", description: "Ga naar Stap 3 om op te slaan." });
   };
 
   return (
@@ -145,7 +145,7 @@ export default function AdminPage() {
         <header className="mb-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <div>
             <h1 className="text-4xl font-headline font-light">Beheer <span className="italic">Portfolio</span></h1>
-            <p className="text-muted-foreground mt-2">Database status: {loadingArtworks ? "Laden..." : `${artworks?.length || 0} schilderijen`}</p>
+            <p className="text-muted-foreground mt-2">{loadingArtworks ? "Laden..." : `${artworks?.length || 0} schilderijen in database`}</p>
           </div>
           <Button variant="outline" className="rounded-full gap-2 border-accent text-accent" onClick={() => window.location.reload()}>
             <RefreshCw className="w-4 h-4" /> Database Verversen
@@ -154,26 +154,24 @@ export default function AdminPage() {
 
         <Alert className="mb-8 bg-accent/10 border-accent/30">
           <HelpCircle className="h-5 w-5 text-accent" />
-          <AlertTitle className="text-accent font-bold text-lg mb-2">Web Station & Directe .jpg Links</AlertTitle>
+          <AlertTitle className="text-accent font-bold text-lg mb-2">Hoe maak ik de juiste link?</AlertTitle>
           <AlertDescription className="text-sm">
+            <p className="mb-4">Voor Web Station moet je de <strong>:5001</strong> weghalen uit je link. Die poort is alleen voor File Station.</p>
             <Accordion type="single" collapsible className="w-full">
-              <AccordionItem value="step-1" className="border-accent/20">
-                <AccordionTrigger className="hover:no-underline font-semibold">1. Waarom Web Station?</AccordionTrigger>
-                <AccordionContent className="space-y-2">
-                  <p>Om 400 foto's te tonen hebben we linkjes nodig die eindigen op <strong>.jpg</strong>. Web Station maakt dit mogelijk door van een map op je NAS een echte "website" te maken.</p>
-                  <p>Installeer <strong>Web Station</strong> via het Package Center op je Synology.</p>
-                </AccordionContent>
-              </AccordionItem>
-              <AccordionItem value="step-2" className="border-accent/20">
-                <AccordionTrigger className="hover:no-underline font-semibold">2. De map 'web' gebruiken</AccordionTrigger>
-                <AccordionContent>
-                  <p>In File Station staat nu een map <code>web</code>. Maak hierin een map <code>portfolio</code> en sleep al je foto's (inclusief submappen) daarheen.</p>
-                </AccordionContent>
-              </AccordionItem>
-              <AccordionItem value="step-3" className="border-accent/20">
-                <AccordionTrigger className="hover:no-underline font-semibold">3. Je linkjes controleren</AccordionTrigger>
-                <AccordionContent>
-                  <p>Je link ziet er dan zo uit: <code>https://jouwnas.direct.quickconnect.to/portfolio/foto.jpg</code>. Merk op dat de poort <strong>:5001</strong> weg is!</p>
+              <AccordionItem value="url-logic" className="border-accent/20">
+                <AccordionTrigger className="hover:no-underline font-semibold">Uitleg over de URL prefix</AccordionTrigger>
+                <AccordionContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-3 bg-destructive/10 rounded border border-destructive/20">
+                      <p className="font-bold text-destructive mb-1 text-xs">FOUT (voor File Station):</p>
+                      <code className="text-[10px] break-all">https://...quickconnect.to<strong>:5001</strong>/portfolio/foto.jpg</code>
+                    </div>
+                    <div className="p-3 bg-green-500/10 rounded border border-green-500/20">
+                      <p className="font-bold text-green-700 mb-1 text-xs">GOED (voor de Website):</p>
+                      <code className="text-[10px] break-all">https://...quickconnect.to/portfolio/foto.jpg</code>
+                    </div>
+                  </div>
+                  <p className="text-xs italic">De website kan alleen de "GOED" versie laden omdat Web Station die bestanden publiek toegankelijk maakt.</p>
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
@@ -185,19 +183,19 @@ export default function AdminPage() {
             <TabsTrigger value="synology">Stap 1: Test Link</TabsTrigger>
             <TabsTrigger value="helper">Stap 2: Scan Map</TabsTrigger>
             <TabsTrigger value="bulk">Stap 3: Bulk Import</TabsTrigger>
-            <TabsTrigger value="overview">Database Overzicht</TabsTrigger>
+            <TabsTrigger value="overview">Database</TabsTrigger>
           </TabsList>
 
           <TabsContent value="synology">
             <Card>
               <CardHeader>
-                <CardTitle>Test je Directe .jpg Link</CardTitle>
-                <CardDescription>Plak hier een link naar een foto in je 'web/portfolio' map om te zien of hij werkt.</CardDescription>
+                <CardTitle>Test je Link</CardTitle>
+                <CardDescription>Plak hier een link ZONDER :5001 om te kijken of hij werkt.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex gap-2">
                   <Input 
-                    placeholder="https://doggyfew.direct.quickconnect.to/portfolio/test.jpg" 
+                    placeholder="https://192-168-178-15.doggyfew.direct.quickconnect.to/portfolio/test.jpg" 
                     value={testUrl} 
                     onChange={e => setTestUrl(e.target.value)}
                   />
@@ -207,8 +205,8 @@ export default function AdminPage() {
                   <div className="p-4 bg-green-500/10 text-green-700 rounded-lg flex items-center gap-3 border border-green-200">
                     <CheckCircle2 className="w-6 h-6" /> 
                     <div>
-                      <p className="font-bold">Succes! De link werkt.</p>
-                      <p className="text-xs">Deze link eindigt op .jpg en de website kan hem direct laden. Je kunt nu veilig door naar stap 2.</p>
+                      <p className="font-bold">Perfect! Deze link werkt.</p>
+                      <p className="text-xs">Kopieer alles wat vóór de bestandsnaam staat naar "Stap 2" hiernaast.</p>
                     </div>
                   </div>
                 )}
@@ -216,8 +214,8 @@ export default function AdminPage() {
                   <div className="p-4 bg-destructive/10 text-destructive rounded-lg flex items-center gap-3 border border-destructive/20">
                     <AlertCircle className="w-6 h-6" />
                     <div>
-                      <p className="font-bold">De foto kan niet worden geladen.</p>
-                      <p className="text-xs">Zorg dat Web Station aan staat en de foto in de map 'web/portfolio' staat. Gebruik GEEN poort :5001.</p>
+                      <p className="font-bold">Laden mislukt.</p>
+                      <p className="text-xs">Zorg dat de poort :5001 weg is en de foto in de map 'web/portfolio' staat op je NAS.</p>
                     </div>
                   </div>
                 )}
@@ -228,8 +226,8 @@ export default function AdminPage() {
           <TabsContent value="helper">
             <Card>
               <CardHeader>
-                <CardTitle>Mappen Scannen & Koppelen</CardTitle>
-                <CardDescription>Selecteer de map op je computer met de 400 foto's. De app maakt de linkjes voor je.</CardDescription>
+                <CardTitle>Mappen Scannen</CardTitle>
+                <CardDescription>Selecteer de map op je computer. We plakken de juiste URL er automatisch voor.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="p-10 border-2 border-dashed rounded-2xl text-center bg-muted/20 border-accent/20">
@@ -244,33 +242,33 @@ export default function AdminPage() {
                   />
                   <Button variant="outline" size="lg" className="rounded-full border-accent text-accent bg-background" asChild>
                     <label htmlFor="file-scanner" className="cursor-pointer">
-                      <FolderOpen className="mr-2 h-5 w-5" /> Selecteer Hoofdmap op Computer
+                      <FolderOpen className="mr-2 h-5 w-5" /> Selecteer Map op Computer
                     </label>
                   </Button>
-                  <p className="mt-4 text-xs text-muted-foreground">Selecteer de map 'Portfolio' die je ook naar je NAS hebt gekopieerd.</p>
                 </div>
 
                 {rawFiles.length > 0 && (
                   <div className="space-y-6 p-6 border rounded-xl bg-accent/5">
-                    <h4 className="font-bold text-accent flex items-center gap-2"><Info className="w-4 h-4" /> {rawFiles.length} bestanden gevonden</h4>
-                    
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label>Basis URL (De link uit Stap 1, zonder de bestandsnaam)</Label>
-                        <Input value={baseUrl} onChange={e => setBaseUrl(e.target.value)} placeholder="https://doggyfew.direct.quickconnect.to/portfolio/" />
-                      </div>
-
-                      <div className="bg-background rounded-lg p-4 border text-xs space-y-2">
-                        <p className="font-bold text-muted-foreground uppercase tracking-wider">Voorbeeld van de eerste 3 linkjes:</p>
-                        <ul className="space-y-1 font-mono text-accent truncate">
-                          {rawFiles.slice(0, 3).map((f, i) => (
-                            <li key={i}>{baseUrl.endsWith('/') ? baseUrl : baseUrl + '/'}{f.name}</li>
-                          ))}
-                        </ul>
-                      </div>
+                    <div className="space-y-2">
+                      <Label className="text-accent font-bold">Wat moet er precies voor? (De Basis URL)</Label>
+                      <Input 
+                        value={baseUrl} 
+                        onChange={e => setBaseUrl(e.target.value)} 
+                        placeholder="https://192-168-178-15.doggyfew.direct.quickconnect.to/portfolio/" 
+                      />
+                      <p className="text-[10px] text-muted-foreground">Tip: Gebruik de link die werkte in Stap 1, maar haal de bestandsnaam aan het einde weg.</p>
                     </div>
 
-                    <Button onClick={generateBulkJson} className="w-full bg-accent text-white h-12 shadow-lg">Stap 2: Maak JSON Lijst</Button>
+                    <div className="bg-background rounded-lg p-4 border text-[10px] space-y-2">
+                      <p className="font-bold text-muted-foreground uppercase">Voorbeeld resultaat:</p>
+                      <ul className="space-y-1 font-mono text-accent truncate">
+                        {rawFiles.slice(0, 2).map((f, i) => (
+                          <li key={i}>{baseUrl.endsWith('/') ? baseUrl : baseUrl + '/'}{f.name}</li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <Button onClick={generateBulkJson} className="w-full bg-accent text-white h-12 shadow-lg">Stap 2: Genereer Lijst</Button>
                   </div>
                 )}
               </CardContent>
@@ -281,18 +279,18 @@ export default function AdminPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Bulk Import</CardTitle>
-                <CardDescription>Klik op de knop hieronder om alle gescande werken definitief op te slaan in de database.</CardDescription>
+                <CardDescription>Sla alle 178+ werken in één keer op in de database.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <Textarea 
-                  className="min-h-[250px] font-mono text-[10px] bg-muted/10" 
+                  className="min-h-[200px] font-mono text-[10px] bg-muted/10" 
                   value={bulkJson} 
                   onChange={e => setBulkJson(e.target.value)} 
-                  placeholder="De lijst verschijnt hier na stap 2..."
+                  placeholder="De lijst verschijnt hier automatisch..."
                 />
                 <Button onClick={handleAddBulk} className="w-full h-14 bg-primary text-white shadow-xl text-lg font-bold" disabled={loading || !bulkJson}>
                   {loading ? <Loader2 className="animate-spin mr-2" /> : <PlusCircle className="mr-2" />}
-                  Alles Definitief Opslaan in Database
+                  Alles Definitief Opslaan
                 </Button>
               </CardContent>
             </Card>
@@ -301,8 +299,8 @@ export default function AdminPage() {
           <TabsContent value="overview">
             <Card>
               <CardHeader>
-                <CardTitle>Huidige Database Overzicht</CardTitle>
-                <CardDescription>Hier zie je alle werken die momenteel live staan op de website.</CardDescription>
+                <CardTitle>Huidige Database</CardTitle>
+                <CardDescription>Overzicht van alle werken die nu live staan.</CardDescription>
               </CardHeader>
               <CardContent>
                 {loadingArtworks ? (
@@ -318,11 +316,6 @@ export default function AdminPage() {
                         </div>
                       </div>
                     ))}
-                    {artworks?.length === 0 && (
-                      <div className="col-span-full py-12 text-center text-muted-foreground italic">
-                        De database is momenteel leeg.
-                      </div>
-                    )}
                   </div>
                 )}
               </CardContent>
