@@ -1,13 +1,13 @@
 
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Maximize2, Loader2, X, RefreshCcw, Info } from 'lucide-react';
+import { Maximize2, Loader2, X, RefreshCcw, Info, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -40,6 +40,33 @@ export default function GalleryPage() {
     if (activeSeries === "Alle") return artworks;
     return artworks.filter(art => (art.series || "Andere") === activeSeries);
   }, [artworks, activeSeries]);
+
+  const navigateGallery = useCallback((direction: 'next' | 'prev') => {
+    if (!selectedArtwork || !filteredArtworks.length) return;
+    
+    const currentIndex = filteredArtworks.findIndex(art => art.id === selectedArtwork.id);
+    let nextIndex;
+    
+    if (direction === 'next') {
+      nextIndex = (currentIndex + 1) % filteredArtworks.length;
+    } else {
+      nextIndex = (currentIndex - 1 + filteredArtworks.length) % filteredArtworks.length;
+    }
+    
+    setSelectedArtwork(filteredArtworks[nextIndex]);
+  }, [selectedArtwork, filteredArtworks]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!selectedArtwork) return;
+      if (e.key === 'ArrowRight') navigateGallery('next');
+      if (e.key === 'ArrowLeft') navigateGallery('prev');
+      if (e.key === 'Escape') setSelectedArtwork(null);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedArtwork, navigateGallery]);
 
   return (
     <main className="min-h-screen bg-background pt-32 pb-24 px-6">
@@ -132,7 +159,7 @@ export default function GalleryPage() {
 
       <Dialog open={!!selectedArtwork} onOpenChange={() => setSelectedArtwork(null)}>
         <DialogContent className="max-w-[95vw] w-full h-[90vh] p-0 flex flex-col md:flex-row bg-background/98 backdrop-blur-2xl border-none">
-          <div className="relative flex-1 bg-black/5 flex items-center justify-center overflow-hidden">
+          <div className="relative flex-1 bg-black/5 flex items-center justify-center overflow-hidden group">
             {selectedArtwork && (
               <Image
                 src={selectedArtwork.imageUrl}
@@ -142,6 +169,23 @@ export default function GalleryPage() {
                 unoptimized={isExternalStorage(selectedArtwork.imageUrl)}
               />
             )}
+            
+            {/* Navigatieknoppen op overlay */}
+            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-4 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button 
+                onClick={(e) => { e.stopPropagation(); navigateGallery('prev'); }}
+                className="p-3 rounded-full bg-background/20 backdrop-blur-md hover:bg-background/40 transition-colors"
+              >
+                <ChevronLeft className="w-6 h-6 text-foreground" />
+              </button>
+              <button 
+                onClick={(e) => { e.stopPropagation(); navigateGallery('next'); }}
+                className="p-3 rounded-full bg-background/20 backdrop-blur-md hover:bg-background/40 transition-colors"
+              >
+                <ChevronRight className="w-6 h-6 text-foreground" />
+              </button>
+            </div>
+
             <DialogClose className="absolute top-6 left-6 z-10 p-2 hover:bg-black/5 rounded-full transition-colors">
               <X className="w-4 h-4 opacity-40" />
             </DialogClose>
@@ -162,6 +206,10 @@ export default function GalleryPage() {
                   Ref: {selectedArtwork?.imageUrl}
                 </div>
               </div>
+            </div>
+            <div className="mt-auto pt-6 flex justify-between text-[9px] uppercase tracking-widest text-muted-foreground/40">
+              <span>Pijltjes om te bladeren</span>
+              <span>{filteredArtworks.findIndex(a => a.id === selectedArtwork?.id) + 1} / {filteredArtworks.length}</span>
             </div>
           </div>
         </DialogContent>
