@@ -85,7 +85,7 @@ export default function AdminPage() {
         fileName: file.name,
         description: `Werk uit de serie ${detectedSeries}.`,
         imageHint: "painting art",
-        tags: []
+        tags: [] // Altijd zonder tags
       };
     });
     setScannedFiles(scanned);
@@ -107,7 +107,7 @@ export default function AdminPage() {
           imageUrl: item.imageUrl,
           description: item.description,
           imageHint: item.imageHint,
-          tags: [],
+          tags: [], // Altijd zonder tags
           createdAt: serverTimestamp(),
         };
         await addDoc(artworkCol, data);
@@ -137,7 +137,7 @@ export default function AdminPage() {
           imageUrl: generateImageUrl(artwork.relativePath),
           description: artwork.description,
           imageHint: artwork.imageHint,
-          tags: [],
+          tags: [], // Altijd zonder tags
           createdAt: serverTimestamp(),
         };
         setCurrentUploadItem(i + 1);
@@ -190,6 +190,7 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col pt-14">
+      {/* Admin Navigatie - Geen zijbalk meer */}
       <header className="h-16 border-b border-border bg-background/95 backdrop-blur-sm sticky top-14 z-40 px-8 flex items-center justify-between">
         <div className="flex items-center gap-8">
           <Link href="/" className="flex items-center gap-3 group">
@@ -263,6 +264,7 @@ export default function AdminPage() {
                         <p className="text-[9px] text-accent font-bold uppercase tracking-[0.2em]">{art.series} &bull; {art.year}</p>
                       </div>
                       
+                      {/* Zwevende Tag Sectie */}
                       <div className="space-y-3 pt-3 border-t border-border">
                         <div className="flex flex-wrap gap-1.5 min-h-[24px]">
                           {art.tags?.length > 0 ? art.tags.map((tag: string) => (
@@ -303,6 +305,7 @@ export default function AdminPage() {
           </div>
         )}
 
+        {/* Andere tabs blijven zoals ze waren */}
         {activeTab === 'scan' && (
           <div className="space-y-12">
             <div className="grid lg:grid-cols-2 gap-12">

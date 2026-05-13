@@ -14,7 +14,6 @@ export default function GalleryPage() {
   const [selectedArtwork, setSelectedArtwork] = useState<any | null>(null);
   const [activeSeries, setActiveSeries] = useState<string>("Alle");
   const [activeTags, setActiveTags] = useState<string[]>([]);
-  const [showHelp, setShowHelp] = useState(false);
   const firestore = useFirestore();
   
   const artworksQuery = useMemo(() => {
@@ -89,6 +88,7 @@ export default function GalleryPage() {
 
   return (
     <main className="min-h-screen bg-background pt-14">
+      {/* Titelstrook */}
       <div className="w-full bg-secondary/5 border-b border-border/10 py-12 md:py-20">
         <div className="container mx-auto px-6 max-w-7xl">
           <h1 className="font-headline text-5xl md:text-7xl font-light text-foreground text-center tracking-tight">Galerie</h1>
@@ -103,6 +103,7 @@ export default function GalleryPage() {
           </div>
         ) : (
           <>
+            {/* Filters */}
             <div className="bg-background/80 backdrop-blur-md sticky top-14 z-30 border-b border-border/10 py-6 mb-12 space-y-6">
               <div className="flex flex-col md:flex-row items-center justify-between gap-6">
                 <div className="flex gap-6 overflow-x-auto no-scrollbar w-full md:w-auto pb-1">
@@ -123,9 +124,6 @@ export default function GalleryPage() {
                   {activeTags.length > 0 && (
                     <button onClick={() => setActiveTags([])} className="text-[9px] uppercase font-bold text-accent">Wis filters</button>
                   )}
-                  <button onClick={() => setShowHelp(!showHelp)} className="text-[9px] uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                    <Info className="w-3 h-3" /> Info
-                  </button>
                 </div>
               </div>
 
@@ -196,6 +194,7 @@ export default function GalleryPage() {
             </DialogClose>
           </div>
 
+          {/* Compacte Info Balk - niet veel groter dan de knop */}
           <div className="w-full bg-background/95 backdrop-blur-md py-1.5 px-8 border-t border-border/10 flex items-center justify-center min-h-[48px]">
             <div className="max-w-6xl w-full flex items-center justify-between gap-4">
               <div className="flex items-center gap-6 overflow-hidden">
