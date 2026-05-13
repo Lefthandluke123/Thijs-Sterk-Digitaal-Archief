@@ -7,12 +7,14 @@ import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Maximize2, ArrowRight, Loader2, X, Filter, RefreshCcw } from 'lucide-react';
+import { Maximize2, Loader2, X, Filter, RefreshCcw, HelpCircle, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function GalleryPage() {
   const [selectedArtwork, setSelectedArtwork] = useState<any | null>(null);
   const [activeSeries, setActiveSeries] = useState<string>("Alle");
+  const [hasImageErrors, setHasImageErrors] = useState(false);
   const firestore = useFirestore();
   
   const artworksQuery = useMemo(() => {
@@ -24,7 +26,6 @@ export default function GalleryPage() {
 
   const isExternalStorage = (url: string) => {
     if (!url) return false;
-    // Forceer unoptimized voor Synology en andere externe links om laadproblemen te voorkomen
     return url.includes('quickconnect.to') || url.includes('direct.quickconnect.to') || url.includes('gofile.me') || url.includes('drive.google.com');
   };
 
@@ -50,6 +51,21 @@ export default function GalleryPage() {
             Ontdek de volledige collectie van Thijs Sterk.
           </p>
         </header>
+
+        {hasImageErrors && (
+          <Alert className="mb-12 bg-amber-50 border-amber-200 max-w-4xl mx-auto rounded-2xl">
+            <AlertCircle className="h-5 w-5 text-amber-600" />
+            <AlertTitle className="text-amber-800">Probleem bij laden foto's</AlertTitle>
+            <AlertDescription className="text-amber-700">
+              Sommige afbeeldingen kunnen niet worden geladen. Dit kan komen doordat je niet op hetzelfde Wi-Fi netwerk zit als je NAS, of omdat de rechten in Web Station nog niet op "Iedereen" staan.
+              <div className="mt-4">
+                <Button variant="outline" size="sm" className="border-amber-400 text-amber-800 hover:bg-amber-100" onClick={() => window.open('https://192-168-178-15.doggyfew.direct.quickconnect.to/portfolio/', '_blank')}>
+                  Test direct link naar NAS
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
 
         {loading ? (
           <div className="flex flex-col items-center justify-center py-32 gap-4">
@@ -100,13 +116,14 @@ export default function GalleryPage() {
                     className="group relative cursor-pointer"
                     onClick={() => setSelectedArtwork(item)}
                   >
-                    <div className="relative aspect-square overflow-hidden rounded-lg bg-muted transition-all duration-500 hover:shadow-xl hover:-translate-y-1">
+                    <div className="relative aspect-square overflow-hidden rounded-lg bg-muted/30 transition-all duration-500 hover:shadow-xl hover:-translate-y-1">
                       <Image
                         src={item.imageUrl}
                         alt={item.title}
                         fill
                         className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                         unoptimized={isExternalStorage(item.imageUrl)}
+                        onError={() => setHasImageErrors(true)}
                       />
                       <div className="absolute inset-0 bg-black/40 opacity-0 transition-opacity duration-300 group-hover:opacity-100 flex flex-col items-center justify-center p-4 text-center">
                         <Maximize2 className="text-white w-5 h-5" />

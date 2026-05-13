@@ -7,7 +7,7 @@ import { collection, addDoc, doc, serverTimestamp, deleteDoc } from 'firebase/fi
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
-import { PlusCircle, Loader2, FolderOpen, RefreshCw, CheckCircle2, HardDrive, ArrowRight, Link as LinkIcon, Info } from 'lucide-react';
+import { PlusCircle, Loader2, FolderOpen, RefreshCw, HardDrive, Info, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Image from 'next/image';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -15,7 +15,7 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { Progress } from "@/components/ui/progress";
 
-// DIT IS JOUW VASTE ADRES - Ik heb dit nu standaard in de code gezet.
+// JOUW VASTE ADRES
 const FIXED_NAS_BASE_URL = 'https://192-168-178-15.doggyfew.direct.quickconnect.to/portfolio/';
 
 export default function AdminPage() {
@@ -25,6 +25,7 @@ export default function AdminPage() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [currentUploadItem, setCurrentUploadItem] = useState(0);
   const [activeTab, setActiveTab] = useState('scan');
+  const [testResult, setTestResult] = useState<'success' | 'error' | null>(null);
 
   const artworksQuery = useMemo(() => {
     if (!firestore) return null;
@@ -57,8 +58,10 @@ export default function AdminPage() {
       let cleanName = file.name.split('.').slice(0, -1).join('.');
       cleanName = cleanName.replace(/[_-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
       
-      // Combineer automatisch met jouw vaste adres
-      const fullUrl = `${FIXED_NAS_BASE_URL}${relativePath}`;
+      // URL Encoding is cruciaal voor spaties in bestandsnamen!
+      // We encoderen alleen het gedeelte NA het vaste adres
+      const encodedPath = relativePath.split('/').map(part => encodeURIComponent(part)).join('/');
+      const fullUrl = `${FIXED_NAS_BASE_URL}${encodedPath}`;
 
       return {
         title: cleanName,
@@ -131,6 +134,19 @@ export default function AdminPage() {
       });
   };
 
+  const testConnection = () => {
+    setTestResult(null);
+    const img = new window.Image();
+    img.onload = () => setTestResult('success');
+    img.onerror = () => setTestResult('error');
+    // We testen even met een dummy plaatje op jouw NAS om te zien of het domein bereikbaar is
+    img.src = `${FIXED_NAS_BASE_URL}favicon.ico?t=${Date.now()}`;
+    
+    setTimeout(() => {
+      if (!testResult) setTestResult('error');
+    }, 5000);
+  };
+
   return (
     <main className="min-h-screen bg-background pt-32 pb-24 px-4">
       <div className="container mx-auto max-w-5xl">
@@ -151,11 +167,13 @@ export default function AdminPage() {
 
         <Alert className="mb-12 bg-primary/5 border-primary/20 p-6 rounded-3xl">
           <Info className="h-6 w-6 text-primary" />
-          <AlertTitle className="text-primary font-bold text-lg mb-2">Automatische Koppeling</AlertTitle>
-          <AlertDescription className="text-muted-foreground">
-            Ik heb je vaste adres alvast ingesteld. Je hoeft alleen de map te kiezen en op opslaan te drukken.
-            <div className="mt-3 font-mono text-xs bg-white/50 p-2 rounded border truncate">
-              Basis: {FIXED_NAS_BASE_URL}
+          <AlertTitle className="text-primary font-bold text-lg mb-2">Automatische Koppeling & Fixes</AlertTitle>
+          <AlertDescription className="text-muted-foreground space-y-4">
+            <p>Ik heb URL-encoding toegevoegd. Dit betekent dat spaties in je bestandsnamen nu automatisch worden omgezet naar %20, zodat de website ze wel kan vinden.</p>
+            <div className="flex items-center gap-4 mt-4">
+               <Button variant="outline" size="sm" onClick={testConnection}>Test Verbinding met NAS</Button>
+               {testResult === 'success' && <div className="flex items-center text-green-600 text-sm gap-1"><CheckCircle2 className="w-4 h-4"/> Verbinding OK</div>}
+               {testResult === 'error' && <div className="flex items-center text-destructive text-sm gap-1"><AlertTriangle className="w-4 h-4"/> NAS niet bereikbaar</div>}
             </div>
           </AlertDescription>
         </Alert>
@@ -171,7 +189,7 @@ export default function AdminPage() {
             <Card className="border-none shadow-lg rounded-3xl">
               <CardHeader>
                 <CardTitle>Stap 1: Kies je map</CardTitle>
-                <CardDescription>Selecteer de map op je computer met de foto's. De app doet de rest.</CardDescription>
+                <CardDescription>Selecteer de map op je computer met de foto's. De app fixt de linkjes automatisch.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-8">
                 <div className="p-16 border-2 border-dashed rounded-3xl text-center bg-muted/20 border-accent/20 transition-colors hover:bg-muted/30">
@@ -189,7 +207,7 @@ export default function AdminPage() {
                       <FolderOpen className="mr-3 h-7 w-7" /> Selecteer Map met Foto's
                     </label>
                   </Button>
-                  <p className="mt-6 text-muted-foreground text-sm">De app leest alleen de namen, de foto's blijven veilig op je computer.</p>
+                  <p className="mt-6 text-muted-foreground text-sm">Let op: Scan de map "Schilderijen" op je computer die overeenkomt met de map op je NAS.</p>
                 </div>
               </CardContent>
             </Card>
@@ -198,19 +216,19 @@ export default function AdminPage() {
           <TabsContent value="import">
             <Card className="border-none shadow-lg rounded-3xl">
               <CardHeader>
-                <CardTitle>Stap 2: Alles in één keer opslaan</CardTitle>
-                <CardDescription>We hebben {scannedArtworks.length} schilderijen gevonden met de juiste linkjes.</CardDescription>
+                <CardTitle>Stap 2: Alles opslaan</CardTitle>
+                <CardDescription>We hebben {scannedArtworks.length} schilderijen gevonden. Linkjes zijn gefixt voor internetgebruik.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 {scannedArtworks.length > 0 && !loading && (
                    <div className="max-h-60 overflow-y-auto border rounded-xl p-4 bg-muted/10 space-y-2">
-                     {scannedArtworks.slice(0, 5).map((art, i) => (
-                       <div key={i} className="text-xs flex justify-between gap-4">
-                         <span className="font-bold">{art.title}</span>
-                         <span className="text-muted-foreground truncate">{art.imageUrl}</span>
+                     {scannedArtworks.slice(0, 3).map((art, i) => (
+                       <div key={i} className="text-[10px] flex flex-col gap-1 border-b pb-2 last:border-0">
+                         <span className="font-bold text-xs">{art.title}</span>
+                         <code className="text-muted-foreground break-all bg-white/50 p-1 rounded">{art.imageUrl}</code>
                        </div>
                      ))}
-                     {scannedArtworks.length > 5 && <div className="text-center text-xs text-muted-foreground pt-2">...en nog {scannedArtworks.length - 5} meer</div>}
+                     {scannedArtworks.length > 3 && <div className="text-center text-xs text-muted-foreground pt-2">...en nog {scannedArtworks.length - 3} meer</div>}
                    </div>
                 )}
 
@@ -240,7 +258,7 @@ export default function AdminPage() {
             <Card className="border-none shadow-lg rounded-3xl">
               <CardHeader>
                 <CardTitle>Database ({artworks?.length || 0})</CardTitle>
-                <CardDescription>Hieronder staan alle werken die momenteel in je galerie staan.</CardDescription>
+                <CardDescription>Klik op een werk om te zien of de link op dit netwerk werkt.</CardDescription>
               </CardHeader>
               <CardContent>
                 {loadingArtworks ? (
@@ -248,10 +266,19 @@ export default function AdminPage() {
                 ) : (
                   <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-4">
                     {artworks?.map((art: any) => (
-                      <div key={art.id} className="relative aspect-square border rounded-xl overflow-hidden group">
-                        <Image src={art.imageUrl} alt="" fill className="object-cover" unoptimized={isExternalStorage(art.imageUrl)} />
-                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-2 gap-2 text-white">
-                          <p className="text-[10px] text-center font-bold px-1">{art.title}</p>
+                      <div key={art.id} className="relative aspect-square border rounded-xl overflow-hidden group bg-muted/30">
+                        <Image 
+                          src={art.imageUrl} 
+                          alt="" 
+                          fill 
+                          className="object-cover" 
+                          unoptimized={isExternalStorage(art.imageUrl)} 
+                          onError={(e) => {
+                            (e.target as any).src = 'https://placehold.co/400x400/d5dc96/2013025?text=Link+fout';
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-2 gap-2 text-white text-center">
+                          <p className="text-[10px] font-bold">{art.title}</p>
                           <Button variant="destructive" size="sm" className="h-7 text-[10px]" onClick={() => handleDelete(art.id)}>Verwijder</Button>
                         </div>
                       </div>
