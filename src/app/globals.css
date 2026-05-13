@@ -17,11 +17,11 @@
     --secondary-foreground: 201 30% 20%;
     --muted: 66 20% 60%;
     --muted-foreground: 201 15% 35%;
-    --accent: 45 93% 41%; /* De kleur #cc9a07 vertaald naar HSL */
+    --accent: 201 30% 25%; /* Teruggezet naar de donkere primaire kleur */
     --accent-foreground: 0 0% 100%;
     --border: 66 20% 60%;
     --input: 66 20% 60%;
-    --ring: 45 93% 41%;
+    --ring: 201 30% 25%;
     --radius: 0.5rem;
   }
   .dark {
@@ -37,13 +37,13 @@
     --secondary-foreground: 66 46% 90%;
     --muted: 66 20% 15%;
     --muted-foreground: 66 15% 65%;
-    --accent: 45 93% 50%;
+    --accent: 66 46% 90%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
     --border: 66 20% 20%;
     --input: 66 20% 20%;
-    --ring: 45 93% 50%;
+    --ring: 66 46% 90%;
   }
 }
 
