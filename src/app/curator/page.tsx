@@ -133,6 +133,10 @@ export default function CuratorPage() {
                           filter: `brightness(${item.brightness || 1})`
                         }}
                       />
+                      {/* Watermark */}
+                      <div className="absolute bottom-2 right-2 z-10 pointer-events-none opacity-20 text-[6px] uppercase tracking-widest text-white font-bold bg-black/20 px-1 rounded-sm">
+                        &copy; Erven Thijs Sterk
+                      </div>
                       <div className="absolute inset-0 bg-background/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                         <Maximize2 className="text-white/60 w-6 h-6" />
                       </div>
@@ -156,17 +160,25 @@ export default function CuratorPage() {
         <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background/98 backdrop-blur-3xl border-none rounded-none">
           <div className="relative flex-1 flex items-center justify-center overflow-hidden group bg-black/5">
             {selectedArtwork && (
-              <Image 
-                src={selectedArtwork.imageUrl} 
-                alt={selectedArtwork.title} 
-                fill 
-                className="object-contain p-4 md:p-12" 
-                unoptimized={isExternalStorage(selectedArtwork.imageUrl)} 
-                style={{
-                  clipPath: `inset(${selectedArtwork.cropTop || 0}% ${selectedArtwork.cropRight || 0}% ${selectedArtwork.cropBottom || 0}% ${selectedArtwork.cropLeft || 0}%)`,
-                  filter: `brightness(${selectedArtwork.brightness || 1})`
-                }}
-              />
+              <div className="relative w-full h-full flex items-center justify-center">
+                <Image 
+                  src={selectedArtwork.imageUrl} 
+                  alt={selectedArtwork.title} 
+                  fill 
+                  className="object-contain p-4 md:p-12" 
+                  unoptimized={isExternalStorage(selectedArtwork.imageUrl)} 
+                  style={{
+                    clipPath: `inset(${selectedArtwork.cropTop || 0}% ${selectedArtwork.cropRight || 0}% ${selectedArtwork.cropBottom || 0}% ${selectedArtwork.cropLeft || 0}%)`,
+                    filter: `brightness(${selectedArtwork.brightness || 1})`
+                  }}
+                />
+                {/* Visual Watermark Overlay in Dialog */}
+                <div className="absolute inset-0 pointer-events-none flex items-center justify-center opacity-[0.03] select-none rotate-[-45deg]">
+                  <span className="text-6xl md:text-8xl font-bold uppercase tracking-[0.5em] text-foreground">
+                    Erven Thijs Sterk
+                  </span>
+                </div>
+              </div>
             )}
             <DialogClose className="absolute top-8 right-8 z-50 p-2 bg-background/10 backdrop-blur-sm rounded-full hover:bg-background/20 transition-colors">
               <X className="w-5 h-5 opacity-50" />

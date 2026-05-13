@@ -62,6 +62,10 @@ export function PortfolioGrid() {
                       filter: `brightness(${art.brightness || 1})`
                     }}
                   />
+                  {/* Watermark */}
+                  <div className="absolute bottom-2 right-2 z-10 pointer-events-none opacity-20 text-[6px] uppercase tracking-widest text-white font-bold bg-black/20 px-1 rounded-sm">
+                    &copy; Erven Thijs Sterk
+                  </div>
                   <div className="absolute inset-0 bg-primary/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100 flex items-center justify-center">
                     <Maximize2 className="text-white w-5 h-5" />
                   </div>
@@ -83,17 +87,25 @@ export function PortfolioGrid() {
         <DialogContent className="max-w-[95vw] w-full h-[90vh] p-0 overflow-hidden border-none bg-background/95 backdrop-blur-xl flex flex-col md:flex-row shadow-2xl">
           <div className="relative flex-1 bg-black/90 flex items-center justify-center overflow-hidden">
             {selectedArtwork && (
-              <Image
-                src={selectedArtwork.imageUrl}
-                alt={selectedArtwork.title}
-                fill
-                className="object-contain p-4 md:p-12"
-                unoptimized={isExternalStorage(selectedArtwork.imageUrl)}
-                style={{
-                  clipPath: `inset(${selectedArtwork.cropTop || 0}% ${selectedArtwork.cropRight || 0}% ${selectedArtwork.cropBottom || 0}% ${selectedArtwork.cropLeft || 0}%)`,
-                  filter: `brightness(${selectedArtwork.brightness || 1})`
-                }}
-              />
+              <div className="relative w-full h-full flex items-center justify-center">
+                <Image
+                  src={selectedArtwork.imageUrl}
+                  alt={selectedArtwork.title}
+                  fill
+                  className="object-contain p-4 md:p-12"
+                  unoptimized={isExternalStorage(selectedArtwork.imageUrl)}
+                  style={{
+                    clipPath: `inset(${selectedArtwork.cropTop || 0}% ${selectedArtwork.cropRight || 0}% ${selectedArtwork.cropBottom || 0}% ${selectedArtwork.cropLeft || 0}%)`,
+                    filter: `brightness(${selectedArtwork.brightness || 1})`
+                  }}
+                />
+                {/* Visual Watermark Overlay in Dialog */}
+                <div className="absolute inset-0 pointer-events-none flex items-center justify-center opacity-[0.03] select-none rotate-[-45deg]">
+                  <span className="text-6xl md:text-8xl font-bold uppercase tracking-[0.5em] text-foreground">
+                    Erven Thijs Sterk
+                  </span>
+                </div>
+              </div>
             )}
             <DialogClose className="absolute top-4 left-4 z-10 p-1.5 bg-background/20 backdrop-blur-md rounded-full text-white hover:bg-background/40 transition-colors">
               <X className="w-5 h-5" />
