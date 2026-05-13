@@ -1,0 +1,53 @@
+
+{
+  "placeholderImages": [
+    {
+      "id": "hero-image",
+      "description": "Abstract atmospheric landscape painting",
+      "imageUrl": "https://picsum.photos/seed/aether1/1200/800",
+      "imageHint": "abstract landscape"
+    },
+    {
+      "id": "artwork-1",
+      "description": "Cerulean Depths",
+      "imageUrl": "https://picsum.photos/seed/aether2/800/800",
+      "imageHint": "blue abstract"
+    },
+    {
+      "id": "artwork-2",
+      "description": "Golden Hour Resilience",
+      "imageUrl": "https://picsum.photos/seed/aether3/800/800",
+      "imageHint": "golden texture"
+    },
+    {
+      "id": "artwork-3",
+      "description": "Whispering Pines",
+      "imageUrl": "https://picsum.photos/seed/aether4/800/1000",
+      "imageHint": "forest abstract"
+    },
+    {
+      "id": "artwork-4",
+      "description": "Ethereal Echoes",
+      "imageUrl": "https://picsum.photos/seed/aether5/800/800",
+      "imageHint": "ethereal light"
+    },
+    {
+      "id": "artwork-5",
+      "description": "Tectonic Shift",
+      "imageUrl": "https://picsum.photos/seed/aether6/1000/800",
+      "imageHint": "rock texture"
+    },
+    {
+      "id": "artwork-6",
+      "description": "Midnight Bloom",
+      "imageUrl": "https://picsum.photos/seed/aether7/800/800",
+      "imageHint": "dark floral"
+    },
+    {
+      "id": "artist-portrait",
+      "description": "Portrait of the artist Elena Vance",
+      "imageUrl": "https://picsum.photos/seed/artist/600/800",
+      "imageHint": "artist portrait"
+    }
+  ]
+}
