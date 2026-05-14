@@ -32,14 +32,15 @@ import {
   Cloud,
   HardDrive,
   Link as LinkIcon,
-  CheckCircle2
+  CheckCircle2,
+  Calendar,
+  Type
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Dialog, DialogContent, DialogClose, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
@@ -581,34 +582,42 @@ export default function AdminPage() {
             </div>
           </div>
 
-          <div className="w-full bg-background/95 backdrop-blur-md border-t border-border/10 p-4 md:px-8 md:py-6 shadow-2xl">
+          <div className="w-full bg-background/95 backdrop-blur-md border-t border-border/10 p-4 md:px-8 md:py-6 shadow-2xl overflow-y-auto max-h-[40vh]">
             <div className="max-w-[1400px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
               <div className="md:col-span-3 space-y-4">
                 <div className="space-y-1.5">
-                  <Label className="text-[9px] uppercase font-bold tracking-widest opacity-50">Titel</Label>
+                  <Label className="text-[9px] uppercase font-bold tracking-widest opacity-50 flex items-center gap-1"><Type className="w-3 h-3" /> Titel</Label>
                   <Input 
-                    value={editingArtwork?.title || ''} 
-                    onChange={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'title', e.target.value)} 
-                    className="h-8 text-sm font-headline bg-transparent border-none focus-visible:ring-0 p-0"
+                    defaultValue={editingArtwork?.title || ''} 
+                    onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'title', e.target.value)} 
+                    className="h-8 text-sm font-headline bg-muted/20 border-border/30 rounded-lg px-3"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label className="text-[9px] uppercase font-bold tracking-widest opacity-50">Serie</Label>
                     <Input 
-                      value={editingArtwork?.series || ''} 
-                      onChange={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'series', e.target.value)} 
-                      className="h-8 text-[10px] bg-transparent border-none focus-visible:ring-0 p-0 text-accent font-bold"
+                      defaultValue={editingArtwork?.series || ''} 
+                      onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'series', e.target.value)} 
+                      className="h-8 text-[10px] bg-muted/20 border-border/30 rounded-lg px-3 text-accent font-bold"
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-[9px] uppercase font-bold tracking-widest opacity-50">Jaar</Label>
+                    <Label className="text-[9px] uppercase font-bold tracking-widest opacity-50 flex items-center gap-1"><Calendar className="w-3 h-3" /> Jaar</Label>
                     <Input 
-                      value={editingArtwork?.year || ''} 
-                      onChange={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'year', e.target.value)} 
-                      className="h-8 text-[10px] bg-transparent border-none focus-visible:ring-0 p-0"
+                      defaultValue={editingArtwork?.year || ''} 
+                      onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'year', e.target.value)} 
+                      className="h-8 text-[10px] bg-muted/20 border-border/30 rounded-lg px-3"
                     />
                   </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[9px] uppercase font-bold tracking-widest opacity-50">Materiaal / Medium</Label>
+                  <Input 
+                    defaultValue={editingArtwork?.medium || ''} 
+                    onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'medium', e.target.value)} 
+                    className="h-8 text-[10px] bg-muted/20 border-border/30 rounded-lg px-3"
+                  />
                 </div>
               </div>
 
@@ -616,15 +625,15 @@ export default function AdminPage() {
                 <Label className="text-[9px] uppercase font-bold tracking-widest opacity-50 flex items-center gap-2">
                   <Tag className="w-3 h-3" /> Thema&apos;s / Tags
                 </Label>
-                <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto no-scrollbar">
+                <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto no-scrollbar p-1">
                   {STANDARD_TAGS.map(tag => (
                     <button
                       key={tag}
                       onClick={() => editingArtwork && toggleArtworkTag(editingArtwork, tag)}
                       className={cn(
-                        "px-2 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-tighter transition-all border",
+                        "px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest transition-all border",
                         editingArtwork?.tags?.includes(tag) 
-                          ? "bg-accent text-white border-accent" 
+                          ? "bg-accent text-white border-accent shadow-sm scale-105" 
                           : "bg-background/50 text-muted-foreground border-border/40 hover:border-accent/40"
                       )}
                     >
@@ -632,6 +641,7 @@ export default function AdminPage() {
                     </button>
                   ))}
                 </div>
+                <p className="text-[8px] text-muted-foreground italic">Klik op een tag om deze toe te voegen of te verwijderen.</p>
               </div>
 
               <div className="md:col-span-3 space-y-4">
@@ -662,11 +672,11 @@ export default function AdminPage() {
               </div>
 
               <div className="md:col-span-3 space-y-1.5">
-                <Label className="text-[9px] uppercase font-bold tracking-widest opacity-50">Omschrijving</Label>
+                <Label className="text-[9px] uppercase font-bold tracking-widest opacity-50 flex items-center gap-1"><Info className="w-3 h-3" /> Omschrijving</Label>
                 <Textarea 
-                  value={editingArtwork?.description || ''} 
-                  onChange={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'description', e.target.value)} 
-                  className="h-24 text-[10px] bg-background/20 border-border/40 resize-none rounded-xl"
+                  defaultValue={editingArtwork?.description || ''} 
+                  onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'description', e.target.value)} 
+                  className="h-28 text-[10px] bg-muted/20 border-border/30 resize-none rounded-xl p-3 leading-relaxed"
                   placeholder="Beschrijf het werk..."
                 />
               </div>
@@ -677,3 +687,4 @@ export default function AdminPage() {
     </div>
   );
 }
+
