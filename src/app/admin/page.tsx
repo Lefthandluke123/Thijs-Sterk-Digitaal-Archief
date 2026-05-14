@@ -14,12 +14,11 @@ import {
   ArrowLeft,
   Upload,
   Plus,
-  Settings2,
   Image as ImageIcon,
   FolderOpen,
   RefreshCw,
   Scissors,
-  Search
+  AlertCircle
 } from 'lucide-react';
 import Image from 'next/image';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -76,8 +75,17 @@ export default function AdminPage() {
   };
 
   const handleScanFolder = async () => {
+    // Check of de browser showDirectoryPicker ondersteunt
+    if (typeof (window as any).showDirectoryPicker === 'undefined') {
+      toast({ 
+        variant: "destructive", 
+        title: "Browser niet ondersteund", 
+        description: "Je browser ondersteunt het automatisch scannen van mappen niet. Gebruik Google Chrome of Microsoft Edge voor deze functie." 
+      });
+      return;
+    }
+
     try {
-      // Gebruik de moderne Directory Picker API
       const dirHandle = await (window as any).showDirectoryPicker();
       const files: string[] = [];
       
@@ -93,9 +101,7 @@ export default function AdminPage() {
       }
 
       setNasFileNames(files.join('\n'));
-      toast({ title: "Map gelezen", description: `${files.length} afbeeldingen gevonden.` });
       
-      // Genereer direct de JSON voor de Bulk tab
       const baseUrlClean = nasBaseUrl.endsWith('/') ? nasBaseUrl : nasBaseUrl + '/';
       const generated = files.map(file => {
         const title = file.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
@@ -117,11 +123,12 @@ export default function AdminPage() {
       });
       setBulkJson(JSON.stringify(generated, null, 2));
       setActiveTab('bulk');
+      toast({ title: "Map gelezen", description: `${files.length} afbeeldingen klaargezet voor import.` });
 
     } catch (err: any) {
       if (err.name !== 'AbortError') {
         console.error(err);
-        toast({ variant: "destructive", title: "Fout bij inlezen", description: "Zorg dat je een moderne browser gebruikt en de map toestemming geeft." });
+        toast({ variant: "destructive", title: "Fout bij inlezen", description: "Kon de map niet benaderen. Controleer de browser-permissies." });
       }
     }
   };
@@ -450,8 +457,8 @@ export default function AdminPage() {
                       <FolderOpen className="mr-4 w-8 h-8 group-hover:scale-110 transition-transform" />
                       Scan NAS Map
                     </Button>
-                    <p className="text-[10px] text-center mt-4 text-muted-foreground">
-                      Tip: Koppel de NAS map eerst als netwerkschijf op je computer om deze te kunnen selecteren.
+                    <p className="text-[10px] text-center mt-4 text-muted-foreground flex items-center justify-center gap-2">
+                      <AlertCircle className="w-3 h-3" /> Let op: Werkt alleen in Chrome of Edge.
                     </p>
                   </div>
                 </div>
@@ -491,7 +498,7 @@ export default function AdminPage() {
                       </Button>
                     </div>
                     <Textarea 
-                      placeholder='Importeer data via de NAS Folder tab...' 
+                      placeholder='Importeer data via de NAS Folder tab of plak hier je eigen JSON...' 
                       value={bulkJson} 
                       onChange={(e) => setBulkJson(e.target.value)}
                       className="min-h-[400px] font-mono text-[10px] rounded-2xl bg-black/5"
