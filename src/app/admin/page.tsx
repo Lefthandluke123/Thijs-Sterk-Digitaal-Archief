@@ -17,9 +17,8 @@ import {
   Settings2,
   Image as ImageIcon,
   FolderOpen,
-  Link as LinkIcon,
-  Maximize2,
-  RefreshCw
+  RefreshCw,
+  Scissors
 } from 'lucide-react';
 import Image from 'next/image';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -39,7 +38,7 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState('archive');
   
   // NAS Helper state
-  const [nasBaseUrl, setNasBaseUrl] = useState('https://192-168-178-15.doggyfew.direct.quickconnect.to:5001/');
+  const [nasBaseUrl, setNasBaseUrl] = useState('https://192-168-178-15.doggyfew.direct.quickconnect.to:5001/web/schilderijen/');
   const [nasFileNames, setNasFileNames] = useState('');
 
   const [newArtwork, setNewArtwork] = useState({
@@ -150,9 +149,7 @@ export default function AdminPage() {
     const baseUrlClean = nasBaseUrl.endsWith('/') ? nasBaseUrl : nasBaseUrl + '/';
     
     const generatedArtworks = files.map(file => {
-      // Clean up title from filename
       const title = file.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
-      
       return {
         title: title || "Zonder titel",
         series: "NAS Import",
@@ -318,7 +315,7 @@ export default function AdminPage() {
           <TabsContent value="new">
             <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-12">
               <div className="space-y-6">
-                <h2 className="text-3xl font-headline font-light mb-8">Handmatig Toevoegen</h2>
+                <h2 className="text-3xl font-headline font-light mb-8">Nieuw Werk</h2>
                 <Card className="p-8 rounded-3xl border-border bg-card/50 shadow-xl">
                   <form onSubmit={handleAddManualArtwork} className="space-y-5">
                     <div className="space-y-2">
@@ -352,7 +349,7 @@ export default function AdminPage() {
 
               <div className="space-y-6">
                 <h2 className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground flex items-center gap-2">
-                  <Settings2 className="w-3 h-3" /> Live Preview & Cropper
+                  <Scissors className="w-3 h-3" /> Live Cropper & Helderheid
                 </h2>
                 <div className="sticky top-32 space-y-8">
                   <div className="relative aspect-square rounded-2xl overflow-hidden bg-muted/20 border-2 border-dashed border-border flex items-center justify-center">
@@ -371,12 +368,12 @@ export default function AdminPage() {
                     ) : (
                       <div className="text-center p-8 opacity-20">
                         <ImageIcon className="w-12 h-12 mx-auto mb-2" />
-                        <p className="text-[10px] uppercase font-bold">Geen afbeelding geladen</p>
+                        <p className="text-[10px] uppercase font-bold">Voer een URL in voor preview</p>
                       </div>
                     )}
                   </div>
 
-                  <div className="space-y-6">
+                  <div className="space-y-6 bg-card/30 p-6 rounded-2xl border border-border/40">
                     <div className="space-y-3">
                       <Label className="text-[10px] uppercase font-bold flex justify-between">Helderheid <span>{newArtwork.brightness.toFixed(2)}</span></Label>
                       <Slider value={[newArtwork.brightness]} max={2} step={0.01} onValueChange={([v]) => setNewArtwork(p => ({ ...p, brightness: v }))} />
@@ -408,29 +405,29 @@ export default function AdminPage() {
           <TabsContent value="nas">
             <div className="max-w-2xl mx-auto space-y-6">
               <h2 className="text-3xl font-headline font-light text-center">NAS Folder Helper</h2>
-              <p className="text-center text-muted-foreground text-sm">Genereer snel links voor een hele map op je NAS (via Web Station of QuickConnect).</p>
+              <p className="text-center text-muted-foreground text-sm">Genereer direct import-links voor mappen op je NAS.</p>
               
               <Card className="p-8 rounded-3xl border-border bg-card/50 shadow-xl space-y-6">
                 <div className="space-y-2">
                   <Label className="text-[10px] uppercase font-bold">Basis URL (NAS map)</Label>
                   <Input 
-                    placeholder="https://jouwnas.nl/web/portfolio-map" 
+                    placeholder="https://jouwnas.nl:5001/web/schilderijen/" 
                     value={nasBaseUrl}
                     onChange={(e) => setNasBaseUrl(e.target.value)}
                     className="rounded-xl"
                   />
-                  <p className="text-[9px] text-muted-foreground italic">Zorg dat de map publiek toegankelijk is via deze link.</p>
+                  <p className="text-[9px] text-muted-foreground italic">Zorg dat deze map toegankelijk is via Web Station of File Station.</p>
                 </div>
                 
                 <div className="space-y-2">
                   <Label className="text-[10px] uppercase font-bold">Bestandsnamen (één per regel)</Label>
                   <Textarea 
-                    placeholder={"schilderij1.jpg\nschilderij2.png\nlandschap.webp"} 
+                    placeholder={"landschap-1.jpg\nstilleven-bloemen.png\nzee-zonsondergang.webp"} 
                     value={nasFileNames}
                     onChange={(e) => setNasFileNames(e.target.value)}
                     className="min-h-[200px] font-mono text-xs rounded-2xl"
                   />
-                  <p className="text-[9px] text-muted-foreground italic">Tip: Kopieer alle bestandsnamen in je Windows/Mac verkenner en plak ze hier.</p>
+                  <p className="text-[9px] text-muted-foreground italic">Kopieer alle bestandsnamen uit je map en plak ze hier.</p>
                 </div>
                 
                 <Button onClick={handleNasImport} className="w-full h-14 rounded-xl font-bold uppercase tracking-widest bg-accent hover:bg-accent/90">
@@ -443,7 +440,7 @@ export default function AdminPage() {
           <TabsContent value="bulk">
             <div className="max-w-2xl mx-auto space-y-6">
               <h2 className="text-3xl font-headline font-light text-center">Bulk Import</h2>
-              <p className="text-center text-muted-foreground text-sm mb-8">Plak hier de JSON code om meerdere werken tegelijk toe te voegen.</p>
+              <p className="text-center text-muted-foreground text-sm mb-8">Importeer meerdere kunstwerken tegelijk via JSON.</p>
               
               <Card className="p-8 rounded-3xl border-border bg-card/50 shadow-xl">
                 <div className="space-y-6">
