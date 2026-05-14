@@ -19,7 +19,8 @@ import {
   Scissors,
   Settings,
   Link as LinkIcon,
-  ExternalLink
+  ExternalLink,
+  Info
 } from 'lucide-react';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -28,6 +29,7 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function AdminPage() {
   const firestore = useFirestore();
@@ -37,7 +39,8 @@ export default function AdminPage() {
   const directoryInputRef = useRef<HTMLInputElement>(null);
   
   // NAS Helper state
-  const [nasBaseUrl, setNasBaseUrl] = useState('https://192-168-178-15.doggyfew.direct.quickconnect.to:5001/');
+  // Aangepast naar poort 80/443 (standaard HTTPS)
+  const [nasBaseUrl, setNasBaseUrl] = useState('https://192-168-178-15.doggyfew.direct.quickconnect.to/');
   const [nasFileCount, setNasFileCount] = useState(0);
   const [previewUrl, setPreviewUrl] = useState('');
 
@@ -76,17 +79,24 @@ export default function AdminPage() {
 
     const artworksToImport: any[] = [];
     const imageExtensions = /\.(jpe?g|png|webp|avif)$/i;
-    const baseUrlClean = nasBaseUrl.endsWith('/') ? nasBaseUrl : nasBaseUrl + '/';
+    
+    // Zorg voor een schone basis URL
+    let baseUrlClean = nasBaseUrl.trim();
+    if (!baseUrlClean.endsWith('/')) {
+      baseUrlClean += '/';
+    }
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       if (imageExtensions.test(file.name)) {
-        // webkitRelativePath bevat de mapnaam. bijv: "Schilderijen/landschap.jpg"
+        // webkitRelativePath bevat het volledige pad vanaf de geselecteerde map
+        // Bijv: "Schilderijen/2024/landschap.jpg"
         const relativePath = file.webkitRelativePath || file.name;
+        
+        // Titel genereren op basis van bestandsnaam
         const fileNameOnly = file.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
         
-        // Synology Photo Station / File Station links hebben vaak een specifieke prefix nodig
-        // We loggen dit voor de gebruiker zodat hij kan zien wat er gebeurt
+        // De uiteindelijke URL combineert de basis NAS URL met het relatieve pad
         const finalUrl = baseUrlClean + relativePath;
 
         if (artworksToImport.length === 0) {
@@ -125,7 +135,7 @@ export default function AdminPage() {
     setActiveTab('bulk');
     toast({ 
       title: "Map gelezen", 
-      description: `${artworksToImport.length} afbeeldingen gevonden inclusief map-paden.` 
+      description: `${artworksToImport.length} afbeeldingen gevonden inclusief map-structuur.` 
     });
     
     if (directoryInputRef.current) {
@@ -232,6 +242,7 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col pt-14">
+      {/* Verborgen input voor map selectie */}
       <input 
         type="file" 
         ref={directoryInputRef} 
@@ -278,7 +289,7 @@ export default function AdminPage() {
                         filter: `brightness(${art.brightness || 1})`
                       }}
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Check+Link+of+Poort+5001';
+                        (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Beeld+niet+gevonden';
                       }}
                     />
                     <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
@@ -381,7 +392,7 @@ export default function AdminPage() {
                           filter: `brightness(${newArtwork.brightness})`
                         }}
                         onError={(e) => {
-                          (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Controleer+NAS+toegang';
+                          (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Beeld+niet+gevonden';
                         }}
                       />
                     ) : (
@@ -425,8 +436,16 @@ export default function AdminPage() {
             <div className="max-w-2xl mx-auto space-y-6">
               <div className="text-center space-y-2">
                 <h2 className="text-3xl font-headline font-light">NAS Folder Helper</h2>
-                <p className="text-muted-foreground text-sm">Selecteer de map op je NAS. De app neemt automatisch de mapnaam mee in de links.</p>
+                <p className="text-muted-foreground text-sm">Scan direct een map op je NAS. De app combineert dit met je QuickConnect adres.</p>
               </div>
+
+              <Alert className="bg-primary/5 border-primary/20">
+                <Info className="h-4 w-4" />
+                <AlertTitle className="text-[10px] uppercase font-bold">Poort 80/443 Actief</AlertTitle>
+                <AlertDescription className="text-xs">
+                  De app is geconfigureerd voor standaard HTTP/HTTPS toegang. Zorg dat je bestanden op je NAS bereikbaar zijn via de opgegeven URL.
+                </AlertDescription>
+              </Alert>
               
               <Card className="p-8 rounded-3xl border-border bg-card/50 shadow-xl space-y-8">
                 <div className="space-y-4">
@@ -436,9 +455,9 @@ export default function AdminPage() {
                       value={nasBaseUrl}
                       onChange={(e) => setNasBaseUrl(e.target.value)}
                       className="rounded-xl font-mono text-xs"
-                      placeholder="Bijv: https://mijn-nas.quickconnect.to:5001/"
+                      placeholder="Bijv: https://mijn-nas.quickconnect.to/"
                     />
-                    <p className="text-[9px] text-muted-foreground italic">Zorg dat deze URL eindigt op een slash. De mapnaam van je keuze wordt hier achter geplakt.</p>
+                    <p className="text-[9px] text-muted-foreground italic">Eindig met een slash. De mapnaam wordt hier automatisch achter geplakt.</p>
                   </div>
                   
                   <div className="pt-4 border-t border-border/20">
@@ -459,19 +478,19 @@ export default function AdminPage() {
                       <Label className="text-[9px] uppercase font-bold">Voorbeeld van gegenereerde link:</Label>
                       <div className="flex items-center gap-2 overflow-hidden">
                         <code className="text-[10px] text-primary truncate flex-1">{previewUrl}</code>
-                        <Button variant="ghost" size="icon" className="h-6 w-6" asChild>
+                        <Button variant="ghost" size="icon" className="h-6 w-6" asChild title="Test link in nieuw tabblad">
                           <a href={previewUrl} target="_blank" rel="noopener noreferrer"><ExternalLink className="w-3 h-3" /></a>
                         </Button>
                       </div>
-                      <p className="text-[9px] text-muted-foreground italic">Klik op het icoontje hierboven. Als je de foto in een nieuw tabblad ziet, werkt de link!</p>
+                      <p className="text-[9px] text-muted-foreground italic">Klik op het icoontje. Als het beeld in een nieuw tabblad verschijnt, is de URL correct!</p>
                     </div>
                     
                     <div className="flex justify-center items-center gap-2 text-primary font-bold animate-pulse">
                       <LinkIcon className="w-4 h-4" />
-                      <span>{nasFileCount} bestanden gevonden met map-paden.</span>
+                      <span>{nasFileCount} bestanden ingelezen.</span>
                     </div>
                     <Button onClick={() => setActiveTab('bulk')} className="w-full rounded-xl bg-primary/20 text-primary border border-primary/20 uppercase text-[10px] font-bold tracking-widest h-12">
-                      Naar Bulk Import
+                      Bekijk overzicht in Bulk Import
                     </Button>
                   </div>
                 )}
@@ -483,20 +502,20 @@ export default function AdminPage() {
             <div className="max-w-4xl mx-auto space-y-6">
               <div className="text-center">
                 <h2 className="text-3xl font-headline font-light">Bulk Overzicht</h2>
-                <p className="text-muted-foreground text-sm">Controleer of de URL's kloppen voordat je importeert.</p>
+                <p className="text-muted-foreground text-sm">Controleer de data voordat je deze definitief opslaat in de database.</p>
               </div>
               
               <Card className="p-8 rounded-3xl border-border bg-card/50 shadow-xl">
                 <div className="space-y-6">
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
-                      <Label className="text-[10px] uppercase font-bold">JSON Data</Label>
+                      <Label className="text-[10px] uppercase font-bold">Gegenereerde JSON Data</Label>
                       <Button variant="ghost" size="sm" onClick={() => setBulkJson('')} className="h-6 text-[8px] uppercase tracking-widest">
-                        <RefreshCw className="w-3 h-3 mr-1" /> Wis
+                        <RefreshCw className="w-3 h-3 mr-1" /> Wis alles
                       </Button>
                     </div>
                     <Textarea 
-                      placeholder='Gebruik de NAS Folder Helper of plak hier je eigen JSON...' 
+                      placeholder='Selecteer eerst een map via NAS Folder Helper...' 
                       value={bulkJson} 
                       onChange={(e) => setBulkJson(e.target.value)}
                       className="min-h-[400px] font-mono text-[10px] rounded-2xl bg-black/5"
@@ -507,7 +526,7 @@ export default function AdminPage() {
                     disabled={loading || !bulkJson} 
                     className="w-full h-14 rounded-xl font-bold uppercase tracking-widest shadow-xl"
                   >
-                    {loading ? <Loader2 className="animate-spin" /> : <><Upload className="mr-2 w-4 h-4" /> Start Snelle Import</>}
+                    {loading ? <Loader2 className="animate-spin" /> : <><Upload className="mr-2 w-4 h-4" /> Importeer nu in Archief</>}
                   </Button>
                 </div>
               </Card>
