@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
@@ -136,7 +137,6 @@ function GalleryContent() {
 
       <Dialog open={!!selectedArtwork} onOpenChange={() => setSelectedArtwork(null)}>
         <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background/98 backdrop-blur-3xl border-none rounded-none overflow-hidden">
-          {/* Top 67% viewport height */}
           <div className="relative h-[67vh] w-full flex items-center justify-center overflow-hidden bg-black/5 group">
             {selectedArtwork && (
               <img 
@@ -162,7 +162,6 @@ function GalleryContent() {
             </DialogClose>
           </div>
 
-          {/* Bottom 33% viewport height */}
           <div className="h-[33vh] w-full bg-background/95 backdrop-blur-md py-16 px-12 border-t border-border/10 shadow-2xl flex flex-col items-center justify-center overflow-y-auto">
             <div className="max-w-6xl mx-auto flex flex-col items-center text-center gap-10">
               <DialogTitle className="font-headline text-6xl md:text-8xl font-light text-foreground tracking-tighter leading-tight uppercase">

@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
@@ -30,18 +31,20 @@ import {
   History,
   CloudUpload,
   Square,
-  Download
+  Download,
+  FileJson,
+  Save
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogClose, DialogTitle } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
+import { Textarea } from '@/components/ui/textarea';
 
 const STANDARD_TAGS = [
   "Groet", "Schoorl", "Hargen", "Amsterdam", "Frankrijk", 
@@ -60,6 +63,7 @@ export default function AdminPage() {
   const directoryInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadDirInputRef = useRef<HTMLInputElement>(null);
+  const jsonFileInputRef = useRef<HTMLInputElement>(null);
   const cancelUploadRef = useRef(false);
   
   const [nasBaseUrl, setNasBaseUrl] = useState('http://192.168.178.15/fotos/');
@@ -315,14 +319,14 @@ export default function AdminPage() {
       });
       setBulkJson('');
       setActiveTab('archive');
-    } catch (err) {
-      toast({ variant: "destructive", title: "JSON Fout", description: "Controleer het format." });
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "JSON Fout", description: "Controleer het format of het bestand." });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleExportArchive = () => {
+  const handleExportArchive = (download = false) => {
     if (!artworks) return;
     const exportData = artworks.map(art => {
       const { id, createdAt, ...rest } = art;
@@ -330,8 +334,35 @@ export default function AdminPage() {
     });
     const jsonString = JSON.stringify(exportData, null, 2);
     setBulkJson(jsonString);
-    setActiveTab('bulk');
-    toast({ title: "Backup Gegenereerd", description: "Kopieer de JSON-tekst onder Backup & Bulk." });
+    
+    if (download) {
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `thijs-sterk-backup-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast({ title: "Backup Opgeslagen", description: "Het JSON-bestand is gedownload." });
+    } else {
+      setActiveTab('bulk');
+      toast({ title: "Backup Gegenereerd", description: "Kopieer de JSON-tekst onder Backup & Bulk." });
+    }
+  };
+
+  const handleJsonFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result as string;
+      setBulkJson(content);
+      toast({ title: "Bestand Geladen", description: "JSON data is klaargezet voor import." });
+    };
+    reader.readAsText(file);
   };
 
   const updateArtworkField = async (id: string, field: string, value: any) => {
@@ -367,6 +398,7 @@ export default function AdminPage() {
       <input type="file" ref={directoryInputRef} style={{ display: 'none' }} onChange={handleDirectoryChange} {...({ webkitdirectory: "", directory: "" } as any)} />
       <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={(e) => handleBatchProcess(e.target.files)} accept="image/*" multiple />
       <input type="file" ref={uploadDirInputRef} style={{ display: 'none' }} onChange={(e) => handleBatchProcess(e.target.files)} {...({ webkitdirectory: "", directory: "" } as any)} />
+      <input type="file" ref={jsonFileInputRef} style={{ display: 'none' }} onChange={handleJsonFileChange} accept=".json" />
 
       <header className="h-16 border-b border-border bg-background/95 backdrop-blur-sm sticky top-14 z-40 px-8 flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -374,7 +406,7 @@ export default function AdminPage() {
           <h1 className="font-headline text-xl font-light">Atelier <span className="italic">Beheer</span></h1>
         </div>
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" onClick={handleExportArchive} className="text-[10px] uppercase tracking-widest font-bold">
+          <Button variant="ghost" size="sm" onClick={() => handleExportArchive(true)} className="text-[10px] uppercase tracking-widest font-bold">
             <Download className="w-3 h-3 mr-2" /> Exporteer Archief
           </Button>
           <Link href="/" className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground hover:text-foreground flex items-center gap-2 border-l border-border pl-4 ml-4">
@@ -506,13 +538,14 @@ export default function AdminPage() {
               <div className="flex justify-between items-center">
                 <Label className="text-[10px] uppercase font-bold">Backup Data (JSON)</Label>
                 <div className="flex gap-2">
-                  <Button variant="ghost" size="sm" onClick={handleExportArchive} className="h-7 text-[8px] uppercase font-bold"><History className="w-3 h-3 mr-1" /> Genereer Backup</Button>
+                  <Button variant="ghost" size="sm" onClick={() => jsonFileInputRef.current?.click()} className="h-7 text-[8px] uppercase font-bold"><FileJson className="w-3 h-3 mr-1" /> Laad Bestand</Button>
+                  <Button variant="ghost" size="sm" onClick={() => handleExportArchive(true)} className="h-7 text-[8px] uppercase font-bold"><Save className="w-3 h-3 mr-1" /> Download JSON</Button>
                   <Button variant="ghost" size="sm" onClick={() => navigator.clipboard.writeText(bulkJson)} className="h-7 text-[8px] uppercase font-bold"><Copy className="w-3 h-3 mr-1" /> Kopieer</Button>
                 </div>
               </div>
               <Textarea value={bulkJson} onChange={(e) => setBulkJson(e.target.value)} className="min-h-[400px] font-mono text-[10px] rounded-2xl bg-black/5" />
               <Button onClick={handleBulkUpload} disabled={loading || !bulkJson} className="w-full h-14 rounded-xl font-bold uppercase tracking-widest shadow-xl">
-                {loading ? <Loader2 className="animate-spin" /> : <><Upload className="mr-2 w-4 h-4" /> Importeer Backup</>}
+                {loading ? <Loader2 className="animate-spin" /> : <><Upload className="mr-2 w-4 h-4" /> Importeer Data</>}
               </Button>
             </Card>
           </TabsContent>
@@ -521,7 +554,6 @@ export default function AdminPage() {
 
       <Dialog open={!!editingId} onOpenChange={() => setEditingId(null)}>
         <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background/98 backdrop-blur-3xl border-none rounded-none overflow-hidden">
-          {/* Top 67% area for the artwork */}
           <div className="relative h-[67vh] w-full flex items-center justify-center overflow-hidden bg-black/5 group">
             {editingArtwork && (
               <img 
@@ -546,10 +578,8 @@ export default function AdminPage() {
             </div>
           </div>
 
-          {/* Bottom 33% area for the controls */}
           <div className="h-[33vh] w-full bg-background/95 backdrop-blur-md border-t border-border/10 p-8 shadow-2xl flex flex-col overflow-y-auto">
             <div className="max-w-[1600px] mx-auto grid grid-cols-4 gap-12 items-start w-full h-full">
-              {/* Column 1: Identity */}
               <div className="space-y-6">
                 <div className="flex flex-col gap-2">
                   <Label className="text-[10px] uppercase font-black tracking-[0.2em] text-accent opacity-80">Titel & Status</Label>
@@ -582,7 +612,6 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              {/* Column 2: Meta & Tags */}
               <div className="space-y-6">
                  <Label className="text-[10px] uppercase font-black tracking-[0.2em] text-accent opacity-80">Details & Thema's</Label>
                 <div className="grid grid-cols-2 gap-4">
@@ -598,7 +627,6 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              {/* Column 3: Display Controls (Precision) */}
               <div className="space-y-6">
                 <div>
                   <Label className="text-[10px] uppercase font-black tracking-[0.2em] text-accent opacity-80 block mb-4">Helderheid ({editingArtwork?.brightness?.toFixed(2) || '1.00'})</Label>
@@ -626,7 +654,6 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              {/* Column 4: Precision & Finish */}
               <div className="space-y-6">
                 <div className="space-y-4">
                   {['Left', 'Right'].map(side => {
