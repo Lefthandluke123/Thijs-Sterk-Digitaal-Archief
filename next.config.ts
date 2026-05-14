@@ -56,6 +56,16 @@ const nextConfig: NextConfig = {
         hostname: '*.direct.quickconnect.to',
         pathname: '/**',
       },
+      {
+        protocol: 'http',
+        hostname: '192.168.*.*',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '192.168.*.*',
+        pathname: '/**',
+      }
     ],
   },
 };

@@ -15,7 +15,9 @@ import {
   Upload,
   Plus,
   Settings2,
-  Image as ImageIcon
+  Image as ImageIcon,
+  FolderOpen,
+  Link as LinkIcon
 } from 'lucide-react';
 import Image from 'next/image';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -32,6 +34,10 @@ export default function AdminPage() {
   const [password, setPassword] = useState('');
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [bulkJson, setBulkJson] = useState('');
+  
+  // NAS Helper state
+  const [nasBaseUrl, setNasBaseUrl] = useState('');
+  const [nasFileNames, setNasFileNames] = useState('');
 
   const [newArtwork, setNewArtwork] = useState({
     title: "",
@@ -130,6 +136,35 @@ export default function AdminPage() {
     }
   };
 
+  const handleNasImport = async () => {
+    if (!nasBaseUrl || !nasFileNames) {
+      toast({ variant: "destructive", title: "Invoer onvolledig", description: "Basis URL en Bestandsnamen zijn nodig." });
+      return;
+    }
+    
+    const files = nasFileNames.split('\n').map(f => f.trim()).filter(f => f !== '');
+    const baseUrlClean = nasBaseUrl.endsWith('/') ? nasBaseUrl : nasBaseUrl + '/';
+    
+    const generatedArtworks = files.map(file => ({
+      title: file.split('.')[0] || "Zonder titel",
+      series: "NAS Import",
+      imageUrl: baseUrlClean + file,
+      medium: "Olieverf op doek",
+      year: "",
+      description: "",
+      imageHint: "painting",
+      tags: [],
+      cropTop: 0,
+      cropBottom: 0,
+      cropLeft: 0,
+      cropRight: 0,
+      brightness: 1
+    }));
+    
+    setBulkJson(JSON.stringify(generatedArtworks, null, 2));
+    toast({ title: "Links gegenereerd", description: "Controleer de JSON in de Bulk Upload tab." });
+  };
+
   const handleDeleteArtwork = (artId: string) => {
     if (!firestore || !confirm("Weet je zeker dat je dit werk wilt verwijderen?")) return;
     const artRef = doc(firestore, 'artworks', artId);
@@ -151,6 +186,11 @@ export default function AdminPage() {
         requestResourceData: { [field]: value }
       }));
     });
+  };
+
+  const isExternalStorage = (url: string) => {
+    if (!url) return false;
+    return url.includes('quickconnect.to') || url.includes('gofile.me') || url.includes('drive.google.com');
   };
 
   if (!isAuthorized) {
@@ -201,6 +241,7 @@ export default function AdminPage() {
           <TabsList className="bg-muted/50 p-1 rounded-full w-fit mx-auto">
             <TabsTrigger value="archive" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Archief</TabsTrigger>
             <TabsTrigger value="new" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Nieuw Werk</TabsTrigger>
+            <TabsTrigger value="nas" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">NAS Helper</TabsTrigger>
             <TabsTrigger value="bulk" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Bulk Upload</TabsTrigger>
           </TabsList>
 
@@ -214,7 +255,7 @@ export default function AdminPage() {
                       alt={art.title} 
                       fill 
                       className="object-cover transition-transform duration-500 group-hover:scale-105" 
-                      unoptimized={true} 
+                      unoptimized={isExternalStorage(art.imageUrl)} 
                       style={{
                         clipPath: `inset(${art.cropTop || 0}% ${art.cropRight || 0}% ${art.cropBottom || 0}% ${art.cropLeft || 0}%)`,
                         filter: `brightness(${art.brightness || 1})`
@@ -308,7 +349,7 @@ export default function AdminPage() {
                         alt="Preview" 
                         fill 
                         className="object-cover" 
-                        unoptimized={true} 
+                        unoptimized={isExternalStorage(newArtwork.imageUrl)} 
                         style={{
                           clipPath: `inset(${newArtwork.cropTop}% ${newArtwork.cropRight}% ${newArtwork.cropBottom}% ${newArtwork.cropLeft}%)`,
                           filter: `brightness(${newArtwork.brightness})`
@@ -351,10 +392,44 @@ export default function AdminPage() {
             </div>
           </TabsContent>
 
+          <TabsContent value="nas">
+            <div className="max-w-2xl mx-auto space-y-6">
+              <h2 className="text-3xl font-headline font-light text-center">NAS Folder Helper</h2>
+              <p className="text-center text-muted-foreground text-sm">Genereer snel links naar afbeeldingen die op je NAS (bijv. Synology) staan.</p>
+              
+              <Card className="p-8 rounded-3xl border-border bg-card/50 shadow-xl space-y-6">
+                <div className="space-y-2">
+                  <Label className="text-[10px] uppercase font-bold">Basis URL (bijv. QuickConnect of IP)</Label>
+                  <Input 
+                    placeholder="https://jouwnas.quickconnect.to/map/naam" 
+                    value={nasBaseUrl}
+                    onChange={(e) => setNasBaseUrl(e.target.value)}
+                    className="rounded-xl"
+                  />
+                  <p className="text-[9px] text-muted-foreground italic">Zorg dat de map publiek toegankelijk is via deze link.</p>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label className="text-[10px] uppercase font-bold">Bestandsnamen (één per regel)</Label>
+                  <Textarea 
+                    placeholder={"schilderij1.jpg\nschilderij2.png\nlandschap.webp"} 
+                    value={nasFileNames}
+                    onChange={(e) => setNasFileNames(e.target.value)}
+                    className="min-h-[200px] font-mono text-xs rounded-2xl"
+                  />
+                </div>
+                
+                <Button onClick={handleNasImport} className="w-full h-14 rounded-xl font-bold uppercase tracking-widest bg-accent hover:bg-accent/90">
+                  <FolderOpen className="mr-2 w-4 h-4" /> Genereer Bulk JSON
+                </Button>
+              </Card>
+            </div>
+          </TabsContent>
+
           <TabsContent value="bulk">
             <div className="max-w-2xl mx-auto space-y-6">
-              <h2 className="text-3xl font-headline font-light mb-2 text-center">Bulk Upload</h2>
-              <p className="text-center text-muted-foreground text-sm mb-8">Plak een JSON array van kunstwerken om ze in één keer toe te voegen.</p>
+              <h2 className="text-3xl font-headline font-light text-center">Bulk Upload</h2>
+              <p className="text-center text-muted-foreground text-sm mb-8">Plak hier de JSON die je hebt gegenereerd of handmatig hebt samengesteld.</p>
               
               <Card className="p-8 rounded-3xl border-border bg-card/50 shadow-xl">
                 <div className="space-y-6">
