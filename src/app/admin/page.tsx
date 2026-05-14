@@ -17,7 +17,8 @@ import {
   Settings2,
   Image as ImageIcon,
   FolderOpen,
-  Link as LinkIcon
+  Link as LinkIcon,
+  Maximize2
 } from 'lucide-react';
 import Image from 'next/image';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -34,6 +35,7 @@ export default function AdminPage() {
   const [password, setPassword] = useState('');
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [bulkJson, setBulkJson] = useState('');
+  const [activeTab, setActiveTab] = useState('archive');
   
   // NAS Helper state
   const [nasBaseUrl, setNasBaseUrl] = useState('');
@@ -129,6 +131,7 @@ export default function AdminPage() {
       }
       toast({ title: "Bulk Upload Geslaagd", description: `${count} werken toegevoegd.` });
       setBulkJson('');
+      setActiveTab('archive');
     } catch (err) {
       toast({ variant: "destructive", title: "JSON Fout", description: "De ingevoerde tekst is geen geldige JSON." });
     } finally {
@@ -136,7 +139,7 @@ export default function AdminPage() {
     }
   };
 
-  const handleNasImport = async () => {
+  const handleNasImport = () => {
     if (!nasBaseUrl || !nasFileNames) {
       toast({ variant: "destructive", title: "Invoer onvolledig", description: "Basis URL en Bestandsnamen zijn nodig." });
       return;
@@ -162,7 +165,8 @@ export default function AdminPage() {
     }));
     
     setBulkJson(JSON.stringify(generatedArtworks, null, 2));
-    toast({ title: "Links gegenereerd", description: "Controleer de JSON in de Bulk Upload tab." });
+    setActiveTab('bulk');
+    toast({ title: "Links gegenereerd", description: "Controleer de JSON en klik op Start Import." });
   };
 
   const handleDeleteArtwork = (artId: string) => {
@@ -186,11 +190,6 @@ export default function AdminPage() {
         requestResourceData: { [field]: value }
       }));
     });
-  };
-
-  const isExternalStorage = (url: string) => {
-    if (!url) return false;
-    return url.includes('quickconnect.to') || url.includes('gofile.me') || url.includes('drive.google.com');
   };
 
   if (!isAuthorized) {
@@ -237,12 +236,12 @@ export default function AdminPage() {
       </header>
 
       <main className="flex-1 p-8 max-w-7xl mx-auto w-full">
-        <Tabs defaultValue="archive" className="space-y-8">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
           <TabsList className="bg-muted/50 p-1 rounded-full w-fit mx-auto">
             <TabsTrigger value="archive" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Archief</TabsTrigger>
             <TabsTrigger value="new" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Nieuw Werk</TabsTrigger>
-            <TabsTrigger value="nas" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">NAS Helper</TabsTrigger>
-            <TabsTrigger value="bulk" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Bulk Upload</TabsTrigger>
+            <TabsTrigger value="nas" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">NAS Folder</TabsTrigger>
+            <TabsTrigger value="bulk" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Bulk Import</TabsTrigger>
           </TabsList>
 
           <TabsContent value="archive">
@@ -255,7 +254,7 @@ export default function AdminPage() {
                       alt={art.title} 
                       fill 
                       className="object-cover transition-transform duration-500 group-hover:scale-105" 
-                      unoptimized={isExternalStorage(art.imageUrl)} 
+                      unoptimized 
                       style={{
                         clipPath: `inset(${art.cropTop || 0}% ${art.cropRight || 0}% ${art.cropBottom || 0}% ${art.cropLeft || 0}%)`,
                         filter: `brightness(${art.brightness || 1})`
@@ -305,7 +304,7 @@ export default function AdminPage() {
           <TabsContent value="new">
             <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-12">
               <div className="space-y-6">
-                <h2 className="text-3xl font-headline font-light mb-8">Nieuw Kunstwerk</h2>
+                <h2 className="text-3xl font-headline font-light mb-8">Handmatig Toevoegen</h2>
                 <Card className="p-8 rounded-3xl border-border bg-card/50 shadow-xl">
                   <form onSubmit={handleAddManualArtwork} className="space-y-5">
                     <div className="space-y-2">
@@ -328,10 +327,10 @@ export default function AdminPage() {
                     </div>
                     <div className="space-y-2">
                       <Label className="text-[10px] uppercase font-bold">Afbeelding URL</Label>
-                      <Input value={newArtwork.imageUrl} onChange={(e) => setNewArtwork(prev => ({ ...prev, imageUrl: e.target.value }))} required className="rounded-xl" />
+                      <Input value={newArtwork.imageUrl} onChange={(e) => setNewArtwork(prev => ({ ...prev, imageUrl: e.target.value }))} required className="rounded-xl" placeholder="https://mijn-nas.nl/web/schilderij.jpg" />
                     </div>
                     <Button type="submit" disabled={loading} className="w-full h-14 rounded-xl font-bold uppercase tracking-widest">
-                      {loading ? <Loader2 className="animate-spin" /> : <><Plus className="mr-2 w-4 h-4" /> Opslaan</>}
+                      {loading ? <Loader2 className="animate-spin" /> : <><Plus className="mr-2 w-4 h-4" /> Opslaan in Archief</>}
                     </Button>
                   </form>
                 </Card>
@@ -349,7 +348,7 @@ export default function AdminPage() {
                         alt="Preview" 
                         fill 
                         className="object-cover" 
-                        unoptimized={isExternalStorage(newArtwork.imageUrl)} 
+                        unoptimized
                         style={{
                           clipPath: `inset(${newArtwork.cropTop}% ${newArtwork.cropRight}% ${newArtwork.cropBottom}% ${newArtwork.cropLeft}%)`,
                           filter: `brightness(${newArtwork.brightness})`
@@ -395,13 +394,13 @@ export default function AdminPage() {
           <TabsContent value="nas">
             <div className="max-w-2xl mx-auto space-y-6">
               <h2 className="text-3xl font-headline font-light text-center">NAS Folder Helper</h2>
-              <p className="text-center text-muted-foreground text-sm">Genereer snel links naar afbeeldingen die op je NAS (bijv. Synology) staan.</p>
+              <p className="text-center text-muted-foreground text-sm">Genereer snel links voor een hele map op je NAS (via Web Station).</p>
               
               <Card className="p-8 rounded-3xl border-border bg-card/50 shadow-xl space-y-6">
                 <div className="space-y-2">
-                  <Label className="text-[10px] uppercase font-bold">Basis URL (bijv. QuickConnect of IP)</Label>
+                  <Label className="text-[10px] uppercase font-bold">Basis URL (bijv. Web Station map)</Label>
                   <Input 
-                    placeholder="https://jouwnas.quickconnect.to/map/naam" 
+                    placeholder="https://jouwnas.nl/web/portfolio-map" 
                     value={nasBaseUrl}
                     onChange={(e) => setNasBaseUrl(e.target.value)}
                     className="rounded-xl"
@@ -417,10 +416,11 @@ export default function AdminPage() {
                     onChange={(e) => setNasFileNames(e.target.value)}
                     className="min-h-[200px] font-mono text-xs rounded-2xl"
                   />
+                  <p className="text-[9px] text-muted-foreground italic">Tip: Kopieer alle bestandsnamen in je Windows/Mac verkenner en plak ze hier.</p>
                 </div>
                 
                 <Button onClick={handleNasImport} className="w-full h-14 rounded-xl font-bold uppercase tracking-widest bg-accent hover:bg-accent/90">
-                  <FolderOpen className="mr-2 w-4 h-4" /> Genereer Bulk JSON
+                  <FolderOpen className="mr-2 w-4 h-4" /> Genereer Import Code
                 </Button>
               </Card>
             </div>
@@ -428,8 +428,8 @@ export default function AdminPage() {
 
           <TabsContent value="bulk">
             <div className="max-w-2xl mx-auto space-y-6">
-              <h2 className="text-3xl font-headline font-light text-center">Bulk Upload</h2>
-              <p className="text-center text-muted-foreground text-sm mb-8">Plak hier de JSON die je hebt gegenereerd of handmatig hebt samengesteld.</p>
+              <h2 className="text-3xl font-headline font-light text-center">Bulk Import</h2>
+              <p className="text-center text-muted-foreground text-sm mb-8">Plak hier de JSON code om meerdere werken tegelijk toe te voegen.</p>
               
               <Card className="p-8 rounded-3xl border-border bg-card/50 shadow-xl">
                 <div className="space-y-6">
@@ -443,7 +443,7 @@ export default function AdminPage() {
                     />
                   </div>
                   <Button onClick={handleBulkUpload} disabled={loading || !bulkJson} className="w-full h-14 rounded-xl font-bold uppercase tracking-widest">
-                    {loading ? <Loader2 className="animate-spin" /> : <><Upload className="mr-2 w-4 h-4" /> Start Bulk Import</>}
+                    {loading ? <Loader2 className="animate-spin" /> : <><Upload className="mr-2 w-4 h-4" /> Start Import</>}
                   </Button>
                 </div>
               </Card>
