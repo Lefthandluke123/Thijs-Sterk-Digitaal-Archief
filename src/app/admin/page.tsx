@@ -10,7 +10,6 @@ import { toast } from '@/hooks/use-toast';
 import { 
   Trash2, 
   Loader2, 
-  Lock, 
   ArrowLeft,
   Upload,
   Plus,
@@ -18,7 +17,8 @@ import {
   FolderOpen,
   RefreshCw,
   Scissors,
-  AlertCircle
+  AlertCircle,
+  Settings
 } from 'lucide-react';
 import Image from 'next/image';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -32,8 +32,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 export default function AdminPage() {
   const firestore = useFirestore();
   const [loading, setLoading] = useState(false);
-  const [password, setPassword] = useState('');
-  const [isAuthorized, setIsAuthorized] = useState(false);
   const [bulkJson, setBulkJson] = useState('');
   const [activeTab, setActiveTab] = useState('archive');
   const directoryInputRef = useRef<HTMLInputElement>(null);
@@ -65,18 +63,7 @@ export default function AdminPage() {
 
   const { data: artworks } = useCollection(artworksQuery);
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (password === 'gabbes') {
-      setIsAuthorized(true);
-      toast({ title: "Toegang verleend", description: "Welkom in het atelier." });
-    } else {
-      toast({ variant: "destructive", title: "Fout wachtwoord", description: "Toegang geweigerd." });
-    }
-  };
-
   const handleScanFolder = () => {
-    // Trigger de verborgen input die in Firefox/Chrome mappen kan lezen
     if (directoryInputRef.current) {
       directoryInputRef.current.click();
     }
@@ -91,7 +78,6 @@ export default function AdminPage() {
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      // We pakken alleen de bestandsnaam, niet het volledige pad (voor privacy/security redenen)
       if (imageExtensions.test(file.name)) {
         imageFiles.push(file.name);
       }
@@ -135,7 +121,6 @@ export default function AdminPage() {
       description: `${imageFiles.length} afbeeldingen gevonden en klaargezet voor import.` 
     });
     
-    // Reset de input zodat dezelfde map opnieuw gekozen kan worden
     if (directoryInputRef.current) {
       directoryInputRef.current.value = '';
     }
@@ -230,40 +215,6 @@ export default function AdminPage() {
     });
   };
 
-  if (!isAuthorized) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="max-w-md w-full p-8 rounded-3xl border-border bg-card/50 shadow-2xl">
-          <div className="flex flex-col items-center text-center space-y-6">
-            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-              <Lock className="w-8 h-8 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-headline font-light mb-2">Atelier Beheer</h1>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Voer het wachtwoord in</p>
-            </div>
-            <form onSubmit={handleLogin} className="w-full space-y-4">
-              <Input 
-                type="password" 
-                placeholder="Wachtwoord" 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="h-12 text-center rounded-xl"
-                autoFocus
-              />
-              <Button type="submit" className="w-full h-12 rounded-xl font-bold uppercase tracking-widest">
-                Betreden
-              </Button>
-            </form>
-            <Link href="/" className="text-[9px] uppercase tracking-widest font-bold text-muted-foreground flex items-center gap-2">
-              <ArrowLeft className="w-3 h-3" /> Terug naar de site
-            </Link>
-          </div>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-background flex flex-col pt-14">
       {/* Verborgen input voor Firefox folder selectie */}
@@ -276,10 +227,18 @@ export default function AdminPage() {
       />
 
       <header className="h-16 border-b border-border bg-background/95 backdrop-blur-sm sticky top-14 z-40 px-8 flex items-center justify-between">
-        <h1 className="font-headline text-xl font-light">Atelier <span className="italic">Beheer</span></h1>
-        <Button variant="outline" asChild className="rounded-full h-9 px-4 border-primary/20 text-primary text-[10px] uppercase tracking-widest">
-          <Link href="/">Bekijk Site</Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Settings className="w-5 h-5 text-accent" />
+          <h1 className="font-headline text-xl font-light">Atelier <span className="italic">Beheer</span></h1>
+        </div>
+        <div className="flex items-center gap-4">
+          <Link href="/" className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground hover:text-foreground flex items-center gap-2">
+            <ArrowLeft className="w-3 h-3" /> Terug naar de site
+          </Link>
+          <Button variant="outline" asChild className="rounded-full h-9 px-4 border-primary/20 text-primary text-[10px] uppercase tracking-widest">
+            <Link href="/">Bekijk Site</Link>
+          </Button>
+        </div>
       </header>
 
       <main className="flex-1 p-8 max-w-7xl mx-auto w-full">
