@@ -4,40 +4,32 @@ Dit project is een eerbetoon aan het werk van Thijs Sterk (1913-1982). Het bevat
 
 ## Hoe dit project naar GitHub te pushen
 
-Als je dit project op GitHub wilt plaatsen, volg dan deze stappen in de terminal van je workspace:
+1. **Maak een repository aan op GitHub** (bijv. `thijs-sterk-portfolio`).
+2. **Kopieer de URL** van de repo.
+3. **Open de Terminal** onderaan dit scherm.
+4. **Initialiseer en Push**:
+   ```bash
+   git init
+   git add .
+   git commit -m "Eerste versie van Thijs Sterk portfolio"
+   git branch -M main
+   git remote add origin <JOUW_GITHUB_URL>
+   git push -u origin main
+   ```
 
-1.  **Maak een nieuwe repository aan op GitHub:**
-    *   Ga naar [github.com](https://github.com) en maak een nieuwe (lege) repository aan.
-    *   Kopieer de URL van de repository (bijv. `https://github.com/gebruikersnaam/thijs-sterk.git`).
+## Publiceren via Firebase App Hosting
 
-2.  **Initialiseer Git in deze workspace:**
-    *   Open de terminal onderaan je scherm.
-    *   Voer uit: `git init`
+1. Ga naar de [Firebase Console](https://console.firebase.google.com/project/studio-7311695883-2090f/overview).
+2. Ga naar **Build > App Hosting**.
+3. Klik op "Get Started" en verbind je GitHub-account.
+4. Selecteer je repository en volg de stappen (kies de `main` branch).
+5. Firebase zal je app bouwen en een live URL geven.
 
-3.  **Voeg je bestanden toe:**
-    *   Voer uit: `git add .`
-    *   Voer uit: `git commit -m "Eerste versie van Thijs Sterk portfolio"`
+## Beveiliging & SEO
+- De website is voorzien van visuele watermerken ("Erven Thijs Sterk").
+- Rechtsklikken en slepen van afbeeldingen is geblokkeerd.
+- Metadata is geoptimaliseerd voor Google (SEO).
 
-4.  **Koppel de GitHub repository:**
-    *   Voer uit: `git remote add origin <JOUW_GITHUB_URL>` (vervang `<JOUW_GITHUB_URL>` door de gekopieerde URL).
-
-5.  **Push de code:**
-    *   Voer uit: `git branch -M main`
-    *   Voer uit: `git push -u origin main`
-
-## Publiceren (Live gaan)
-
-Nadat de code op GitHub staat, kun je deze koppelen aan **Firebase App Hosting** voor een professionele live-omgeving:
-
-1.  Ga naar de [Firebase Console](https://console.firebase.google.com/).
-2.  Selecteer je project.
-3.  Ga naar **Build > App Hosting**.
-4.  Klik op "Get Started" en verbind je GitHub repository.
-5.  Selecteer de `main` branch en volg de stappen om je website online te zetten.
-
-## Belangrijke contactgegevens
+## Contact
 *   **E-mail:** info@thijssterk.nl
 *   **Telefoon:** 06-53716249
-
-## Beveiliging
-De website is voorzien van visuele watermerken en een blokkade op rechtsklikken en verslepen van afbeeldingen om ongewenst kopiëren te ontmoedigen.

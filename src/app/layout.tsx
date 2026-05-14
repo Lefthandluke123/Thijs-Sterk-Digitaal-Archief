@@ -6,12 +6,12 @@ import { FirebaseClientProvider } from '@/firebase/client-provider';
 
 export const metadata: Metadata = {
   title: 'Thijs Sterk (1913-1982) | Schilder van Licht, Ruimte en Water',
-  description: 'Het officiële retrospectieve portfolio van Thijs Sterk. Ontdek zijn meesterlijke landschappen, stillevens en monumentale werken. Beheerd door de Erven Thijs Sterk.',
-  keywords: ['Thijs Sterk', 'Nederlandse schilderkunst', 'Licht en Ruimte', 'Landschappen', 'Groet Schoorl', 'Kunstcollectie'],
+  description: 'Ontdek het officiële retrospectieve portfolio van Thijs Sterk. Meesterlijke landschappen, stillevens en monumentale werken. Beheerd door de Erven Thijs Sterk.',
+  keywords: ['Thijs Sterk', 'Nederlandse kunst', 'Schilderkunst 20e eeuw', 'Licht en Ruimte', 'Landschappen', 'Groet Schoorl', 'Kunstcollectie', 'Hanneke Sterk', 'Beatrijs Sterk', 'Peter Bes'],
   authors: [{ name: 'Erven Thijs Sterk' }],
   openGraph: {
     title: 'Thijs Sterk | Retrospectief Portfolio',
-    description: 'Ontdek de artistieke nalatenschap van Thijs Sterk (1913-1982).',
+    description: 'Artistieke nalatenschap van Thijs Sterk (1913-1982). Een leven gewijd aan de essentie van het licht.',
     url: 'https://thijssterk.nl',
     siteName: 'Thijs Sterk Portfolio',
     locale: 'nl_NL',
