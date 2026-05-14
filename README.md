@@ -10,7 +10,7 @@ Dit project is het officiële eerbetoon aan het werk van Thijs Sterk (1913-1982)
 3. Het activeren van deze services na het koppelen van billing kan **2 tot 10 minuten** duren.
 
 ### 2. Push naar GitHub
-Open de terminal onderaan dit scherm en voer deze commando's uit:
+Voor **App Hosting** is een GitHub koppeling vereist. Open de terminal onderaan dit scherm en voer deze commando's uit:
 ```bash
 git init
 git add .
@@ -29,7 +29,7 @@ git push -u origin main
 ## Belangrijke Kenmerken
 - **Beveiliging:** Visuele watermerken op alle afbeeldingen en blokkade van rechtsklikken/slepen.
 - **SEO:** Metadata volledig geoptimaliseerd voor Google (Schilder van Licht, Ruimte en Water).
-- **Beheer:** Beveiligd paneel via `/admin` voor collectiebeheer.
+- **Beheer:** Beveiligd paneel via `/admin` voor collectiebeheer (Atelier).
 
 ## Contact
 *   **E-mail:** info@thijssterk.nl
