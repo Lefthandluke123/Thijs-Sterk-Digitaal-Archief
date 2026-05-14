@@ -141,8 +141,6 @@ export default function AdminPage() {
         const pathParts = relativePath.split('/');
         
         let detectedSeries = "Hoofdcollectie";
-        // Als we in een map zitten, is het pad 'Hoofdmap/Zaal/Foto.jpg'
-        // pathParts.length zou dan 3 zijn. De zaal is pathParts[1]
         if (pathParts.length > 2) {
           detectedSeries = pathParts[pathParts.length - 2];
         }
@@ -185,6 +183,7 @@ export default function AdminPage() {
     cancelUploadRef.current = false;
     const totalFiles = files.length;
     let startedCount = 0;
+    let duplicateCount = 0;
 
     for (let i = 0; i < totalFiles; i++) {
       if (cancelUploadRef.current) {
@@ -196,6 +195,27 @@ export default function AdminPage() {
       const imageExtensions = /\.(jpe?g|png|webp|avif)$/i;
       if (!imageExtensions.test(file.name)) continue;
 
+      const relativePath = (file as any).webkitRelativePath || "";
+      const pathParts = relativePath.split('/');
+      let detectedSeries = "Nieuwe Uploads";
+      if (pathParts.length > 2) {
+        detectedSeries = pathParts[pathParts.length - 2];
+      }
+      const fileNameOnly = file.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
+
+      // Dubbel-check
+      const isDuplicate = artworks?.some(art => 
+        art.title === fileNameOnly && 
+        art.series === detectedSeries
+      );
+
+      if (isDuplicate) {
+        duplicateCount++;
+        startedCount++;
+        setUploadProgress((startedCount / totalFiles) * 100);
+        continue;
+      }
+
       setUploadStatus(`Uploaden: ${file.name} (${i + 1}/${totalFiles})`);
       
       const uniqueId = Math.random().toString(36).substring(7);
@@ -204,15 +224,7 @@ export default function AdminPage() {
       try {
         const snapshot = await uploadBytes(storageRef, file);
         const downloadUrl = await getDownloadURL(snapshot.ref);
-        const fileNameOnly = file.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
         
-        const relativePath = (file as any).webkitRelativePath || "";
-        const pathParts = relativePath.split('/');
-        let detectedSeries = "Nieuwe Uploads";
-        if (pathParts.length > 2) {
-          detectedSeries = pathParts[pathParts.length - 2];
-        }
-
         const newArtwork = {
           title: fileNameOnly,
           series: detectedSeries,
@@ -251,7 +263,10 @@ export default function AdminPage() {
     setIsUploading(false);
     setUploadStatus('');
     if (!cancelUploadRef.current) {
-      toast({ title: "Batch Voltooid", description: `${startedCount} foto's zijn verwerkt.` });
+      toast({ 
+        title: "Batch Voltooid", 
+        description: `${startedCount - duplicateCount} foto's verwerkt. ${duplicateCount} dubbelen overgeslagen.` 
+      });
       setActiveTab('archive');
     }
   };
@@ -262,18 +277,33 @@ export default function AdminPage() {
     try {
       const data = JSON.parse(bulkJson);
       const artworksArray = Array.isArray(data) ? data : [data];
+      let addedCount = 0;
+      let skippedCount = 0;
       
       for (const item of artworksArray) {
         const { id, ...rest } = item;
+        
+        // Dubbel-check op URL
+        const isDuplicate = artworks?.some(art => art.imageUrl === rest.imageUrl);
+        
+        if (isDuplicate) {
+          skippedCount++;
+          continue;
+        }
+
         addDoc(collection(firestore, 'artworks'), {
           ...rest,
           createdAt: serverTimestamp()
         }).catch(async () => {
           errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'artworks', operation: 'create' }));
         });
+        addedCount++;
       }
       
-      toast({ title: "Import Succesvol", description: `${artworksArray.length} items toegevoegd.` });
+      toast({ 
+        title: "Import Succesvol", 
+        description: `${addedCount} items toegevoegd. ${skippedCount} dubbelen overgeslagen.` 
+      });
       setBulkJson('');
       setActiveTab('archive');
     } catch (err) {
