@@ -28,7 +28,8 @@ import {
   ChevronRight,
   Search,
   Cloud,
-  HardDrive
+  HardDrive,
+  Link as LinkIcon
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -60,7 +61,10 @@ export default function AdminPage() {
   
   // NAS Helper state
   const [nasBaseUrl, setNasBaseUrl] = useState('http://192.168.178.15/fotos/');
-  const [nasFileCount, setNasFileCount] = useState(0);
+  
+  // Handmatig toevoegen state
+  const [manualTitle, setManualTitle] = useState('');
+  const [manualUrl, setManualUrl] = useState('');
 
   // Firebase Upload state
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -68,16 +72,17 @@ export default function AdminPage() {
 
   const artworksQuery = useMemoFirebase(() => {
     if (!firestore) return null;
+    // We gebruiken createdAt voor sortering, maar maken het optioneel voor het geval sommige docs het missen
     return query(collection(firestore, 'artworks'), orderBy('createdAt', 'desc'));
   }, [firestore]);
 
-  const { data: artworks } = useCollection(artworksQuery);
+  const { data: artworks, loading: isCollectionLoading } = useCollection(artworksQuery);
 
   const filteredArtworks = useMemo(() => {
     if (!artworks) return [];
     return artworks.filter(art => 
-      art.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      art.series?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (art.title?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
+      (art.series?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
       art.tags?.some((t: string) => t.toLowerCase().includes(searchQuery.toLowerCase()))
     );
   }, [artworks, searchQuery]);
@@ -144,7 +149,6 @@ export default function AdminPage() {
       }
     }
 
-    setNasFileCount(artworksToImport.length);
     setBulkJson(JSON.stringify(artworksToImport, null, 2));
     setActiveTab('bulk');
   };
@@ -203,6 +207,40 @@ export default function AdminPage() {
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleManualAdd = async () => {
+    if (!manualUrl || !firestore) return;
+    
+    setLoading(true);
+    try {
+      const newArtwork = {
+        title: manualTitle || "Nieuw Werk",
+        series: "Handmatige Toevoeging",
+        imageUrl: manualUrl,
+        medium: "Olieverf op doek",
+        year: new Date().getFullYear().toString(),
+        description: "",
+        imageHint: "painting",
+        tags: [],
+        cropTop: 0,
+        cropBottom: 0,
+        cropLeft: 0,
+        cropRight: 0,
+        brightness: 1,
+        createdAt: serverTimestamp()
+      };
+
+      await addDoc(collection(firestore, 'artworks'), newArtwork);
+      toast({ title: "Toegevoegd", description: "Het werk staat nu in het archief." });
+      setManualTitle('');
+      setManualUrl('');
+      setActiveTab('archive');
+    } catch (err) {
+      toast({ variant: "destructive", title: "Fout", description: "Kon het werk niet toevoegen." });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -279,7 +317,7 @@ export default function AdminPage() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <TabsList className="bg-muted/50 p-1 rounded-full w-fit">
               <TabsTrigger value="archive" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Archief ({artworks?.length || 0})</TabsTrigger>
-              <TabsTrigger value="upload" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Upload</TabsTrigger>
+              <TabsTrigger value="upload" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Toevoegen</TabsTrigger>
               <TabsTrigger value="nas" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">NAS</TabsTrigger>
               <TabsTrigger value="bulk" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Bulk</TabsTrigger>
             </TabsList>
@@ -296,9 +334,16 @@ export default function AdminPage() {
           </div>
 
           <TabsContent value="archive" className="mt-0">
-            {filteredArtworks.length === 0 ? (
+            {isCollectionLoading ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-4">
+                <Loader2 className="w-8 h-8 animate-spin text-accent" />
+                <p className="text-sm font-light italic">Archief wordt geladen...</p>
+              </div>
+            ) : filteredArtworks.length === 0 ? (
               <div className="py-20 text-center border border-dashed rounded-3xl opacity-40">
-                <p className="text-sm font-light italic">Geen kunstwerken gevonden. Upload je eerste foto!</p>
+                <p className="text-sm font-light italic">
+                  {searchQuery ? "Geen resultaten gevonden." : "Nog niets in het archief. Gebruik de tab 'Toevoegen'!"}
+                </p>
               </div>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
@@ -314,7 +359,7 @@ export default function AdminPage() {
                           clipPath: `inset(${art.cropTop || 0}% ${art.cropRight || 0}% ${art.cropBottom || 0}% ${art.cropLeft || 0}%)`, 
                           filter: `brightness(${art.brightness || 1})` 
                         }}
-                        onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Scan+Map'; }}
+                        onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Beeld+Fout'; }}
                       />
                       <div className="absolute top-2 right-2 flex gap-1">
                         {isStorageUrl(art.imageUrl) ? (
@@ -338,44 +383,73 @@ export default function AdminPage() {
           </TabsContent>
 
           <TabsContent value="upload">
-            <div className="max-w-xl mx-auto space-y-8 text-center">
-              <div className="space-y-2">
-                <h2 className="text-3xl font-headline font-light">Direct naar de Cloud</h2>
-                <p className="text-muted-foreground text-sm">Upload foto&apos;s direct naar Firebase Storage. Geen NAS nodig.</p>
+            <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-12">
+              <div className="space-y-8">
+                <div className="space-y-2">
+                  <h2 className="text-2xl font-headline font-light">Cloud Upload</h2>
+                  <p className="text-muted-foreground text-xs leading-relaxed">Selecteer een bestand van je computer om direct in de Firebase Cloud te plaatsen.</p>
+                </div>
+
+                <Card className="p-10 rounded-3xl border-dashed border-2 border-accent/20 bg-accent/5 flex flex-col items-center justify-center space-y-6">
+                  <div className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center">
+                    <CloudUpload className="w-8 h-8 text-accent" />
+                  </div>
+                  
+                  <div className="space-y-4 w-full">
+                    <Button 
+                      onClick={handleFileSelect} 
+                      disabled={isUploading}
+                      className="w-full h-14 rounded-2xl font-bold uppercase tracking-widest shadow-xl"
+                    >
+                      {isUploading ? <Loader2 className="animate-spin mr-2" /> : <Plus className="mr-2" />}
+                      Bestand Kiezen
+                    </Button>
+                    
+                    {isUploading && (
+                      <div className="space-y-2">
+                        <Progress value={uploadProgress} className="h-2" />
+                        <p className="text-[10px] uppercase font-bold text-accent animate-pulse text-center">Bezig met uploaden...</p>
+                      </div>
+                    )}
+                  </div>
+                </Card>
               </div>
 
-              <Card className="p-12 rounded-3xl border-dashed border-2 border-accent/20 bg-accent/5 flex flex-col items-center justify-center space-y-6">
-                <div className="w-20 h-20 rounded-full bg-accent/10 flex items-center justify-center">
-                  <CloudUpload className="w-10 h-10 text-accent" />
+              <div className="space-y-8">
+                <div className="space-y-2">
+                  <h2 className="text-2xl font-headline font-light">Handmatige Link</h2>
+                  <p className="text-muted-foreground text-xs leading-relaxed">Heb je de foto al ergens anders staan? Plak de directe URL hieronder.</p>
                 </div>
-                
-                <div className="space-y-4 w-full">
-                  <Button 
-                    onClick={handleFileSelect} 
-                    disabled={isUploading}
-                    className="w-full h-16 rounded-2xl font-bold uppercase tracking-widest text-lg shadow-xl"
-                  >
-                    {isUploading ? <Loader2 className="animate-spin mr-2" /> : <Plus className="mr-2" />}
-                    Kies Foto
-                  </Button>
-                  
-                  {isUploading && (
-                    <div className="space-y-2">
-                      <Progress value={uploadProgress} className="h-2" />
-                      <p className="text-[10px] uppercase font-bold text-accent animate-pulse">Bezig met uploaden...</p>
-                    </div>
-                  )}
-                </div>
-              </Card>
 
-              <div className="bg-blue-500/10 border border-blue-500/20 p-6 rounded-2xl flex gap-4 text-left">
-                <Info className="w-6 h-6 text-blue-500 shrink-0" />
-                <div className="space-y-1">
-                  <h4 className="text-[10px] uppercase font-bold text-blue-600">Tip</h4>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    Firebase Storage genereert direct werkende links die overal ter wereld snel laden. Dit is de aanbevolen methode voor dit portfolio.
-                  </p>
-                </div>
+                <Card className="p-8 rounded-3xl border-border bg-card/50 shadow-sm space-y-6">
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-[9px] uppercase font-bold tracking-widest">Titel van het werk</Label>
+                      <Input placeholder="Bijv. Licht over Schoorl" value={manualTitle} onChange={(e) => setManualTitle(e.target.value)} className="rounded-xl h-10" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-[9px] uppercase font-bold tracking-widest">Directe URL naar afbeelding</Label>
+                      <Input placeholder="https://..." value={manualUrl} onChange={(e) => setManualUrl(e.target.value)} className="rounded-xl h-10 font-mono text-[10px]" />
+                    </div>
+                    <Button 
+                      disabled={!manualUrl || loading} 
+                      onClick={handleManualAdd}
+                      className="w-full h-12 rounded-xl font-bold uppercase tracking-widest bg-secondary text-foreground hover:bg-secondary/80"
+                    >
+                      {loading ? <Loader2 className="animate-spin" /> : <><LinkIcon className="mr-2 w-4 h-4" /> Toevoegen aan Lijst</>}
+                    </Button>
+                  </div>
+                </Card>
+              </div>
+            </div>
+
+            <div className="mt-16 bg-blue-500/10 border border-blue-500/20 p-6 rounded-2xl flex gap-4 max-w-2xl mx-auto">
+              <Info className="w-6 h-6 text-blue-500 shrink-0" />
+              <div className="space-y-1">
+                <h4 className="text-[10px] uppercase font-bold text-blue-600">Tip voor Firebase Console</h4>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Als je foto&apos;s rechtstreeks in de Firebase Console uploadt, moet je de &quot;Download URL&quot; die Firebase daar genereert kopiëren en hierboven bij &quot;Handmatige Link&quot; plakken. Ze verschijnen niet automatisch in het archief door ze alleen in Storage te zetten.
+                </p>
               </div>
             </div>
           </TabsContent>
@@ -448,7 +522,7 @@ export default function AdminPage() {
       <Dialog open={!!editingArtwork} onOpenChange={() => setEditingArtwork(null)}>
         <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background/98 backdrop-blur-3xl border-none rounded-none overflow-hidden">
           <DialogTitle className="sr-only">Master Editor - {editingArtwork?.title}</DialogTitle>
-          <DialogDescription className="sr-only">Pas details, uitsnede en helderheid aan.</DialogDescription>
+          <DialogDescription className="sr-only">Pas details, uitsnede en helderheid aan van dit kunstwerk.</DialogDescription>
           
           <div className="relative flex-1 flex items-center justify-center overflow-hidden group bg-black/10">
             {editingArtwork && (
