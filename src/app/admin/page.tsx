@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
@@ -16,23 +17,18 @@ import {
   Plus,
   Image as ImageIcon,
   FolderOpen,
-  Scissors,
-  Settings,
-  ExternalLink,
-  HelpCircle,
+  Maximize2,
+  Tag,
+  Info,
+  UserPlus,
+  Globe,
+  CloudUpload,
   X,
   ChevronLeft,
   ChevronRight,
-  Maximize2,
-  Tag,
-  AlertCircle,
-  Info,
-  RefreshCw,
-  UserPlus,
-  Globe,
-  Settings2,
-  CloudOff,
-  CloudUpload
+  Search,
+  Cloud,
+  HardDrive
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -42,6 +38,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Dialog, DialogContent, DialogClose, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 const STANDARD_TAGS = [
@@ -57,13 +54,13 @@ export default function AdminPage() {
   const [bulkJson, setBulkJson] = useState('');
   const [activeTab, setActiveTab] = useState('archive');
   const [editingArtwork, setEditingArtwork] = useState<any | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const directoryInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // NAS Helper state
   const [nasBaseUrl, setNasBaseUrl] = useState('http://192.168.178.15/fotos/');
   const [nasFileCount, setNasFileCount] = useState(0);
-  const [previewUrl, setPreviewUrl] = useState('');
 
   // Firebase Upload state
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -76,14 +73,23 @@ export default function AdminPage() {
 
   const { data: artworks } = useCollection(artworksQuery);
 
+  const filteredArtworks = useMemo(() => {
+    if (!artworks) return [];
+    return artworks.filter(art => 
+      art.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      art.series?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      art.tags?.some((t: string) => t.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+  }, [artworks, searchQuery]);
+
   const navigateEditing = useCallback((direction: 'next' | 'prev') => {
-    if (!editingArtwork || !artworks) return;
-    const currentIndex = artworks.findIndex(art => art.id === editingArtwork.id);
+    if (!editingArtwork || !filteredArtworks) return;
+    const currentIndex = filteredArtworks.findIndex(art => art.id === editingArtwork.id);
     let nextIndex = direction === 'next' 
-      ? (currentIndex + 1) % artworks.length 
-      : (currentIndex - 1 + artworks.length) % artworks.length;
-    setEditingArtwork(artworks[nextIndex]);
-  }, [editingArtwork, artworks]);
+      ? (currentIndex + 1) % filteredArtworks.length 
+      : (currentIndex - 1 + filteredArtworks.length) % filteredArtworks.length;
+    setEditingArtwork(filteredArtworks[nextIndex]);
+  }, [editingArtwork, filteredArtworks]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -120,13 +126,9 @@ export default function AdminPage() {
         const fileNameOnly = file.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
         const finalUrl = baseUrlClean + fileName;
 
-        if (artworksToImport.length === 0) {
-          setPreviewUrl(finalUrl);
-        }
-
         artworksToImport.push({
           title: fileNameOnly || "Zonder titel",
-          series: "Import " + new Date().toLocaleDateString(),
+          series: "NAS Import",
           imageUrl: finalUrl,
           medium: "Olieverf op doek",
           year: "",
@@ -171,7 +173,7 @@ export default function AdminPage() {
       
       const newArtwork = {
         title: fileNameOnly,
-        series: "Firebase Upload",
+        series: "Cloud Collectie",
         imageUrl: downloadUrl,
         medium: "Olieverf op doek",
         year: new Date().getFullYear().toString(),
@@ -196,7 +198,7 @@ export default function AdminPage() {
       toast({ 
         variant: "destructive", 
         title: "Upload Mislukt", 
-        description: "Controleer of Firebase Storage is geactiveerd in de console." 
+        description: "Controleer of Firebase Storage is geactiveerd." 
       });
     } finally {
       setIsUploading(false);
@@ -225,11 +227,11 @@ export default function AdminPage() {
         });
       });
       
-      toast({ title: "Import Gestart" });
+      toast({ title: "Import Succesvol", description: `${artworksArray.length} items toegevoegd.` });
       setBulkJson('');
       setActiveTab('archive');
     } catch (err) {
-      toast({ variant: "destructive", title: "JSON Fout" });
+      toast({ variant: "destructive", title: "JSON Fout", description: "Controleer het format." });
     } finally {
       setLoading(false);
     }
@@ -255,6 +257,8 @@ export default function AdminPage() {
     if (editingArtwork?.id === artId) setEditingArtwork(null);
   };
 
+  const isStorageUrl = (url: string) => url?.includes('firebasestorage.googleapis.com');
+
   return (
     <div className="min-h-screen bg-background flex flex-col pt-14">
       <input type="file" ref={directoryInputRef} style={{ display: 'none' }} onChange={handleDirectoryChange} {...({ webkitdirectory: "", directory: "" } as any)} />
@@ -262,57 +266,82 @@ export default function AdminPage() {
 
       <header className="h-16 border-b border-border bg-background/95 backdrop-blur-sm sticky top-14 z-40 px-8 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Settings className="w-5 h-5 text-accent" />
+          <Cloud className="w-5 h-5 text-accent" />
           <h1 className="font-headline text-xl font-light">Atelier <span className="italic">Beheer</span></h1>
         </div>
         <Link href="/" className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground hover:text-foreground flex items-center gap-2">
-          <ArrowLeft className="w-3 h-3" /> Terug naar de site
+          <ArrowLeft className="w-3 h-3" /> Naar Website
         </Link>
       </header>
 
       <main className="flex-1 p-8 max-w-7xl mx-auto w-full">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-          <TabsList className="bg-muted/50 p-1 rounded-full w-fit mx-auto">
-            <TabsTrigger value="archive" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Archief</TabsTrigger>
-            <TabsTrigger value="upload" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Direct Uploaden</TabsTrigger>
-            <TabsTrigger value="nas" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">NAS Folder Helper</TabsTrigger>
-            <TabsTrigger value="bulk" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Bulk Import</TabsTrigger>
-          </TabsList>
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <TabsList className="bg-muted/50 p-1 rounded-full w-fit">
+              <TabsTrigger value="archive" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Archief ({artworks?.length || 0})</TabsTrigger>
+              <TabsTrigger value="upload" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Upload</TabsTrigger>
+              <TabsTrigger value="nas" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">NAS</TabsTrigger>
+              <TabsTrigger value="bulk" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Bulk</TabsTrigger>
+            </TabsList>
+
+            <div className="relative w-full md:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input 
+                placeholder="Zoek in archief..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 rounded-full h-10 text-xs bg-muted/30 border-none"
+              />
+            </div>
+          </div>
 
           <TabsContent value="archive" className="mt-0">
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {artworks?.map((art: any) => (
-                <Card 
-                  key={art.id} 
-                  className="overflow-hidden bg-card border-border rounded-xl group cursor-pointer transition-shadow hover:shadow-lg"
-                  onClick={() => setEditingArtwork(art)}
-                >
-                  <div className="relative aspect-square bg-muted/20 overflow-hidden">
-                    <img src={art.imageUrl} alt={art.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      style={{ 
-                        clipPath: `inset(${art.cropTop || 0}% ${art.cropRight || 0}% ${art.cropBottom || 0}% ${art.cropLeft || 0}%)`, 
-                        filter: `brightness(${art.brightness || 1})` 
-                      }}
-                      onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Beeld+niet+gevonden'; }}
-                    />
-                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <Maximize2 className="text-white w-6 h-6" />
+            {filteredArtworks.length === 0 ? (
+              <div className="py-20 text-center border border-dashed rounded-3xl opacity-40">
+                <p className="text-sm font-light italic">Geen kunstwerken gevonden. Upload je eerste foto!</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                {filteredArtworks.map((art: any) => (
+                  <Card 
+                    key={art.id} 
+                    className="overflow-hidden bg-card border-border rounded-2xl group cursor-pointer transition-all hover:ring-2 hover:ring-accent/40"
+                    onClick={() => setEditingArtwork(art)}
+                  >
+                    <div className="relative aspect-square bg-muted/20 overflow-hidden">
+                      <img src={art.imageUrl} alt={art.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        style={{ 
+                          clipPath: `inset(${art.cropTop || 0}% ${art.cropRight || 0}% ${art.cropBottom || 0}% ${art.cropLeft || 0}%)`, 
+                          filter: `brightness(${art.brightness || 1})` 
+                        }}
+                        onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Scan+Map'; }}
+                      />
+                      <div className="absolute top-2 right-2 flex gap-1">
+                        {isStorageUrl(art.imageUrl) ? (
+                          <Badge className="bg-blue-500 text-white border-none p-1"><Cloud className="w-3 h-3" /></Badge>
+                        ) : (
+                          <Badge className="bg-orange-500 text-white border-none p-1"><HardDrive className="w-3 h-3" /></Badge>
+                        )}
+                      </div>
+                      <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <Maximize2 className="text-white w-6 h-6" />
+                      </div>
                     </div>
-                  </div>
-                  <CardContent className="p-3">
-                    <h4 className="font-headline text-sm font-light truncate">{art.title}</h4>
-                    <p className="text-[8px] text-accent font-bold uppercase tracking-widest">{art.series}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                    <CardContent className="p-3">
+                      <h4 className="font-headline text-xs font-light truncate">{art.title}</h4>
+                      <p className="text-[8px] text-accent font-bold uppercase tracking-widest truncate">{art.series}</p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="upload">
             <div className="max-w-xl mx-auto space-y-8 text-center">
               <div className="space-y-2">
-                <h2 className="text-3xl font-headline font-light">Direct Uploaden naar Cloud</h2>
-                <p className="text-muted-foreground text-sm">Upload foto&apos;s direct vanaf je computer naar Firebase. Geen NAS nodig.</p>
+                <h2 className="text-3xl font-headline font-light">Direct naar de Cloud</h2>
+                <p className="text-muted-foreground text-sm">Upload foto&apos;s direct naar Firebase Storage. Geen NAS nodig.</p>
               </div>
 
               <Card className="p-12 rounded-3xl border-dashed border-2 border-accent/20 bg-accent/5 flex flex-col items-center justify-center space-y-6">
@@ -327,7 +356,7 @@ export default function AdminPage() {
                     className="w-full h-16 rounded-2xl font-bold uppercase tracking-widest text-lg shadow-xl"
                   >
                     {isUploading ? <Loader2 className="animate-spin mr-2" /> : <Plus className="mr-2" />}
-                    Kies Afbeelding
+                    Kies Foto
                   </Button>
                   
                   {isUploading && (
@@ -337,18 +366,14 @@ export default function AdminPage() {
                     </div>
                   )}
                 </div>
-
-                <div className="text-xs text-muted-foreground leading-relaxed italic">
-                  Tip: Firebase Storage is sneller en betrouwbaarder dan een eigen NAS voor het tonen van afbeeldingen op een website.
-                </div>
               </Card>
 
               <div className="bg-blue-500/10 border border-blue-500/20 p-6 rounded-2xl flex gap-4 text-left">
                 <Info className="w-6 h-6 text-blue-500 shrink-0" />
                 <div className="space-y-1">
-                  <h4 className="text-[10px] uppercase font-bold text-blue-600">Belangrijk</h4>
-                  <p className="text-xs text-muted-foreground">
-                    Zorg dat &apos;Storage&apos; is ingeschakeld in de Firebase Console. Ga naar <strong>Storage</strong> &gt; <strong>Get Started</strong> &gt; <strong>Production Mode</strong>.
+                  <h4 className="text-[10px] uppercase font-bold text-blue-600">Tip</h4>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Firebase Storage genereert direct werkende links die overal ter wereld snel laden. Dit is de aanbevolen methode voor dit portfolio.
                   </p>
                 </div>
               </div>
@@ -364,43 +389,18 @@ export default function AdminPage() {
 
               <div className="grid gap-4">
                 <Accordion type="single" collapsible className="w-full bg-blue-500/5 rounded-2xl border border-blue-500/10 px-6">
-                  <AccordionItem value="webstation-dsm7" className="border-none">
+                  <AccordionItem value="webstation" className="border-none">
                     <AccordionTrigger className="text-[11px] uppercase font-bold tracking-widest text-blue-500 hover:no-underline">
-                      <Globe className="w-4 h-4 mr-2" /> Stap 3: Web Station instellen (DSM 7)
+                      <Globe className="w-4 h-4 mr-2" /> Stap: Web Station instellen
                     </AccordionTrigger>
                     <AccordionContent className="space-y-4 pb-6">
                       <div className="space-y-3 text-sm text-muted-foreground leading-relaxed">
-                        <p className="font-bold text-blue-600">Cruciaal: Gebruik het tabblad &apos;Webservice&apos;, NIET &apos;Webportaal&apos;.</p>
+                        <p className="font-bold text-blue-600">Activeer je map als website:</p>
                         <ol className="list-decimal pl-5 space-y-2">
-                          <li>Open de app <strong>Web Station</strong> op je NAS.</li>
-                          <li>Klik in het linkermenu op <strong>Webservice</strong>.</li>
-                          <li>Klik bovenaan op de knop <strong>Maken</strong>.</li>
+                          <li>Open <strong>Web Station</strong> op je NAS.</li>
+                          <li>Ga naar <strong>Webservice</strong> &gt; <strong>Maken</strong>.</li>
                           <li>Kies <strong>Statische website</strong>.</li>
-                          <li>Geef een naam (bijv. <code>fotos</code>).</li>
-                          <li>Selecteer jouw nieuwe map als <strong>Document-root</strong>.</li>
-                          <li>Klik op <strong>Voltooien</strong>.</li>
-                        </ol>
-                        <p className="mt-4 pt-4 border-t border-blue-500/10 italic text-[11px]">
-                          Na deze stappen is je Basis URL: <code>http://[IP-NAS]/fotos/</code>
-                        </p>
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
-
-                <Accordion type="single" collapsible className="w-full bg-accent/5 rounded-2xl border border-accent/10 px-6">
-                  <AccordionItem value="http-group" className="border-none">
-                    <AccordionTrigger className="text-[11px] uppercase font-bold tracking-widest text-accent hover:no-underline">
-                      <UserPlus className="w-4 h-4 mr-2" /> Stap 2: De &apos;http&apos; groep machtigen
-                    </AccordionTrigger>
-                    <AccordionContent className="space-y-4 pb-6">
-                      <div className="space-y-3 text-sm text-muted-foreground leading-relaxed">
-                        <p>De groep <code>http</code> is een systeemgroep. Zo vind je deze:</p>
-                        <ol className="list-decimal pl-5 space-y-2">
-                          <li>Ga naar <strong>Configuratiescherm</strong> &gt; <strong>Gedeelde map</strong>.</li>
-                          <li>Selecteer je map en klik op <strong>Bewerken</strong> &gt; <strong>Machtigingen</strong>.</li>
-                          <li>Kies in de dropdown bovenaan voor <strong>Lokale groepen</strong> (ipv Lokale gebruikers).</li>
-                          <li>Zoek <code>http</code> in de lijst en vink <strong>Lezen</strong> aan.</li>
+                          <li>Selecteer jouw map als <strong>Document-root</strong>.</li>
                         </ol>
                       </div>
                     </AccordionContent>
@@ -411,32 +411,17 @@ export default function AdminPage() {
               <Card className="p-8 rounded-3xl border-border bg-card/50 shadow-xl space-y-8">
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label className="text-[10px] uppercase font-bold">1. Basis URL van je NAS</Label>
+                    <Label className="text-[10px] uppercase font-bold">Basis URL van je NAS</Label>
                     <Input value={nasBaseUrl} onChange={(e) => setNasBaseUrl(e.target.value)} className="rounded-xl font-mono text-xs" />
                   </div>
                   
                   <div className="pt-4 border-t border-border/20">
-                    <Label className="text-[10px] uppercase font-bold mb-4 block">2. Selecteer de map op je computer</Label>
                     <Button onClick={handleScanFolder} className="w-full h-20 rounded-2xl font-bold uppercase tracking-widest bg-accent hover:bg-accent/90 text-lg shadow-lg group">
                       <FolderOpen className="mr-4 w-8 h-8 group-hover:scale-110 transition-transform" />
-                      Map Scannen
+                      Map Scannen & Bulk JSON Genereren
                     </Button>
                   </div>
                 </div>
-
-                {previewUrl && (
-                  <div className="space-y-4 pt-6 border-t border-border/20">
-                    <div className="bg-muted/30 p-4 rounded-xl space-y-2">
-                      <Label className="text-[9px] uppercase font-bold">Voorbeeld Link:</Label>
-                      <div className="flex items-center gap-2 overflow-hidden">
-                        <code className="text-[10px] text-primary truncate flex-1">{previewUrl}</code>
-                        <Button variant="ghost" size="icon" className="h-6 w-6" asChild>
-                          <a href={previewUrl} target="_blank" rel="noopener noreferrer"><ExternalLink className="w-3 h-3" /></a>
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </Card>
             </div>
           </TabsContent>
@@ -447,7 +432,7 @@ export default function AdminPage() {
                 <div className="space-y-6">
                   <div className="space-y-2">
                     <Label className="text-[10px] uppercase font-bold">Gegenereerde JSON Data</Label>
-                    <Textarea placeholder='Selecteer eerst een map...' value={bulkJson} onChange={(e) => setBulkJson(e.target.value)} className="min-h-[400px] font-mono text-[10px] rounded-2xl bg-black/5" />
+                    <Textarea placeholder='Scan eerst een map in de NAS tab...' value={bulkJson} onChange={(e) => setBulkJson(e.target.value)} className="min-h-[400px] font-mono text-[10px] rounded-2xl bg-black/5" />
                   </div>
                   <Button onClick={handleBulkUpload} disabled={loading || !bulkJson} className="w-full h-14 rounded-xl font-bold uppercase tracking-widest shadow-xl">
                     {loading ? <Loader2 className="animate-spin" /> : <><Upload className="mr-2 w-4 h-4" /> Importeer nu in Archief</>}
@@ -463,15 +448,15 @@ export default function AdminPage() {
       <Dialog open={!!editingArtwork} onOpenChange={() => setEditingArtwork(null)}>
         <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background/98 backdrop-blur-3xl border-none rounded-none overflow-hidden">
           <DialogTitle className="sr-only">Master Editor - {editingArtwork?.title}</DialogTitle>
-          <DialogDescription className="sr-only">Bewerk de details, uitsnede en helderheid van dit kunstwerk.</DialogDescription>
+          <DialogDescription className="sr-only">Pas details, uitsnede en helderheid aan.</DialogDescription>
           
-          <div className="relative flex-1 flex items-center justify-center overflow-hidden group bg-black/5">
+          <div className="relative flex-1 flex items-center justify-center overflow-hidden group bg-black/10">
             {editingArtwork && (
               <div className="relative w-full h-full flex items-center justify-center">
                 <img 
                   src={editingArtwork.imageUrl} 
                   alt={editingArtwork.title} 
-                  className="max-w-full max-h-full object-contain p-4 md:p-12 transition-all duration-300" 
+                  className="max-w-[85%] max-h-[85%] object-contain p-4 md:p-12 transition-all duration-300 shadow-2xl" 
                   style={{
                     clipPath: `inset(${editingArtwork.cropTop || 0}% ${editingArtwork.cropRight || 0}% ${editingArtwork.cropBottom || 0}% ${editingArtwork.cropLeft || 0}%)`,
                     filter: `brightness(${editingArtwork.brightness || 1})`
