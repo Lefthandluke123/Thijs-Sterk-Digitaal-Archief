@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
@@ -36,7 +35,8 @@ import {
   Type,
   Star,
   LayoutGrid,
-  CheckCircle2
+  CheckCircle2,
+  Save
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -72,6 +72,7 @@ export default function AdminPage() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   const artworksQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -332,17 +333,23 @@ export default function AdminPage() {
     }
   };
 
-  const updateArtworkField = (id: string, field: string, value: any) => {
+  const updateArtworkField = async (id: string, field: string, value: any) => {
     if (!firestore || !id) return;
+    setIsSaving(true);
     const artRef = doc(firestore, 'artworks', id);
-    updateDoc(artRef, { [field]: value }).catch(async (serverError) => {
-      const permissionError = new FirestorePermissionError({
-        path: artRef.path,
-        operation: 'update',
-        requestResourceData: { [field]: value },
+    updateDoc(artRef, { [field]: value })
+      .then(() => {
+        setTimeout(() => setIsSaving(false), 500);
+      })
+      .catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: artRef.path,
+          operation: 'update',
+          requestResourceData: { [field]: value },
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        setIsSaving(false);
       });
-      errorEmitter.emit('permission-error', permissionError);
-    });
   };
 
   const toggleArtworkTag = (artwork: any, tag: string) => {
@@ -445,13 +452,20 @@ export default function AdminPage() {
                           <Badge className="bg-orange-500 text-white border-none p-1"><HardDrive className="w-3 h-3" /></Badge>
                         )}
                       </div>
+                      
+                      {art.series && (
+                        <div className="absolute bottom-2 left-2">
+                          <Badge className="bg-black/40 text-[7px] text-white border-none backdrop-blur-md uppercase tracking-widest">{art.series}</Badge>
+                        </div>
+                      )}
+
                       <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                         <Maximize2 className="text-white w-6 h-6" />
                       </div>
                     </div>
                     <CardContent className="p-3">
                       <h4 className="font-headline text-xs font-light truncate">{art.title}</h4>
-                      <p className="text-[8px] text-accent font-bold uppercase tracking-widest truncate">{art.series}</p>
+                      <p className="text-[8px] text-accent font-bold uppercase tracking-widest truncate">{art.series || "Geen Serie"}</p>
                     </CardContent>
                   </Card>
                 ))}
@@ -595,6 +609,11 @@ export default function AdminPage() {
             </div>
 
             <div className="absolute top-8 right-8 z-50 flex gap-4">
+              {isSaving && (
+                <div className="bg-accent text-white px-3 py-1 rounded-full text-[9px] uppercase font-bold tracking-widest flex items-center gap-2 animate-in fade-in zoom-in">
+                  <Loader2 className="w-3 h-3 animate-spin" /> Opgeslagen
+                </div>
+              )}
                <Button variant="destructive" size="icon" onClick={() => editingArtwork && handleDeleteArtwork(editingArtwork.id)} className="rounded-full h-10 w-10 opacity-50 hover:opacity-100">
                 <Trash2 className="w-5 h-5" />
               </Button>
@@ -639,7 +658,10 @@ export default function AdminPage() {
                         <button 
                           key={s} 
                           onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, 'series', s)}
-                          className="text-[7px] uppercase font-bold bg-muted/30 px-1.5 py-0.5 rounded-sm hover:bg-accent hover:text-white transition-colors"
+                          className={cn(
+                            "text-[7px] uppercase font-bold px-1.5 py-0.5 rounded-sm transition-colors",
+                            editingArtwork?.series === s ? "bg-accent text-white" : "bg-muted/30 hover:bg-accent/40"
+                          )}
                         >
                           {s}
                         </button>
