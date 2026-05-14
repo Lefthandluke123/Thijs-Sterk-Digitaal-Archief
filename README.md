@@ -6,6 +6,7 @@ Dit project is het officiële eerbetoon aan het werk van Thijs Sterk (1913-1982)
 - **Typografie:** Gebruik van Playfair Display voor een elegante en tijdloze uitstraling.
 - **Beveiliging:** Visuele watermerken en blokkade van rechtsklikken op afbeeldingen ter bescherming van het oeuvre.
 - **Wachtwoord:** Beheerpaneel (/admin) beveiligd met `gabbes`.
+- **Atelier (Beheer):** Ondersteuning voor bulk-uploads via JSON en een interactieve visuele cropper om uitsnedes en helderheid aan te passen.
 
 ## Hoe dit project live te zetten (Delen als App)
 
