@@ -1,35 +1,51 @@
-
 {
   "placeholderImages": [
     {
-      "id": "artwork-1",
-      "title": "Stille Getuige",
-      "series": "Fragmenten",
-      "year": "2023",
+      "id": "hero-image",
+      "title": "Licht over de Polder",
+      "series": "Landschappen",
+      "year": "1954",
       "medium": "Olieverf op doek",
-      "description": "Een diepgaand onderzoek naar de vergankelijkheid van licht op oude muren.",
+      "description": "Een representatief werk dat de essentie van Thijs Sterk's visie op licht en ruimte vangt.",
+      "imageUrl": "https://picsum.photos/seed/hero/1200/600",
+      "imageHint": "atmospheric landscape"
+    },
+    {
+      "id": "artist-portrait",
+      "title": "Thijs Sterk in zijn Atelier",
+      "description": "Portret van de kunstenaar aan het werk.",
+      "imageUrl": "https://picsum.photos/seed/artist/800/1000",
+      "imageHint": "vintage artist portrait"
+    },
+    {
+      "id": "artwork-1",
+      "title": "De Branding bij Hargen",
+      "series": "Waterpartijen",
+      "year": "1962",
+      "medium": "Olieverf op doek",
+      "description": "De dynamiek van de zee gevangen in krachtige streken.",
       "imageUrl": "https://picsum.photos/seed/art1/800/1000",
-      "imageHint": "fine art painting"
+      "imageHint": "sea waves painting"
     },
     {
       "id": "artwork-2",
-      "title": "Geometrische Echo",
-      "series": "Abstracties",
-      "year": "2024",
-      "medium": "Gemengde techniek",
-      "description": "Het samenspel tussen harde lijnen en zachte overgangen in kleur.",
+      "title": "Stilleven met Klaprozen",
+      "series": "Bloemen",
+      "year": "1958",
+      "medium": "Aquarel",
+      "description": "Een verfijnde studie van kleur en kwetsbaarheid.",
       "imageUrl": "https://picsum.photos/seed/art2/800/1000",
-      "imageHint": "abstract geometric painting"
+      "imageHint": "flower painting"
     },
     {
       "id": "artwork-3",
-      "title": "Horizon in Blauw",
-      "series": "Fragmenten",
-      "year": "2023",
+      "title": "Avondlicht over Groet",
+      "series": "Landschappen",
+      "year": "1970",
       "medium": "Olieverf",
-      "description": "De grens tussen lucht en water, vervaagd door de herinnering.",
+      "description": "De stilte van het Noord-Hollandse dorp bij zonsondergang.",
       "imageUrl": "https://picsum.photos/seed/art3/800/1000",
-      "imageHint": "landscape painting"
+      "imageHint": "village landscape painting"
     }
   ]
 }
