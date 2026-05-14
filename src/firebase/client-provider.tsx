@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo, useEffect } from 'react';
@@ -8,7 +9,7 @@ import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 export const FirebaseClientProvider: React.FC<{
   children: React.ReactNode;
 }> = ({ children }) => {
-  const { firebaseApp, firestore, auth } = useMemo(() => initializeFirebase(), []);
+  const { firebaseApp, firestore, auth, storage } = useMemo(() => initializeFirebase(), []);
 
   useEffect(() => {
     const handleContextMenu = (e: MouseEvent) => {
@@ -35,7 +36,7 @@ export const FirebaseClientProvider: React.FC<{
   }, []);
 
   return (
-    <FirebaseProvider firebaseApp={firebaseApp} firestore={firestore} auth={auth}>
+    <FirebaseProvider firebaseApp={firebaseApp} firestore={firestore} auth={auth} storage={storage}>
       <FirebaseErrorListener />
       {children}
     </FirebaseProvider>

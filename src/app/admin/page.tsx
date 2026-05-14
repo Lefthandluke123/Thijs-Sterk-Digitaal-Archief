@@ -3,8 +3,9 @@
 
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, useStorage } from '@/firebase';
 import { collection, doc, serverTimestamp, deleteDoc, addDoc, query, orderBy, updateDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
@@ -31,7 +32,8 @@ import {
   UserPlus,
   Globe,
   Settings2,
-  CloudOff
+  CloudOff,
+  CloudUpload
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -40,6 +42,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Dialog, DialogContent, DialogClose, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 
 const STANDARD_TAGS = [
@@ -50,16 +53,22 @@ const STANDARD_TAGS = [
 
 export default function AdminPage() {
   const firestore = useFirestore();
+  const storage = useStorage();
   const [loading, setLoading] = useState(false);
   const [bulkJson, setBulkJson] = useState('');
   const [activeTab, setActiveTab] = useState('archive');
   const [editingArtwork, setEditingArtwork] = useState<any | null>(null);
   const directoryInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // NAS Helper state
   const [nasBaseUrl, setNasBaseUrl] = useState('http://192.168.178.15/fotos/');
   const [nasFileCount, setNasFileCount] = useState(0);
   const [previewUrl, setPreviewUrl] = useState('');
+
+  // Firebase Upload state
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
 
   const artworksQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -139,6 +148,63 @@ export default function AdminPage() {
     setActiveTab('bulk');
   };
 
+  const handleFileSelect = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0 || !storage || !firestore) return;
+
+    setIsUploading(true);
+    setUploadProgress(0);
+
+    const file = files[0];
+    const storageRef = ref(storage, `artworks/${Date.now()}_${file.name}`);
+
+    try {
+      const snapshot = await uploadBytes(storageRef, file);
+      const downloadUrl = await getDownloadURL(snapshot.ref);
+
+      const fileNameOnly = file.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
+      
+      const newArtwork = {
+        title: fileNameOnly,
+        series: "Firebase Upload",
+        imageUrl: downloadUrl,
+        medium: "Olieverf op doek",
+        year: new Date().getFullYear().toString(),
+        description: "",
+        imageHint: "painting",
+        tags: [],
+        cropTop: 0,
+        cropBottom: 0,
+        cropLeft: 0,
+        cropRight: 0,
+        brightness: 1,
+        createdAt: serverTimestamp()
+      };
+
+      await addDoc(collection(firestore, 'artworks'), newArtwork);
+      
+      toast({ title: "Upload Succesvol", description: `${file.name} is toegevoegd aan het archief.` });
+      setUploadProgress(100);
+      setActiveTab('archive');
+    } catch (error: any) {
+      console.error(error);
+      toast({ 
+        variant: "destructive", 
+        title: "Upload Mislukt", 
+        description: "Controleer of Firebase Storage is geactiveerd in de console." 
+      });
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   const handleBulkUpload = () => {
     if (!firestore || !bulkJson) return;
     setLoading(true);
@@ -193,6 +259,7 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-background flex flex-col pt-14">
       <input type="file" ref={directoryInputRef} style={{ display: 'none' }} onChange={handleDirectoryChange} {...({ webkitdirectory: "", directory: "" } as any)} />
+      <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={handleFileUpload} accept="image/*" />
 
       <header className="h-16 border-b border-border bg-background/95 backdrop-blur-sm sticky top-14 z-40 px-8 flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -208,6 +275,7 @@ export default function AdminPage() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
           <TabsList className="bg-muted/50 p-1 rounded-full w-fit mx-auto">
             <TabsTrigger value="archive" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Archief</TabsTrigger>
+            <TabsTrigger value="upload" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Direct Uploaden</TabsTrigger>
             <TabsTrigger value="nas" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">NAS Folder Helper</TabsTrigger>
             <TabsTrigger value="bulk" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Bulk Import</TabsTrigger>
           </TabsList>
@@ -238,6 +306,53 @@ export default function AdminPage() {
                   </CardContent>
                 </Card>
               ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="upload">
+            <div className="max-w-xl mx-auto space-y-8 text-center">
+              <div className="space-y-2">
+                <h2 className="text-3xl font-headline font-light">Direct Uploaden naar Cloud</h2>
+                <p className="text-muted-foreground text-sm">Upload foto's direct vanaf je computer naar Firebase. Geen NAS nodig.</p>
+              </div>
+
+              <Card className="p-12 rounded-3xl border-dashed border-2 border-accent/20 bg-accent/5 flex flex-col items-center justify-center space-y-6">
+                <div className="w-20 h-20 rounded-full bg-accent/10 flex items-center justify-center">
+                  <CloudUpload className="w-10 h-10 text-accent" />
+                </div>
+                
+                <div className="space-y-4 w-full">
+                  <Button 
+                    onClick={handleFileSelect} 
+                    disabled={isUploading}
+                    className="w-full h-16 rounded-2xl font-bold uppercase tracking-widest text-lg shadow-xl"
+                  >
+                    {isUploading ? <Loader2 className="animate-spin mr-2" /> : <Plus className="mr-2" />}
+                    Kies Afbeelding
+                  </Button>
+                  
+                  {isUploading && (
+                    <div className="space-y-2">
+                      <Progress value={uploadProgress} className="h-2" />
+                      <p className="text-[10px] uppercase font-bold text-accent animate-pulse">Bezig met uploaden...</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="text-xs text-muted-foreground leading-relaxed italic">
+                  Tip: Firebase Storage is sneller en betrouwbaarder dan een eigen NAS voor het tonen van afbeeldingen op een website.
+                </div>
+              </Card>
+
+              <div className="bg-blue-500/10 border border-blue-500/20 p-6 rounded-2xl flex gap-4 text-left">
+                <Info className="w-6 h-6 text-blue-500 shrink-0" />
+                <div className="space-y-1">
+                  <h4 className="text-[10px] uppercase font-bold text-blue-600">Belangrijk</h4>
+                  <p className="text-xs text-muted-foreground">
+                    Zorg dat 'Storage' is ingeschakeld in de Firebase Console. Ga naar <strong>Storage</strong> > <strong>Get Started</strong> > <strong>Production Mode</strong>.
+                  </p>
+                </div>
+              </div>
             </div>
           </TabsContent>
 
@@ -292,16 +407,6 @@ export default function AdminPage() {
                     </AccordionContent>
                   </AccordionItem>
                 </Accordion>
-
-                <div className="bg-orange-500/10 border border-orange-500/20 p-6 rounded-2xl flex gap-4 items-start">
-                  <CloudOff className="w-10 h-10 text-orange-500 shrink-0" />
-                  <div className="space-y-2">
-                    <h4 className="text-[10px] uppercase font-bold text-orange-600">Waarom geen Google Drive of Dropbox?</h4>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      Google Drive en Dropbox genereren geen "directe" afbeeldingslinks. Ze sturen de website naar een preview-pagina, waardoor de foto's niet geladen kunnen worden. Je NAS (of Firebase Storage) is de enige manier om je eigen beheer te behouden.
-                    </p>
-                  </div>
-                </div>
               </div>
               
               <Card className="p-8 rounded-3xl border-border bg-card/50 shadow-xl space-y-8">
@@ -309,7 +414,6 @@ export default function AdminPage() {
                   <div className="space-y-2">
                     <Label className="text-[10px] uppercase font-bold">1. Basis URL van je NAS</Label>
                     <Input value={nasBaseUrl} onChange={(e) => setNasBaseUrl(e.target.value)} className="rounded-xl font-mono text-xs" />
-                    <p className="text-[9px] text-muted-foreground italic">Bijv: http://192.168.178.15/fotos/ (eindig altijd met een slash)</p>
                   </div>
                   
                   <div className="pt-4 border-t border-border/20">
@@ -331,7 +435,6 @@ export default function AdminPage() {
                           <a href={previewUrl} target="_blank" rel="noopener noreferrer"><ExternalLink className="w-3 h-3" /></a>
                         </Button>
                       </div>
-                      <p className="text-[9px] text-muted-foreground italic">Klik op het icoontje. Als de foto opent in een nieuw tabblad, klopt de koppeling.</p>
                     </div>
                   </div>
                 )}

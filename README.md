@@ -1,16 +1,20 @@
 
 # Thijs Sterk Portfolio - Live zetten
 
-Dit project is nu uitgerust met een intelligente NAS Folder Scanner en uitgebreide herstelinstructies voor Synology.
+Dit project is nu uitgerust met ondersteuning voor zowel Firebase Storage als een eigen NAS.
 
-## 1. Firebase Instellingen
-Zorg dat in je [Firebase Console](https://console.firebase.google.com/) het volgende aan staat:
-- **Firestore Database:** In productie-modus of test-modus.
-- **Authentication:** Schakel de 'Email/Password' of 'Google' provider in.
+## 1. Firebase Storage Activeren (AANBEVOLEN)
+Firebase Storage is sneller en stabieler dan een NAS voor het tonen van afbeeldingen.
+1. Ga naar de [Firebase Console](https://console.firebase.google.com/).
+2. Klik in het linkermenu op **Storage**.
+3. Klik op **Get Started**.
+4. Kies **Start in production mode** en klik op Next.
+5. Kies een locatie (bijv. `europe-west3`) en klik op Done.
+6. Ga naar de tab **Rules** en zorg dat de regels schrijven toestaan voor geautoriseerde gebruikers, of gebruik de standaard regels voor publieke leesrechten.
+7. Gebruik de **Direct Uploaden** tab in het beheerpaneel van de app.
 
 ## 2. NAS Map Herstellen (Synology DSM 7+)
-
-Als de standaard `web` map niet werkt of "verplaatst" is, volg dan deze stappen om een eigen map te publiceren:
+Als je toch je eigen NAS wilt gebruiken voor de hosting:
 
 1. **Maak een nieuwe map:**
    - Ga naar **Configuratiescherm** > **Gedeelde map** > **Maken**.
@@ -18,27 +22,22 @@ Als de standaard `web` map niet werkt of "verplaatst" is, volg dan deze stappen 
 
 2. **Rechten toekennen aan 'http' groep:**
    - In het scherm van je nieuwe map, ga naar **Machtigingen**.
-   - Verander de dropdown linksboven van "Lokale gebruikers" naar **Lokale groepen**.
+   - Verander de dropdown linksboven naar **Lokale groepen**.
    - Zoek de groep `http` en vink **Lezen** aan.
-   - Geef ook jezelf (admin) **Lezen/Schrijven** rechten zodat de map zichtbaar wordt in File Station.
+   - Geef ook jezelf (admin) **Lezen/Schrijven** rechten.
 
-3. **Koppel de nieuwe map in Web Station (CRUCIAAL):**
-   - Open de app **Web Station** op je NAS.
-   - Ga in het linkermenu naar **Webservice** (NIET naar Webportaal).
-   - Klik op de knop **Maken** bovenaan.
-   - Kies in de lijst voor **Statische website**.
-   - Geef een naam (bijv. 'fotos') en selecteer bij **Document-root** de map die je zojuist hebt gemaakt (`atelier-fotos`).
-   - Klik op **Voltooien**.
+3. **Koppel de nieuwe map in Web Station:**
+   - Open **Web Station**.
+   - Ga naar **Webservice** (NIET naar Webportaal).
+   - Klik op **Maken** > **Statische website**.
+   - Selecteer de map `atelier-fotos`.
 
-4. **Toegang:**
-   - Je foto's zijn nu bereikbaar via `http://[IP-ADRES-NAS]/fotos/naam-van-foto.jpg`.
+## 3. Waarom Firebase Storage?
+Firebase Storage genereert direct werkende links die overal ter wereld snel laden. Google Drive, Dropbox en pCloud doen dit niet; zij sturen bezoekers naar een "preview pagina", wat niet werkt voor een website.
 
-## 3. Waarom geen Google Drive of Dropbox?
-Google Drive en Dropbox zijn niet ontworpen voor direct hosting. De links die zij genereren verwijzen naar een "preview pagina" en niet naar het ruwe afbeeldingsbestand. Hierdoor kan de website de beelden niet inladen. De NAS (of Firebase Storage) is de enige stabiele oplossing.
-
-## 4. NAS Map Inlezen in de App
-In het `/admin` gedeelte vind je de **NAS Folder Helper**:
-1. Koppel je NAS map als een lokale schijf op je computer.
-2. Klik op **Scan NAS Map**.
-3. De app leest nu alle bestanden in. Gebruik de **Test Link** knop om te zien of een afbeelding opent.
-4. Ga naar de **Bulk Import** tab om alles met één klik toe te voegen aan je archief.
+## 4. Beheer
+In het `/admin` gedeelte vind je de **Master Editor**. Hiermee kun je:
+- Direct uploaden naar de cloud.
+- Titels, jaren en tags aanpassen.
+- Helderheid en uitsnede (cropping) live bewerken.
+- Bladeren met de pijltjestoetsen.
