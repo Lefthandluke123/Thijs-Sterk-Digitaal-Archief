@@ -57,19 +57,14 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(false);
   const [bulkJson, setBulkJson] = useState('');
   const [activeTab, setActiveTab] = useState('archive');
-  const [editingArtwork, setEditingArtwork] = useState<any | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const directoryInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // NAS Helper state
   const [nasBaseUrl, setNasBaseUrl] = useState('http://192.168.178.15/fotos/');
-  
-  // Handmatig toevoegen state
   const [manualTitle, setManualTitle] = useState('');
   const [manualUrl, setManualUrl] = useState('');
-
-  // Firebase Upload state
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState('');
@@ -81,6 +76,10 @@ export default function AdminPage() {
 
   const { data: artworks, loading: isCollectionLoading } = useCollection(artworksQuery);
 
+  const editingArtwork = useMemo(() => {
+    return artworks?.find(art => art.id === editingId) || null;
+  }, [artworks, editingId]);
+
   const filteredArtworks = useMemo(() => {
     if (!artworks) return [];
     return artworks.filter(art => 
@@ -91,23 +90,23 @@ export default function AdminPage() {
   }, [artworks, searchQuery]);
 
   const navigateEditing = useCallback((direction: 'next' | 'prev') => {
-    if (!editingArtwork || !filteredArtworks) return;
-    const currentIndex = filteredArtworks.findIndex(art => art.id === editingArtwork.id);
+    if (!editingId || !filteredArtworks.length) return;
+    const currentIndex = filteredArtworks.findIndex(art => art.id === editingId);
     let nextIndex = direction === 'next' 
       ? (currentIndex + 1) % filteredArtworks.length 
       : (currentIndex - 1 + filteredArtworks.length) % filteredArtworks.length;
-    setEditingArtwork(filteredArtworks[nextIndex]);
-  }, [editingArtwork, filteredArtworks]);
+    setEditingId(filteredArtworks[nextIndex].id);
+  }, [editingId, filteredArtworks]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (!editingArtwork) return;
+      if (!editingId) return;
       if (e.key === 'ArrowRight') navigateEditing('next');
       if (e.key === 'ArrowLeft') navigateEditing('prev');
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [editingArtwork, navigateEditing]);
+  }, [editingId, navigateEditing]);
 
   const handleScanFolder = () => {
     if (directoryInputRef.current) {
@@ -181,7 +180,6 @@ export default function AdminPage() {
       try {
         const snapshot = await uploadBytes(storageRef, file);
         const downloadUrl = await getDownloadURL(snapshot.ref);
-
         const fileNameOnly = file.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
         
         const newArtwork = {
@@ -218,14 +216,14 @@ export default function AdminPage() {
         toast({ 
           variant: "destructive", 
           title: "Upload Mislukt", 
-          description: `Kon ${file.name} niet uploaden naar de cloud. Controleer de Storage-instellingen in Firebase.` 
+          description: `Kon ${file.name} niet uploaden naar de cloud.` 
         });
       }
     }
 
     toast({ 
-      title: "Batch Gestart", 
-      description: `${startedCount} van de ${totalFiles} foto's worden verwerkt en verschijnen zometeen in het archief.` 
+      title: "Batch Voltooid", 
+      description: `${startedCount} foto's zijn verwerkt.` 
     });
     
     setIsUploading(false);
@@ -318,7 +316,7 @@ export default function AdminPage() {
   };
 
   const updateArtworkField = (id: string, field: string, value: any) => {
-    if (!firestore) return;
+    if (!firestore || !id) return;
     const artRef = doc(firestore, 'artworks', id);
     updateDoc(artRef, { [field]: value }).catch(async (serverError) => {
       const permissionError = new FirestorePermissionError({
@@ -348,7 +346,7 @@ export default function AdminPage() {
       });
       errorEmitter.emit('permission-error', permissionError);
     });
-    if (editingArtwork?.id === artId) setEditingArtwork(null);
+    if (editingId === artId) setEditingId(null);
   };
 
   const isStorageUrl = (url: string) => url?.includes('firebasestorage.googleapis.com');
@@ -407,7 +405,7 @@ export default function AdminPage() {
                   <Card 
                     key={art.id} 
                     className="overflow-hidden bg-card border-border rounded-2xl group cursor-pointer transition-all hover:ring-2 hover:ring-accent/40"
-                    onClick={() => setEditingArtwork(art)}
+                    onClick={() => setEditingId(art.id)}
                   >
                     <div className="relative aspect-square bg-muted/20 overflow-hidden">
                       <img src={art.imageUrl} alt={art.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -443,7 +441,7 @@ export default function AdminPage() {
               <div className="space-y-8">
                 <div className="space-y-2">
                   <h2 className="text-2xl font-headline font-light">Batch Cloud Upload</h2>
-                  <p className="text-muted-foreground text-xs leading-relaxed">Selecteer een of meerdere bestanden om direct in de Firebase Cloud te plaatsen.</p>
+                  <p className="text-muted-foreground text-xs leading-relaxed">Selecteer bestanden om direct in de Firebase Cloud te plaatsen.</p>
                 </div>
 
                 <Card className="p-10 rounded-3xl border-dashed border-2 border-accent/20 bg-accent/5 flex flex-col items-center justify-center space-y-6">
@@ -469,9 +467,6 @@ export default function AdminPage() {
                         </div>
                       </div>
                     )}
-                    {!isUploading && (
-                      <p className="text-[9px] uppercase font-bold text-muted-foreground opacity-50 tracking-tighter">Meerdere selecteren is mogelijk</p>
-                    )}
                   </div>
                 </Card>
               </div>
@@ -479,7 +474,7 @@ export default function AdminPage() {
               <div className="space-y-8">
                 <div className="space-y-2">
                   <h2 className="text-2xl font-headline font-light">Handmatige Link</h2>
-                  <p className="text-muted-foreground text-xs leading-relaxed">Heb je de foto al ergens anders staan? Plak de directe URL hieronder.</p>
+                  <p className="text-muted-foreground text-xs leading-relaxed">Plak een directe URL naar een afbeelding hieronder.</p>
                 </div>
 
                 <Card className="p-8 rounded-3xl border-border bg-card/50 shadow-sm space-y-6">
@@ -489,7 +484,7 @@ export default function AdminPage() {
                       <Input placeholder="Bijv. Licht over Schoorl" value={manualTitle} onChange={(e) => setManualTitle(e.target.value)} className="rounded-xl h-10" />
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-[9px] uppercase font-bold tracking-widest">Directe URL naar afbeelding</Label>
+                      <Label className="text-[9px] uppercase font-bold tracking-widest">Directe URL</Label>
                       <Input placeholder="https://..." value={manualUrl} onChange={(e) => setManualUrl(e.target.value)} className="rounded-xl h-10 font-mono text-[10px]" />
                     </div>
                     <Button 
@@ -497,20 +492,10 @@ export default function AdminPage() {
                       onClick={handleManualAdd}
                       className="w-full h-12 rounded-xl font-bold uppercase tracking-widest bg-secondary text-foreground hover:bg-secondary/80"
                     >
-                      {loading ? <Loader2 className="animate-spin" /> : <><LinkIcon className="mr-2 w-4 h-4" /> Toevoegen aan Lijst</>}
+                      {loading ? <Loader2 className="animate-spin" /> : <><LinkIcon className="mr-2 w-4 h-4" /> Toevoegen</>}
                     </Button>
                   </div>
                 </Card>
-              </div>
-            </div>
-
-            <div className="mt-16 bg-blue-500/10 border border-blue-500/20 p-6 rounded-2xl flex gap-4 max-w-2xl mx-auto">
-              <Info className="w-6 h-6 text-blue-500 shrink-0" />
-              <div className="space-y-1">
-                <h4 className="text-[10px] uppercase font-bold text-blue-600">Tip voor Firebase Storage</h4>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  Zorg dat 'Storage' is ingeschakeld in de Firebase Console. Ga naar <strong>Storage</strong> &gt; <strong>Get Started</strong> &gt; <strong>Production Mode</strong>. Zodra geactiveerd, worden uploads automatisch gelinkt aan je archief.
-                </p>
               </div>
             </div>
           </TabsContent>
@@ -521,53 +506,12 @@ export default function AdminPage() {
                 <h2 className="text-3xl font-headline font-light">NAS Folder Helper</h2>
                 <p className="text-muted-foreground text-sm">Beheer je foto&apos;s vanaf je eigen Synology server.</p>
               </div>
-
-              <div className="grid gap-4">
-                <Accordion type="single" collapsible className="w-full bg-blue-500/5 rounded-2xl border border-blue-500/10 px-6">
-                  <AccordionItem value="webstation" className="border-none">
-                    <AccordionTrigger className="text-[11px] uppercase font-bold tracking-widest text-blue-500 hover:no-underline">
-                      <Globe className="w-4 h-4 mr-2" /> Stap: Web Station instellen (DSM 7+)
-                    </AccordionTrigger>
-                    <AccordionContent className="space-y-4 pb-6">
-                      <div className="space-y-3 text-sm text-muted-foreground leading-relaxed">
-                        <p className="font-bold text-blue-600">Activeer je map als website:</p>
-                        <ol className="list-decimal pl-5 space-y-2">
-                          <li>Open <strong>Web Station</strong> op je NAS.</li>
-                          <li>Ga naar <strong>Webservice</strong> (niet Webportaal).</li>
-                          <li>Klik op <strong>Maken</strong> &gt; <strong>Statische website</strong>.</li>
-                          <li>Selecteer jouw map als <strong>Document-root</strong>.</li>
-                        </ol>
-                        <p className="mt-4 italic">Na deze stap zijn je foto&apos;s via hun URL bereikbaar voor de app.</p>
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                  <AccordionItem value="permissions" className="border-none border-t border-border/10">
-                    <AccordionTrigger className="text-[11px] uppercase font-bold tracking-widest text-blue-500 hover:no-underline">
-                      <UserPlus className="w-4 h-4 mr-2" /> Map 'web' bestaat maar is onzichtbaar?
-                    </AccordionTrigger>
-                    <AccordionContent className="space-y-4 pb-6">
-                      <div className="space-y-3 text-sm text-muted-foreground leading-relaxed">
-                        <p className="font-bold text-blue-600">Rechten herstellen:</p>
-                        <ol className="list-decimal pl-5 space-y-2">
-                          <li>Ga naar <strong>Configuratiescherm</strong> &gt; <strong>Gedeelde map</strong>.</li>
-                          <li>Selecteer de map <strong>web</strong> en klik op <strong>Bewerken</strong>.</li>
-                          <li>Ga naar het tabblad <strong>Machtigingen</strong>.</li>
-                          <li>Zoek je eigen gebruikersnaam en vink <strong>Lezen/Schrijven</strong> aan.</li>
-                        </ol>
-                        <p className="mt-4 text-xs">Nu verschijnt de map direct in File Station.</p>
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
-              </div>
-              
               <Card className="p-8 rounded-3xl border-border bg-card/50 shadow-xl space-y-8">
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label className="text-[10px] uppercase font-bold">Basis URL van je NAS</Label>
                     <Input value={nasBaseUrl} onChange={(e) => setNasBaseUrl(e.target.value)} className="rounded-xl font-mono text-xs" />
                   </div>
-                  
                   <div className="pt-4 border-t border-border/20">
                     <Button onClick={handleScanFolder} className="w-full h-20 rounded-2xl font-bold uppercase tracking-widest bg-accent hover:bg-accent/90 text-lg shadow-lg group">
                       <FolderOpen className="mr-4 w-8 h-8 group-hover:scale-110 transition-transform" />
@@ -585,10 +529,10 @@ export default function AdminPage() {
                 <div className="space-y-6">
                   <div className="space-y-2">
                     <Label className="text-[10px] uppercase font-bold">Gegenereerde JSON Data</Label>
-                    <Textarea placeholder='Scan eerst een map in de NAS tab...' value={bulkJson} onChange={(e) => setBulkJson(e.target.value)} className="min-h-[400px] font-mono text-[10px] rounded-2xl bg-black/5" />
+                    <Textarea placeholder='Scan eerst een map...' value={bulkJson} onChange={(e) => setBulkJson(e.target.value)} className="min-h-[400px] font-mono text-[10px] rounded-2xl bg-black/5" />
                   </div>
                   <Button onClick={handleBulkUpload} disabled={loading || !bulkJson} className="w-full h-14 rounded-xl font-bold uppercase tracking-widest shadow-xl">
-                    {loading ? <Loader2 className="animate-spin" /> : <><Upload className="mr-2 w-4 h-4" /> Importeer nu in Archief</>}
+                    {loading ? <Loader2 className="animate-spin" /> : <><Upload className="mr-2 w-4 h-4" /> Importeer in Archief</>}
                   </Button>
                 </div>
               </Card>
@@ -597,11 +541,10 @@ export default function AdminPage() {
         </Tabs>
       </main>
 
-      {/* Master Editor Dialog */}
-      <Dialog open={!!editingArtwork} onOpenChange={() => setEditingArtwork(null)}>
+      <Dialog open={!!editingId} onOpenChange={() => setEditingId(null)}>
         <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background/98 backdrop-blur-3xl border-none rounded-none overflow-hidden">
           <DialogTitle className="sr-only">Master Editor - {editingArtwork?.title}</DialogTitle>
-          <DialogDescription className="sr-only">Pas details, uitsnede en helderheid aan van dit kunstwerk.</DialogDescription>
+          <DialogDescription className="sr-only">Pas details, uitsnede en helderheid aan.</DialogDescription>
           
           <div className="relative flex-1 flex items-center justify-center overflow-hidden group bg-black/10">
             {editingArtwork && (
@@ -629,7 +572,7 @@ export default function AdminPage() {
             </div>
 
             <div className="absolute top-8 right-8 z-50 flex gap-4">
-               <Button variant="destructive" size="icon" onClick={() => handleDeleteArtwork(editingArtwork.id)} className="rounded-full h-10 w-10 opacity-50 hover:opacity-100">
+               <Button variant="destructive" size="icon" onClick={() => editingArtwork && handleDeleteArtwork(editingArtwork.id)} className="rounded-full h-10 w-10 opacity-50 hover:opacity-100">
                 <Trash2 className="w-5 h-5" />
               </Button>
               <DialogClose className="p-2 bg-background/20 backdrop-blur-md rounded-full hover:bg-background/40 transition-colors">
@@ -645,7 +588,7 @@ export default function AdminPage() {
                   <Label className="text-[9px] uppercase font-bold tracking-widest opacity-50">Titel</Label>
                   <Input 
                     value={editingArtwork?.title || ''} 
-                    onChange={(e) => updateArtworkField(editingArtwork.id, 'title', e.target.value)} 
+                    onChange={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'title', e.target.value)} 
                     className="h-8 text-sm font-headline bg-transparent border-none focus-visible:ring-0 p-0"
                   />
                 </div>
@@ -654,7 +597,7 @@ export default function AdminPage() {
                     <Label className="text-[9px] uppercase font-bold tracking-widest opacity-50">Serie</Label>
                     <Input 
                       value={editingArtwork?.series || ''} 
-                      onChange={(e) => updateArtworkField(editingArtwork.id, 'series', e.target.value)} 
+                      onChange={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'series', e.target.value)} 
                       className="h-8 text-[10px] bg-transparent border-none focus-visible:ring-0 p-0 text-accent font-bold"
                     />
                   </div>
@@ -662,7 +605,7 @@ export default function AdminPage() {
                     <Label className="text-[9px] uppercase font-bold tracking-widest opacity-50">Jaar</Label>
                     <Input 
                       value={editingArtwork?.year || ''} 
-                      onChange={(e) => updateArtworkField(editingArtwork.id, 'year', e.target.value)} 
+                      onChange={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'year', e.target.value)} 
                       className="h-8 text-[10px] bg-transparent border-none focus-visible:ring-0 p-0"
                     />
                   </div>
@@ -677,7 +620,7 @@ export default function AdminPage() {
                   {STANDARD_TAGS.map(tag => (
                     <button
                       key={tag}
-                      onClick={() => toggleArtworkTag(editingArtwork, tag)}
+                      onClick={() => editingArtwork && toggleArtworkTag(editingArtwork, tag)}
                       className={cn(
                         "px-2 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-tighter transition-all border",
                         editingArtwork?.tags?.includes(tag) 
@@ -700,7 +643,7 @@ export default function AdminPage() {
                     value={[editingArtwork?.brightness || 1]} 
                     max={2} 
                     step={0.01} 
-                    onValueChange={([val]) => updateArtworkField(editingArtwork.id, 'brightness', val)} 
+                    onValueChange={([val]) => editingArtwork && updateArtworkField(editingArtwork.id, 'brightness', val)} 
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-x-6 gap-y-4">
@@ -711,7 +654,7 @@ export default function AdminPage() {
                         value={[editingArtwork?.[`crop${side}`] || 0]} 
                         max={50} 
                         step={1} 
-                        onValueChange={([val]) => updateArtworkField(editingArtwork.id, `crop${side}`, val)} 
+                        onValueChange={([val]) => editingArtwork && updateArtworkField(editingArtwork.id, `crop${side}`, val)} 
                       />
                     </div>
                   ))}
@@ -722,7 +665,7 @@ export default function AdminPage() {
                 <Label className="text-[9px] uppercase font-bold tracking-widest opacity-50">Omschrijving</Label>
                 <Textarea 
                   value={editingArtwork?.description || ''} 
-                  onChange={(e) => updateArtworkField(editingArtwork.id, 'description', e.target.value)} 
+                  onChange={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'description', e.target.value)} 
                   className="h-24 text-[10px] bg-background/20 border-border/40 resize-none rounded-xl"
                   placeholder="Beschrijf het werk..."
                 />
