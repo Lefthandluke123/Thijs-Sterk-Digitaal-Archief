@@ -1,22 +1,27 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
+import { useFirestore, useDoc } from '@/firebase';
+import { doc } from 'firebase/firestore';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, LayoutGrid } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 
 export function Navbar() {
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
+  const firestore = useFirestore();
+  const settingsRef = useMemo(() => firestore ? doc(firestore, 'settings', 'site') : null, [firestore]);
+  const { data: settings } = useDoc(settingsRef);
 
   useEffect(() => {
     setMounted(true);
@@ -29,17 +34,11 @@ export function Navbar() {
       <div className="container mx-auto px-6 h-14 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-3 group">
           <div className="relative w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white overflow-hidden transition-transform group-hover:scale-105">
-            <Image 
-              src="/logo.png" 
-              alt="Logo" 
-              fill 
-              className="object-contain p-1" 
-              onError={(e) => {
-                const target = e.target as HTMLElement;
-                target.style.display = 'none';
-              }}
-            />
-            <span className="font-headline font-bold text-base">T</span>
+            {settings?.logoUrl ? (
+              <Image src={settings.logoUrl} alt="Logo" fill className="object-contain p-1" />
+            ) : (
+              <span className="font-headline font-bold text-base">T</span>
+            )}
           </div>
           <div className="flex flex-col">
             <span className="font-headline font-bold tracking-tight text-lg leading-none">Thijs Sterk</span>

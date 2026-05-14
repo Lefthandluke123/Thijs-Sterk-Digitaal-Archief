@@ -110,6 +110,21 @@
           "description": "Tijdstip van de interactie"
         }
       }
+    },
+    "Settings": {
+      "title": "Settings",
+      "description": "Algemene website instellingen.",
+      "type": "object",
+      "properties": {
+        "logoUrl": {
+          "type": "string",
+          "description": "URL naar het website logo"
+        },
+        "siteTitle": {
+          "type": "string",
+          "description": "De titel van de website"
+        }
+      }
     }
   },
   "auth": {
@@ -125,6 +140,10 @@
     "/interactions/{interactionId}": {
       "schema": "Interaction",
       "description": "Log van bezoekersinteracties voor analyse"
+    },
+    "/settings/site": {
+      "schema": "Settings",
+      "description": "Website configuratie"
     }
   }
 }
