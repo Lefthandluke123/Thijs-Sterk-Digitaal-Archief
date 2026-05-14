@@ -4,10 +4,8 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useFirestore, useCollection, useMemoFirebase, useStorage } from '@/firebase';
-import { collection, doc, serverTimestamp, deleteDoc, addDoc, query, orderBy, updateDoc, writeBatch } from 'firebase/firestore';
+import { collection, doc, serverTimestamp, deleteDoc, addDoc, query, orderBy, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
@@ -18,36 +16,25 @@ import {
   Upload,
   Plus,
   Minus,
-  Image as ImageIcon,
   FolderOpen,
-  Maximize2,
-  Tag,
-  Info,
-  Globe,
-  CloudUpload,
   X,
   ChevronLeft,
   ChevronRight,
   Search,
   Cloud,
   HardDrive,
-  Link as LinkIcon,
-  Calendar,
-  Type,
   Star,
-  LayoutGrid,
   CheckCircle2,
-  Save,
-  Download,
   Copy,
-  History
+  History,
+  CloudUpload
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogClose, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogClose, DialogTitle } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
@@ -121,6 +108,7 @@ export default function AdminPage() {
       if (!editingId) return;
       if (e.key === 'ArrowRight') navigateEditing('next');
       if (e.key === 'ArrowLeft') navigateEditing('prev');
+      if (e.key === 'Escape') setEditingId(null);
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -150,9 +138,10 @@ export default function AdminPage() {
         const relativePath = (file as any).webkitRelativePath || "";
         const pathParts = relativePath.split('/');
         
+        // Detect series: if selected root contains folders, pathParts[1] is usually the subfolder
         let detectedSeries = "Hoofdcollectie";
-        if (pathParts.length > 1) {
-          detectedSeries = pathParts[pathParts.length - 2];
+        if (pathParts.length > 2) {
+          detectedSeries = pathParts[1];
         }
 
         const fileNameOnly = file.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
@@ -180,15 +169,9 @@ export default function AdminPage() {
     setBulkJson(JSON.stringify(artworksToImport, null, 2));
     setActiveTab('bulk');
     toast({ 
-      title: "Map Analyse Voltooid", 
-      description: `${artworksToImport.length} foto's verdeeld over collecties.` 
+      title: "Mappen Analyse Voltooid", 
+      description: `${artworksToImport.length} foto's verdeeld over collecties gebaseerd op mappen.` 
     });
-  };
-
-  const handleFileSelect = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
-    }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -214,7 +197,7 @@ export default function AdminPage() {
         
         const newArtwork = {
           title: fileNameOnly,
-          series: "Cloud Collectie",
+          series: "Nieuwe Uploads",
           imageUrl: downloadUrl,
           medium: "Olieverf op doek",
           year: new Date().getFullYear().toString(),
@@ -230,9 +213,7 @@ export default function AdminPage() {
           createdAt: serverTimestamp()
         };
 
-        const artworkCol = collection(firestore, 'artworks');
-        addDoc(artworkCol, newArtwork);
-
+        await addDoc(collection(firestore, 'artworks'), newArtwork);
         startedCount++;
         setUploadProgress((startedCount / totalFiles) * 100);
       } catch (error: any) {
@@ -240,52 +221,11 @@ export default function AdminPage() {
       }
     }
 
-    toast({ 
-      title: "Batch Voltooid", 
-      description: `${startedCount} foto's zijn verwerkt.` 
-    });
-    
+    toast({ title: "Batch Voltooid", description: `${startedCount} foto's zijn verwerkt.` });
     setIsUploading(false);
     setUploadStatus('');
     if (fileInputRef.current) fileInputRef.current.value = '';
-    setTimeout(() => setActiveTab('archive'), 800);
-  };
-
-  const handleManualAdd = async () => {
-    if (!manualUrl || !firestore) return;
-    
-    setLoading(true);
-    try {
-      const newArtwork = {
-        title: manualTitle || "Nieuw Werk",
-        series: "Handmatige Toevoeging",
-        imageUrl: manualUrl,
-        medium: "Olieverf op doek",
-        year: new Date().getFullYear().toString(),
-        description: "",
-        imageHint: "painting",
-        tags: [],
-        cropTop: 0,
-        cropBottom: 0,
-        cropLeft: 0,
-        cropRight: 0,
-        brightness: 1,
-        featured: false,
-        createdAt: serverTimestamp()
-      };
-
-      const artworkCol = collection(firestore, 'artworks');
-      addDoc(artworkCol, newArtwork);
-
-      toast({ title: "Toegevoegd", description: "Het werk staat nu in het archief." });
-      setManualTitle('');
-      setManualUrl('');
-      setActiveTab('archive');
-    } catch (err) {
-      toast({ variant: "destructive", title: "Fout", description: "Kon het werk niet toevoegen." });
-    } finally {
-      setLoading(false);
-    }
+    setActiveTab('archive');
   };
 
   const handleBulkUpload = async () => {
@@ -296,21 +236,11 @@ export default function AdminPage() {
       const artworksArray = Array.isArray(data) ? data : [data];
       
       for (const item of artworksArray) {
-        const payload = {
-          ...item,
-          createdAt: serverTimestamp(),
-          cropTop: item.cropTop || 0,
-          cropBottom: item.cropBottom || 0,
-          cropLeft: item.cropLeft || 0,
-          cropRight: item.cropRight || 0,
-          brightness: item.brightness || 1,
-          featured: item.featured || false,
-          tags: item.tags || []
-        };
-        // Remove ID if present in JSON to avoid conflicts or creating specific IDs
-        delete (payload as any).id;
-        
-        await addDoc(collection(firestore, 'artworks'), payload);
+        const { id, ...rest } = item;
+        await addDoc(collection(firestore, 'artworks'), {
+          ...rest,
+          createdAt: serverTimestamp()
+        });
       }
       
       toast({ title: "Import Succesvol", description: `${artworksArray.length} items toegevoegd.` });
@@ -331,23 +261,15 @@ export default function AdminPage() {
     });
     setBulkJson(JSON.stringify(exportData, null, 2));
     setActiveTab('bulk');
-    toast({ 
-      title: "Backup Gegenereerd", 
-      description: "De JSON in de tekstbox bevat uw volledige archief. Kopieer deze tekst en bewaar het veilig." 
-    });
+    toast({ title: "Backup Gegenereerd", description: "Kopieer de JSON-tekst en bewaar deze veilig." });
   };
 
   const updateArtworkField = async (id: string, field: string, value: any) => {
     if (!firestore || !id) return;
     setIsSaving(true);
     const artRef = doc(firestore, 'artworks', id);
-    updateDoc(artRef, { [field]: value })
-      .then(() => {
-        setTimeout(() => setIsSaving(false), 300);
-      })
-      .catch(() => {
-        setIsSaving(false);
-      });
+    await updateDoc(artRef, { [field]: value });
+    setTimeout(() => setIsSaving(false), 500);
   };
 
   const toggleArtworkTag = (artwork: any, tag: string) => {
@@ -359,13 +281,10 @@ export default function AdminPage() {
   };
 
   const handleDeleteArtwork = (artId: string) => {
-    if (!firestore || !confirm("Weet u het zeker? Dit kan niet ongedaan gemaakt worden.")) return;
-    const artRef = doc(firestore, 'artworks', artId);
-    deleteDoc(artRef);
+    if (!firestore || !confirm("Weet u het zeker?")) return;
+    deleteDoc(doc(firestore, 'artworks', artId));
     if (editingId === artId) setEditingId(null);
   };
-
-  const isStorageUrl = (url: string) => url?.includes('firebasestorage.googleapis.com');
 
   return (
     <div className="min-h-screen bg-background flex flex-col pt-14">
@@ -387,24 +306,19 @@ export default function AdminPage() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <TabsList className="bg-muted/50 p-1 rounded-full w-fit">
               <TabsTrigger value="archive" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Archief ({artworks?.length || 0})</TabsTrigger>
-              <TabsTrigger value="upload" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Upload</TabsTrigger>
-              <TabsTrigger value="nas" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Map Scannen</TabsTrigger>
-              <TabsTrigger value="bulk" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Bulk / Backup</TabsTrigger>
+              <TabsTrigger value="upload" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Uploaden</TabsTrigger>
+              <TabsTrigger value="nas" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Map Importeren</TabsTrigger>
+              <TabsTrigger value="bulk" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Backup & Bulk</TabsTrigger>
             </TabsList>
 
-            <div className="flex gap-4 items-center">
-               <Button variant="outline" size="sm" onClick={handleExportArchive} className="hidden md:flex rounded-full text-[9px] uppercase font-bold tracking-widest border-accent/20 text-accent hover:bg-accent hover:text-white transition-all h-10">
-                <History className="w-3 h-3 mr-2" /> Backup Maken
-              </Button>
-              <div className="relative w-full md:w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input 
-                  placeholder="Zoek in archief..." 
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 rounded-full h-10 text-xs bg-muted/30 border-none"
-                />
-              </div>
+            <div className="relative w-full md:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input 
+                placeholder="Zoek in archief..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 rounded-full h-10 text-xs bg-muted/30 border-none"
+              />
             </div>
           </div>
 
@@ -412,11 +326,7 @@ export default function AdminPage() {
             {isCollectionLoading ? (
               <div className="flex flex-col items-center justify-center py-20 gap-4">
                 <Loader2 className="w-8 h-8 animate-spin text-accent" />
-                <p className="text-sm font-light italic">Archief wordt geladen...</p>
-              </div>
-            ) : filteredArtworks.length === 0 ? (
-              <div className="py-20 text-center border border-dashed rounded-3xl opacity-40">
-                <p className="text-sm font-light italic">Geen resultaten gevonden.</p>
+                <p className="text-sm font-light italic">Laden...</p>
               </div>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
@@ -425,7 +335,7 @@ export default function AdminPage() {
                     key={art.id} 
                     className={cn(
                       "overflow-hidden bg-card border-border rounded-2xl group cursor-pointer transition-all hover:ring-2 hover:ring-accent/40",
-                      art.featured && "ring-2 ring-accent shadow-lg"
+                      art.featured && "ring-2 ring-accent"
                     )}
                     onClick={() => setEditingId(art.id)}
                   >
@@ -437,18 +347,17 @@ export default function AdminPage() {
                         }}
                       />
                       <div className="absolute top-2 right-2 flex gap-1">
-                        {art.featured && <Badge className="bg-accent text-white border-none p-1 shadow-md"><Star className="w-3 h-3 fill-white" /></Badge>}
-                        {isStorageUrl(art.imageUrl) ? <Badge className="bg-blue-500 text-white border-none p-1"><Cloud className="w-3 h-3" /></Badge> : <Badge className="bg-orange-500 text-white border-none p-1"><HardDrive className="w-3 h-3" /></Badge>}
+                        {art.featured && <Badge className="bg-accent text-white p-1"><Star className="w-3 h-3 fill-white" /></Badge>}
+                        <Badge className={cn("text-white p-1", art.imageUrl.includes('firebasestorage') ? "bg-blue-500" : "bg-orange-500")}>
+                          {art.imageUrl.includes('firebasestorage') ? <Cloud className="w-3 h-3" /> : <HardDrive className="w-3 h-3" />}
+                        </Badge>
                       </div>
-                      {art.series && (
-                        <div className="absolute bottom-2 left-2">
-                          <Badge className="bg-black/40 text-[7px] text-white border-none backdrop-blur-md uppercase tracking-widest">{art.series}</Badge>
-                        </div>
-                      )}
+                      <div className="absolute bottom-2 left-2">
+                        <Badge className="bg-black/40 text-[7px] text-white border-none backdrop-blur-md uppercase tracking-widest">{art.series || "Geen Zaal"}</Badge>
+                      </div>
                     </div>
                     <CardContent className="p-3">
                       <h4 className="font-headline text-xs font-light truncate">{art.title}</h4>
-                      <p className="text-[8px] text-accent font-bold uppercase tracking-widest truncate">{art.series || "Geen Zaal"}</p>
                     </CardContent>
                   </Card>
                 ))}
@@ -457,50 +366,44 @@ export default function AdminPage() {
           </TabsContent>
 
           <TabsContent value="nas">
-            <div className="max-w-3xl mx-auto space-y-8">
-              <Card className="p-8 rounded-3xl border-border bg-card/50 shadow-xl space-y-8">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label className="text-[10px] uppercase font-bold">Basis URL van je server (bijv. NAS)</Label>
-                    <Input value={nasBaseUrl} onChange={(e) => setNasBaseUrl(e.target.value)} className="rounded-xl font-mono text-xs" />
-                  </div>
-                  <Button onClick={handleScanFolder} className="w-full h-20 rounded-2xl font-bold uppercase tracking-widest bg-accent hover:bg-accent/90 text-lg shadow-lg group">
-                    <FolderOpen className="mr-4 w-8 h-8 group-hover:scale-110 transition-transform" />
-                    Hoofdmap Kiezen (Submappen = Zalen)
-                  </Button>
-                </div>
-              </Card>
-            </div>
+            <Card className="p-12 rounded-3xl border-border bg-card/50 shadow-xl max-w-2xl mx-auto text-center space-y-8">
+              <div className="space-y-4">
+                <h3 className="font-headline text-2xl font-light">Hoofdmap Selecteren</h3>
+                <p className="text-sm text-muted-foreground">Kies een map op uw computer of server. Elke submap wordt automatisch een nieuwe "Zaal" in uw galerie.</p>
+              </div>
+              <div className="space-y-4">
+                <Label className="text-[10px] uppercase font-bold text-left block">Basis URL (bijv. van uw NAS)</Label>
+                <Input value={nasBaseUrl} onChange={(e) => setNasBaseUrl(e.target.value)} className="rounded-xl font-mono text-xs" />
+                <Button onClick={handleScanFolder} className="w-full h-20 rounded-2xl font-bold uppercase tracking-widest bg-accent hover:bg-accent/90 text-lg shadow-lg">
+                  <FolderOpen className="mr-4 w-8 h-8" />
+                  Selecteer Hoofdmap
+                </Button>
+              </div>
+            </Card>
           </TabsContent>
 
           <TabsContent value="bulk">
-            <div className="max-w-4xl mx-auto space-y-6">
-              <Card className="p-8 rounded-3xl border-border bg-card/50 shadow-xl">
-                <div className="space-y-6">
-                  <div className="flex justify-between items-center">
-                    <Label className="text-[10px] uppercase font-bold">Portefeuille Data (JSON)</Label>
-                    <div className="flex gap-2">
-                       <Button variant="ghost" size="sm" onClick={handleExportArchive} className="h-7 text-[8px] uppercase font-bold">Huidig archief ophalen</Button>
-                       <Button variant="ghost" size="sm" onClick={() => navigator.clipboard.writeText(bulkJson)} className="h-7 text-[8px] uppercase font-bold"><Copy className="w-3 h-3 mr-1" /> Kopieer JSON</Button>
-                    </div>
-                  </div>
-                  <Textarea placeholder='Plak hier uw backup JSON om alles in één keer te herstellen...' value={bulkJson} onChange={(e) => setBulkJson(e.target.value)} className="min-h-[400px] font-mono text-[10px] rounded-2xl bg-black/5" />
-                  <Button onClick={handleBulkUpload} disabled={loading || !bulkJson} className="w-full h-14 rounded-xl font-bold uppercase tracking-widest shadow-xl">
-                    {loading ? <Loader2 className="animate-spin" /> : <><Upload className="mr-2 w-4 h-4" /> Importeer / Herstel Alles</>}
-                  </Button>
-                  <p className="text-[9px] text-muted-foreground italic text-center">Let op: dit voegt de items toe aan de database. Dubbele items worden niet automatisch verwijderd.</p>
+            <Card className="p-8 rounded-3xl border-border bg-card/50 shadow-xl max-w-4xl mx-auto space-y-6">
+              <div className="flex justify-between items-center">
+                <Label className="text-[10px] uppercase font-bold">Backup Data (JSON)</Label>
+                <div className="flex gap-2">
+                  <Button variant="ghost" size="sm" onClick={handleExportArchive} className="h-7 text-[8px] uppercase font-bold"><History className="w-3 h-3 mr-1" /> Exporteer</Button>
+                  <Button variant="ghost" size="sm" onClick={() => navigator.clipboard.writeText(bulkJson)} className="h-7 text-[8px] uppercase font-bold"><Copy className="w-3 h-3 mr-1" /> Kopieer</Button>
                 </div>
-              </Card>
-            </div>
+              </div>
+              <Textarea value={bulkJson} onChange={(e) => setBulkJson(e.target.value)} className="min-h-[400px] font-mono text-[10px] rounded-2xl bg-black/5" />
+              <Button onClick={handleBulkUpload} disabled={loading || !bulkJson} className="w-full h-14 rounded-xl font-bold uppercase tracking-widest shadow-xl">
+                {loading ? <Loader2 className="animate-spin" /> : <><Upload className="mr-2 w-4 h-4" /> Importeer / Herstel</>}
+              </Button>
+            </Card>
           </TabsContent>
 
           <TabsContent value="upload">
-            <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-12">
-              <Card className="p-10 rounded-3xl border-dashed border-2 border-accent/20 bg-accent/5 flex flex-col items-center justify-center space-y-6">
+             <Card className="p-10 rounded-3xl border-dashed border-2 border-accent/20 bg-accent/5 flex flex-col items-center justify-center space-y-6 max-w-2xl mx-auto">
                 <CloudUpload className="w-12 h-12 text-accent" />
-                <Button onClick={handleFileSelect} disabled={isUploading} className="w-full h-14 rounded-2xl font-bold uppercase tracking-widest shadow-xl">
+                <Button onClick={() => fileInputRef.current?.click()} disabled={isUploading} className="w-full h-14 rounded-2xl font-bold uppercase tracking-widest shadow-xl">
                   {isUploading ? <Loader2 className="animate-spin mr-2" /> : <Plus className="mr-2" />}
-                  Kies Bestanden
+                  Bestanden Kiezen
                 </Button>
                 {isUploading && (
                   <div className="w-full space-y-3">
@@ -509,29 +412,18 @@ export default function AdminPage() {
                   </div>
                 )}
               </Card>
-              <Card className="p-8 rounded-3xl border-border bg-card/50 space-y-6">
-                <div className="space-y-4">
-                  <Input placeholder="Titel" value={manualTitle} onChange={(e) => setManualTitle(e.target.value)} className="rounded-xl h-10" />
-                  <Input placeholder="https://..." value={manualUrl} onChange={(e) => setManualUrl(e.target.value)} className="rounded-xl h-10 font-mono text-[10px]" />
-                  <Button disabled={!manualUrl || loading} onClick={handleManualAdd} className="w-full h-12 rounded-xl font-bold uppercase tracking-widest bg-secondary">
-                    {loading ? <Loader2 className="animate-spin" /> : 'Toevoegen'}
-                  </Button>
-                </div>
-              </Card>
-            </div>
           </TabsContent>
         </Tabs>
       </main>
 
       <Dialog open={!!editingId} onOpenChange={() => setEditingId(null)}>
         <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background/98 backdrop-blur-3xl border-none rounded-none overflow-hidden">
-          <DialogTitle className="sr-only">Master Editor - {editingArtwork?.title}</DialogTitle>
           <div className="relative flex-1 flex items-center justify-center overflow-hidden bg-black/5">
             {editingArtwork && (
               <img 
                 src={editingArtwork.imageUrl} 
                 alt={editingArtwork.title} 
-                className="max-w-[90%] max-h-[85%] object-contain p-4 transition-all duration-300 shadow-2xl" 
+                className="max-w-[90%] max-h-[80%] object-contain p-4 transition-all duration-300 shadow-2xl" 
                 style={{
                   clipPath: `inset(${editingArtwork.cropTop || 0}% ${editingArtwork.cropRight || 0}% ${editingArtwork.cropBottom || 0}% ${editingArtwork.cropLeft || 0}%)`,
                   filter: `brightness(${editingArtwork.brightness || 1})`
@@ -550,16 +442,19 @@ export default function AdminPage() {
             </div>
           </div>
 
-          <div className="w-full bg-background/95 backdrop-blur-md border-t border-border/10 px-8 py-3 shadow-2xl overflow-y-auto max-h-[20vh]">
-            <div className="max-w-[1600px] mx-auto grid grid-cols-1 md:grid-cols-4 gap-6 items-start">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between mb-1">
-                  <Label className="text-[7px] uppercase font-bold opacity-50 flex items-center gap-1"><Star className="w-2.5 h-2.5" /> Uitgelicht</Label>
+          <div className="w-full bg-background/95 backdrop-blur-md border-t border-border/10 p-4 shadow-2xl">
+            <div className="max-w-[1400px] mx-auto grid grid-cols-4 gap-8 items-start">
+              <div className="space-y-3">
+                <DialogTitle className="font-headline text-3xl font-light text-center mb-4 leading-tight">
+                  {editingArtwork?.title}
+                </DialogTitle>
+                <div className="flex items-center justify-between">
+                  <Label className="text-[8px] uppercase font-bold opacity-50">Uitgelicht</Label>
                   <Switch checked={editingArtwork?.featured || false} onCheckedChange={(val) => editingArtwork && updateArtworkField(editingArtwork.id, 'featured', val)} />
                 </div>
-                <Input defaultValue={editingArtwork?.title || ''} onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'title', e.target.value)} placeholder="Titel" className="h-7 text-xs font-headline bg-muted/10 border-none px-2" />
-                <Input defaultValue={editingArtwork?.series || ''} onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'series', e.target.value)} placeholder="Zaal (Serie)" className="h-7 text-[9px] bg-muted/10 border-none px-2 text-accent font-bold" />
-                <div className="flex flex-wrap gap-1">
+                <Input defaultValue={editingArtwork?.title || ''} onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'title', e.target.value)} placeholder="Titel" className="h-8 text-xs font-headline bg-muted/10 border-none px-2" />
+                <Input defaultValue={editingArtwork?.series || ''} onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'series', e.target.value)} placeholder="Selectie / Serie (Zaal)" className="h-8 text-[9px] bg-muted/10 border-none px-2 text-accent font-bold" />
+                <div className="flex flex-wrap gap-1 max-h-16 overflow-y-auto">
                   {existingSeries.map(s => (
                     <button key={s} onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, 'series', s)} className={cn("text-[6px] uppercase font-bold px-1 py-0.5 rounded-sm", editingArtwork?.series === s ? "bg-accent text-white" : "bg-muted/30")}>
                       {s}
@@ -568,13 +463,13 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-2">
-                  <Input defaultValue={editingArtwork?.year || ''} onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'year', e.target.value)} placeholder="Jaar" className="h-7 text-[9px] bg-muted/10 border-none" />
-                  <Input defaultValue={editingArtwork?.medium || ''} onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'medium', e.target.value)} placeholder="Medium" className="h-7 text-[9px] bg-muted/10 border-none" />
+                  <Input defaultValue={editingArtwork?.year || ''} onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'year', e.target.value)} placeholder="Jaar" className="h-8 text-[9px] bg-muted/10 border-none" />
+                  <Input defaultValue={editingArtwork?.medium || ''} onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'medium', e.target.value)} placeholder="Medium" className="h-8 text-[9px] bg-muted/10 border-none" />
                 </div>
-                <Label className="text-[7px] uppercase font-bold tracking-widest opacity-50">Thema's</Label>
-                <div className="flex flex-wrap gap-1 max-h-12 overflow-y-auto no-scrollbar">
+                <Label className="text-[8px] uppercase font-bold opacity-50">Thema's</Label>
+                <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
                   {STANDARD_TAGS.map(tag => (
                     <button key={tag} onClick={() => editingArtwork && toggleArtworkTag(editingArtwork, tag)} className={cn("px-1.5 py-0.5 rounded-full text-[6px] font-bold uppercase border", editingArtwork?.tags?.includes(tag) ? "bg-accent text-white border-accent" : "bg-background/50 text-muted-foreground border-border/40")}>
                       {tag}
@@ -583,61 +478,40 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <div className="md:col-span-2 grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <Label className="text-[7px] uppercase font-bold opacity-40">Helderheid ({editingArtwork?.brightness?.toFixed(2) || '1.00'})</Label>
-                    <div className="flex gap-1">
-                      <Button variant="outline" size="icon" className="h-3.5 w-3.5 rounded-sm" onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, 'brightness', Math.max(0, (editingArtwork.brightness || 1) - 0.05))}>
-                        <Minus className="h-2 w-2" />
-                      </Button>
-                      <Button variant="outline" size="icon" className="h-3.5 w-3.5 rounded-sm" onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, 'brightness', Math.min(2, (editingArtwork.brightness || 1) + 0.05))}>
-                        <Plus className="h-2 w-2" />
-                      </Button>
-                    </div>
-                  </div>
-                  <Slider value={[editingArtwork?.brightness || 1]} max={2} step={0.01} onValueChange={([val]) => editingArtwork && updateArtworkField(editingArtwork.id, 'brightness', val)} />
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-                    {['Top', 'Bottom'].map(side => {
-                      const field = `crop${side}`;
-                      return (
-                        <div key={side} className="space-y-0.5">
-                          <div className="flex justify-between items-center text-[6px] uppercase font-bold opacity-40">
-                            {side} {editingArtwork?.[field] || 0}%
-                            <div className="flex gap-0.5">
-                              <button onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, field, Math.max(0, (editingArtwork[field] || 0) - 1))} className="p-0.5 bg-muted/20 hover:bg-muted/40 rounded"><Minus className="w-1.5 h-1.5" /></button>
-                              <button onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, field, Math.min(50, (editingArtwork[field] || 0) + 1))} className="p-0.5 bg-muted/20 hover:bg-muted/40 rounded"><Plus className="w-1.5 h-1.5" /></button>
-                            </div>
-                          </div>
-                          <Slider value={[editingArtwork?.[field] || 0]} max={50} step={1} onValueChange={([val]) => editingArtwork && updateArtworkField(editingArtwork.id, field, val)} />
-                        </div>
-                      );
-                    })}
-                  </div>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <Label className="text-[8px] uppercase font-bold opacity-40">Helderheid ({editingArtwork?.brightness?.toFixed(2) || '1.00'})</Label>
                 </div>
-                <div className="space-y-2">
-                   <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-                    {['Left', 'Right'].map(side => {
-                      const field = `crop${side}`;
-                      return (
-                        <div key={side} className="space-y-0.5">
-                          <div className="flex justify-between items-center text-[6px] uppercase font-bold opacity-40">
-                            {side} {editingArtwork?.[field] || 0}%
-                            <div className="flex gap-0.5">
-                              <button onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, field, Math.max(0, (editingArtwork[field] || 0) - 1))} className="p-0.5 bg-muted/20 hover:bg-muted/40 rounded"><Minus className="w-1.5 h-1.5" /></button>
-                              <button onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, field, Math.min(50, (editingArtwork[field] || 0) + 1))} className="p-0.5 bg-muted/20 hover:bg-muted/40 rounded"><Plus className="w-1.5 h-1.5" /></button>
-                            </div>
-                          </div>
-                          <Slider value={[editingArtwork?.[field] || 0]} max={50} step={1} onValueChange={([val]) => editingArtwork && updateArtworkField(editingArtwork.id, field, val)} />
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <div className="flex flex-col gap-1 pt-1">
-                    <Button onClick={() => setEditingId(null)} className="h-6 text-[8px] uppercase tracking-widest font-bold">Gereed</Button>
-                    <div className="flex items-center justify-center gap-1 opacity-40 text-[6px] uppercase font-bold">
-                      {isSaving ? <><Loader2 className="w-2 h-2 animate-spin" /> ...</> : <><CheckCircle2 className="w-2 h-2" /> Opgeslagen</>}
-                    </div>
+                <Slider value={[editingArtwork?.brightness || 1]} max={2} step={0.01} onValueChange={([val]) => editingArtwork && updateArtworkField(editingArtwork.id, 'brightness', val)} />
+                <div className="grid grid-cols-2 gap-4">
+                  {['Top', 'Bottom'].map(side => {
+                    const field = `crop${side}`;
+                    return (
+                      <div key={side} className="space-y-1">
+                        <Label className="text-[7px] uppercase font-bold opacity-40">{side} {editingArtwork?.[field] || 0}%</Label>
+                        <Slider value={[editingArtwork?.[field] || 0]} max={50} step={1} onValueChange={([val]) => editingArtwork && updateArtworkField(editingArtwork.id, field, val)} />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-4">
+                  {['Left', 'Right'].map(side => {
+                    const field = `crop${side}`;
+                    return (
+                      <div key={side} className="space-y-1">
+                        <Label className="text-[7px] uppercase font-bold opacity-40">{side} {editingArtwork?.[field] || 0}%</Label>
+                        <Slider value={[editingArtwork?.[field] || 0]} max={50} step={1} onValueChange={([val]) => editingArtwork && updateArtworkField(editingArtwork.id, field, val)} />
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="flex flex-col gap-2 pt-2">
+                  <Button onClick={() => setEditingId(null)} className="h-8 text-[9px] uppercase tracking-widest font-bold">Gereed</Button>
+                  <div className="flex items-center justify-center gap-1 opacity-40 text-[7px] uppercase font-bold">
+                    {isSaving ? <><Loader2 className="w-2.5 h-2.5 animate-spin" /> ...</> : <><CheckCircle2 className="w-2.5 h-2.5" /> Opgeslagen</>}
                   </div>
                 </div>
               </div>

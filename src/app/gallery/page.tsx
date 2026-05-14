@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
@@ -6,7 +7,7 @@ import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { Dialog, DialogContent, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Maximize2, Loader2, X, ChevronLeft, ChevronRight, LayoutGrid, Palette, ArrowRight } from 'lucide-react';
+import { Maximize2, Loader2, X, ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 function GalleryContent() {
@@ -67,15 +68,14 @@ function GalleryContent() {
       if (!selectedArtwork) return;
       if (e.key === 'ArrowRight') navigateGallery('next');
       if (e.key === 'ArrowLeft') navigateGallery('prev');
+      if (e.key === 'Escape') setSelectedArtwork(null);
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedArtwork, navigateGallery]);
 
   const toggleTag = (tag: string) => {
-    setActiveTags(prev => 
-      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
-    );
+    setActiveTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
   };
 
   const artworksBySeries = useMemo(() => {
@@ -104,9 +104,7 @@ function GalleryContent() {
 
       <div className="container mx-auto max-w-7xl px-6 pb-24">
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-32">
-            <Loader2 className="w-6 h-6 animate-spin text-accent/40" />
-          </div>
+          <div className="flex flex-col items-center justify-center py-32"><Loader2 className="w-6 h-6 animate-spin text-accent/40" /></div>
         ) : (
           <>
             <div className="bg-background/80 backdrop-blur-md sticky top-14 z-30 border-b border-border/10 py-6 mb-12">
@@ -126,23 +124,6 @@ function GalleryContent() {
                   ))}
                 </div>
               </div>
-
-              {activeSeries !== "Alle" && allAvailableTags.length > 0 && (
-                <div className="flex flex-wrap gap-2 pt-4 border-t border-border/5 mt-4">
-                  {allAvailableTags.map(tag => (
-                    <button
-                      key={tag}
-                      onClick={() => toggleTag(tag)}
-                      className={cn(
-                        "px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest transition-all border",
-                        activeTags.includes(tag) ? "bg-primary text-primary-foreground border-primary" : "bg-background text-muted-foreground border-border hover:border-accent"
-                      )}
-                    >
-                      {tag}
-                    </button>
-                  ))}
-                </div>
-              )}
             </div>
 
             {activeSeries === "Alle" && artworksBySeries ? (
@@ -151,11 +132,8 @@ function GalleryContent() {
                   <section key={series} className="space-y-8">
                     <div className="flex items-center justify-between border-b border-border/10 pb-4">
                       <h2 className="font-headline text-3xl font-light italic">{series}</h2>
-                      <button 
-                        onClick={() => setActiveSeries(series)}
-                        className="text-[10px] uppercase font-bold tracking-widest text-accent flex items-center gap-2 hover:translate-x-1 transition-transform"
-                      >
-                        Open deze zaal <ArrowRight className="w-3 h-3" />
+                      <button onClick={() => setActiveSeries(series)} className="text-[10px] uppercase font-bold tracking-widest text-accent flex items-center gap-2 hover:translate-x-1 transition-transform">
+                        Bekijk Zaal <ArrowRight className="w-3 h-3" />
                       </button>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
@@ -170,7 +148,6 @@ function GalleryContent() {
                                 clipPath: `inset(${item.cropTop || 0}% ${item.cropRight || 0}% ${item.cropBottom || 0}% ${item.cropLeft || 0}%)`,
                                 filter: `brightness(${item.brightness || 1})`
                               }}
-                              onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Beeld+Fout'; }}
                             />
                           </div>
                           <div className="mt-2 text-center opacity-60 group-hover:opacity-100 transition-opacity">
@@ -195,11 +172,7 @@ function GalleryContent() {
                           clipPath: `inset(${item.cropTop || 0}% ${item.cropRight || 0}% ${item.cropBottom || 0}% ${item.cropLeft || 0}%)`,
                           filter: `brightness(${item.brightness || 1})`
                         }}
-                        onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Beeld+Fout'; }}
                       />
-                      <div className="absolute bottom-2 right-2 z-10 pointer-events-none opacity-20 text-[6px] uppercase tracking-widest text-white font-bold bg-black/20 px-1 rounded-sm">
-                        &copy; Erven Thijs Sterk
-                      </div>
                       <div className="absolute inset-0 bg-background/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                         <Maximize2 className="text-white/60 w-6 h-6" />
                       </div>
@@ -217,32 +190,24 @@ function GalleryContent() {
 
       <Dialog open={!!selectedArtwork} onOpenChange={() => setSelectedArtwork(null)}>
         <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background/98 backdrop-blur-3xl border-none rounded-none overflow-hidden">
-          <div className="relative flex-1 flex items-center justify-center overflow-hidden group bg-black/5">
+          <div className="relative flex-1 flex items-center justify-center overflow-hidden bg-black/5">
             {selectedArtwork && (
-              <div className="relative w-full h-full flex items-center justify-center">
-                <img 
-                  src={selectedArtwork.imageUrl} 
-                  alt={selectedArtwork.title} 
-                  className="max-w-full max-h-full object-contain p-4 md:p-12"
-                  style={{
-                    clipPath: `inset(${selectedArtwork.cropTop || 0}% ${selectedArtwork.cropRight || 0}% ${selectedArtwork.cropBottom || 0}% ${selectedArtwork.cropLeft || 0}%)`,
-                    filter: `brightness(${selectedArtwork.brightness || 1})`
-                  }}
-                  onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Beeld+Fout'; }}
-                />
-                <div className="absolute inset-0 pointer-events-none flex items-center justify-center opacity-[0.03] select-none rotate-[-45deg]">
-                  <span className="text-6xl md:text-9xl font-bold uppercase tracking-[0.5em] text-foreground">
-                    Erven Thijs Sterk
-                  </span>
-                </div>
-              </div>
+              <img 
+                src={selectedArtwork.imageUrl} 
+                alt={selectedArtwork.title} 
+                className="max-w-full max-h-[85vh] object-contain p-4 md:p-12"
+                style={{
+                  clipPath: `inset(${selectedArtwork.cropTop || 0}% ${selectedArtwork.cropRight || 0}% ${selectedArtwork.cropBottom || 0}% ${selectedArtwork.cropLeft || 0}%)`,
+                  filter: `brightness(${selectedArtwork.brightness || 1})`
+                }}
+              />
             )}
             <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-6 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
               <button onClick={(e) => { e.stopPropagation(); navigateGallery('prev'); }} className="p-3 rounded-full bg-background/10 backdrop-blur-md pointer-events-auto hover:bg-background/20 transition-colors">
-                <ChevronLeft className="w-6 h-6 text-foreground" />
+                <ChevronLeft className="w-6 h-6" />
               </button>
               <button onClick={(e) => { e.stopPropagation(); navigateGallery('next'); }} className="p-3 rounded-full bg-background/10 backdrop-blur-md pointer-events-auto hover:bg-background/20 transition-colors">
-                <ChevronRight className="w-6 h-6 text-foreground" />
+                <ChevronRight className="w-6 h-6" />
               </button>
             </div>
             <DialogClose className="absolute top-8 right-8 z-50 p-2 bg-background/10 backdrop-blur-sm rounded-full hover:bg-background/20 transition-colors">
@@ -250,21 +215,19 @@ function GalleryContent() {
             </DialogClose>
           </div>
 
-          <div className="w-full bg-background/95 backdrop-blur-md py-8 md:py-12 px-8 border-t border-border/10">
-            <div className="max-w-4xl mx-auto flex flex-col items-center text-center gap-6">
-              <div className="space-y-4">
-                <DialogTitle className="font-headline text-4xl md:text-6xl font-light text-foreground tracking-tight">
-                  {selectedArtwork?.title}
-                </DialogTitle>
-                <div className="text-[11px] md:text-[12px] uppercase tracking-[0.3em] text-accent font-bold flex flex-wrap gap-x-8 gap-y-2 justify-center items-center opacity-80">
-                  <span>{selectedArtwork?.series}</span>
-                  <span className="hidden md:inline w-1.5 h-1.5 rounded-full bg-accent/30" />
-                  <span>{selectedArtwork?.year}</span>
-                  <span className="hidden md:inline w-1.5 h-1.5 rounded-full bg-accent/30" />
-                  <span>{selectedArtwork?.medium}</span>
-                </div>
+          <div className="w-full bg-background/95 backdrop-blur-md py-8 px-8 border-t border-border/10">
+            <div className="max-w-4xl mx-auto flex flex-col items-center text-center gap-4">
+              <DialogTitle className="font-headline text-4xl md:text-6xl font-light text-foreground tracking-tight">
+                {selectedArtwork?.title}
+              </DialogTitle>
+              <div className="text-[11px] md:text-[12px] uppercase tracking-[0.3em] text-accent font-bold flex flex-wrap gap-x-8 gap-y-2 justify-center items-center opacity-80">
+                <span>{selectedArtwork?.series}</span>
+                <span className="hidden md:inline w-1.5 h-1.5 rounded-full bg-accent/30" />
+                <span>{selectedArtwork?.year}</span>
+                <span className="hidden md:inline w-1.5 h-1.5 rounded-full bg-accent/30" />
+                <span>{selectedArtwork?.medium}</span>
               </div>
-              <Button variant="outline" size="lg" className="rounded-full text-[10px] uppercase tracking-[0.2em] px-12 h-12 border-primary/20 hover:bg-primary/5 hover:border-primary transition-all">
+              <Button variant="outline" size="lg" className="rounded-full text-[10px] uppercase tracking-[0.2em] px-12 h-12 border-primary/20 mt-4">
                 Interesse in dit werk?
               </Button>
             </div>
