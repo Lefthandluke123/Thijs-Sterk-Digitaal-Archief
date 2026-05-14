@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from 'react';
@@ -88,7 +87,7 @@ export function Navbar() {
               pathname === "/curator" ? "bg-accent/90 text-accent-foreground shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
             )}
           >
-            Uw Collectie
+            Uw Selectie
           </Link>
 
           <DropdownMenu>

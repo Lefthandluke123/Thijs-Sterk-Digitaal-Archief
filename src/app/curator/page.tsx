@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo } from 'react';
@@ -64,7 +63,7 @@ export default function CuratorPage() {
         <div className="container mx-auto px-6 max-w-5xl text-center">
           <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-accent mb-4 block">Uw Persoonlijke Selectie</span>
           <h1 className="font-headline text-5xl md:text-7xl font-light text-foreground tracking-tight mb-8">
-            Stel <span className="italic">Uw Collectie</span> samen
+            Stel <span className="italic">Uw Selectie</span> samen
           </h1>
           <p className="text-muted-foreground text-lg font-light max-w-2xl mx-auto leading-relaxed">
             Laat uw nieuwsgierigheid de vrije loop. Of u nu meer wilt zien van Groet of van stillevens met bloemen, dit is uw plek om een persoonlijke selectie te maken uit het werk van Thijs Sterk.
