@@ -32,7 +32,7 @@ import { Slider } from '@/components/ui/slider';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Dialog, DialogContent, DialogClose, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogClose, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 
 const STANDARD_TAGS = [
@@ -385,6 +385,9 @@ export default function AdminPage() {
       {/* Master Editor Dialog */}
       <Dialog open={!!editingArtwork} onOpenChange={() => setEditingArtwork(null)}>
         <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background/98 backdrop-blur-3xl border-none rounded-none overflow-hidden">
+          <DialogTitle className="sr-only">Master Editor - {editingArtwork?.title}</DialogTitle>
+          <DialogDescription className="sr-only">Bewerk de details, uitsnede en helderheid van dit kunstwerk.</DialogDescription>
+          
           <div className="relative flex-1 flex items-center justify-center overflow-hidden group bg-black/5">
             {editingArtwork && (
               <div className="relative w-full h-full flex items-center justify-center">
