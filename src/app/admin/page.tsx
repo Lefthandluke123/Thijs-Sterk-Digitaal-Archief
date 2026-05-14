@@ -40,13 +40,6 @@ import { Slider } from '@/components/ui/slider';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 const LOCAL_NAS_URL = 'https://192-168-178-15.doggyfew.direct.quickconnect.to/portfolio/';
-const EXTERNAL_NAS_URL = 'https://doggyfew.quickconnect.to/portfolio/';
-
-const STANDARD_TAGS = [
-  "Groet", "Schoorl", "Hargen", "Amsterdam", "Frankrijk", 
-  "Griekenland", "Olieverf", "Aquarel", "Monumentaal", "Glas in lood",
-  "Bloemen", "Dieren", "Water", "Portretten"
-];
 
 export default function AdminPage() {
   const firestore = useFirestore();
@@ -138,12 +131,7 @@ export default function AdminPage() {
   };
 
   const generateImageUrl = (relativePath: string) => {
-    const pathParts = relativePath.split('/');
-    let adjustedPath = relativePath;
-    if (!includeRootFolder && pathParts.length > 1) {
-      adjustedPath = pathParts.slice(1).join('/');
-    }
-    const encodedPath = adjustedPath.split('/').map(part => encodeURIComponent(part)).join('/');
+    const encodedPath = relativePath.split('/').map(part => encodeURIComponent(part)).join('/');
     return `${nasBaseUrl}${encodedPath}`;
   };
 
@@ -156,19 +144,17 @@ export default function AdminPage() {
       let detectedSeries = 'Onbekende Serie';
       if (pathParts.length > 1) {
         detectedSeries = pathParts[pathParts.length - 2] || detectedSeries;
-        detectedSeries = detectedSeries.replace(/[_-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
       }
       let cleanName = file.name.split('.').slice(0, -1).join('.');
-      cleanName = cleanName.replace(/[_-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
       return {
         title: cleanName,
         series: detectedSeries,
         year: "Onbekend",
-        medium: "Olieverf op doek",
+        medium: "Olieverf",
         relativePath: relativePath,
         fileName: file.name,
-        description: `Werk uit de serie ${detectedSeries}.`,
-        imageHint: "painting art",
+        description: "",
+        imageHint: "painting",
         tags: []
       };
     });
@@ -182,11 +168,9 @@ export default function AdminPage() {
     const artworkCol = collection(firestore, 'artworks');
     
     try {
-      // Alleen echte kunstwerken (niet de hero of portret)
       const artworksToSeed = PlaceHolderImages.filter(img => img.id.startsWith('artwork-'));
       
-      for (let i = 0; i < artworksToSeed.length; i++) {
-        const item = artworksToSeed[i];
+      for (const item of artworksToSeed) {
         const data = {
           title: item.title || 'Ongetiteld',
           series: item.series || 'Collectie',
@@ -268,19 +252,17 @@ export default function AdminPage() {
     }
   };
 
-  const handleAddTag = async (artId: string, currentTags: string[], tagToAdd?: string) => {
+  const handleAddTag = async (artId: string, currentTags: string[]) => {
     if (!firestore) return;
-    const tagValue = tagToAdd || newTagInputs[artId]?.trim();
-    if (!tagValue) return;
-    
-    if (currentTags?.includes(tagValue)) return;
+    const tagValue = newTagInputs[artId]?.trim();
+    if (!tagValue || currentTags?.includes(tagValue)) return;
     
     const updatedTags = [...(currentTags || []), tagValue];
     const artRef = doc(firestore, 'artworks', artId);
     
     updateDoc(artRef, { tags: updatedTags })
       .then(() => {
-        if (!tagToAdd) setNewTagInputs(prev => ({ ...prev, [artId]: "" }));
+        setNewTagInputs(prev => ({ ...prev, [artId]: "" }));
         toast({ title: "Tag toegevoegd" });
       })
       .catch(async (err) => {
@@ -343,34 +325,20 @@ export default function AdminPage() {
     <div className="min-h-screen bg-background flex flex-col pt-14">
       <header className="h-16 border-b border-border bg-background/95 backdrop-blur-sm sticky top-14 z-40 px-8 flex items-center justify-between">
         <div className="flex items-center gap-8">
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white font-headline font-bold text-lg shadow-sm group-hover:scale-105 transition-transform relative overflow-hidden">
-              <span className="relative z-10">T</span>
-            </div>
-            <span className="font-bold text-sm leading-none uppercase tracking-widest hidden sm:block">Beheer</span>
+          <Link href="/" className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white font-headline font-bold text-lg">T</div>
+            <span className="font-bold text-sm uppercase tracking-widest hidden sm:block">Beheer</span>
           </Link>
           
           <nav className="flex items-center gap-1">
-            <Button variant={activeTab === 'db' ? 'secondary' : 'ghost'} onClick={() => setActiveTab('db')} className="gap-2 h-9 px-4 font-bold rounded-full text-[10px] uppercase tracking-widest">
-              <Archive className="w-3.5 h-3.5" /> Archief
-            </Button>
-            <Button variant={activeTab === 'atelier' ? 'secondary' : 'ghost'} onClick={() => setActiveTab('atelier')} className="gap-2 h-9 px-4 font-bold rounded-full text-[10px] uppercase tracking-widest">
-              <Brush className="w-3.5 h-3.5" /> Atelier
-            </Button>
-            <Button variant={activeTab === 'scan' ? 'secondary' : 'ghost'} onClick={() => setActiveTab('scan')} className="gap-2 h-9 px-4 font-bold rounded-full text-[10px] uppercase tracking-widest">
-              <UploadCloud className="w-3.5 h-3.5" /> Foto's Invoeren
-            </Button>
-            <Button variant={activeTab === 'settings' ? 'secondary' : 'ghost'} onClick={() => setActiveTab('settings')} className="gap-2 h-9 px-4 font-bold rounded-full text-[10px] uppercase tracking-widest">
-              <Settings className="w-3.5 h-3.5" /> NAS
-            </Button>
-            <Button variant={activeTab === 'system' ? 'secondary' : 'ghost'} onClick={() => setActiveTab('system')} className="gap-2 h-9 px-4 font-bold rounded-full text-[10px] uppercase tracking-widest">
-              <Database className="w-3.5 h-3.5" /> Systeem
-            </Button>
+            <Button variant={activeTab === 'db' ? 'secondary' : 'ghost'} onClick={() => setActiveTab('db')} className="h-9 px-4 font-bold text-[10px] uppercase tracking-widest">Archief</Button>
+            <Button variant={activeTab === 'atelier' ? 'secondary' : 'ghost'} onClick={() => setActiveTab('atelier')} className="h-9 px-4 font-bold text-[10px] uppercase tracking-widest">Atelier</Button>
+            <Button variant={activeTab === 'scan' ? 'secondary' : 'ghost'} onClick={() => setActiveTab('scan')} className="h-9 px-4 font-bold text-[10px] uppercase tracking-widest">Importeren</Button>
+            <Button variant={activeTab === 'system' ? 'secondary' : 'ghost'} onClick={() => setActiveTab('system')} className="h-9 px-4 font-bold text-[10px] uppercase tracking-widest">Systeem</Button>
           </nav>
         </div>
-        
         <Button variant="outline" asChild className="rounded-full h-9 px-4 border-primary/20 text-primary text-[10px] uppercase tracking-widest">
-          <Link href="/" className="gap-2"><Home className="w-3.5 h-3.5" /> Website</Link>
+          <Link href="/">Website</Link>
         </Button>
       </header>
 
@@ -378,306 +346,134 @@ export default function AdminPage() {
         {activeTab === 'db' && (
           <div className="space-y-12">
             <div className="flex items-center justify-between border-b border-border pb-6">
-              <div className="space-y-1">
-                <h2 className="text-3xl font-headline font-light">Mijn Archief</h2>
-                <p className="text-muted-foreground uppercase tracking-[0.2em] font-bold text-[9px]">{artworks?.length || 0} Geregistreerde werken</p>
-              </div>
+              <h2 className="text-3xl font-headline font-light">Mijn Archief ({artworks?.length || 0})</h2>
             </div>
-
-            {dbLoading ? (
-              <div className="flex flex-col items-center justify-center py-40 gap-4">
-                <Loader2 className="w-10 h-10 animate-spin text-primary/20" />
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Laden...</p>
-              </div>
-            ) : artworks?.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-40 gap-6 border-2 border-dashed border-border rounded-3xl">
-                <p className="text-muted-foreground font-light text-lg">Uw archief is nog leeg.</p>
-                <Button onClick={() => setActiveTab('scan')} className="rounded-full px-8 uppercase tracking-widest font-bold text-xs h-12">
-                  <Plus className="mr-2 w-4 h-4" /> Voeg uw eerste foto's toe
-                </Button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {artworks?.map((art: any) => (
-                  <Card key={art.id} className="overflow-hidden bg-card border-border hover:shadow-xl transition-all group rounded-2xl">
-                    <div className="relative aspect-[4/3] group/img">
-                      <Image 
-                        src={art.imageUrl} 
-                        alt={art.title} 
-                        fill 
-                        className="object-cover transition-transform duration-700 group-hover/img:scale-105" 
-                        unoptimized={true} 
-                        style={{
-                          clipPath: `inset(${art.cropTop || 0}% ${art.cropRight || 0}% ${art.cropBottom || 0}% ${art.cropLeft || 0}%)`,
-                          filter: `brightness(${art.brightness || 1})`
-                        }}
-                      />
-                      <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button variant="secondary" size="icon" onClick={() => { setActiveTab('atelier'); setSelectedAtelierId(art.id); }} className="rounded-full shadow-lg h-8 w-8">
-                          <Brush className="w-3.5 h-3.5" />
-                        </Button>
-                        <Button variant="destructive" size="icon" onClick={() => handleDeleteArtwork(art.id)} className="rounded-full shadow-lg h-8 w-8">
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
-                      </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {artworks?.map((art: any) => (
+                <Card key={art.id} className="overflow-hidden bg-card border-border rounded-2xl group">
+                  <div className="relative aspect-[4/3]">
+                    <Image 
+                      src={art.imageUrl} 
+                      alt={art.title} 
+                      fill 
+                      className="object-cover" 
+                      unoptimized={true} 
+                      style={{
+                        clipPath: `inset(${art.cropTop || 0}% ${art.cropRight || 0}% ${art.cropBottom || 0}% ${art.cropLeft || 0}%)`,
+                        filter: `brightness(${art.brightness || 1})`
+                      }}
+                    />
+                    <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button variant="secondary" size="icon" onClick={() => { setActiveTab('atelier'); setSelectedAtelierId(art.id); }} className="rounded-full h-8 w-8"><Brush className="w-3.5 h-3.5" /></Button>
+                      <Button variant="destructive" size="icon" onClick={() => handleDeleteArtwork(art.id)} className="rounded-full h-8 w-8"><Trash2 className="w-3.5 h-3.5" /></Button>
                     </div>
-                    <CardContent className="p-6 space-y-4">
-                      <div className="space-y-0.5">
-                        <h4 className="font-headline text-xl font-light leading-tight">{art.title}</h4>
-                        <p className="text-[9px] text-accent font-bold uppercase tracking-[0.2em]">{art.series} &bull; {art.year}</p>
-                      </div>
-                      
-                      <div className="space-y-3 pt-3 border-t border-border">
-                        <div className="flex flex-wrap gap-1.5 min-h-[24px]">
-                          {art.tags?.length > 0 ? art.tags.map((tag: string) => (
-                            <Badge key={tag} variant="secondary" className="gap-1.5 pr-1 py-0.5 px-2 rounded-full text-[8px] font-bold uppercase tracking-widest bg-primary/5 text-primary border-primary/10">
-                              {tag}
-                              <button onClick={() => handleRemoveTag(art.id, tag, art.tags)} className="text-primary/40 hover:text-destructive transition-colors">
-                                <X className="w-3 h-3" />
-                              </button>
-                            </Badge>
-                          )) : (
-                            <span className="text-[8px] text-muted-foreground uppercase tracking-widest italic opacity-40">Geen tags</span>
-                          )}
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <div className="flex gap-2">
-                            <Input 
-                              value={newTagInputs[art.id] || ""} 
-                              onChange={(e) => setNewTagInputs(prev => ({ ...prev, [art.id]: e.target.value }))}
-                              onKeyDown={(e) => { if (e.key === 'Enter') handleAddTag(art.id, art.tags) }}
-                              placeholder="Tag toevoegen..." 
-                              className="h-8 text-[9px] rounded-full bg-background/50 border-border"
-                            />
-                            <Button 
-                              variant="outline" 
-                              size="icon" 
-                              onClick={() => handleAddTag(art.id, art.tags)}
-                              className="h-8 w-8 rounded-full border-primary/20 shrink-0"
-                            >
-                              <Plus className="w-3.5 h-3.5" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
+                  </div>
+                  <CardContent className="p-6">
+                    <h4 className="font-headline text-xl font-light mb-1">{art.title}</h4>
+                    <p className="text-[9px] text-accent font-bold uppercase tracking-widest mb-4">{art.series} &bull; {art.year}</p>
+                    <div className="flex flex-wrap gap-1.5 mb-4">
+                      {art.tags?.map((tag: string) => (
+                        <Badge key={tag} variant="secondary" className="gap-1 py-0.5 px-2 rounded-full text-[8px] font-bold uppercase tracking-widest bg-primary/5">
+                          {tag}
+                          <button onClick={() => handleRemoveTag(art.id, tag, art.tags)}><X className="w-3 h-3" /></button>
+                        </Badge>
+                      ))}
+                    </div>
+                    <div className="flex gap-2">
+                      <Input 
+                        value={newTagInputs[art.id] || ""} 
+                        onChange={(e) => setNewTagInputs(prev => ({ ...prev, [art.id]: e.target.value }))}
+                        onKeyDown={(e) => { if (e.key === 'Enter') handleAddTag(art.id, art.tags) }}
+                        placeholder="Tag..." className="h-8 text-[9px] rounded-full"
+                      />
+                      <Button variant="outline" size="icon" onClick={() => handleAddTag(art.id, art.tags)} className="h-8 w-8 rounded-full"><Plus className="w-3.5 h-3.5" /></Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
         )}
 
-        {activeTab === 'atelier' && (
-          <div className="space-y-12">
-            <div className="flex items-center justify-between border-b border-border pb-6">
-              <div className="space-y-1">
-                <h2 className="text-3xl font-headline font-light">Atelier</h2>
-                <p className="text-muted-foreground uppercase tracking-[0.2em] font-bold text-[9px]">Beeldbewerking & Optimalisatie</p>
-              </div>
-              <div className="flex gap-3">
-                {selectedAtelierId && (
-                  <>
-                    <Button variant="outline" size="sm" onClick={() => navigateAtelier('prev')} className="h-8 w-8 p-0 rounded-full"><ChevronLeft className="w-4 h-4" /></Button>
-                    <Button variant="outline" size="sm" onClick={() => navigateAtelier('next')} className="h-8 w-8 p-0 rounded-full"><ChevronRight className="w-4 h-4" /></Button>
-                  </>
-                )}
-                <Button variant="outline" size="sm" onClick={() => { setSelectedAtelierId(null); setActiveTab('db'); }} className="text-[9px] uppercase font-bold rounded-full h-8 px-6">Terug naar archief</Button>
+        {activeTab === 'atelier' && selectedArtwork && (
+          <div className="grid lg:grid-cols-12 gap-12">
+            <div className="lg:col-span-7">
+              <div className="bg-muted/10 rounded-3xl border border-border p-8 min-h-[500px] flex items-center justify-center">
+                <div className="relative aspect-square w-full max-w-[600px]">
+                  <Image 
+                    src={selectedArtwork.imageUrl} alt={selectedArtwork.title} fill className="object-contain" unoptimized 
+                    style={{
+                      clipPath: `inset(${editValues.cropTop}% ${editValues.cropRight}% ${editValues.cropBottom}% ${editValues.cropLeft}%)`,
+                      filter: `brightness(${editValues.brightness / 100})`
+                    }}
+                  />
+                </div>
               </div>
             </div>
-
-            {!selectedAtelierId ? (
-              artworks && artworks.length > 0 ? (
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                  {artworks.map(art => (
-                    <button 
-                      key={art.id} 
-                      onClick={() => setSelectedAtelierId(art.id)}
-                      className="group relative aspect-square rounded-xl overflow-hidden border-2 border-transparent hover:border-primary transition-all"
-                    >
-                      <Image src={art.imageUrl} alt={art.title} fill className="object-cover" unoptimized />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center">
-                        <Brush className="text-white w-6 h-6" />
+            <div className="lg:col-span-5 space-y-8">
+              <Card className="rounded-3xl p-8 border-border bg-card/50 space-y-8">
+                <div className="space-y-4">
+                  <Label className="text-[10px] font-bold uppercase tracking-widest">Titel</Label>
+                  <Input value={editValues.title} onChange={(e) => handleUpdateText('title', e.target.value)} />
+                </div>
+                <div className="space-y-6">
+                  <h4 className="text-[10px] font-bold uppercase tracking-widest">Crop (%)</h4>
+                  {['cropTop', 'cropBottom', 'cropLeft', 'cropRight'].map(field => (
+                    <div key={field} className="space-y-2">
+                      <div className="flex justify-between text-[9px] uppercase tracking-widest opacity-60">
+                        <span>{field.replace('crop', '')}</span>
+                        <span>{editValues[field as keyof typeof editValues]}%</span>
                       </div>
-                    </button>
+                      <Slider value={[editValues[field as keyof typeof editValues]]} max={50} step={0.1} onValueChange={([val]) => handleUpdateAtelier(field, val)} />
+                    </div>
                   ))}
                 </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-40 gap-6 border-2 border-dashed border-border rounded-3xl bg-muted/5">
-                  <p className="text-muted-foreground font-light text-lg">Importeer eerst schilderijen om ze te bewerken.</p>
-                  <Button onClick={() => setActiveTab('scan')} className="rounded-full px-8 uppercase tracking-widest font-bold text-xs h-12">
-                    <UploadCloud className="mr-2 w-4 h-4" /> Foto's Invoeren
-                  </Button>
+                <div className="space-y-4">
+                  <Label className="text-[10px] font-bold uppercase tracking-widest">Helderheid ({editValues.brightness}%)</Label>
+                  <Slider value={[editValues.brightness]} max={200} min={50} step={1} onValueChange={([val]) => handleUpdateAtelier('brightness', val)} />
                 </div>
-              )
-            ) : (
-              <div className="grid lg:grid-cols-12 gap-12">
-                <div className="lg:col-span-7 space-y-8">
-                  <div className="bg-muted/10 rounded-3xl border border-border overflow-hidden flex items-center justify-center p-8 min-h-[500px] relative">
-                    <div className="relative w-full h-full aspect-square max-h-[600px]">
-                      {selectedArtwork && (
-                        <Image 
-                          src={selectedArtwork.imageUrl} 
-                          alt={selectedArtwork.title} 
-                          fill 
-                          className="object-contain" 
-                          unoptimized 
-                          style={{
-                            clipPath: `inset(${editValues.cropTop}% ${editValues.cropRight}% ${editValues.cropBottom}% ${editValues.cropLeft}%)`,
-                            filter: `brightness(${editValues.brightness / 100})`
-                          }}
-                        />
-                      )}
-                    </div>
-                  </div>
+                <div className="flex gap-4 pt-4">
+                  <Button onClick={() => navigateAtelier('next')} className="flex-1 h-12 rounded-xl text-[10px] uppercase font-bold tracking-widest">Volgende</Button>
+                  <Button variant="outline" onClick={() => setSelectedAtelierId(null)} className="flex-1 h-12 rounded-xl text-[10px] uppercase font-bold tracking-widest">Sluiten</Button>
                 </div>
-
-                <div className="lg:col-span-5 space-y-8">
-                  <Card className="rounded-3xl p-8 border-border bg-card/50 shadow-xl space-y-10">
-                    <div className="space-y-6">
-                      <div className="flex items-center gap-2">
-                        <Type className="w-4 h-4 text-primary" />
-                        <h4 className="text-[10px] font-bold uppercase tracking-widest">Informatie</h4>
-                      </div>
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label className="text-[9px] uppercase tracking-widest opacity-60">Titel</Label>
-                          <Input 
-                            value={editValues.title} 
-                            onChange={(e) => handleUpdateText('title', e.target.value)}
-                            className="bg-background border-border"
-                            placeholder="Titel van het werk"
-                          />
-                        </div>
-                        <p className="text-[9px] font-bold uppercase tracking-widest text-accent">{selectedArtwork?.series} &bull; {selectedArtwork?.year}</p>
-                      </div>
-                    </div>
-
-                    <div className="space-y-12">
-                      <div className="space-y-8">
-                        <div className="flex items-center gap-2 mb-4">
-                          <Crop className="w-4 h-4 text-primary" />
-                          <h4 className="text-[10px] font-bold uppercase tracking-widest">Crop Instellingen (%)</h4>
-                        </div>
-
-                        {[
-                          { label: 'Boven', field: 'cropTop' },
-                          { label: 'Onder', field: 'cropBottom' },
-                          { label: 'Links', field: 'cropLeft' },
-                          { label: 'Rechts', field: 'cropRight' },
-                        ].map((c) => (
-                          <div key={c.field} className="space-y-4">
-                            <div className="flex justify-between items-center">
-                              <Label className="text-[9px] uppercase tracking-widest opacity-60">{c.label}</Label>
-                              <span className="text-[10px] font-mono font-bold">
-                                {editValues[c.field as keyof typeof editValues].toFixed(1)}%
-                              </span>
-                            </div>
-                            <Slider 
-                              value={[editValues[c.field as keyof typeof editValues]]} 
-                              max={50} 
-                              step={0.1}
-                              onValueChange={([val]) => handleUpdateAtelier(c.field, val)}
-                            />
-                          </div>
-                        ))}
-                      </div>
-
-                      <div className="space-y-6 pt-8 border-t border-border">
-                        <div className="flex items-center gap-2 mb-4">
-                          <Sun className="w-4 h-4 text-primary" />
-                          <h4 className="text-[10px] font-bold uppercase tracking-widest">Helderheid</h4>
-                        </div>
-                        <Slider 
-                          value={[editValues.brightness]} 
-                          max={200} 
-                          min={50}
-                          step={1}
-                          onValueChange={([val]) => handleUpdateAtelier('brightness', val)}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="pt-8 flex gap-4">
-                      <Button onClick={() => navigateAtelier('next')} className="flex-1 h-14 text-[10px] font-bold uppercase tracking-widest rounded-2xl">Volgende</Button>
-                      <Button variant="outline" onClick={() => setSelectedAtelierId(null)} className="flex-1 h-14 text-[10px] font-bold uppercase tracking-widest rounded-2xl">Sluiten</Button>
-                    </div>
-                  </Card>
-                </div>
-              </div>
-            )}
+              </Card>
+            </div>
           </div>
         )}
 
         {activeTab === 'scan' && (
-          <div className="space-y-12">
-            <div className="flex flex-col items-center justify-center text-center space-y-4 mb-12">
-              <h2 className="text-4xl font-headline font-light">Foto's Invoeren</h2>
-              <p className="text-muted-foreground text-sm uppercase tracking-widest font-bold">Importeer een serie schilderijen van je NAS</p>
+          <div className="max-w-2xl mx-auto space-y-12 text-center">
+            <h2 className="text-4xl font-headline font-light">Importeren</h2>
+            <div className="border-2 border-dashed border-border rounded-3xl p-16 bg-muted/5 group hover:border-primary/50 transition-all">
+              <input type="file" multiple className="hidden" id="file-scanner" onChange={handleFileScan} accept="image/*" {...({ webkitdirectory: "", directory: "" } as any)} />
+              <FolderOpen className="w-16 h-16 text-primary/20 mb-6 mx-auto" />
+              <Button size="lg" className="h-14 px-12 rounded-full font-bold uppercase tracking-widest text-xs" asChild>
+                <label htmlFor="file-scanner" className="cursor-pointer">Map Selecteren</label>
+              </Button>
             </div>
-
-            <div className="grid lg:grid-cols-2 gap-12">
-              <div className="space-y-8">
-                <div className="border-2 border-dashed border-border rounded-3xl p-16 bg-muted/5 flex flex-col items-center justify-center text-center transition-all hover:bg-muted/10 hover:border-primary/50 group">
-                  <input type="file" multiple className="hidden" id="file-scanner" onChange={handleFileScan} accept="image/*" {...({ webkitdirectory: "", directory: "" } as any)} />
-                  <FolderOpen className="w-16 h-16 text-primary/20 mb-6 transition-colors group-hover:text-primary/40" />
-                  <Button size="lg" className="h-14 px-12 rounded-full font-bold uppercase tracking-widest text-xs" asChild>
-                    <label htmlFor="file-scanner" className="cursor-pointer">Map Selecteren</label>
-                  </Button>
-                </div>
-              </div>
-
-              {scannedFiles.length > 0 && (
-                <div className="space-y-6">
-                  <Card className="border-primary/20 shadow-2xl bg-primary/5 rounded-3xl p-8 space-y-8">
-                    <h3 className="text-3xl font-headline font-light text-primary">Scan Gereed</h3>
-                    <p className="text-sm uppercase tracking-widest text-muted-foreground font-bold">{scannedFiles.length} kunstwerken gevonden.</p>
-                    {loading ? (
-                      <div className="space-y-4">
-                        <Progress value={uploadProgress} className="h-4 rounded-full" />
-                        <p className="text-center font-bold text-[10px] uppercase tracking-widest">{currentUploadItem} / {scannedFiles.length}</p>
-                      </div>
-                    ) : (
-                      <Button onClick={handleSaveAll} className="w-full h-16 text-lg font-bold rounded-2xl uppercase tracking-widest shadow-xl">Start Import</Button>
-                    )}
-                  </Card>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'settings' && (
-          <div className="max-w-2xl mx-auto">
-            <Card className="border-border shadow-2xl rounded-3xl p-10 space-y-12 bg-card/50">
-              <h2 className="text-4xl font-headline font-light">NAS Setup</h2>
-              <div className="space-y-6">
-                <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Netwerk Locatie</Label>
-                <Input value={nasBaseUrl} onChange={(e) => setNasBaseUrl(e.target.value)} className="font-mono h-12 text-sm rounded-lg" />
-              </div>
-            </Card>
+            {scannedFiles.length > 0 && (
+              <Card className="p-8 border-primary/20 bg-primary/5 rounded-3xl space-y-6">
+                <p className="font-bold text-sm uppercase tracking-widest">{scannedFiles.length} kunstwerken gevonden.</p>
+                {loading ? <Progress value={uploadProgress} className="h-3" /> : <Button onClick={handleSaveAll} className="w-full h-14 rounded-xl font-bold uppercase tracking-widest">Start Import</Button>}
+              </Card>
+            )}
           </div>
         )}
 
         {activeTab === 'system' && (
           <div className="max-w-2xl mx-auto space-y-8">
             <h2 className="text-4xl font-headline font-light text-center">Systeem</h2>
-            <Card className="border-border shadow-xl rounded-3xl p-8 space-y-6 bg-card/30">
-              <div className="p-6 bg-background rounded-2xl border border-border flex items-center justify-between">
+            <Card className="p-8 space-y-6 rounded-3xl bg-card/30">
+              <div className="flex items-center justify-between p-6 bg-background rounded-2xl border">
                 <div>
-                  <h3 className="text-xl font-headline font-light">Voorbeelden Herstellen</h3>
-                  <p className="text-[9px] text-muted-foreground uppercase tracking-widest">Vult de database met de standaard collectie</p>
+                  <h3 className="text-xl font-headline font-light">Voorbeelden</h3>
+                  <p className="text-[9px] text-muted-foreground uppercase tracking-widest">Herstel de basiscollectie</p>
                 </div>
-                <Button onClick={handleSeedDatabase} disabled={loading} className="h-12 px-8 rounded-xl gap-2 font-bold text-[10px] uppercase tracking-widest">
-                  Seed DB
-                </Button>
+                <Button onClick={handleSeedDatabase} disabled={loading} className="h-10 px-6 font-bold text-[10px] uppercase tracking-widest">Seed DB</Button>
               </div>
               <div className="flex items-center justify-between p-6 bg-destructive/5 rounded-2xl border border-destructive/10">
                 <h3 className="text-xl font-headline font-light text-destructive">Database Wissen</h3>
-                <Button variant="outline" onClick={handleClearDatabase} disabled={loading} className="h-12 px-8 rounded-xl border-destructive text-destructive font-bold text-[10px] uppercase tracking-widest">
-                  Reset DB
-                </Button>
+                <Button variant="outline" onClick={handleClearDatabase} disabled={loading} className="h-10 px-6 border-destructive text-destructive font-bold text-[10px] uppercase tracking-widest">Reset DB</Button>
               </div>
             </Card>
           </div>
