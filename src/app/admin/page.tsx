@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
@@ -313,7 +312,7 @@ export default function AdminPage() {
             <div className="max-w-xl mx-auto space-y-8 text-center">
               <div className="space-y-2">
                 <h2 className="text-3xl font-headline font-light">Direct Uploaden naar Cloud</h2>
-                <p className="text-muted-foreground text-sm">Upload foto's direct vanaf je computer naar Firebase. Geen NAS nodig.</p>
+                <p className="text-muted-foreground text-sm">Upload foto&apos;s direct vanaf je computer naar Firebase. Geen NAS nodig.</p>
               </div>
 
               <Card className="p-12 rounded-3xl border-dashed border-2 border-accent/20 bg-accent/5 flex flex-col items-center justify-center space-y-6">
@@ -349,7 +348,7 @@ export default function AdminPage() {
                 <div className="space-y-1">
                   <h4 className="text-[10px] uppercase font-bold text-blue-600">Belangrijk</h4>
                   <p className="text-xs text-muted-foreground">
-                    Zorg dat 'Storage' is ingeschakeld in de Firebase Console. Ga naar <strong>Storage</strong> > <strong>Get Started</strong> > <strong>Production Mode</strong>.
+                    Zorg dat &apos;Storage&apos; is ingeschakeld in de Firebase Console. Ga naar <strong>Storage</strong> &gt; <strong>Get Started</strong> &gt; <strong>Production Mode</strong>.
                   </p>
                 </div>
               </div>
@@ -360,7 +359,7 @@ export default function AdminPage() {
             <div className="max-w-3xl mx-auto space-y-8">
               <div className="text-center space-y-2">
                 <h2 className="text-3xl font-headline font-light">NAS Folder Helper</h2>
-                <p className="text-muted-foreground text-sm">Beheer je foto's vanaf je eigen Synology server.</p>
+                <p className="text-muted-foreground text-sm">Beheer je foto&apos;s vanaf je eigen Synology server.</p>
               </div>
 
               <div className="grid gap-4">
@@ -371,7 +370,7 @@ export default function AdminPage() {
                     </AccordionTrigger>
                     <AccordionContent className="space-y-4 pb-6">
                       <div className="space-y-3 text-sm text-muted-foreground leading-relaxed">
-                        <p className="font-bold text-blue-600">Cruciaal: Gebruik het tabblad 'Webservice', NIET 'Webportaal'.</p>
+                        <p className="font-bold text-blue-600">Cruciaal: Gebruik het tabblad &apos;Webservice&apos;, NIET &apos;Webportaal&apos;.</p>
                         <ol className="list-decimal pl-5 space-y-2">
                           <li>Open de app <strong>Web Station</strong> op je NAS.</li>
                           <li>Klik in het linkermenu op <strong>Webservice</strong>.</li>
@@ -392,7 +391,7 @@ export default function AdminPage() {
                 <Accordion type="single" collapsible className="w-full bg-accent/5 rounded-2xl border border-accent/10 px-6">
                   <AccordionItem value="http-group" className="border-none">
                     <AccordionTrigger className="text-[11px] uppercase font-bold tracking-widest text-accent hover:no-underline">
-                      <UserPlus className="w-4 h-4 mr-2" /> Stap 2: De 'http' groep machtigen
+                      <UserPlus className="w-4 h-4 mr-2" /> Stap 2: De &apos;http&apos; groep machtigen
                     </AccordionTrigger>
                     <AccordionContent className="space-y-4 pb-6">
                       <div className="space-y-3 text-sm text-muted-foreground leading-relaxed">
@@ -534,7 +533,7 @@ export default function AdminPage() {
 
               <div className="md:col-span-3 space-y-4">
                 <Label className="text-[9px] uppercase font-bold tracking-widest opacity-50 flex items-center gap-2">
-                  <Tag className="w-3 h-3" /> Thema's / Tags
+                  <Tag className="w-3 h-3" /> Thema&apos;s / Tags
                 </Label>
                 <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto no-scrollbar">
                   {STANDARD_TAGS.map(tag => (
