@@ -21,14 +21,11 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
 
 export default function AdminPage() {
   const firestore = useFirestore();
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('db');
-  const [newTagInputs, setNewTagInputs] = useState<Record<string, string>>({});
   
   const [password, setPassword] = useState('');
   const [isAuthorized, setIsAuthorized] = useState(false);
