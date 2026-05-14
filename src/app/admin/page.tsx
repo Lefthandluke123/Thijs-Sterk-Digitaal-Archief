@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { useFirestore, useCollection } from '@/firebase';
 import { collection, doc, serverTimestamp, deleteDoc, addDoc, query, orderBy, updateDoc } from 'firebase/firestore';
@@ -36,6 +36,7 @@ export default function AdminPage() {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [bulkJson, setBulkJson] = useState('');
   const [activeTab, setActiveTab] = useState('archive');
+  const directoryInputRef = useRef<HTMLInputElement>(null);
   
   // NAS Helper state
   const [nasBaseUrl, setNasBaseUrl] = useState('https://192-168-178-15.doggyfew.direct.quickconnect.to:5001/web/');
@@ -74,62 +75,69 @@ export default function AdminPage() {
     }
   };
 
-  const handleScanFolder = async () => {
-    // Check of de browser showDirectoryPicker ondersteunt
-    if (typeof (window as any).showDirectoryPicker === 'undefined') {
+  const handleScanFolder = () => {
+    // Trigger de verborgen input die in Firefox/Chrome mappen kan lezen
+    if (directoryInputRef.current) {
+      directoryInputRef.current.click();
+    }
+  };
+
+  const handleDirectoryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const imageFiles: string[] = [];
+    const imageExtensions = /\.(jpe?g|png|webp|avif)$/i;
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      // We pakken alleen de bestandsnaam, niet het volledige pad (voor privacy/security redenen)
+      if (imageExtensions.test(file.name)) {
+        imageFiles.push(file.name);
+      }
+    }
+
+    if (imageFiles.length === 0) {
       toast({ 
         variant: "destructive", 
-        title: "Browser niet ondersteund", 
-        description: "Je browser ondersteunt het automatisch scannen van mappen niet. Gebruik Google Chrome of Microsoft Edge voor deze functie." 
+        title: "Geen foto's", 
+        description: "Geen geschikte afbeeldingen gevonden in de geselecteerde map." 
       });
       return;
     }
 
-    try {
-      const dirHandle = await (window as any).showDirectoryPicker();
-      const files: string[] = [];
-      
-      for await (const entry of dirHandle.values()) {
-        if (entry.kind === 'file' && /\.(jpe?g|png|webp|avif)$/i.test(entry.name)) {
-          files.push(entry.name);
-        }
-      }
-      
-      if (files.length === 0) {
-        toast({ variant: "destructive", title: "Geen foto's", description: "Geen geschikte afbeeldingen gevonden in deze map." });
-        return;
-      }
-
-      setNasFileNames(files.join('\n'));
-      
-      const baseUrlClean = nasBaseUrl.endsWith('/') ? nasBaseUrl : nasBaseUrl + '/';
-      const generated = files.map(file => {
-        const title = file.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
-        return {
-          title: title || "Zonder titel",
-          series: "Import " + new Date().toLocaleDateString(),
-          imageUrl: baseUrlClean + file,
-          medium: "Olieverf op doek",
-          year: "",
-          description: "",
-          imageHint: "painting",
-          tags: [],
-          cropTop: 0,
-          cropBottom: 0,
-          cropLeft: 0,
-          cropRight: 0,
-          brightness: 1
-        };
-      });
-      setBulkJson(JSON.stringify(generated, null, 2));
-      setActiveTab('bulk');
-      toast({ title: "Map gelezen", description: `${files.length} afbeeldingen klaargezet voor import.` });
-
-    } catch (err: any) {
-      if (err.name !== 'AbortError') {
-        console.error(err);
-        toast({ variant: "destructive", title: "Fout bij inlezen", description: "Kon de map niet benaderen. Controleer de browser-permissies." });
-      }
+    setNasFileNames(imageFiles.join('\n'));
+    
+    const baseUrlClean = nasBaseUrl.endsWith('/') ? nasBaseUrl : nasBaseUrl + '/';
+    const generated = imageFiles.map(file => {
+      const title = file.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
+      return {
+        title: title || "Zonder titel",
+        series: "Import " + new Date().toLocaleDateString(),
+        imageUrl: baseUrlClean + file,
+        medium: "Olieverf op doek",
+        year: "",
+        description: "",
+        imageHint: "painting",
+        tags: [],
+        cropTop: 0,
+        cropBottom: 0,
+        cropLeft: 0,
+        cropRight: 0,
+        brightness: 1
+      };
+    });
+    
+    setBulkJson(JSON.stringify(generated, null, 2));
+    setActiveTab('bulk');
+    toast({ 
+      title: "Map gelezen", 
+      description: `${imageFiles.length} afbeeldingen gevonden en klaargezet voor import.` 
+    });
+    
+    // Reset de input zodat dezelfde map opnieuw gekozen kan worden
+    if (directoryInputRef.current) {
+      directoryInputRef.current.value = '';
     }
   };
 
@@ -258,6 +266,15 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col pt-14">
+      {/* Verborgen input voor Firefox folder selectie */}
+      <input 
+        type="file" 
+        ref={directoryInputRef} 
+        style={{ display: 'none' }} 
+        onChange={handleDirectoryChange}
+        {...({ webkitdirectory: "", directory: "" } as any)} 
+      />
+
       <header className="h-16 border-b border-border bg-background/95 backdrop-blur-sm sticky top-14 z-40 px-8 flex items-center justify-between">
         <h1 className="font-headline text-xl font-light">Atelier <span className="italic">Beheer</span></h1>
         <Button variant="outline" asChild className="rounded-full h-9 px-4 border-primary/20 text-primary text-[10px] uppercase tracking-widest">
@@ -433,7 +450,7 @@ export default function AdminPage() {
             <div className="max-w-2xl mx-auto space-y-6">
               <div className="text-center space-y-2">
                 <h2 className="text-3xl font-headline font-light">Automatische NAS Import</h2>
-                <p className="text-muted-foreground text-sm">Scan een map op je NAS en importeer alle foto's direct.</p>
+                <p className="text-muted-foreground text-sm">Selecteer een map op je computer of NAS om alle foto's direct te indexeren.</p>
               </div>
               
               <Card className="p-8 rounded-3xl border-border bg-card/50 shadow-xl space-y-8">
@@ -455,10 +472,10 @@ export default function AdminPage() {
                       className="w-full h-20 rounded-2xl font-bold uppercase tracking-widest bg-accent hover:bg-accent/90 text-lg shadow-lg group"
                     >
                       <FolderOpen className="mr-4 w-8 h-8 group-hover:scale-110 transition-transform" />
-                      Scan NAS Map
+                      Selecteer Map
                     </Button>
                     <p className="text-[10px] text-center mt-4 text-muted-foreground flex items-center justify-center gap-2">
-                      <AlertCircle className="w-3 h-3" /> Let op: Werkt alleen in Chrome of Edge.
+                      <AlertCircle className="w-3 h-3" /> Werkt in Firefox, Chrome en Edge.
                     </p>
                   </div>
                 </div>
