@@ -41,13 +41,12 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
-        hostname: '192-168-178-15.doggyfew.direct.quickconnect.to',
-        port: '5001',
+        hostname: '*.direct.quickconnect.to',
         pathname: '/**',
       },
       {
         protocol: 'https',
-        hostname: '*.direct.quickconnect.to',
+        hostname: '*.quickconnect.to',
         pathname: '/**',
       },
       {

@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useRef } from 'react';
@@ -18,7 +17,6 @@ import {
   FolderOpen,
   RefreshCw,
   Scissors,
-  AlertCircle,
   Settings
 } from 'lucide-react';
 import Image from 'next/image';
@@ -169,7 +167,6 @@ export default function AdminPage() {
       const artworksArray = Array.isArray(data) ? data : [data];
       const artworkCol = collection(firestore, 'artworks');
       
-      let count = 0;
       artworksArray.forEach((item: any) => {
         const docData = {
           ...item,
@@ -190,10 +187,9 @@ export default function AdminPage() {
               requestResourceData: docData
             }));
           });
-        count++;
       });
       
-      toast({ title: "Import Gestart", description: `${count} werken worden toegevoegd aan het archief.` });
+      toast({ title: "Import Gestart", description: `${artworksArray.length} werken worden toegevoegd.` });
       setBulkJson('');
       setActiveTab('archive');
     } catch (err) {
@@ -225,6 +221,9 @@ export default function AdminPage() {
       }));
     });
   };
+
+  // Helper om te checken of een URL van de NAS komt
+  const isNASUrl = (url: string) => url?.includes('quickconnect.to') || url?.includes('192.168');
 
   return (
     <div className="min-h-screen bg-background flex flex-col pt-14">
@@ -265,17 +264,30 @@ export default function AdminPage() {
               {artworks?.map((art: any) => (
                 <Card key={art.id} className="overflow-hidden bg-card border-border rounded-2xl group flex flex-col">
                   <div className="relative aspect-[4/3] bg-muted/20 overflow-hidden">
-                    <Image 
-                      src={art.imageUrl} 
-                      alt={art.title} 
-                      fill 
-                      className="object-cover transition-transform duration-500 group-hover:scale-105" 
-                      unoptimized 
-                      style={{
-                        clipPath: `inset(${art.cropTop || 0}% ${art.cropRight || 0}% ${art.cropBottom || 0}% ${art.cropLeft || 0}%)`,
-                        filter: `brightness(${art.brightness || 1})`
-                      }}
-                    />
+                    {/* Gebruik standaard img voor NAS om Next.js proxying te omzeilen indien nodig */}
+                    {isNASUrl(art.imageUrl) ? (
+                      <img 
+                        src={art.imageUrl} 
+                        alt={art.title} 
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        style={{
+                          clipPath: `inset(${art.cropTop || 0}% ${art.cropRight || 0}% ${art.cropBottom || 0}% ${art.cropLeft || 0}%)`,
+                          filter: `brightness(${art.brightness || 1})`
+                        }}
+                      />
+                    ) : (
+                      <Image 
+                        src={art.imageUrl} 
+                        alt={art.title} 
+                        fill 
+                        className="object-cover transition-transform duration-500 group-hover:scale-105" 
+                        unoptimized
+                        style={{
+                          clipPath: `inset(${art.cropTop || 0}% ${art.cropRight || 0}% ${art.cropBottom || 0}% ${art.cropLeft || 0}%)`,
+                          filter: `brightness(${art.brightness || 1})`
+                        }}
+                      />
+                    )}
                     <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
                       <Button variant="destructive" size="icon" onClick={() => handleDeleteArtwork(art.id)} className="rounded-full h-8 w-8">
                         <Trash2 className="w-3.5 h-3.5" />
@@ -367,17 +379,29 @@ export default function AdminPage() {
                 <div className="sticky top-32 space-y-8">
                   <div className="relative aspect-square rounded-2xl overflow-hidden bg-muted/20 border-2 border-dashed border-border flex items-center justify-center">
                     {newArtwork.imageUrl ? (
-                      <Image 
-                        src={newArtwork.imageUrl} 
-                        alt="Preview" 
-                        fill 
-                        className="object-cover" 
-                        unoptimized
-                        style={{
-                          clipPath: `inset(${newArtwork.cropTop}% ${newArtwork.cropRight}% ${newArtwork.cropBottom}% ${newArtwork.cropLeft}%)`,
-                          filter: `brightness(${newArtwork.brightness})`
-                        }}
-                      />
+                      isNASUrl(newArtwork.imageUrl) ? (
+                        <img 
+                          src={newArtwork.imageUrl} 
+                          alt="Preview" 
+                          className="w-full h-full object-cover" 
+                          style={{
+                            clipPath: `inset(${newArtwork.cropTop}% ${newArtwork.cropRight}% ${newArtwork.cropBottom}% ${newArtwork.cropLeft}%)`,
+                            filter: `brightness(${newArtwork.brightness})`
+                          }}
+                        />
+                      ) : (
+                        <Image 
+                          src={newArtwork.imageUrl} 
+                          alt="Preview" 
+                          fill 
+                          className="object-cover" 
+                          unoptimized
+                          style={{
+                            clipPath: `inset(${newArtwork.cropTop}% ${newArtwork.cropRight}% ${newArtwork.cropBottom}% ${newArtwork.cropLeft}%)`,
+                            filter: `brightness(${newArtwork.brightness})`
+                          }}
+                        />
+                      )
                     ) : (
                       <div className="text-center p-8 opacity-20">
                         <ImageIcon className="w-12 h-12 mx-auto mb-2" />
@@ -468,7 +492,7 @@ export default function AdminPage() {
             <div className="max-w-4xl mx-auto space-y-6">
               <div className="text-center">
                 <h2 className="text-3xl font-headline font-light">Bulk Overzicht</h2>
-                <p className="text-muted-foreground text-sm">Controleer de data en start de import. Dit proces is nu razendsnel.</p>
+                <p className="text-muted-foreground text-sm">Controleer de data en start de import.</p>
               </div>
               
               <Card className="p-8 rounded-3xl border-border bg-card/50 shadow-xl">

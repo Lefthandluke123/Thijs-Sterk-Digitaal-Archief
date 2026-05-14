@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo } from 'react';
@@ -20,10 +19,7 @@ export function PortfolioGrid() {
 
   const { data: artworks, loading } = useCollection(artworksQuery);
 
-  const isExternalStorage = (url: string) => {
-    if (!url) return false;
-    return url.includes('drive.google.com') || url.includes('gofile.me') || url.includes('quickconnect.to');
-  };
+  const isNASUrl = (url: string) => url?.includes('quickconnect.to') || url?.includes('192.168');
 
   return (
     <section className="py-24 bg-background px-4" id="portfolio">
@@ -51,18 +47,29 @@ export function PortfolioGrid() {
                 onClick={() => setSelectedArtwork(art)}
               >
                 <div className="relative aspect-square overflow-hidden rounded-lg bg-muted/30 transition-all duration-500 group-hover:shadow-lg">
-                  <Image
-                    src={art.imageUrl}
-                    alt={art.title}
-                    fill
-                    className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-                    unoptimized={isExternalStorage(art.imageUrl)}
-                    style={{
-                      clipPath: `inset(${art.cropTop || 0}% ${art.cropRight || 0}% ${art.cropBottom || 0}% ${art.cropLeft || 0}%)`,
-                      filter: `brightness(${art.brightness || 1})`
-                    }}
-                  />
-                  {/* Watermark */}
+                  {isNASUrl(art.imageUrl) ? (
+                    <img
+                      src={art.imageUrl}
+                      alt={art.title}
+                      className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                      style={{
+                        clipPath: `inset(${art.cropTop || 0}% ${art.cropRight || 0}% ${art.cropBottom || 0}% ${art.cropLeft || 0}%)`,
+                        filter: `brightness(${art.brightness || 1})`
+                      }}
+                    />
+                  ) : (
+                    <Image
+                      src={art.imageUrl}
+                      alt={art.title}
+                      fill
+                      className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                      unoptimized
+                      style={{
+                        clipPath: `inset(${art.cropTop || 0}% ${art.cropRight || 0}% ${art.cropBottom || 0}% ${art.cropLeft || 0}%)`,
+                        filter: `brightness(${art.brightness || 1})`
+                      }}
+                    />
+                  )}
                   <div className="absolute bottom-2 right-2 z-10 pointer-events-none opacity-20 text-[6px] uppercase tracking-widest text-white font-bold bg-black/20 px-1 rounded-sm">
                     &copy; Erven Thijs Sterk
                   </div>
@@ -88,18 +95,29 @@ export function PortfolioGrid() {
           <div className="relative flex-1 bg-black/90 flex items-center justify-center overflow-hidden">
             {selectedArtwork && (
               <div className="relative w-full h-full flex items-center justify-center">
-                <Image
-                  src={selectedArtwork.imageUrl}
-                  alt={selectedArtwork.title}
-                  fill
-                  className="object-contain p-4 md:p-12"
-                  unoptimized={isExternalStorage(selectedArtwork.imageUrl)}
-                  style={{
-                    clipPath: `inset(${selectedArtwork.cropTop || 0}% ${selectedArtwork.cropRight || 0}% ${selectedArtwork.cropBottom || 0}% ${selectedArtwork.cropLeft || 0}%)`,
-                    filter: `brightness(${selectedArtwork.brightness || 1})`
-                  }}
-                />
-                {/* Visual Watermark Overlay in Dialog */}
+                {isNASUrl(selectedArtwork.imageUrl) ? (
+                  <img
+                    src={selectedArtwork.imageUrl}
+                    alt={selectedArtwork.title}
+                    className="max-w-full max-h-full object-contain p-4 md:p-12"
+                    style={{
+                      clipPath: `inset(${selectedArtwork.cropTop || 0}% ${selectedArtwork.cropRight || 0}% ${selectedArtwork.cropBottom || 0}% ${selectedArtwork.cropLeft || 0}%)`,
+                      filter: `brightness(${selectedArtwork.brightness || 1})`
+                    }}
+                  />
+                ) : (
+                  <Image
+                    src={selectedArtwork.imageUrl}
+                    alt={selectedArtwork.title}
+                    fill
+                    className="object-contain p-4 md:p-12"
+                    unoptimized
+                    style={{
+                      clipPath: `inset(${selectedArtwork.cropTop || 0}% ${selectedArtwork.cropRight || 0}% ${selectedArtwork.cropBottom || 0}% ${selectedArtwork.cropLeft || 0}%)`,
+                      filter: `brightness(${selectedArtwork.brightness || 1})`
+                    }}
+                  />
+                )}
                 <div className="absolute inset-0 pointer-events-none flex items-center justify-center opacity-[0.03] select-none rotate-[-45deg]">
                   <span className="text-6xl md:text-8xl font-bold uppercase tracking-[0.5em] text-foreground">
                     Erven Thijs Sterk
