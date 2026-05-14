@@ -368,7 +368,7 @@ export default function AdminPage() {
                     ) : (
                       <div className="text-center p-8 opacity-20">
                         <ImageIcon className="w-12 h-12 mx-auto mb-2" />
-                        <p className="text-[10px] uppercase font-bold">Voer een URL in voor preview</p>
+                        <p className="text-center text-[10px] uppercase font-bold">Voer een URL in voor preview</p>
                       </div>
                     )}
                   </div>
@@ -416,7 +416,7 @@ export default function AdminPage() {
                     onChange={(e) => setNasBaseUrl(e.target.value)}
                     className="rounded-xl"
                   />
-                  <p className="text-[9px] text-muted-foreground italic">Zorg dat deze map toegankelijk is via Web Station of File Station.</p>
+                  <p className="text-[9px] text-muted-foreground italic">Tip: /volume1/web op je NAS wordt meestal geserveerd via poort 80/443 of DSM poort 5001.</p>
                 </div>
                 
                 <div className="space-y-2">
