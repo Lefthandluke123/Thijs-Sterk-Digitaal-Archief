@@ -34,7 +34,8 @@ import {
   Link as LinkIcon,
   Calendar,
   Type,
-  Star
+  Star,
+  LayoutGrid
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -77,6 +78,15 @@ export default function AdminPage() {
   }, [firestore]);
 
   const { data: artworks, loading: isCollectionLoading } = useCollection(artworksQuery);
+
+  const existingSeries = useMemo(() => {
+    if (!artworks) return [];
+    const series = new Set<string>();
+    artworks.forEach(art => {
+      if (art.series) series.add(art.series);
+    });
+    return Array.from(series).sort();
+  }, [artworks]);
 
   const editingArtwork = useMemo(() => {
     return artworks?.find(art => art.id === editingId) || null;
@@ -613,16 +623,30 @@ export default function AdminPage() {
                     className="h-8 text-sm font-headline bg-muted/20 border-border/30 rounded-lg px-3"
                   />
                 </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[9px] uppercase font-bold tracking-widest opacity-50 flex items-center gap-1"><LayoutGrid className="w-3 h-3" /> Selectie / Serie (Zaal)</Label>
+                  <Input 
+                    key={editingArtwork?.id + '-series'}
+                    defaultValue={editingArtwork?.series || ''} 
+                    onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'series', e.target.value)} 
+                    className="h-8 text-[10px] bg-muted/20 border-border/30 rounded-lg px-3 text-accent font-bold"
+                    placeholder="Bijv. Landschappen"
+                  />
+                  {existingSeries.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {existingSeries.map(s => (
+                        <button 
+                          key={s} 
+                          onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, 'series', s)}
+                          className="text-[7px] uppercase font-bold bg-muted/30 px-1.5 py-0.5 rounded-sm hover:bg-accent hover:text-white transition-colors"
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <Label className="text-[9px] uppercase font-bold tracking-widest opacity-50">Selectie / Serie</Label>
-                    <Input 
-                      key={editingArtwork?.id + '-series'}
-                      defaultValue={editingArtwork?.series || ''} 
-                      onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'series', e.target.value)} 
-                      className="h-8 text-[10px] bg-muted/20 border-border/30 rounded-lg px-3 text-accent font-bold"
-                    />
-                  </div>
                   <div className="space-y-1.5">
                     <Label className="text-[9px] uppercase font-bold tracking-widest opacity-50 flex items-center gap-1"><Calendar className="w-3 h-3" /> Jaar</Label>
                     <Input 
@@ -632,15 +656,15 @@ export default function AdminPage() {
                       className="h-8 text-[10px] bg-muted/20 border-border/30 rounded-lg px-3"
                     />
                   </div>
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-[9px] uppercase font-bold tracking-widest opacity-50">Materiaal / Medium</Label>
-                  <Input 
-                    key={editingArtwork?.id + '-medium'}
-                    defaultValue={editingArtwork?.medium || ''} 
-                    onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'medium', e.target.value)} 
-                    className="h-8 text-[10px] bg-muted/20 border-border/30 rounded-lg px-3"
-                  />
+                  <div className="space-y-1.5">
+                    <Label className="text-[9px] uppercase font-bold tracking-widest opacity-50">Medium</Label>
+                    <Input 
+                      key={editingArtwork?.id + '-medium'}
+                      defaultValue={editingArtwork?.medium || ''} 
+                      onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'medium', e.target.value)} 
+                      className="h-8 text-[10px] bg-muted/20 border-border/30 rounded-lg px-3"
+                    />
+                  </div>
                 </div>
               </div>
 
