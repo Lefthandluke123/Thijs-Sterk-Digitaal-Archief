@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useFirestore, useCollection } from '@/firebase';
 import { collection, doc, serverTimestamp, deleteDoc, addDoc, query, orderBy, updateDoc, getDocs } from 'firebase/firestore';
@@ -8,26 +8,19 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
 import { 
-  FolderOpen, 
   Trash2, 
-  Settings, 
   Plus,
   X,
-  Brush,
-  Sun,
-  Image as ImageIcon,
   Save,
   Loader2,
-  Database
+  Lock
 } from 'lucide-react';
 import Image from 'next/image';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-import { Progress } from "@/components/ui/progress";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Slider } from '@/components/ui/slider';
 import { Textarea } from '@/components/ui/textarea';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
@@ -37,6 +30,10 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState('db');
   const [newTagInputs, setNewTagInputs] = useState<Record<string, string>>({});
   
+  // Wachtwoord beveiliging
+  const [password, setPassword] = useState('');
+  const [isAuthorized, setIsAuthorized] = useState(false);
+
   // Formulier voor handmatig toevoegen
   const [newArtwork, setNewArtwork] = useState({
     title: "",
@@ -54,6 +51,16 @@ export default function AdminPage() {
   }, [firestore]);
 
   const { data: artworks, loading: dbLoading } = useCollection(artworksQuery);
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password === 'gabbes') {
+      setIsAuthorized(true);
+      toast({ title: "Toegang verleend", description: "Welkom in het atelier." });
+    } else {
+      toast({ variant: "destructive", title: "Fout wachtwoord", description: "Toegang geweigerd." });
+    }
+  };
 
   const handleAddManualArtwork = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -170,6 +177,40 @@ export default function AdminPage() {
       setLoading(false);
     }
   };
+
+  if (!isAuthorized) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="max-w-md w-full p-8 rounded-3xl border-border bg-card/50 shadow-2xl">
+          <div className="flex flex-col items-center text-center space-y-6">
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+              <Lock className="w-8 h-8 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-headline font-light mb-2">Beheer Toegang</h1>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Voer het wachtwoord in om het atelier te betreden</p>
+            </div>
+            <form onSubmit={handleLogin} className="w-full space-y-4">
+              <Input 
+                type="password" 
+                placeholder="Wachtwoord" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="h-12 text-center rounded-xl border-border focus:ring-accent"
+                autoFocus
+              />
+              <Button type="submit" className="w-full h-12 rounded-xl font-bold uppercase tracking-widest shadow-lg">
+                Betreden
+              </Button>
+            </form>
+            <Link href="/" className="text-[9px] uppercase tracking-widest font-bold text-muted-foreground hover:text-foreground transition-colors pt-4">
+              Terug naar de site
+            </Link>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col pt-14">
