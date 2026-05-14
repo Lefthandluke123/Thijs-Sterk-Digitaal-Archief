@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo } from 'react';
@@ -35,7 +36,6 @@ export default function AdminPage() {
   const [password, setPassword] = useState('');
   const [isAuthorized, setIsAuthorized] = useState(false);
 
-  // Formulier voor handmatig toevoegen
   const [newArtwork, setNewArtwork] = useState({
     title: "",
     series: "Onbekend",
@@ -145,40 +145,6 @@ export default function AdminPage() {
     });
   };
 
-  const handleSeedDatabase = async () => {
-    if (!firestore) return;
-    setLoading(true);
-    const artworkCol = collection(firestore, 'artworks');
-    
-    try {
-      const artworksToSeed = PlaceHolderImages.filter(img => img.id.startsWith('artwork-'));
-      for (const item of artworksToSeed) {
-        await addDoc(artworkCol, {
-          title: item.title || 'Ongetiteld',
-          series: item.series || 'Collectie',
-          year: item.year || 'Onbekend',
-          medium: item.medium || 'Olieverf',
-          imageUrl: item.imageUrl,
-          description: item.description,
-          imageHint: item.imageHint,
-          tags: [],
-          cropTop: 0,
-          cropBottom: 0,
-          cropLeft: 0,
-          cropRight: 0,
-          brightness: 1,
-          createdAt: serverTimestamp(),
-        });
-      }
-      toast({ title: "Database gevuld met voorbeelden" });
-      setActiveTab('db');
-    } catch (error) {
-      toast({ variant: "destructive", title: "Fout bij vullen" });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   if (!isAuthorized) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -225,7 +191,6 @@ export default function AdminPage() {
           <nav className="flex items-center gap-1">
             <Button variant={activeTab === 'db' ? 'secondary' : 'ghost'} onClick={() => setActiveTab('db')} className="h-9 px-4 font-bold text-[10px] uppercase tracking-widest">Archief</Button>
             <Button variant={activeTab === 'new' ? 'secondary' : 'ghost'} onClick={() => setActiveTab('new')} className="h-9 px-4 font-bold text-[10px] uppercase tracking-widest">Nieuw Werk</Button>
-            <Button variant={activeTab === 'system' ? 'secondary' : 'ghost'} onClick={() => setActiveTab('system')} className="h-9 px-4 font-bold text-[10px] uppercase tracking-widest">Systeem</Button>
           </nav>
         </div>
         <Button variant="outline" asChild className="rounded-full h-9 px-4 border-primary/20 text-primary text-[10px] uppercase tracking-widest">
@@ -253,10 +218,6 @@ export default function AdminPage() {
                         fill 
                         className="object-cover" 
                         unoptimized={true} 
-                        style={{
-                          clipPath: `inset(${art.cropTop || 0}% ${art.cropRight || 0}% ${art.cropBottom || 0}% ${art.cropLeft || 0}%)`,
-                          filter: `brightness(${art.brightness || 1})`
-                        }}
                       />
                       <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
                         <Button variant="destructive" size="icon" onClick={() => handleDeleteArtwork(art.id)} className="rounded-full h-8 w-8 shadow-lg"><Trash2 className="w-3.5 h-3.5" /></Button>
@@ -343,7 +304,6 @@ export default function AdminPage() {
                     placeholder="https://..."
                     required
                   />
-                  <p className="text-[8px] text-muted-foreground uppercase tracking-widest">Plak hier de directe link naar de afbeelding (bijv. van Google Drive of NAS).</p>
                 </div>
 
                 <div className="space-y-2">
@@ -360,38 +320,6 @@ export default function AdminPage() {
                   {loading ? <Loader2 className="animate-spin" /> : <><Save className="mr-2 w-4 h-4" /> Opslaan in Archief</>}
                 </Button>
               </form>
-            </Card>
-          </div>
-        )}
-
-        {activeTab === 'system' && (
-          <div className="max-w-2xl mx-auto space-y-8">
-            <h2 className="text-3xl font-headline font-light text-center">Systeeminstellingen</h2>
-            <Card className="p-8 space-y-6 rounded-3xl bg-card/30">
-              <div className="flex items-center justify-between p-6 bg-background rounded-2xl border">
-                <div>
-                  <h3 className="text-xl font-headline font-light">Voorbeelden Herstellen</h3>
-                  <p className="text-[9px] text-muted-foreground uppercase tracking-widest">Vul de database met de basiscollectie</p>
-                </div>
-                <Button onClick={handleSeedDatabase} disabled={loading} className="h-10 px-6 font-bold text-[10px] uppercase tracking-widest">Seed DB</Button>
-              </div>
-              
-              <div className="flex items-center justify-between p-6 bg-destructive/5 rounded-2xl border border-destructive/10">
-                <div>
-                  <h3 className="text-xl font-headline font-light text-destructive">Database Opschonen</h3>
-                  <p className="text-[9px] text-destructive/60 uppercase tracking-widest">Verwijder alle kunstwerken uit de cloud</p>
-                </div>
-                <Button variant="outline" onClick={async () => {
-                  if (!firestore || !confirm("Weet je dit heel zeker? Alle kunstwerken worden definitief gewist.")) return;
-                  setLoading(true);
-                  const snaps = await getDocs(collection(firestore, 'artworks'));
-                  for (const d of snaps.docs) {
-                    await deleteDoc(d.ref);
-                  }
-                  toast({ title: "Archief leeggemaakt" });
-                  setLoading(false);
-                }} disabled={loading} className="h-10 px-6 border-destructive text-destructive font-bold text-[10px] uppercase tracking-widest">Reset DB</Button>
-              </div>
             </Card>
           </div>
         )}
