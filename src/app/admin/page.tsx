@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useRef } from 'react';
@@ -126,7 +127,7 @@ export default function AdminPage() {
     }
   };
 
-  const handleAddManualArtwork = async (e: React.FormEvent) => {
+  const handleAddManualArtwork = (e: React.FormEvent) => {
     e.preventDefault();
     if (!firestore || !newArtwork.title || !newArtwork.imageUrl) {
       toast({ variant: "destructive", title: "Invoer onvolledig", description: "Titel en Afbeelding URL zijn verplicht." });
@@ -160,7 +161,7 @@ export default function AdminPage() {
       .finally(() => setLoading(false));
   };
 
-  const handleBulkUpload = async () => {
+  const handleBulkUpload = () => {
     if (!firestore || !bulkJson) return;
     setLoading(true);
     try {
@@ -169,8 +170,8 @@ export default function AdminPage() {
       const artworkCol = collection(firestore, 'artworks');
       
       let count = 0;
-      for (const item of artworksArray) {
-        await addDoc(artworkCol, {
+      artworksArray.forEach((item: any) => {
+        const docData = {
           ...item,
           createdAt: serverTimestamp(),
           cropTop: item.cropTop || 0,
@@ -179,10 +180,20 @@ export default function AdminPage() {
           cropRight: item.cropRight || 0,
           brightness: item.brightness || 1,
           tags: item.tags || []
-        });
+        };
+        
+        addDoc(artworkCol, docData)
+          .catch(async (err) => {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+              path: artworkCol.path,
+              operation: 'create',
+              requestResourceData: docData
+            }));
+          });
         count++;
-      }
-      toast({ title: "Bulk Upload Geslaagd", description: `${count} werken toegevoegd.` });
+      });
+      
+      toast({ title: "Import Gestart", description: `${count} werken worden toegevoegd aan het archief.` });
       setBulkJson('');
       setActiveTab('archive');
     } catch (err) {
@@ -217,7 +228,6 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col pt-14">
-      {/* Verborgen input voor Firefox folder selectie */}
       <input 
         type="file" 
         ref={directoryInputRef} 
@@ -246,7 +256,7 @@ export default function AdminPage() {
           <TabsList className="bg-muted/50 p-1 rounded-full w-fit mx-auto overflow-x-auto no-scrollbar max-w-full">
             <TabsTrigger value="archive" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Archief</TabsTrigger>
             <TabsTrigger value="new" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Nieuw Werk</TabsTrigger>
-            <TabsTrigger value="nas" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">NAS Folder</TabsTrigger>
+            <TabsTrigger value="nas" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">NAS Folder Helper</TabsTrigger>
             <TabsTrigger value="bulk" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Bulk Import</TabsTrigger>
           </TabsList>
 
@@ -318,7 +328,7 @@ export default function AdminPage() {
           <TabsContent value="new">
             <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-12">
               <div className="space-y-6">
-                <h2 className="text-3xl font-headline font-light mb-8">Handmatige Toevoeging</h2>
+                <h2 className="text-3xl font-headline font-light mb-8">Nieuw Werk</h2>
                 <Card className="p-8 rounded-3xl border-border bg-card/50 shadow-xl">
                   <form onSubmit={handleAddManualArtwork} className="space-y-5">
                     <div className="space-y-2">
@@ -408,34 +418,31 @@ export default function AdminPage() {
           <TabsContent value="nas">
             <div className="max-w-2xl mx-auto space-y-6">
               <div className="text-center space-y-2">
-                <h2 className="text-3xl font-headline font-light">Automatische NAS Import</h2>
-                <p className="text-muted-foreground text-sm">Selecteer een map op je computer of NAS om alle foto's direct te indexeren.</p>
+                <h2 className="text-3xl font-headline font-light">NAS Folder Helper</h2>
+                <p className="text-muted-foreground text-sm">Selecteer de map op je NAS waar je foto's staan om ze direct te indexeren.</p>
               </div>
               
               <Card className="p-8 rounded-3xl border-border bg-card/50 shadow-xl space-y-8">
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label className="text-[10px] uppercase font-bold">Stap 1: Controleer Basis URL</Label>
+                    <Label className="text-[10px] uppercase font-bold">1. Basis URL van je NAS</Label>
                     <Input 
                       value={nasBaseUrl}
                       onChange={(e) => setNasBaseUrl(e.target.value)}
                       className="rounded-xl font-mono text-xs"
                     />
-                    <p className="text-[9px] text-muted-foreground italic">Dit adres wordt voor elke gevonden bestandsnaam geplakt.</p>
+                    <p className="text-[9px] text-muted-foreground italic">Dit adres wordt voor elke bestandsnaam geplakt om werkende links te maken.</p>
                   </div>
                   
                   <div className="pt-4 border-t border-border/20">
-                    <Label className="text-[10px] uppercase font-bold mb-4 block">Stap 2: Map selecteren</Label>
+                    <Label className="text-[10px] uppercase font-bold mb-4 block">2. Selecteer de map</Label>
                     <Button 
                       onClick={handleScanFolder} 
                       className="w-full h-20 rounded-2xl font-bold uppercase tracking-widest bg-accent hover:bg-accent/90 text-lg shadow-lg group"
                     >
                       <FolderOpen className="mr-4 w-8 h-8 group-hover:scale-110 transition-transform" />
-                      Selecteer Map
+                      Selecteer Map op NAS
                     </Button>
-                    <p className="text-[10px] text-center mt-4 text-muted-foreground flex items-center justify-center gap-2">
-                      <AlertCircle className="w-3 h-3" /> Werkt in Firefox, Chrome en Edge.
-                    </p>
                   </div>
                 </div>
 
@@ -448,8 +455,8 @@ export default function AdminPage() {
                     <div className="max-h-40 overflow-y-auto bg-black/5 p-4 rounded-xl border border-border/20">
                       <pre className="text-[9px] font-mono text-muted-foreground">{nasFileNames}</pre>
                     </div>
-                    <Button onClick={() => setActiveTab('bulk')} className="w-full rounded-xl bg-primary/20 text-primary border border-primary/20">
-                      Naar Import Overzicht
+                    <Button onClick={() => setActiveTab('bulk')} className="w-full rounded-xl bg-primary/20 text-primary border border-primary/20 uppercase text-[10px] font-bold tracking-widest">
+                      Genereer Bulk Data
                     </Button>
                   </div>
                 )}
@@ -461,7 +468,7 @@ export default function AdminPage() {
             <div className="max-w-4xl mx-auto space-y-6">
               <div className="text-center">
                 <h2 className="text-3xl font-headline font-light">Bulk Overzicht</h2>
-                <p className="text-muted-foreground text-sm">Controleer de data en start de import naar de database.</p>
+                <p className="text-muted-foreground text-sm">Controleer de data en start de import. Dit proces is nu razendsnel.</p>
               </div>
               
               <Card className="p-8 rounded-3xl border-border bg-card/50 shadow-xl">
@@ -474,7 +481,7 @@ export default function AdminPage() {
                       </Button>
                     </div>
                     <Textarea 
-                      placeholder='Importeer data via de NAS Folder tab of plak hier je eigen JSON...' 
+                      placeholder='Gebruik de NAS Folder Helper of plak hier je eigen JSON...' 
                       value={bulkJson} 
                       onChange={(e) => setBulkJson(e.target.value)}
                       className="min-h-[400px] font-mono text-[10px] rounded-2xl bg-black/5"
@@ -485,7 +492,7 @@ export default function AdminPage() {
                     disabled={loading || !bulkJson} 
                     className="w-full h-14 rounded-xl font-bold uppercase tracking-widest shadow-xl"
                   >
-                    {loading ? <Loader2 className="animate-spin" /> : <><Upload className="mr-2 w-4 h-4" /> Start Definitieve Import</>}
+                    {loading ? <Loader2 className="animate-spin" /> : <><Upload className="mr-2 w-4 h-4" /> Start Snelle Import</>}
                   </Button>
                 </div>
               </Card>
