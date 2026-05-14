@@ -18,7 +18,8 @@ import {
   Image as ImageIcon,
   FolderOpen,
   Link as LinkIcon,
-  Maximize2
+  Maximize2,
+  RefreshCw
 } from 'lucide-react';
 import Image from 'next/image';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -38,7 +39,7 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState('archive');
   
   // NAS Helper state
-  const [nasBaseUrl, setNasBaseUrl] = useState('');
+  const [nasBaseUrl, setNasBaseUrl] = useState('https://192-168-178-15.doggyfew.direct.quickconnect.to:5001/');
   const [nasFileNames, setNasFileNames] = useState('');
 
   const [newArtwork, setNewArtwork] = useState({
@@ -148,21 +149,26 @@ export default function AdminPage() {
     const files = nasFileNames.split('\n').map(f => f.trim()).filter(f => f !== '');
     const baseUrlClean = nasBaseUrl.endsWith('/') ? nasBaseUrl : nasBaseUrl + '/';
     
-    const generatedArtworks = files.map(file => ({
-      title: file.split('.')[0] || "Zonder titel",
-      series: "NAS Import",
-      imageUrl: baseUrlClean + file,
-      medium: "Olieverf op doek",
-      year: "",
-      description: "",
-      imageHint: "painting",
-      tags: [],
-      cropTop: 0,
-      cropBottom: 0,
-      cropLeft: 0,
-      cropRight: 0,
-      brightness: 1
-    }));
+    const generatedArtworks = files.map(file => {
+      // Clean up title from filename
+      const title = file.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
+      
+      return {
+        title: title || "Zonder titel",
+        series: "NAS Import",
+        imageUrl: baseUrlClean + file,
+        medium: "Olieverf op doek",
+        year: "",
+        description: "",
+        imageHint: "painting",
+        tags: [],
+        cropTop: 0,
+        cropBottom: 0,
+        cropLeft: 0,
+        cropRight: 0,
+        brightness: 1
+      };
+    });
     
     setBulkJson(JSON.stringify(generatedArtworks, null, 2));
     setActiveTab('bulk');
@@ -237,7 +243,7 @@ export default function AdminPage() {
 
       <main className="flex-1 p-8 max-w-7xl mx-auto w-full">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-          <TabsList className="bg-muted/50 p-1 rounded-full w-fit mx-auto">
+          <TabsList className="bg-muted/50 p-1 rounded-full w-fit mx-auto overflow-x-auto no-scrollbar max-w-full">
             <TabsTrigger value="archive" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Archief</TabsTrigger>
             <TabsTrigger value="new" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Nieuw Werk</TabsTrigger>
             <TabsTrigger value="nas" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">NAS Folder</TabsTrigger>
@@ -292,6 +298,14 @@ export default function AdminPage() {
                         <div className="space-y-1">
                           <Label className="text-[8px] uppercase font-bold">Crop Bottom</Label>
                           <Slider defaultValue={[art.cropBottom || 0]} max={50} step={1} onValueCommit={([val]) => updateArtworkValue(art.id, 'cropBottom', val)} />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-[8px] uppercase font-bold">Crop Left</Label>
+                          <Slider defaultValue={[art.cropLeft || 0]} max={50} step={1} onValueCommit={([val]) => updateArtworkValue(art.id, 'cropLeft', val)} />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-[8px] uppercase font-bold">Crop Right</Label>
+                          <Slider defaultValue={[art.cropRight || 0]} max={50} step={1} onValueCommit={([val]) => updateArtworkValue(art.id, 'cropRight', val)} />
                         </div>
                       </div>
                     </div>
@@ -394,11 +408,11 @@ export default function AdminPage() {
           <TabsContent value="nas">
             <div className="max-w-2xl mx-auto space-y-6">
               <h2 className="text-3xl font-headline font-light text-center">NAS Folder Helper</h2>
-              <p className="text-center text-muted-foreground text-sm">Genereer snel links voor een hele map op je NAS (via Web Station).</p>
+              <p className="text-center text-muted-foreground text-sm">Genereer snel links voor een hele map op je NAS (via Web Station of QuickConnect).</p>
               
               <Card className="p-8 rounded-3xl border-border bg-card/50 shadow-xl space-y-6">
                 <div className="space-y-2">
-                  <Label className="text-[10px] uppercase font-bold">Basis URL (bijv. Web Station map)</Label>
+                  <Label className="text-[10px] uppercase font-bold">Basis URL (NAS map)</Label>
                   <Input 
                     placeholder="https://jouwnas.nl/web/portfolio-map" 
                     value={nasBaseUrl}
@@ -434,7 +448,12 @@ export default function AdminPage() {
               <Card className="p-8 rounded-3xl border-border bg-card/50 shadow-xl">
                 <div className="space-y-6">
                   <div className="space-y-2">
-                    <Label className="text-[10px] uppercase font-bold">JSON Data</Label>
+                    <div className="flex justify-between items-center">
+                      <Label className="text-[10px] uppercase font-bold">JSON Data</Label>
+                      <Button variant="ghost" size="sm" onClick={() => setBulkJson('')} className="h-6 text-[8px] uppercase tracking-widest">
+                        <RefreshCw className="w-3 h-3 mr-1" /> Wis
+                      </Button>
+                    </div>
                     <Textarea 
                       placeholder='[{"title": "Mooi Werk", "series": "Landschappen", "imageUrl": "https://..."}]' 
                       value={bulkJson} 
