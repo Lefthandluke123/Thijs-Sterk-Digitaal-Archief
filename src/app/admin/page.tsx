@@ -18,7 +18,8 @@ import {
   RefreshCw,
   Scissors,
   Settings,
-  Link as LinkIcon
+  Link as LinkIcon,
+  ExternalLink
 } from 'lucide-react';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -38,6 +39,7 @@ export default function AdminPage() {
   // NAS Helper state
   const [nasBaseUrl, setNasBaseUrl] = useState('https://192-168-178-15.doggyfew.direct.quickconnect.to:5001/');
   const [nasFileCount, setNasFileCount] = useState(0);
+  const [previewUrl, setPreviewUrl] = useState('');
 
   const [newArtwork, setNewArtwork] = useState({
     title: "",
@@ -83,8 +85,13 @@ export default function AdminPage() {
         const relativePath = file.webkitRelativePath || file.name;
         const fileNameOnly = file.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
         
+        // Synology Photo Station / File Station links hebben vaak een specifieke prefix nodig
+        // We loggen dit voor de gebruiker zodat hij kan zien wat er gebeurt
         const finalUrl = baseUrlClean + relativePath;
-        console.log('Gegenereerde URL:', finalUrl);
+
+        if (artworksToImport.length === 0) {
+          setPreviewUrl(finalUrl);
+        }
 
         artworksToImport.push({
           title: fileNameOnly || "Zonder titel",
@@ -271,7 +278,6 @@ export default function AdminPage() {
                         filter: `brightness(${art.brightness || 1})`
                       }}
                       onError={(e) => {
-                        console.log('Fout bij laden van:', art.imageUrl);
                         (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Check+Link+of+Poort+5001';
                       }}
                     />
@@ -447,14 +453,25 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                {nasFileCount > 0 && (
-                  <div className="space-y-4 pt-6 border-t border-border/20 text-center">
+                {previewUrl && (
+                  <div className="space-y-4 pt-6 border-t border-border/20">
+                    <div className="bg-muted/30 p-4 rounded-xl space-y-2">
+                      <Label className="text-[9px] uppercase font-bold">Voorbeeld van gegenereerde link:</Label>
+                      <div className="flex items-center gap-2 overflow-hidden">
+                        <code className="text-[10px] text-primary truncate flex-1">{previewUrl}</code>
+                        <Button variant="ghost" size="icon" className="h-6 w-6" asChild>
+                          <a href={previewUrl} target="_blank" rel="noopener noreferrer"><ExternalLink className="w-3 h-3" /></a>
+                        </Button>
+                      </div>
+                      <p className="text-[9px] text-muted-foreground italic">Klik op het icoontje hierboven. Als je de foto in een nieuw tabblad ziet, werkt de link!</p>
+                    </div>
+                    
                     <div className="flex justify-center items-center gap-2 text-primary font-bold animate-pulse">
                       <LinkIcon className="w-4 h-4" />
-                      <span>{nasFileCount} bestanden gevonden met correcte paden!</span>
+                      <span>{nasFileCount} bestanden gevonden met map-paden.</span>
                     </div>
                     <Button onClick={() => setActiveTab('bulk')} className="w-full rounded-xl bg-primary/20 text-primary border border-primary/20 uppercase text-[10px] font-bold tracking-widest h-12">
-                      Bekijk en Importeer Data
+                      Naar Bulk Import
                     </Button>
                   </div>
                 )}
