@@ -149,6 +149,13 @@ export default function AdminPage() {
         const fileNameOnly = file.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
         const finalUrl = baseUrlClean + (relativePath || file.name);
 
+        const isDuplicate = artworks?.some(art => 
+          art.title.toLowerCase() === fileNameOnly.toLowerCase() && 
+          art.series.toLowerCase() === detectedSeries.toLowerCase()
+        );
+
+        if (isDuplicate) continue;
+
         artworksToImport.push({
           title: fileNameOnly || "Zonder titel",
           series: detectedSeries,
@@ -172,7 +179,7 @@ export default function AdminPage() {
     setActiveTab('bulk');
     toast({ 
       title: "Map Analyse Voltooid", 
-      description: `${artworksToImport.length} foto's verdeeld over zalen gebaseerd op de mappenstructuur.` 
+      description: `${artworksToImport.length} nieuwe foto's herkend.` 
     });
   };
 
@@ -431,7 +438,7 @@ export default function AdminPage() {
                         <Badge className="bg-black/40 text-[7px] text-white border-none backdrop-blur-md uppercase tracking-widest">{art.series || "Geen Zaal"}</Badge>
                       </div>
                     </div>
-                    <CardContent className="p-3">
+                    <CardContent className="p-3 text-center">
                       <h4 className="font-headline text-xs font-light truncate">{art.title}</h4>
                     </CardContent>
                   </Card>
@@ -514,7 +521,8 @@ export default function AdminPage() {
 
       <Dialog open={!!editingId} onOpenChange={() => setEditingId(null)}>
         <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background/98 backdrop-blur-3xl border-none rounded-none overflow-hidden">
-          <div className="relative flex-1 h-[67vh] flex items-center justify-center overflow-hidden bg-black/5">
+          {/* Top 67% area for the artwork */}
+          <div className="relative h-[67vh] w-full flex items-center justify-center overflow-hidden bg-black/5 group">
             {editingArtwork && (
               <img 
                 src={editingArtwork.imageUrl} 
@@ -526,34 +534,47 @@ export default function AdminPage() {
                 }}
               />
             )}
-            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-6 pointer-events-none opacity-20 hover:opacity-100 transition-opacity">
-              <button onClick={() => navigateEditing('prev')} className="p-3 rounded-full bg-background/20 backdrop-blur-md pointer-events-auto hover:bg-background/40"><ChevronLeft className="w-6 h-6" /></button>
-              <button onClick={() => navigateEditing('next')} className="p-3 rounded-full bg-background/20 backdrop-blur-md pointer-events-auto hover:bg-background/40"><ChevronRight className="w-6 h-6" /></button>
+            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-6 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
+              <button onClick={() => navigateEditing('prev')} className="p-4 rounded-full bg-background/20 backdrop-blur-md pointer-events-auto hover:bg-background/40 transition-all"><ChevronLeft className="w-8 h-8" /></button>
+              <button onClick={() => navigateEditing('next')} className="p-4 rounded-full bg-background/20 backdrop-blur-md pointer-events-auto hover:bg-background/40 transition-all"><ChevronRight className="w-8 h-8" /></button>
             </div>
-            <div className="absolute top-4 right-4 z-50 flex gap-2">
-               <Button variant="destructive" size="icon" onClick={() => editingArtwork && handleDeleteArtwork(editingArtwork.id)} className="rounded-full h-8 w-8 opacity-40 hover:opacity-100">
-                <Trash2 className="w-4 h-4" />
+            <div className="absolute top-8 right-8 z-50 flex gap-4">
+               <Button variant="destructive" size="icon" onClick={() => editingArtwork && handleDeleteArtwork(editingArtwork.id)} className="rounded-full h-10 w-10 opacity-40 hover:opacity-100 shadow-lg">
+                <Trash2 className="w-5 h-5" />
               </Button>
-              <DialogClose className="p-2 bg-background/20 backdrop-blur-md rounded-full"><X className="w-5 h-5" /></DialogClose>
+              <DialogClose className="p-2.5 bg-background/20 backdrop-blur-md rounded-full hover:bg-background/40 transition-all shadow-lg"><X className="w-6 h-6 opacity-60" /></DialogClose>
             </div>
           </div>
 
-          <div className="h-[33vh] w-full bg-background/95 backdrop-blur-md border-t border-border/10 p-6 shadow-2xl overflow-y-auto">
-            <div className="max-w-[1400px] mx-auto grid grid-cols-4 gap-8 items-start h-full">
-              <div className="space-y-4">
-                <DialogTitle className="font-headline text-3xl md:text-4xl font-light text-center mb-2 leading-tight truncate px-4">
-                  {editingArtwork?.title}
-                </DialogTitle>
-                <div className="flex items-center justify-between px-2">
-                  <Label className="text-[8px] uppercase font-bold opacity-50">Uitgelicht op home</Label>
-                  <Switch checked={editingArtwork?.featured || false} onCheckedChange={(val) => editingArtwork && updateArtworkField(editingArtwork.id, 'featured', val)} />
+          {/* Bottom 33% area for the controls */}
+          <div className="h-[33vh] w-full bg-background/95 backdrop-blur-md border-t border-border/10 p-8 shadow-2xl flex flex-col overflow-y-auto">
+            <div className="max-w-[1600px] mx-auto grid grid-cols-4 gap-12 items-start w-full h-full">
+              {/* Column 1: Identity */}
+              <div className="space-y-6">
+                <div className="flex flex-col gap-2">
+                  <Label className="text-[10px] uppercase font-black tracking-[0.2em] text-accent opacity-80">Titel & Status</Label>
+                  <div className="flex items-center justify-between bg-muted/20 p-3 rounded-xl border border-border/10">
+                    <span className="text-[11px] uppercase font-bold tracking-widest">Op Home tonen</span>
+                    <Switch checked={editingArtwork?.featured || false} onCheckedChange={(val) => editingArtwork && updateArtworkField(editingArtwork.id, 'featured', val)} />
+                  </div>
+                  <Input 
+                    defaultValue={editingArtwork?.title || ''} 
+                    onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'title', e.target.value)} 
+                    placeholder="Titel van het werk" 
+                    className="h-12 text-lg font-headline bg-muted/10 border-none px-4 rounded-xl" 
+                  />
                 </div>
-                <Input defaultValue={editingArtwork?.title || ''} onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'title', e.target.value)} placeholder="Titel" className="h-8 text-sm font-headline bg-muted/10 border-none px-3" />
-                <div className="space-y-2">
-                  <Input defaultValue={editingArtwork?.series || ''} onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'series', e.target.value)} placeholder="Zaal (Serie)" className="h-8 text-[10px] bg-muted/10 border-none px-3 text-accent font-bold" />
-                  <div className="flex flex-wrap gap-1.5 max-h-16 overflow-y-auto">
+                <div className="space-y-3">
+                  <Label className="text-[10px] uppercase font-black tracking-[0.2em] text-accent opacity-80">Zaal (Serie)</Label>
+                  <Input 
+                    defaultValue={editingArtwork?.series || ''} 
+                    onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'series', e.target.value)} 
+                    placeholder="Zaal" 
+                    className="h-12 text-xs bg-muted/10 border-none px-4 text-accent font-black uppercase tracking-widest rounded-xl" 
+                  />
+                  <div className="flex flex-wrap gap-2 max-h-24 overflow-y-auto no-scrollbar">
                     {existingSeries.map(s => (
-                      <button key={s} onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, 'series', s)} className="px-2 py-0.5 rounded-full text-[8px] font-bold uppercase bg-accent/10 text-accent hover:bg-accent/20 transition-colors">
+                      <button key={s} onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, 'series', s)} className="px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest bg-accent/10 text-accent hover:bg-accent/20 transition-colors">
                         {s}
                       </button>
                     ))}
@@ -561,40 +582,43 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <div className="space-y-4">
+              {/* Column 2: Meta & Tags */}
+              <div className="space-y-6">
+                 <Label className="text-[10px] uppercase font-black tracking-[0.2em] text-accent opacity-80">Details & Thema's</Label>
                 <div className="grid grid-cols-2 gap-4">
-                  <Input defaultValue={editingArtwork?.year || ''} onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'year', e.target.value)} placeholder="Jaar" className="h-8 text-[10px] bg-muted/10 border-none px-3" />
-                  <Input defaultValue={editingArtwork?.medium || ''} onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'medium', e.target.value)} placeholder="Medium" className="h-8 text-[10px] bg-muted/10 border-none px-3" />
+                  <Input defaultValue={editingArtwork?.year || ''} onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'year', e.target.value)} placeholder="Jaar" className="h-12 text-xs bg-muted/10 border-none px-4 rounded-xl uppercase tracking-widest font-bold" />
+                  <Input defaultValue={editingArtwork?.medium || ''} onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'medium', e.target.value)} placeholder="Medium" className="h-12 text-xs bg-muted/10 border-none px-4 rounded-xl uppercase tracking-widest font-bold" />
                 </div>
-                <div className="flex flex-wrap gap-1.5 pt-1">
+                <div className="flex flex-wrap gap-2 pt-2">
                   {STANDARD_TAGS.map(tag => (
-                    <button key={tag} onClick={() => editingArtwork && toggleArtworkTag(editingArtwork, tag)} className={cn("px-2 py-1 rounded-full text-[8px] font-bold uppercase border transition-all", editingArtwork?.tags?.includes(tag) ? "bg-accent text-white border-accent" : "bg-background/50 text-muted-foreground border-border/40 hover:border-accent/40")}>
+                    <button key={tag} onClick={() => editingArtwork && toggleArtworkTag(editingArtwork, tag)} className={cn("px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all", editingArtwork?.tags?.includes(tag) ? "bg-accent text-white border-accent shadow-md" : "bg-background/50 text-muted-foreground border-border/40 hover:border-accent/40")}>
                       {tag}
                     </button>
                   ))}
                 </div>
               </div>
 
-              <div className="space-y-4">
+              {/* Column 3: Display Controls (Precision) */}
+              <div className="space-y-6">
                 <div>
-                  <Label className="text-[8px] uppercase font-bold opacity-40 block mb-2">Helderheid ({editingArtwork?.brightness?.toFixed(2) || '1.00'})</Label>
-                  <div className="flex items-center gap-3">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, 'brightness', Math.max(0, (editingArtwork.brightness || 1) - 0.01))}><Minus className="w-4 h-4" /></Button>
+                  <Label className="text-[10px] uppercase font-black tracking-[0.2em] text-accent opacity-80 block mb-4">Helderheid ({editingArtwork?.brightness?.toFixed(2) || '1.00'})</Label>
+                  <div className="flex items-center gap-4 bg-muted/10 p-2 rounded-xl">
+                    <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-accent hover:text-white" onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, 'brightness', Math.max(0, (editingArtwork.brightness || 1) - 0.01))}><Minus className="w-5 h-5" /></Button>
                     <Slider value={[editingArtwork?.brightness || 1]} max={2} step={0.01} onValueChange={([val]) => editingArtwork && updateArtworkField(editingArtwork.id, 'brightness', val)} className="flex-1" />
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, 'brightness', Math.min(2, (editingArtwork.brightness || 1) + 0.01))}><Plus className="w-4 h-4" /></Button>
+                    <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-accent hover:text-white" onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, 'brightness', Math.min(2, (editingArtwork.brightness || 1) + 0.01))}><Plus className="w-5 h-5" /></Button>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-4">
                   {['Top', 'Bottom'].map(side => {
                     const field = `crop${side}`;
                     const currentVal = editingArtwork?.[field as keyof typeof editingArtwork] as number || 0;
                     return (
                       <div key={side} className="space-y-2">
-                        <Label className="text-[8px] uppercase font-bold opacity-40">{side} Crop {currentVal}%</Label>
-                        <div className="flex items-center gap-2">
-                          <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, field, Math.max(0, currentVal - 1))}><Minus className="w-3 h-3" /></Button>
+                        <Label className="text-[9px] uppercase font-black tracking-[0.2em] opacity-40">{side} Uitsnede {currentVal}%</Label>
+                        <div className="flex items-center gap-3 bg-muted/10 p-2 rounded-xl">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, field, Math.max(0, currentVal - 1))}><Minus className="w-4 h-4" /></Button>
                           <Slider value={[currentVal]} max={50} step={1} onValueChange={([val]) => editingArtwork && updateArtworkField(editingArtwork.id, field, val)} className="flex-1" />
-                          <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, field, Math.min(50, currentVal + 1))}><Plus className="w-3 h-3" /></Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, field, Math.min(50, currentVal + 1))}><Plus className="w-4 h-4" /></Button>
                         </div>
                       </div>
                     );
@@ -602,28 +626,29 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-6">
+              {/* Column 4: Precision & Finish */}
+              <div className="space-y-6">
+                <div className="space-y-4">
                   {['Left', 'Right'].map(side => {
                     const field = `crop${side}`;
                     const currentVal = editingArtwork?.[field as keyof typeof editingArtwork] as number || 0;
                     return (
                       <div key={side} className="space-y-2">
-                        <Label className="text-[8px] uppercase font-bold opacity-40">{side} Crop {currentVal}%</Label>
-                        <div className="flex items-center gap-2">
-                          <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, field, Math.max(0, currentVal - 1))}><Minus className="w-3 h-3" /></Button>
+                        <Label className="text-[9px] uppercase font-black tracking-[0.2em] opacity-40">{side} Uitsnede {currentVal}%</Label>
+                        <div className="flex items-center gap-3 bg-muted/10 p-2 rounded-xl">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, field, Math.max(0, currentVal - 1))}><Minus className="w-4 h-4" /></Button>
                           <Slider value={[currentVal]} max={50} step={1} onValueChange={([val]) => editingArtwork && updateArtworkField(editingArtwork.id, field, val)} className="flex-1" />
-                          <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, field, Math.min(50, currentVal + 1))}><Plus className="w-3 h-3" /></Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, field, Math.min(50, currentVal + 1))}><Plus className="w-4 h-4" /></Button>
                         </div>
                       </div>
                     );
                   })}
                 </div>
-                <div className="flex items-center justify-between pt-4 border-t border-border/10">
-                  <div className="flex items-center gap-2 opacity-50 text-[9px] uppercase font-bold">
-                    {isSaving ? <><Loader2 className="w-3 h-3 animate-spin" /> Bezig met opslaan...</> : <><CheckCircle2 className="w-3 h-3 text-green-500" /> Wijzigingen opgeslagen</>}
+                <div className="flex flex-col gap-4 pt-6 border-t border-border/10">
+                  <div className="flex items-center gap-2 opacity-60 text-[10px] uppercase font-black tracking-widest">
+                    {isSaving ? <><Loader2 className="w-4 h-4 animate-spin text-accent" /> Opslaan...</> : <><CheckCircle2 className="w-4 h-4 text-green-500" /> Wijzigingen actief</>}
                   </div>
-                  <Button onClick={() => setEditingId(null)} className="h-10 px-10 text-[10px] uppercase tracking-widest font-bold bg-primary text-white hover:bg-primary/90 rounded-full shadow-lg">Gereed</Button>
+                  <Button onClick={() => setEditingId(null)} className="w-full h-14 text-[12px] uppercase font-black tracking-[0.3em] bg-primary text-white hover:bg-primary/90 rounded-full shadow-2xl transition-all active:scale-95">Sluiten</Button>
                 </div>
               </div>
             </div>
