@@ -12,17 +12,12 @@ import { cn } from '@/lib/utils';
 
 function GalleryContent() {
   const searchParams = useSearchParams();
-  const initialSeries = searchParams.get('series') || "Alle";
+  const initialSeriesFromUrl = searchParams.get('series');
   
   const [selectedArtwork, setSelectedArtwork] = useState<any | null>(null);
-  const [activeSeries, setActiveSeries] = useState<string>(initialSeries);
-  const [activeTags, setActiveTags] = useState<string[]>([]);
+  const [activeSeries, setActiveSeries] = useState<string | null>(initialSeriesFromUrl);
   const firestore = useFirestore();
   
-  useEffect(() => {
-    setActiveSeries(searchParams.get('series') || "Alle");
-  }, [searchParams]);
-
   const artworksQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'artworks'), orderBy('createdAt', 'desc'));
@@ -31,28 +26,24 @@ function GalleryContent() {
   const { data: artworks, loading } = useCollection(artworksQuery);
 
   const seriesNames = useMemo(() => {
-    if (!artworks) return ["Alle"];
+    if (!artworks) return [];
     const names = Array.from(new Set(artworks.map(art => art.series || "Andere")));
-    return ["Alle", ...names.sort()];
+    return names.sort();
   }, [artworks]);
 
-  const allAvailableTags = useMemo(() => {
-    if (!artworks) return [];
-    const tags = new Set<string>();
-    artworks.forEach(art => {
-      art.tags?.forEach((tag: string) => tags.add(tag));
-    });
-    return Array.from(tags).sort();
-  }, [artworks]);
+  useEffect(() => {
+    const s = searchParams.get('series');
+    if (s) {
+      setActiveSeries(s);
+    } else if (seriesNames.length > 0 && !activeSeries) {
+      setActiveSeries(seriesNames[0]);
+    }
+  }, [searchParams, seriesNames, activeSeries]);
 
   const filteredArtworks = useMemo(() => {
-    if (!artworks) return [];
-    return artworks.filter(art => {
-      const matchesSeries = activeSeries === "Alle" || (art.series || "Andere") === activeSeries;
-      const matchesTags = activeTags.length === 0 || activeTags.every(tag => art.tags?.includes(tag));
-      return matchesSeries && matchesTags;
-    });
-  }, [artworks, activeSeries, activeTags]);
+    if (!artworks || !activeSeries) return [];
+    return artworks.filter(art => (art.series || "Andere") === activeSeries);
+  }, [artworks, activeSeries]);
 
   const navigateGallery = useCallback((direction: 'next' | 'prev') => {
     if (!selectedArtwork || !filteredArtworks.length) return;
@@ -74,30 +65,15 @@ function GalleryContent() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedArtwork, navigateGallery]);
 
-  const toggleTag = (tag: string) => {
-    setActiveTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
-  };
-
-  const artworksBySeries = useMemo(() => {
-    if (!artworks || activeSeries !== "Alle") return null;
-    const grouped: { [key: string]: any[] } = {};
-    artworks.forEach(art => {
-      const s = art.series || "Andere";
-      if (!grouped[s]) grouped[s] = [];
-      grouped[s].push(art);
-    });
-    return grouped;
-  }, [artworks, activeSeries]);
-
   return (
     <main className="min-h-screen bg-background pt-14">
       <div className="w-full bg-secondary/5 border-b border-border/10 py-12 md:py-20">
         <div className="container mx-auto px-6 max-w-7xl">
           <h1 className="font-headline text-5xl md:text-7xl font-light text-foreground text-center tracking-tight">
-            {activeSeries === "Alle" ? "Zalen" : <span className="italic">{activeSeries}</span>}
+            <span className="italic">{activeSeries || "Laden..."}</span>
           </h1>
           <p className="text-center text-accent mt-4 uppercase tracking-[0.3em] text-[10px] font-bold">
-            {activeSeries === "Alle" ? "Het Volledige Oeuvre" : `Zaal: ${activeSeries}`}
+            Zaal: {activeSeries || "..."}
           </p>
         </div>
       </div>
@@ -108,8 +84,8 @@ function GalleryContent() {
         ) : (
           <>
             <div className="bg-background/80 backdrop-blur-md sticky top-14 z-30 border-b border-border/10 py-6 mb-12">
-              <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-                <div className="flex gap-6 overflow-x-auto no-scrollbar w-full md:w-auto pb-1">
+              <div className="flex flex-col md:flex-row items-center justify-center gap-6">
+                <div className="flex gap-6 overflow-x-auto no-scrollbar w-full md:w-auto pb-1 justify-center">
                   {seriesNames.map((name) => (
                     <button
                       key={name}
@@ -126,62 +102,33 @@ function GalleryContent() {
               </div>
             </div>
 
-            {activeSeries === "Alle" && artworksBySeries ? (
-              <div className="space-y-24">
-                {Object.entries(artworksBySeries).map(([series, items]) => (
-                  <section key={series} className="space-y-8">
-                    <div className="flex items-center justify-between border-b border-border/10 pb-4">
-                      <h2 className="font-headline text-3xl font-light italic">{series}</h2>
-                      <button onClick={() => setActiveSeries(series)} className="text-[10px] uppercase font-bold tracking-widest text-accent flex items-center gap-2 hover:translate-x-1 transition-transform">
-                        Bekijk Zaal <ArrowRight className="w-3 h-3" />
-                      </button>
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
-                      {items.slice(0, 6).map((item) => (
-                        <div key={item.id} className="group relative cursor-pointer" onClick={() => setSelectedArtwork(item)}>
-                          <div className="relative aspect-[4/5] overflow-hidden rounded-sm bg-muted/20">
-                            <img 
-                              src={item.imageUrl} 
-                              alt={item.title} 
-                              className="w-full h-full object-cover transition-all duration-700 ease-out group-hover:scale-[1.03]"
-                              style={{
-                                clipPath: `inset(${item.cropTop || 0}% ${item.cropRight || 0}% ${item.cropBottom || 0}% ${item.cropLeft || 0}%)`,
-                                filter: `brightness(${item.brightness || 1})`
-                              }}
-                            />
-                          </div>
-                          <div className="mt-2 text-center opacity-60 group-hover:opacity-100 transition-opacity">
-                            <h3 className="text-[8px] font-bold uppercase tracking-widest truncate">{item.title}</h3>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </section>
-                ))}
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8">
-                {filteredArtworks.map((item) => (
-                  <div key={item.id} className="group relative cursor-pointer" onClick={() => setSelectedArtwork(item)}>
-                    <div className="relative aspect-[4/5] overflow-hidden rounded-sm bg-muted/20">
-                      <img 
-                        src={item.imageUrl} 
-                        alt={item.title} 
-                        className="w-full h-full object-cover transition-all duration-700 ease-out group-hover:scale-[1.03]"
-                        style={{
-                          clipPath: `inset(${item.cropTop || 0}% ${item.cropRight || 0}% ${item.cropBottom || 0}% ${item.cropLeft || 0}%)`,
-                          filter: `brightness(${item.brightness || 1})`
-                        }}
-                      />
-                      <div className="absolute inset-0 bg-background/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <Maximize2 className="text-white/60 w-6 h-6" />
-                      </div>
-                    </div>
-                    <div className="mt-4 text-center">
-                      <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-foreground">{item.title}</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8">
+              {filteredArtworks.map((item) => (
+                <div key={item.id} className="group relative cursor-pointer" onClick={() => setSelectedArtwork(item)}>
+                  <div className="relative aspect-[4/5] overflow-hidden rounded-sm bg-muted/20">
+                    <img 
+                      src={item.imageUrl} 
+                      alt={item.title} 
+                      className="w-full h-full object-cover transition-all duration-700 ease-out group-hover:scale-[1.03]"
+                      style={{
+                        clipPath: `inset(${item.cropTop || 0}% ${item.cropRight || 0}% ${item.cropBottom || 0}% ${item.cropLeft || 0}%)`,
+                        filter: `brightness(${item.brightness || 1})`
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-background/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <Maximize2 className="text-white/60 w-6 h-6" />
                     </div>
                   </div>
-                ))}
+                  <div className="mt-4 text-center">
+                    <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-foreground">{item.title}</h3>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            {!loading && filteredArtworks.length === 0 && (
+              <div className="py-20 text-center opacity-40">
+                <p className="text-sm font-light italic">Geen werken gevonden in deze zaal.</p>
               </div>
             )}
           </>
@@ -203,10 +150,10 @@ function GalleryContent() {
               />
             )}
             <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-6 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-              <button onClick={(e) => { e.stopPropagation(); navigateGallery('prev'); }} className="p-3 rounded-full bg-background/10 backdrop-blur-md pointer-events-auto hover:bg-background/20 transition-colors">
+              <button onClick={(e) => { e.stopPropagation(); navigateGallery('prev'); }} className="p-3 rounded-full bg-background/10 backdrop-blur-sm pointer-events-auto hover:bg-background/20 transition-colors">
                 <ChevronLeft className="w-6 h-6" />
               </button>
-              <button onClick={(e) => { e.stopPropagation(); navigateGallery('next'); }} className="p-3 rounded-full bg-background/10 backdrop-blur-md pointer-events-auto hover:bg-background/20 transition-colors">
+              <button onClick={(e) => { e.stopPropagation(); navigateGallery('next'); }} className="p-3 rounded-full bg-background/10 backdrop-blur-sm pointer-events-auto hover:bg-background/20 transition-colors">
                 <ChevronRight className="w-6 h-6" />
               </button>
             </div>

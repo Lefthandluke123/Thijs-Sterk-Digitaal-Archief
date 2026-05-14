@@ -71,12 +71,6 @@ export function Navbar() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="bg-background/98 backdrop-blur-xl border-border/40 rounded-2xl min-w-[200px] p-2 shadow-2xl">
               <DropdownMenuItem asChild className="text-[9px] uppercase font-bold tracking-[0.15em] focus:bg-accent focus:text-accent-foreground rounded-xl cursor-pointer p-3 mb-1">
-                <Link href="/gallery" className="flex items-center gap-2">
-                  <LayoutGrid className="w-3 h-3" /> Alle Zalen
-                </Link>
-              </DropdownMenuItem>
-              <div className="h-px bg-border/20 my-1 mx-2" />
-              <DropdownMenuItem asChild className="text-[9px] uppercase font-bold tracking-[0.15em] focus:bg-accent focus:text-accent-foreground rounded-xl cursor-pointer p-3 mb-1">
                 <Link href="/gallery?series=Landschappen">Landschappen</Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild className="text-[9px] uppercase font-bold tracking-[0.15em] focus:bg-accent focus:text-accent-foreground rounded-xl cursor-pointer p-3 mb-1">
@@ -103,7 +97,7 @@ export function Navbar() {
               <button
                 className={cn(
                   "px-2 sm:px-4 py-1.5 rounded-full text-[9px] sm:text-[10px] font-semibold tracking-widest uppercase transition-all duration-300 flex items-center gap-1 outline-none",
-                  pathname.includes('about') || pathname.includes('hanneke') || pathname.includes('beatrijs') || pathname.includes('peter-bes')
+                  pathname.includes('hanneke') || pathname.includes('beatrijs') || pathname.includes('peter-bes')
                     ? "bg-secondary/80 text-foreground" 
                     : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
                 )}
