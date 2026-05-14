@@ -17,6 +17,7 @@ import {
   ArrowLeft,
   Upload,
   Plus,
+  Minus,
   Image as ImageIcon,
   FolderOpen,
   Maximize2,
@@ -588,6 +589,7 @@ export default function AdminPage() {
                 <div className="space-y-1.5">
                   <Label className="text-[9px] uppercase font-bold tracking-widest opacity-50 flex items-center gap-1"><Type className="w-3 h-3" /> Titel</Label>
                   <Input 
+                    key={editingArtwork?.id + '-title'}
                     defaultValue={editingArtwork?.title || ''} 
                     onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'title', e.target.value)} 
                     className="h-8 text-sm font-headline bg-muted/20 border-border/30 rounded-lg px-3"
@@ -597,6 +599,7 @@ export default function AdminPage() {
                   <div className="space-y-1.5">
                     <Label className="text-[9px] uppercase font-bold tracking-widest opacity-50">Serie</Label>
                     <Input 
+                      key={editingArtwork?.id + '-series'}
                       defaultValue={editingArtwork?.series || ''} 
                       onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'series', e.target.value)} 
                       className="h-8 text-[10px] bg-muted/20 border-border/30 rounded-lg px-3 text-accent font-bold"
@@ -605,6 +608,7 @@ export default function AdminPage() {
                   <div className="space-y-1.5">
                     <Label className="text-[9px] uppercase font-bold tracking-widest opacity-50 flex items-center gap-1"><Calendar className="w-3 h-3" /> Jaar</Label>
                     <Input 
+                      key={editingArtwork?.id + '-year'}
                       defaultValue={editingArtwork?.year || ''} 
                       onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'year', e.target.value)} 
                       className="h-8 text-[10px] bg-muted/20 border-border/30 rounded-lg px-3"
@@ -614,6 +618,7 @@ export default function AdminPage() {
                 <div className="space-y-1.5">
                   <Label className="text-[9px] uppercase font-bold tracking-widest opacity-50">Materiaal / Medium</Label>
                   <Input 
+                    key={editingArtwork?.id + '-medium'}
                     defaultValue={editingArtwork?.medium || ''} 
                     onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'medium', e.target.value)} 
                     className="h-8 text-[10px] bg-muted/20 border-border/30 rounded-lg px-3"
@@ -646,8 +651,17 @@ export default function AdminPage() {
 
               <div className="md:col-span-3 space-y-4">
                 <div className="space-y-3">
-                  <Label className="text-[9px] uppercase font-bold tracking-widest opacity-50 flex justify-between">
-                    Helderheid <span>{editingArtwork?.brightness?.toFixed(2) || '1.00'}</span>
+                  <Label className="text-[9px] uppercase font-bold tracking-widest opacity-50 flex justify-between items-center">
+                    Helderheid 
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="icon" className="h-5 w-5 rounded-md" onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, 'brightness', Math.max(0, (editingArtwork.brightness || 1) - 0.05))}>
+                        <Minus className="h-3 w-3" />
+                      </Button>
+                      <span className="w-8 text-center">{editingArtwork?.brightness?.toFixed(2) || '1.00'}</span>
+                      <Button variant="outline" size="icon" className="h-5 w-5 rounded-md" onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, 'brightness', Math.min(2, (editingArtwork.brightness || 1) + 0.05))}>
+                        <Plus className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </Label>
                   <Slider 
                     value={[editingArtwork?.brightness || 1]} 
@@ -657,23 +671,38 @@ export default function AdminPage() {
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-x-6 gap-y-4">
-                  {['Top', 'Bottom', 'Left', 'Right'].map(side => (
-                    <div key={side} className="space-y-2">
-                      <Label className="text-[8px] uppercase font-bold opacity-40">Crop {side} ({editingArtwork?.[`crop${side}`] || 0}%)</Label>
-                      <Slider 
-                        value={[editingArtwork?.[`crop${side}`] || 0]} 
-                        max={50} 
-                        step={1} 
-                        onValueChange={([val]) => editingArtwork && updateArtworkField(editingArtwork.id, `crop${side}`, val)} 
-                      />
-                    </div>
-                  ))}
+                  {['Top', 'Bottom', 'Left', 'Right'].map(side => {
+                    const fieldName = `crop${side}`;
+                    return (
+                      <div key={side} className="space-y-2">
+                        <Label className="text-[8px] uppercase font-bold opacity-40 flex justify-between items-center">
+                          Crop {side}
+                          <div className="flex items-center gap-1.5">
+                            <Button variant="outline" size="icon" className="h-4 w-4 rounded-sm border-none bg-muted/20" onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, fieldName, Math.max(0, (editingArtwork[fieldName] || 0) - 1))}>
+                              <Minus className="h-2 w-2" />
+                            </Button>
+                            <span className="w-6 text-center">{editingArtwork?.[fieldName] || 0}%</span>
+                            <Button variant="outline" size="icon" className="h-4 w-4 rounded-sm border-none bg-muted/20" onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, fieldName, Math.min(50, (editingArtwork[fieldName] || 0) + 1))}>
+                              <Plus className="h-2 w-2" />
+                            </Button>
+                          </div>
+                        </Label>
+                        <Slider 
+                          value={[editingArtwork?.[fieldName] || 0]} 
+                          max={50} 
+                          step={1} 
+                          onValueChange={([val]) => editingArtwork && updateArtworkField(editingArtwork.id, fieldName, val)} 
+                        />
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
               <div className="md:col-span-3 space-y-1.5">
                 <Label className="text-[9px] uppercase font-bold tracking-widest opacity-50 flex items-center gap-1"><Info className="w-3 h-3" /> Omschrijving</Label>
                 <Textarea 
+                  key={editingArtwork?.id + '-desc'}
                   defaultValue={editingArtwork?.description || ''} 
                   onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'description', e.target.value)} 
                   className="h-28 text-[10px] bg-muted/20 border-border/30 resize-none rounded-xl p-3 leading-relaxed"
@@ -687,4 +716,3 @@ export default function AdminPage() {
     </div>
   );
 }
-
