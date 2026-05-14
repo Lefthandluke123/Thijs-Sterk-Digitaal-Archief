@@ -8,14 +8,13 @@ Zorg dat in je [Firebase Console](https://console.firebase.google.com/) het volg
 - **Authentication:** Schakel de 'Email/Password' of 'Google' provider in.
 
 ## 2. NAS Map Herstellen (Synology)
-Als de `web` map op je NAS niet meer zichtbaar is in File Station:
+Als de `web` map wel bestaat op je NAS, maar niet zichtbaar is in File Station:
 
-1. **Map handmatig aanmaken:**
+1. **Rechten toekennen (Zichtbaar maken):**
    - Ga naar **Configuratiescherm** > **Gedeelde map**.
-   - Klik op **Maken** > **Maken**.
-   - Voer bij Naam exact `web` in.
-   - Klik op Volgende tot je bij **Machtigingen** bent.
-   - Zoek de groep `http` en geef deze **Lezen/Schrijven** rechten.
+   - Selecteer de map `web` en klik op **Bewerken**.
+   - Ga naar het tabblad **Machtigingen**.
+   - Zoek je eigen gebruikersnaam (bijv. 'admin') en zorg dat het vinkje bij **Lezen/Schrijven** aan staat. Klik op Opslaan. Nu verschijnt de map in File Station.
 
 2. **Backend Server Configureren:**
    - Ga naar het **Package Center** en installeer **Apache HTTP Server 2.4**.
@@ -23,8 +22,8 @@ Als de `web` map op je NAS niet meer zichtbaar is in File Station:
    - Ga naar **Webservice-instellingen** -> **Default Service** -> **Bewerken**.
    - Kies bij **HTTP-back-endserver** voor de zojuist geïnstalleerde Apache of Nginx.
 
-3. **Rechten controleren:**
-   - Zorg dat in **Configuratiescherm** > **Gedeelde map** > **web** > **Bewerken** > **Machtigingen** de groep `http` echt op 'Lezen' staat.
+3. **Rechten voor de website (Technisch):**
+   - Zorg dat in **Configuratiescherm** > **Gedeelde map** > **web** > **Bewerken** > **Machtigingen** de groep `http` op minimaal **Lezen** staat.
 
 ## 3. NAS Map Inlezen in de App
 In het `/admin` gedeelte vind je de **NAS Folder Helper**:

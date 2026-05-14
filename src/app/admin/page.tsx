@@ -24,7 +24,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Maximize2,
-  Tag
+  Tag,
+  AlertCircle
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -270,36 +271,6 @@ export default function AdminPage() {
             </div>
           </TabsContent>
 
-          <TabsContent value="new">
-            <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-12">
-              <div className="space-y-6">
-                <h2 className="text-3xl font-headline font-light mb-8">Nieuw Werk</h2>
-                <Card className="p-8 rounded-3xl border-border bg-card/50 shadow-xl">
-                  <form onSubmit={handleAddManualArtwork} className="space-y-5">
-                    <div className="space-y-2">
-                      <Label className="text-[10px] uppercase font-bold">Titel</Label>
-                      <Input value={newArtwork.title} onChange={(e) => setNewArtwork(prev => ({ ...prev, title: e.target.value }))} required className="rounded-xl" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-[10px] uppercase font-bold">Serie</Label>
-                      <Input value={newArtwork.series} onChange={(e) => setNewArtwork(prev => ({ ...prev, series: e.target.value }))} className="rounded-xl" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-[10px] uppercase font-bold">Afbeelding URL</Label>
-                      <Input value={newArtwork.imageUrl} onChange={(e) => setNewArtwork(prev => ({ ...prev, imageUrl: e.target.value }))} required className="rounded-xl" placeholder="http://..." />
-                    </div>
-                    <Button type="submit" disabled={loading} className="w-full h-14 rounded-xl font-bold uppercase tracking-widest">
-                      {loading ? <Loader2 className="animate-spin" /> : <><Plus className="mr-2 w-4 h-4" /> Toevoegen aan Archief</>}
-                    </Button>
-                  </form>
-                </Card>
-              </div>
-              <div className="space-y-6 opacity-40">
-                <p className="text-sm italic">Gebruik de preview in het archief om de uitsnede en helderheid aan te passen na het toevoegen.</p>
-              </div>
-            </div>
-          </TabsContent>
-
           <TabsContent value="nas">
             <div className="max-w-3xl mx-auto space-y-8">
               <div className="text-center space-y-2">
@@ -307,24 +278,46 @@ export default function AdminPage() {
                 <p className="text-muted-foreground text-sm">Bereid je bulk-import voor door je NAS map te scannen.</p>
               </div>
 
-              <Accordion type="single" collapsible className="w-full bg-accent/5 rounded-2xl border border-accent/10 px-6">
-                <AccordionItem value="missing-web-folder" className="border-none">
-                  <AccordionTrigger className="text-[11px] uppercase font-bold tracking-widest text-accent hover:no-underline">
-                    <HelpCircle className="w-4 h-4 mr-2" /> Map 'web' ontbreekt in File Station?
-                  </AccordionTrigger>
-                  <AccordionContent className="space-y-4 pb-6">
-                    <div className="space-y-3 text-sm text-muted-foreground leading-relaxed">
-                      <p>Als de map <strong>web</strong> niet zichtbaar is, volg dan deze stappen in DSM:</p>
-                      <ol className="list-decimal pl-5 space-y-2">
-                        <li>Ga naar <strong>Configuratiescherm</strong> &gt; <strong>Gedeelde map</strong>.</li>
-                        <li>Klik op <strong>Maken</strong> &gt; <strong>Maken</strong> en noem de map exact <code>web</code>.</li>
-                        <li>Geef de groep <strong>http</strong> minimaal <strong>Lezen</strong> rechten.</li>
-                        <li>Controleer in <strong>Web Station</strong> of de service actief is op poort 80/443.</li>
-                      </ol>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
+              <div className="grid gap-4">
+                <Accordion type="single" collapsible className="w-full bg-accent/5 rounded-2xl border border-accent/10 px-6">
+                  <AccordionItem value="hidden-web-folder" className="border-none">
+                    <AccordionTrigger className="text-[11px] uppercase font-bold tracking-widest text-accent hover:no-underline">
+                      <AlertCircle className="w-4 h-4 mr-2" /> Map 'web' bestaat maar is onzichtbaar?
+                    </AccordionTrigger>
+                    <AccordionContent className="space-y-4 pb-6">
+                      <div className="space-y-3 text-sm text-muted-foreground leading-relaxed">
+                        <p>Als de map <strong>web</strong> bestaat maar niet verschijnt in File Station, moet je jouw gebruiker expliciet rechten geven:</p>
+                        <ol className="list-decimal pl-5 space-y-2">
+                          <li>Ga naar <strong>Configuratiescherm</strong> &gt; <strong>Gedeelde map</strong>.</li>
+                          <li>Selecteer de map <code>web</code> en klik op <strong>Bewerken</strong>.</li>
+                          <li>Ga naar het tabblad <strong>Machtigingen</strong>.</li>
+                          <li>Zoek je eigen gebruikersnaam (bijv. 'admin') en zorg dat het vinkje bij <strong>Lezen/Schrijven</strong> aan staat.</li>
+                          <li>Klik op Opslaan. De map is nu direct zichtbaar in File Station.</li>
+                        </ol>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+
+                <Accordion type="single" collapsible className="w-full bg-primary/5 rounded-2xl border border-primary/10 px-6">
+                  <AccordionItem value="missing-web-folder" className="border-none">
+                    <AccordionTrigger className="text-[11px] uppercase font-bold tracking-widest text-primary hover:no-underline">
+                      <HelpCircle className="w-4 h-4 mr-2" /> Map 'web' ontbreekt volledig?
+                    </AccordionTrigger>
+                    <AccordionContent className="space-y-4 pb-6">
+                      <div className="space-y-3 text-sm text-muted-foreground leading-relaxed">
+                        <p>Als de map helemaal niet bestaat, kun je deze handmatig aanmaken:</p>
+                        <ol className="list-decimal pl-5 space-y-2">
+                          <li>Ga naar <strong>Configuratiescherm</strong> &gt; <strong>Gedeelde map</strong> &gt; <strong>Maken</strong>.</li>
+                          <li>Noem de map exact <code>web</code>.</li>
+                          <li>Geef de groep <strong>http</strong> minimaal <strong>Lezen</strong> rechten.</li>
+                          <li>Zorg in <strong>Web Station</strong> dat er een back-end server (Apache 2.4 of Nginx) is geselecteerd.</li>
+                        </ol>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              </div>
               
               <Card className="p-8 rounded-3xl border-border bg-card/50 shadow-xl space-y-8">
                 <div className="space-y-4">
