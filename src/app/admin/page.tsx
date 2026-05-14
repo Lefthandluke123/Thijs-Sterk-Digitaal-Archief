@@ -26,7 +26,8 @@ import {
   Maximize2,
   Tag,
   AlertCircle,
-  Info
+  Info,
+  RefreshCw
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -55,22 +56,6 @@ export default function AdminPage() {
   const [nasBaseUrl, setNasBaseUrl] = useState('http://192.168.178.15/');
   const [nasFileCount, setNasFileCount] = useState(0);
   const [previewUrl, setPreviewUrl] = useState('');
-
-  const [newArtwork, setNewArtwork] = useState({
-    title: "",
-    series: "Onbekend",
-    year: "",
-    medium: "Olieverf op doek",
-    description: "",
-    imageUrl: "",
-    imageHint: "painting",
-    tags: [] as string[],
-    cropTop: 0,
-    cropBottom: 0,
-    cropLeft: 0,
-    cropRight: 0,
-    brightness: 1,
-  });
 
   const artworksQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -150,25 +135,6 @@ export default function AdminPage() {
     setActiveTab('bulk');
   };
 
-  const handleAddManualArtwork = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!firestore || !newArtwork.title || !newArtwork.imageUrl) return;
-
-    setLoading(true);
-    const artworkCol = collection(firestore, 'artworks');
-    addDoc(artworkCol, { ...newArtwork, createdAt: serverTimestamp() })
-      .then(() => {
-        toast({ title: "Toegevoegd" });
-        setNewArtwork({ 
-          title: "", series: "Onbekend", year: "", medium: "Olieverf op doek", 
-          description: "", imageUrl: "", imageHint: "painting", 
-          tags: [], cropTop: 0, cropBottom: 0, cropLeft: 0, cropRight: 0, brightness: 1 
-        });
-        setActiveTab('archive');
-      })
-      .finally(() => setLoading(false));
-  };
-
   const handleBulkUpload = () => {
     if (!firestore || !bulkJson) return;
     setLoading(true);
@@ -238,7 +204,6 @@ export default function AdminPage() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
           <TabsList className="bg-muted/50 p-1 rounded-full w-fit mx-auto">
             <TabsTrigger value="archive" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Archief</TabsTrigger>
-            <TabsTrigger value="new" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Nieuw Werk</TabsTrigger>
             <TabsTrigger value="nas" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">NAS Folder Helper</TabsTrigger>
             <TabsTrigger value="bulk" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Bulk Import</TabsTrigger>
           </TabsList>
@@ -276,49 +241,44 @@ export default function AdminPage() {
             <div className="max-w-3xl mx-auto space-y-8">
               <div className="text-center space-y-2">
                 <h2 className="text-3xl font-headline font-light">NAS Folder Helper</h2>
-                <p className="text-muted-foreground text-sm">Bereid je bulk-import voor door je NAS map te scannen.</p>
+                <p className="text-muted-foreground text-sm">Problemen met de 'web' map? Gebruik deze herstelstappen.</p>
               </div>
 
               <div className="grid gap-4">
-                <Accordion type="single" collapsible className="w-full bg-accent/5 rounded-2xl border border-accent/10 px-6">
-                  <AccordionItem value="hidden-web-folder" className="border-none">
-                    <AccordionTrigger className="text-[11px] uppercase font-bold tracking-widest text-accent hover:no-underline">
-                      <AlertCircle className="w-4 h-4 mr-2" /> Map 'web' bestaat maar is onzichtbaar?
+                <Accordion type="single" collapsible className="w-full bg-red-500/5 rounded-2xl border border-red-500/10 px-6">
+                  <AccordionItem value="moved-error" className="border-none">
+                    <AccordionTrigger className="text-[11px] uppercase font-bold tracking-widest text-red-500 hover:no-underline">
+                      <AlertCircle className="w-4 h-4 mr-2" /> Fout: "Map is verplaatst"? (Plan B)
                     </AccordionTrigger>
                     <AccordionContent className="space-y-4 pb-6">
                       <div className="space-y-3 text-sm text-muted-foreground leading-relaxed">
-                        <p>Als de map <strong>web</strong> bestaat maar niet verschijnt in File Station, moet je jouw gebruikersnaam expliciet rechten geven:</p>
+                        <p>Als DSM zegt dat de map <strong>web</strong> is verplaatst, kun je de blokkade omzeilen door een <strong>eigen map</strong> te gebruiken:</p>
                         <ol className="list-decimal pl-5 space-y-2">
-                          <li>Ga naar <strong>Configuratiescherm</strong> &gt; <strong>Gedeelde map</strong>.</li>
-                          <li>Selecteer de map <code>web</code> en klik op <strong>Bewerken</strong>.</li>
-                          <li>Ga naar het tabblad <strong>Machtigingen</strong>.</li>
-                          <li>Zoek je eigen gebruikersnaam (bijv. 'admin') en zet het vinkje bij <strong>Lezen/Schrijven</strong> aan.</li>
-                          <li>Klik op Opslaan. De map verschijnt nu direct in File Station.</li>
+                          <li>Ga naar <strong>Configuratiescherm</strong> &gt; <strong>Gedeelde map</strong> &gt; <strong>Maken</strong>.</li>
+                          <li>Noem de map bijvoorbeeld <code>atelier-fotos</code>.</li>
+                          <li>Geef jezelf en de groep <code>http</code> minimaal <strong>Lezen</strong> rechten.</li>
+                          <li>Open de app <strong>Web Station</strong>.</li>
+                          <li>Ga naar <strong>Webservice-instellingen</strong> &gt; <strong>Maken</strong> &gt; <strong>Statische website</strong>.</li>
+                          <li>Selecteer bij "Document-root" je nieuwe map <code>atelier-fotos</code>.</li>
+                          <li>Vul hieronder je nieuwe Basis URL in, bijvoorbeeld: <code>http://[IP-NAS]/fotos/</code> (afhankelijk van je Web Station instelling).</li>
                         </ol>
-                        <div className="flex items-start gap-2 bg-accent/10 p-3 rounded-lg border border-accent/20 mt-4">
-                          <Info className="w-4 h-4 text-accent shrink-0 mt-0.5" />
-                          <p className="text-[11px] text-accent font-medium">
-                            <strong>Over de groep 'http':</strong> Je hoeft deze groep niet aan te maken. Het is een systeemgroep die Synology automatisch beheert. Zoek hem op in de lijst bij stap 4 en zorg dat hij minimaal "Lezen" rechten heeft.
-                          </p>
-                        </div>
                       </div>
                     </AccordionContent>
                   </AccordionItem>
                 </Accordion>
 
-                <Accordion type="single" collapsible className="w-full bg-primary/5 rounded-2xl border border-primary/10 px-6">
-                  <AccordionItem value="missing-web-folder" className="border-none">
-                    <AccordionTrigger className="text-[11px] uppercase font-bold tracking-widest text-primary hover:no-underline">
-                      <HelpCircle className="w-4 h-4 mr-2" /> Map 'web' ontbreekt volledig?
+                <Accordion type="single" collapsible className="w-full bg-accent/5 rounded-2xl border border-accent/10 px-6">
+                  <AccordionItem value="hidden-web-folder" className="border-none">
+                    <AccordionTrigger className="text-[11px] uppercase font-bold tracking-widest text-accent hover:no-underline">
+                      <RefreshCw className="w-4 h-4 mr-2" /> Map 'web' onzichtbaar in File Station?
                     </AccordionTrigger>
                     <AccordionContent className="space-y-4 pb-6">
                       <div className="space-y-3 text-sm text-muted-foreground leading-relaxed">
-                        <p>Als de map helemaal niet bestaat, kun je deze handmatig aanmaken:</p>
+                        <p>Zorg dat jouw admin-account expliciete rechten heeft:</p>
                         <ol className="list-decimal pl-5 space-y-2">
-                          <li>Ga naar <strong>Configuratiescherm</strong> &gt; <strong>Gedeelde map</strong> &gt; <strong>Maken</strong>.</li>
-                          <li>Noem de map exact <code>web</code>.</li>
-                          <li>Geef de (reeds bestaande) groep <strong>http</strong> minimaal <strong>Lezen</strong> rechten.</li>
-                          <li>Zorg in <strong>Web Station</strong> dat er een back-end server (Apache 2.4 of Nginx) is geselecteerd.</li>
+                          <li>Ga naar <strong>Configuratiescherm</strong> &gt; <strong>Gedeelde map</strong> &gt; Selecteer <code>web</code> &gt; <strong>Bewerken</strong>.</li>
+                          <li>Ga naar <strong>Machtigingen</strong> en vink <strong>Lezen/Schrijven</strong> aan bij jouw naam.</li>
+                          <li>De map verschijnt nu direct in File Station.</li>
                         </ol>
                       </div>
                     </AccordionContent>
@@ -329,13 +289,13 @@ export default function AdminPage() {
               <Card className="p-8 rounded-3xl border-border bg-card/50 shadow-xl space-y-8">
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label className="text-[10px] uppercase font-bold">1. Basis URL van je NAS</Label>
+                    <Label className="text-[10px] uppercase font-bold">1. Basis URL van je NAS (poort 80/443)</Label>
                     <Input value={nasBaseUrl} onChange={(e) => setNasBaseUrl(e.target.value)} className="rounded-xl font-mono text-xs" />
-                    <p className="text-[9px] text-muted-foreground italic">Bijv: http://192.168.178.15/ of je QuickConnect adres.</p>
+                    <p className="text-[9px] text-muted-foreground italic">Bijv: http://192.168.178.15/ of http://nas.local/</p>
                   </div>
                   
                   <div className="pt-4 border-t border-border/20">
-                    <Label className="text-[10px] uppercase font-bold mb-4 block">2. Selecteer de map</Label>
+                    <Label className="text-[10px] uppercase font-bold mb-4 block">2. Selecteer de map op je computer</Label>
                     <Button onClick={handleScanFolder} className="w-full h-20 rounded-2xl font-bold uppercase tracking-widest bg-accent hover:bg-accent/90 text-lg shadow-lg group">
                       <FolderOpen className="mr-4 w-8 h-8 group-hover:scale-110 transition-transform" />
                       Map Scannen
