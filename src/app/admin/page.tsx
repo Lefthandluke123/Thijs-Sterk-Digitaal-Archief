@@ -143,13 +143,21 @@ export default function AdminPage() {
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       if (imageExtensions.test(file.name)) {
-        const fileName = file.name;
+        const relativePath = (file as any).webkitRelativePath || "";
+        const pathParts = relativePath.split('/');
+        
+        // Gebruik de direct bovenliggende mapnaam als de serie
+        let detectedSeries = "Ongecategoriseerd";
+        if (pathParts.length > 1) {
+          detectedSeries = pathParts[pathParts.length - 2];
+        }
+
         const fileNameOnly = file.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
-        const finalUrl = baseUrlClean + fileName;
+        const finalUrl = baseUrlClean + (relativePath || file.name);
 
         artworksToImport.push({
           title: fileNameOnly || "Zonder titel",
-          series: "NAS Import",
+          series: detectedSeries,
           imageUrl: finalUrl,
           medium: "Olieverf op doek",
           year: "",
@@ -168,6 +176,10 @@ export default function AdminPage() {
 
     setBulkJson(JSON.stringify(artworksToImport, null, 2));
     setActiveTab('bulk');
+    toast({ 
+      title: "Mappen Gescand", 
+      description: `${artworksToImport.length} foto's gevonden. Controleer de tab 'Bulk' om ze te importeren.` 
+    });
   };
 
   const handleFileSelect = () => {
@@ -396,7 +408,7 @@ export default function AdminPage() {
             <TabsList className="bg-muted/50 p-1 rounded-full w-fit">
               <TabsTrigger value="archive" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Archief ({artworks?.length || 0})</TabsTrigger>
               <TabsTrigger value="upload" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Toevoegen</TabsTrigger>
-              <TabsTrigger value="nas" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">NAS</TabsTrigger>
+              <TabsTrigger value="nas" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">NAS Import</TabsTrigger>
               <TabsTrigger value="bulk" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Bulk</TabsTrigger>
             </TabsList>
 
@@ -539,20 +551,23 @@ export default function AdminPage() {
 
           <TabsContent value="nas">
             <div className="max-w-3xl mx-auto space-y-8">
-              <div className="text-center space-y-2">
-                <h2 className="text-3xl font-headline font-light">NAS Folder Helper</h2>
-                <p className="text-muted-foreground text-sm">Beheer je foto&apos;s vanaf je eigen Synology server.</p>
+              <div className="text-center space-y-4">
+                <h2 className="text-3xl font-headline font-light">Mappen Importeren</h2>
+                <p className="text-muted-foreground text-sm max-w-lg mx-auto leading-relaxed">
+                  Selecteer een hoofdmap van je NAS of computer. De app gebruikt automatisch de namen van de submappen als <strong>Serie (Zaal)</strong>.
+                </p>
               </div>
               <Card className="p-8 rounded-3xl border-border bg-card/50 shadow-xl space-y-8">
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label className="text-[10px] uppercase font-bold">Basis URL van je NAS</Label>
+                    <Label className="text-[10px] uppercase font-bold">Basis URL van je NAS / Server</Label>
                     <Input value={nasBaseUrl} onChange={(e) => setNasBaseUrl(e.target.value)} className="rounded-xl font-mono text-xs" />
+                    <p className="text-[8px] text-muted-foreground italic">Zorg dat dit adres overeenkomt met waar de foto's online staan.</p>
                   </div>
                   <div className="pt-4 border-t border-border/20">
                     <Button onClick={handleScanFolder} className="w-full h-20 rounded-2xl font-bold uppercase tracking-widest bg-accent hover:bg-accent/90 text-lg shadow-lg group">
                       <FolderOpen className="mr-4 w-8 h-8 group-hover:scale-110 transition-transform" />
-                      Map Scannen & Bulk JSON Genereren
+                      Hoofdmap Scannen
                     </Button>
                   </div>
                 </div>

@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
@@ -253,15 +252,15 @@ function GalleryContent() {
 
           <div className="w-full bg-background/95 backdrop-blur-md py-8 md:py-12 px-8 border-t border-border/10">
             <div className="max-w-4xl mx-auto flex flex-col items-center text-center gap-6">
-              <div className="space-y-3">
-                <DialogTitle className="font-headline text-3xl md:text-5xl font-light text-foreground tracking-tight">
+              <div className="space-y-4">
+                <DialogTitle className="font-headline text-4xl md:text-6xl font-light text-foreground tracking-tight">
                   {selectedArtwork?.title}
                 </DialogTitle>
-                <div className="text-[10px] md:text-[11px] uppercase tracking-[0.3em] text-accent font-bold flex flex-wrap gap-x-6 gap-y-2 justify-center items-center opacity-80">
+                <div className="text-[11px] md:text-[12px] uppercase tracking-[0.3em] text-accent font-bold flex flex-wrap gap-x-8 gap-y-2 justify-center items-center opacity-80">
                   <span>{selectedArtwork?.series}</span>
-                  <span className="hidden md:inline w-1 h-1 rounded-full bg-accent/30" />
+                  <span className="hidden md:inline w-1.5 h-1.5 rounded-full bg-accent/30" />
                   <span>{selectedArtwork?.year}</span>
-                  <span className="hidden md:inline w-1 h-1 rounded-full bg-accent/30" />
+                  <span className="hidden md:inline w-1.5 h-1.5 rounded-full bg-accent/30" />
                   <span>{selectedArtwork?.medium}</span>
                 </div>
               </div>
