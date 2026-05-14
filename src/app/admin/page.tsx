@@ -20,7 +20,6 @@ import {
   Settings,
   Link as LinkIcon
 } from 'lucide-react';
-import Image from 'next/image';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { Input } from '@/components/ui/input';
@@ -37,7 +36,7 @@ export default function AdminPage() {
   const directoryInputRef = useRef<HTMLInputElement>(null);
   
   // NAS Helper state
-  const [nasBaseUrl, setNasBaseUrl] = useState('https://192-168-178-15.doggyfew.direct.quickconnect.to:5001/web/');
+  const [nasBaseUrl, setNasBaseUrl] = useState('https://192-168-178-15.doggyfew.direct.quickconnect.to:5001/');
   const [nasFileCount, setNasFileCount] = useState(0);
 
   const [newArtwork, setNewArtwork] = useState({
@@ -80,14 +79,17 @@ export default function AdminPage() {
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       if (imageExtensions.test(file.name)) {
-        // Gebruik webkitRelativePath om de mapnaam mee te nemen
+        // webkitRelativePath bevat de mapnaam. bijv: "Schilderijen/landschap.jpg"
         const relativePath = file.webkitRelativePath || file.name;
         const fileNameOnly = file.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
         
+        const finalUrl = baseUrlClean + relativePath;
+        console.log('Gegenereerde URL:', finalUrl);
+
         artworksToImport.push({
           title: fileNameOnly || "Zonder titel",
           series: "Import " + new Date().toLocaleDateString(),
-          imageUrl: baseUrlClean + relativePath,
+          imageUrl: finalUrl,
           medium: "Olieverf op doek",
           year: "",
           description: "",
@@ -221,8 +223,6 @@ export default function AdminPage() {
     });
   };
 
-  const isNASUrl = (url: string) => url?.includes('quickconnect.to') || url?.includes('192.168');
-
   return (
     <div className="min-h-screen bg-background flex flex-col pt-14">
       <input 
@@ -271,7 +271,8 @@ export default function AdminPage() {
                         filter: `brightness(${art.brightness || 1})`
                       }}
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Beeld+niet+gevonden';
+                        console.log('Fout bij laden van:', art.imageUrl);
+                        (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Check+Link+of+Poort+5001';
                       }}
                     />
                     <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
@@ -374,7 +375,7 @@ export default function AdminPage() {
                           filter: `brightness(${newArtwork.brightness})`
                         }}
                         onError={(e) => {
-                          (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Preview+niet+mogelijk';
+                          (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Controleer+NAS+toegang';
                         }}
                       />
                     ) : (
@@ -424,12 +425,12 @@ export default function AdminPage() {
               <Card className="p-8 rounded-3xl border-border bg-card/50 shadow-xl space-y-8">
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label className="text-[10px] uppercase font-bold">1. Basis URL van je NAS (Web Station/HTTP)</Label>
+                    <Label className="text-[10px] uppercase font-bold">1. Basis URL van je NAS (QuickConnect)</Label>
                     <Input 
                       value={nasBaseUrl}
                       onChange={(e) => setNasBaseUrl(e.target.value)}
                       className="rounded-xl font-mono text-xs"
-                      placeholder="Bijv: https://mijn-nas.quickconnect.to/web/"
+                      placeholder="Bijv: https://mijn-nas.quickconnect.to:5001/"
                     />
                     <p className="text-[9px] text-muted-foreground italic">Zorg dat deze URL eindigt op een slash. De mapnaam van je keuze wordt hier achter geplakt.</p>
                   </div>

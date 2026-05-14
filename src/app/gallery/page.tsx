@@ -69,8 +69,6 @@ export default function GalleryPage() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedArtwork, navigateGallery]);
 
-  const isNASUrl = (url: string) => url?.includes('quickconnect.to') || url?.includes('192.168');
-
   return (
     <main className="min-h-screen bg-background pt-14">
       <div className="w-full bg-secondary/5 border-b border-border/10 py-12 md:py-20">
@@ -127,29 +125,18 @@ export default function GalleryPage() {
               {filteredArtworks.map((item) => (
                 <div key={item.id} className="group relative cursor-pointer" onClick={() => setSelectedArtwork(item)}>
                   <div className="relative aspect-[4/5] overflow-hidden rounded-sm bg-muted/20">
-                    {isNASUrl(item.imageUrl) ? (
-                      <img 
-                        src={item.imageUrl} 
-                        alt={item.title} 
-                        className="w-full h-full object-cover transition-all duration-700 ease-out group-hover:scale-[1.03]"
-                        style={{
-                          clipPath: `inset(${item.cropTop || 0}% ${item.cropRight || 0}% ${item.cropBottom || 0}% ${item.cropLeft || 0}%)`,
-                          filter: `brightness(${item.brightness || 1})`
-                        }}
-                      />
-                    ) : (
-                      <Image 
-                        src={item.imageUrl} 
-                        alt={item.title} 
-                        fill 
-                        className="object-cover transition-all duration-700 ease-out group-hover:scale-[1.03]" 
-                        unoptimized
-                        style={{
-                          clipPath: `inset(${item.cropTop || 0}% ${item.cropRight || 0}% ${item.cropBottom || 0}% ${item.cropLeft || 0}%)`,
-                          filter: `brightness(${item.brightness || 1})`
-                        }}
-                      />
-                    )}
+                    <img 
+                      src={item.imageUrl} 
+                      alt={item.title} 
+                      className="w-full h-full object-cover transition-all duration-700 ease-out group-hover:scale-[1.03]"
+                      style={{
+                        clipPath: `inset(${item.cropTop || 0}% ${item.cropRight || 0}% ${item.cropBottom || 0}% ${item.cropLeft || 0}%)`,
+                        filter: `brightness(${item.brightness || 1})`
+                      }}
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Beeld+niet+gevonden';
+                      }}
+                    />
                     <div className="absolute bottom-2 right-2 z-10 pointer-events-none opacity-20 text-[6px] uppercase tracking-widest text-white font-bold bg-black/20 px-1 rounded-sm">
                       &copy; Erven Thijs Sterk
                     </div>
@@ -172,29 +159,18 @@ export default function GalleryPage() {
           <div className="relative flex-1 flex items-center justify-center overflow-hidden group bg-black/5">
             {selectedArtwork && (
               <div className="relative w-full h-full flex items-center justify-center">
-                {isNASUrl(selectedArtwork.imageUrl) ? (
-                  <img 
-                    src={selectedArtwork.imageUrl} 
-                    alt={selectedArtwork.title} 
-                    className="max-w-full max-h-full object-contain p-4 md:p-12"
-                    style={{
-                      clipPath: `inset(${selectedArtwork.cropTop || 0}% ${selectedArtwork.cropRight || 0}% ${selectedArtwork.cropBottom || 0}% ${selectedArtwork.cropLeft || 0}%)`,
-                      filter: `brightness(${selectedArtwork.brightness || 1})`
-                    }}
-                  />
-                ) : (
-                  <Image 
-                    src={selectedArtwork.imageUrl} 
-                    alt={selectedArtwork.title} 
-                    fill 
-                    className="object-contain p-4 md:p-12" 
-                    unoptimized 
-                    style={{
-                      clipPath: `inset(${selectedArtwork.cropTop || 0}% ${selectedArtwork.cropRight || 0}% ${selectedArtwork.cropBottom || 0}% ${selectedArtwork.cropLeft || 0}%)`,
-                      filter: `brightness(${selectedArtwork.brightness || 1})`
-                    }}
-                  />
-                )}
+                <img 
+                  src={selectedArtwork.imageUrl} 
+                  alt={selectedArtwork.title} 
+                  className="max-w-full max-h-full object-contain p-4 md:p-12"
+                  style={{
+                    clipPath: `inset(${selectedArtwork.cropTop || 0}% ${selectedArtwork.cropRight || 0}% ${selectedArtwork.cropBottom || 0}% ${selectedArtwork.cropLeft || 0}%)`,
+                    filter: `brightness(${selectedArtwork.brightness || 1})`
+                  }}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Beeld+niet+gevonden';
+                  }}
+                />
                 <div className="absolute inset-0 pointer-events-none flex items-center justify-center opacity-[0.03] select-none rotate-[-45deg]">
                   <span className="text-6xl md:text-9xl font-bold uppercase tracking-[0.5em] text-foreground">
                     Erven Thijs Sterk
