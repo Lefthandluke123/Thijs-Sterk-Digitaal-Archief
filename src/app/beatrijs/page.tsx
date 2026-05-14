@@ -31,7 +31,7 @@ export default function BeatrijsSterkPage() {
                 Beatrijs Sterk deelt als dochter de passie voor het landschap en de atmosferische rust die haar vaders werk zo typeert. Zij ziet het archief niet slechts als een verzameling beelden, maar als een levende geschiedenis van een kunstenaarsleven.
               </p>
               <p>
-                Haar bijdrage aan dit retrospectief is essentieel voor het duiden van de intiemere momenten en de visie die Thijs Sterk had op de wereld om hem heen.
+                Haar bijdrage aan dit retrospectief is essentieel voor het duiden van de intiemere momenten en de visie die Thijs Sterk had op de wereld om hem heen. Voor Beatrijs is de website een manier om het licht dat haar vader ving, door te geven.
               </p>
             </div>
           </div>

@@ -1,6 +1,6 @@
 # Thijs Sterk Retrospectief Portfolio
 
-Dit project is een eerbetoon aan het werk van Thijs Sterk (1913-1982). Het bevat een galerie, een beheeromgeving (Atelier) en secties voor zijn dochters Hanneke en Beatrijs, en zijn leerling Peter Bes.
+Dit project is een eerbetoon aan het werk van Thijs Sterk (1913-1982). Het bevat een galerie, een curator-omgeving en secties voor zijn dochters Hanneke en Beatrijs, en zijn leerling Peter Bes.
 
 ## Hoe dit project naar GitHub te pushen
 
@@ -25,9 +25,19 @@ Als je dit project op GitHub wilt plaatsen, volg dan deze stappen in de terminal
     *   Voer uit: `git branch -M main`
     *   Voer uit: `git push -u origin main`
 
+## Publiceren (Live gaan)
+
+Nadat de code op GitHub staat, kun je deze koppelen aan **Firebase App Hosting** voor een professionele live-omgeving:
+
+1.  Ga naar de [Firebase Console](https://console.firebase.google.com/).
+2.  Selecteer je project.
+3.  Ga naar **Build > App Hosting**.
+4.  Klik op "Get Started" en verbind je GitHub repository.
+5.  Selecteer de `main` branch en volg de stappen om je website online te zetten.
+
 ## Belangrijke contactgegevens
 *   **E-mail:** info@thijssterk.nl
 *   **Telefoon:** 06-53716249
 
-## Ontwikkeling
-Dit project is gebouwd met Next.js, Tailwind CSS en Firebase.
+## Beveiliging
+De website is voorzien van visuele watermerken en een blokkade op rechtsklikken en verslepen van afbeeldingen om ongewenst kopiëren te ontmoedigen.

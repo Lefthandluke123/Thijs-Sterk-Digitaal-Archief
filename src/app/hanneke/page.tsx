@@ -31,7 +31,7 @@ export default function HannekeSterkPage() {
                 Als dochter van Thijs Sterk groeide Hanneke op te midden van de geur van olieverf en het strijklicht van het atelier. Haar perspectief op het werk van haar vader is diepgeworteld in persoonlijke herinneringen aan zijn scheppingsproces.
               </p>
               <p>
-                Samen met haar zus Beatrijs draagt zij zorg voor de artistieke nalatenschap, waarbij het ontsluiten van zijn oeuvre voor een nieuwe generatie centraal staat.
+                Samen met haar zus Beatrijs draagt zij zorg voor de artistieke nalatenschap, waarbij het ontsluiten van zijn oeuvre voor een nieuwe generatie centraal staat. "Mijn vader schilderde niet wat hij zag, maar wat hij voelde bij het landschap," aldus Hanneke.
               </p>
             </div>
           </div>

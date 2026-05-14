@@ -31,7 +31,7 @@ export default function PeterBesPage() {
                 Peter Bes was een leerling van Thijs Sterk. Onder de vleugels van zijn meester ontwikkelde hij een eigen vormentaal, terwijl hij de lessen over licht en compositie altijd in zijn hart hield.
               </p>
               <p>
-                De band tussen leermeester en leerling was meer dan louter technisch; het was een gedeelde zoektocht naar de ziel van het schilderen. Zijn herinneringen werpen een uniek licht op de didactische en menselijke kant van Thijs.
+                De band tussen leermeester en leerling was meer dan louter technisch; het was een gedeelde zoektocht naar de ziel van het schilderen. Zijn herinneringen werpen een uniek licht op de didactische en menselijke kant van Thijs. Peter herinnert hem als een strenge maar rechtvaardige mentor die altijd zocht naar de essentie.
               </p>
             </div>
           </div>
