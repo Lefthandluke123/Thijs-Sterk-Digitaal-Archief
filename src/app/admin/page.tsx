@@ -139,8 +139,8 @@ export default function AdminPage() {
     <div className="min-h-screen bg-background flex flex-col pt-14">
       <header className="h-16 border-b border-border bg-background/95 backdrop-blur-sm sticky top-14 z-40 px-8 flex items-center justify-between">
         <nav className="flex items-center gap-1">
-          <Button variant={activeTab === 'db' ? 'secondary' : 'ghost'} onClick={() => setActiveTab('db'} className="font-bold text-[10px] uppercase">Archief</Button>
-          <Button variant={activeTab === 'new' ? 'secondary' : 'ghost'} onClick={() => setActiveTab('new'} className="font-bold text-[10px] uppercase">Nieuw Werk</Button>
+          <Button variant={activeTab === 'db' ? 'secondary' : 'ghost'} onClick={() => setActiveTab('db')} className="font-bold text-[10px] uppercase">Archief</Button>
+          <Button variant={activeTab === 'new' ? 'secondary' : 'ghost'} onClick={() => setActiveTab('new')} className="font-bold text-[10px] uppercase">Nieuw Werk</Button>
         </nav>
         <Button variant="outline" asChild className="rounded-full h-9 px-4 border-primary/20 text-primary text-[10px] uppercase tracking-widest">
           <Link href="/">Bekijk Site</Link>
