@@ -17,6 +17,9 @@ export default function BeatrijsSterkPage() {
                 className="object-cover" 
                 data-ai-hint="portrait woman"
               />
+              <div className="absolute bottom-4 right-4 z-10 opacity-20 text-[8px] uppercase tracking-widest text-white font-bold bg-black/40 px-2 py-1 rounded-sm">
+                &copy; Erven Thijs Sterk
+              </div>
             </div>
           </div>
           <div className="lg:col-span-7 space-y-8">
