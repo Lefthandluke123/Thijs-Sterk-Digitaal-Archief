@@ -29,7 +29,8 @@ import {
   Copy,
   History,
   CloudUpload,
-  Square
+  Square,
+  Download
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -203,10 +204,10 @@ export default function AdminPage() {
       }
       const fileNameOnly = file.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
 
-      // Dubbel-check
+      // Dubbel-check op titel EN serie
       const isDuplicate = artworks?.some(art => 
-        art.title === fileNameOnly && 
-        art.series === detectedSeries
+        art.title.toLowerCase() === fileNameOnly.toLowerCase() && 
+        art.series.toLowerCase() === detectedSeries.toLowerCase()
       );
 
       if (isDuplicate) {
@@ -283,8 +284,11 @@ export default function AdminPage() {
       for (const item of artworksArray) {
         const { id, ...rest } = item;
         
-        // Dubbel-check op URL
-        const isDuplicate = artworks?.some(art => art.imageUrl === rest.imageUrl);
+        // Dubbel-check op URL of op titel+serie
+        const isDuplicate = artworks?.some(art => 
+          art.imageUrl === rest.imageUrl || 
+          (art.title.toLowerCase() === rest.title.toLowerCase() && art.series.toLowerCase() === rest.series.toLowerCase())
+        );
         
         if (isDuplicate) {
           skippedCount++;
@@ -319,7 +323,8 @@ export default function AdminPage() {
       const { id, createdAt, ...rest } = art;
       return rest;
     });
-    setBulkJson(JSON.stringify(exportData, null, 2));
+    const jsonString = JSON.stringify(exportData, null, 2);
+    setBulkJson(jsonString);
     setActiveTab('bulk');
     toast({ title: "Backup Gegenereerd", description: "Kopieer de JSON-tekst onder Backup & Bulk." });
   };
@@ -363,9 +368,14 @@ export default function AdminPage() {
           <Cloud className="w-5 h-5 text-accent" />
           <h1 className="font-headline text-xl font-light">Atelier <span className="italic">Beheer</span></h1>
         </div>
-        <Link href="/" className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground hover:text-foreground flex items-center gap-2">
-          <ArrowLeft className="w-3 h-3" /> Naar Website
-        </Link>
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="sm" onClick={handleExportArchive} className="text-[10px] uppercase tracking-widest font-bold">
+            <Download className="w-3 h-3 mr-2" /> Exporteer Archief
+          </Button>
+          <Link href="/" className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground hover:text-foreground flex items-center gap-2 border-l border-border pl-4 ml-4">
+            <ArrowLeft className="w-3 h-3" /> Naar Website
+          </Link>
+        </div>
       </header>
 
       <main className="flex-1 p-8 max-w-7xl mx-auto w-full">
