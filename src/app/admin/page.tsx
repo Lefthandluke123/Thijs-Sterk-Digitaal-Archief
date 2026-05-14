@@ -3,18 +3,15 @@
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useFirestore, useCollection } from '@/firebase';
-import { collection, doc, serverTimestamp, deleteDoc, addDoc, query, orderBy, updateDoc } from 'firebase/firestore';
+import { collection, doc, serverTimestamp, deleteDoc, addDoc, query, orderBy } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
 import { 
   Trash2, 
-  Plus,
-  X,
-  Save,
-  Loader2,
-  Lock,
-  ArrowLeft
+  Loader2, 
+  Lock, 
+  ArrowLeft 
 } from 'lucide-react';
 import Image from 'next/image';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -45,7 +42,7 @@ export default function AdminPage() {
     return query(collection(firestore, 'artworks'), orderBy('createdAt', 'desc'));
   }, [firestore]);
 
-  const { data: artworks, loading: dbLoading } = useCollection(artworksQuery);
+  const { data: artworks } = useCollection(artworksQuery);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
