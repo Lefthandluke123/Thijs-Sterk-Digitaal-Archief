@@ -28,12 +28,11 @@ import {
   Star,
   CheckCircle2,
   Copy,
-  History,
-  CloudUpload,
-  Square,
+  Save,
   Download,
   FileJson,
-  Save
+  Square,
+  CloudUpload
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -554,6 +553,7 @@ export default function AdminPage() {
 
       <Dialog open={!!editingId} onOpenChange={() => setEditingId(null)}>
         <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background/98 backdrop-blur-3xl border-none rounded-none overflow-hidden">
+          <DialogTitle className="sr-only">Bewerk Kunstwerk: {editingArtwork?.title}</DialogTitle>
           <div className="relative h-[67vh] w-full flex items-center justify-center overflow-hidden bg-black/5 group">
             {editingArtwork && (
               <img 
