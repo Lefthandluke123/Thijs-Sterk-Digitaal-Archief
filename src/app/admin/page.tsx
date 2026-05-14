@@ -29,7 +29,8 @@ import {
   Search,
   Cloud,
   HardDrive,
-  Link as LinkIcon
+  Link as LinkIcon,
+  CheckCircle2
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -69,10 +70,10 @@ export default function AdminPage() {
   // Firebase Upload state
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState('');
 
   const artworksQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    // We gebruiken createdAt voor sortering, maar maken het optioneel voor het geval sommige docs het missen
     return query(collection(firestore, 'artworks'), orderBy('createdAt', 'desc'));
   }, [firestore]);
 
@@ -165,49 +166,60 @@ export default function AdminPage() {
 
     setIsUploading(true);
     setUploadProgress(0);
+    const totalFiles = files.length;
+    let completedCount = 0;
 
-    const file = files[0];
-    const storageRef = ref(storage, `artworks/${Date.now()}_${file.name}`);
-
-    try {
-      const snapshot = await uploadBytes(storageRef, file);
-      const downloadUrl = await getDownloadURL(snapshot.ref);
-
-      const fileNameOnly = file.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
+    for (let i = 0; i < totalFiles; i++) {
+      const file = files[i];
+      setUploadStatus(`Uploaden: ${file.name} (${i + 1}/${totalFiles})`);
       
-      const newArtwork = {
-        title: fileNameOnly,
-        series: "Cloud Collectie",
-        imageUrl: downloadUrl,
-        medium: "Olieverf op doek",
-        year: new Date().getFullYear().toString(),
-        description: "",
-        imageHint: "painting",
-        tags: [],
-        cropTop: 0,
-        cropBottom: 0,
-        cropLeft: 0,
-        cropRight: 0,
-        brightness: 1,
-        createdAt: serverTimestamp()
-      };
+      const storageRef = ref(storage, `artworks/${Date.now()}_${file.name}`);
 
-      await addDoc(collection(firestore, 'artworks'), newArtwork);
-      
-      toast({ title: "Upload Succesvol", description: `${file.name} is toegevoegd aan het archief.` });
-      setUploadProgress(100);
-      setActiveTab('archive');
-    } catch (error: any) {
-      console.error(error);
-      toast({ 
-        variant: "destructive", 
-        title: "Upload Mislukt", 
-        description: "Controleer of Firebase Storage is geactiveerd." 
-      });
-    } finally {
-      setIsUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
+      try {
+        const snapshot = await uploadBytes(storageRef, file);
+        const downloadUrl = await getDownloadURL(snapshot.ref);
+
+        const fileNameOnly = file.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
+        
+        const newArtwork = {
+          title: fileNameOnly,
+          series: "Cloud Collectie",
+          imageUrl: downloadUrl,
+          medium: "Olieverf op doek",
+          year: new Date().getFullYear().toString(),
+          description: "",
+          imageHint: "painting",
+          tags: [],
+          cropTop: 0,
+          cropBottom: 0,
+          cropLeft: 0,
+          cropRight: 0,
+          brightness: 1,
+          createdAt: serverTimestamp()
+        };
+
+        await addDoc(collection(firestore, 'artworks'), newArtwork);
+        completedCount++;
+        setUploadProgress((completedCount / totalFiles) * 100);
+      } catch (error: any) {
+        console.error(error);
+        toast({ 
+          variant: "destructive", 
+          title: "Upload Mislukt", 
+          description: `Kon ${file.name} niet uploaden. Is Firebase Storage actief?` 
+        });
+      }
     }
+
+    toast({ 
+      title: "Batch Voltooid", 
+      description: `${completedCount} van de ${totalFiles} foto's zijn toegevoegd aan het archief.` 
+    });
+    
+    setIsUploading(false);
+    setUploadStatus('');
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    setActiveTab('archive');
   };
 
   const handleManualAdd = async () => {
@@ -300,7 +312,7 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-background flex flex-col pt-14">
       <input type="file" ref={directoryInputRef} style={{ display: 'none' }} onChange={handleDirectoryChange} {...({ webkitdirectory: "", directory: "" } as any)} />
-      <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={handleFileUpload} accept="image/*" />
+      <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={handleFileUpload} accept="image/*" multiple />
 
       <header className="h-16 border-b border-border bg-background/95 backdrop-blur-sm sticky top-14 z-40 px-8 flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -386,8 +398,8 @@ export default function AdminPage() {
             <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-12">
               <div className="space-y-8">
                 <div className="space-y-2">
-                  <h2 className="text-2xl font-headline font-light">Cloud Upload</h2>
-                  <p className="text-muted-foreground text-xs leading-relaxed">Selecteer een bestand van je computer om direct in de Firebase Cloud te plaatsen.</p>
+                  <h2 className="text-2xl font-headline font-light">Batch Cloud Upload</h2>
+                  <p className="text-muted-foreground text-xs leading-relaxed">Selecteer een of meerdere bestanden om direct in de Firebase Cloud te plaatsen.</p>
                 </div>
 
                 <Card className="p-10 rounded-3xl border-dashed border-2 border-accent/20 bg-accent/5 flex flex-col items-center justify-center space-y-6">
@@ -395,21 +407,26 @@ export default function AdminPage() {
                     <CloudUpload className="w-8 h-8 text-accent" />
                   </div>
                   
-                  <div className="space-y-4 w-full">
+                  <div className="space-y-4 w-full text-center">
                     <Button 
                       onClick={handleFileSelect} 
                       disabled={isUploading}
                       className="w-full h-14 rounded-2xl font-bold uppercase tracking-widest shadow-xl"
                     >
                       {isUploading ? <Loader2 className="animate-spin mr-2" /> : <Plus className="mr-2" />}
-                      Bestand Kiezen
+                      Bestanden Kiezen
                     </Button>
                     
                     {isUploading && (
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         <Progress value={uploadProgress} className="h-2" />
-                        <p className="text-[10px] uppercase font-bold text-accent animate-pulse text-center">Bezig met uploaden...</p>
+                        <div className="flex items-center justify-center gap-2">
+                          <p className="text-[10px] uppercase font-bold text-accent animate-pulse">{uploadStatus}</p>
+                        </div>
                       </div>
+                    )}
+                    {!isUploading && (
+                      <p className="text-[9px] uppercase font-bold text-muted-foreground opacity-50 tracking-tighter">Meerdere selecteren is mogelijk</p>
                     )}
                   </div>
                 </Card>
@@ -446,9 +463,9 @@ export default function AdminPage() {
             <div className="mt-16 bg-blue-500/10 border border-blue-500/20 p-6 rounded-2xl flex gap-4 max-w-2xl mx-auto">
               <Info className="w-6 h-6 text-blue-500 shrink-0" />
               <div className="space-y-1">
-                <h4 className="text-[10px] uppercase font-bold text-blue-600">Tip voor Firebase Console</h4>
+                <h4 className="text-[10px] uppercase font-bold text-blue-600">Tip voor Firebase Storage</h4>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Als je foto&apos;s rechtstreeks in de Firebase Console uploadt, moet je de &quot;Download URL&quot; die Firebase daar genereert kopiëren en hierboven bij &quot;Handmatige Link&quot; plakken. Ze verschijnen niet automatisch in het archief door ze alleen in Storage te zetten.
+                  Zorg dat 'Storage' is ingeschakeld in de Firebase Console. Ga naar <strong>Storage</strong> &gt; <strong>Get Started</strong> &gt; <strong>Production Mode</strong>. Zodra geactiveerd, worden uploads automatisch gelinkt aan je archief.
                 </p>
               </div>
             </div>
@@ -465,17 +482,35 @@ export default function AdminPage() {
                 <Accordion type="single" collapsible className="w-full bg-blue-500/5 rounded-2xl border border-blue-500/10 px-6">
                   <AccordionItem value="webstation" className="border-none">
                     <AccordionTrigger className="text-[11px] uppercase font-bold tracking-widest text-blue-500 hover:no-underline">
-                      <Globe className="w-4 h-4 mr-2" /> Stap: Web Station instellen
+                      <Globe className="w-4 h-4 mr-2" /> Stap: Web Station instellen (DSM 7+)
                     </AccordionTrigger>
                     <AccordionContent className="space-y-4 pb-6">
                       <div className="space-y-3 text-sm text-muted-foreground leading-relaxed">
                         <p className="font-bold text-blue-600">Activeer je map als website:</p>
                         <ol className="list-decimal pl-5 space-y-2">
                           <li>Open <strong>Web Station</strong> op je NAS.</li>
-                          <li>Ga naar <strong>Webservice</strong> &gt; <strong>Maken</strong>.</li>
-                          <li>Kies <strong>Statische website</strong>.</li>
+                          <li>Ga naar <strong>Webservice</strong> (niet Webportaal).</li>
+                          <li>Klik op <strong>Maken</strong> &gt; <strong>Statische website</strong>.</li>
                           <li>Selecteer jouw map als <strong>Document-root</strong>.</li>
                         </ol>
+                        <p className="mt-4 italic">Na deze stap zijn je foto&apos;s via hun URL bereikbaar voor de app.</p>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                  <AccordionItem value="permissions" className="border-none border-t border-border/10">
+                    <AccordionTrigger className="text-[11px] uppercase font-bold tracking-widest text-blue-500 hover:no-underline">
+                      <UserPlus className="w-4 h-4 mr-2" /> Map 'web' bestaat maar is onzichtbaar?
+                    </AccordionTrigger>
+                    <AccordionContent className="space-y-4 pb-6">
+                      <div className="space-y-3 text-sm text-muted-foreground leading-relaxed">
+                        <p className="font-bold text-blue-600">Rechten herstellen:</p>
+                        <ol className="list-decimal pl-5 space-y-2">
+                          <li>Ga naar <strong>Configuratiescherm</strong> &gt; <strong>Gedeelde map</strong>.</li>
+                          <li>Selecteer de map <strong>web</strong> en klik op <strong>Bewerken</strong>.</li>
+                          <li>Ga naar het tabblad <strong>Machtigingen</strong>.</li>
+                          <li>Zoek je eigen gebruikersnaam en vink <strong>Lezen/Schrijven</strong> aan.</li>
+                        </ol>
+                        <p className="mt-4 text-xs">Nu verschijnt de map direct in File Station.</p>
                       </div>
                     </AccordionContent>
                   </AccordionItem>
