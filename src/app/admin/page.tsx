@@ -4,7 +4,7 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useFirestore, useCollection, useMemoFirebase, useStorage } from '@/firebase';
-import { collection, doc, serverTimestamp, deleteDoc, addDoc, query, orderBy, updateDoc } from 'firebase/firestore';
+import { collection, doc, serverTimestamp, deleteDoc, addDoc, query, orderBy, updateDoc, writeBatch } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -37,7 +37,10 @@ import {
   Star,
   LayoutGrid,
   CheckCircle2,
-  Save
+  Save,
+  Download,
+  Copy,
+  History
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -228,14 +231,7 @@ export default function AdminPage() {
         };
 
         const artworkCol = collection(firestore, 'artworks');
-        addDoc(artworkCol, newArtwork).catch(async (serverError) => {
-          const permissionError = new FirestorePermissionError({
-            path: 'artworks',
-            operation: 'create',
-            requestResourceData: newArtwork,
-          });
-          errorEmitter.emit('permission-error', permissionError);
-        });
+        addDoc(artworkCol, newArtwork);
 
         startedCount++;
         setUploadProgress((startedCount / totalFiles) * 100);
@@ -292,15 +288,14 @@ export default function AdminPage() {
     }
   };
 
-  const handleBulkUpload = () => {
+  const handleBulkUpload = async () => {
     if (!firestore || !bulkJson) return;
     setLoading(true);
     try {
       const data = JSON.parse(bulkJson);
       const artworksArray = Array.isArray(data) ? data : [data];
-      const artworkCol = collection(firestore, 'artworks');
       
-      artworksArray.forEach((item: any) => {
+      for (const item of artworksArray) {
         const payload = {
           ...item,
           createdAt: serverTimestamp(),
@@ -312,9 +307,11 @@ export default function AdminPage() {
           featured: item.featured || false,
           tags: item.tags || []
         };
+        // Remove ID if present in JSON to avoid conflicts or creating specific IDs
+        delete (payload as any).id;
         
-        addDoc(artworkCol, payload);
-      });
+        await addDoc(collection(firestore, 'artworks'), payload);
+      }
       
       toast({ title: "Import Succesvol", description: `${artworksArray.length} items toegevoegd.` });
       setBulkJson('');
@@ -326,6 +323,20 @@ export default function AdminPage() {
     }
   };
 
+  const handleExportArchive = () => {
+    if (!artworks) return;
+    const exportData = artworks.map(art => {
+      const { id, createdAt, ...rest } = art;
+      return rest;
+    });
+    setBulkJson(JSON.stringify(exportData, null, 2));
+    setActiveTab('bulk');
+    toast({ 
+      title: "Backup Gegenereerd", 
+      description: "De JSON in de tekstbox bevat uw volledige archief. Kopieer deze tekst en bewaar het veilig." 
+    });
+  };
+
   const updateArtworkField = async (id: string, field: string, value: any) => {
     if (!firestore || !id) return;
     setIsSaving(true);
@@ -334,7 +345,7 @@ export default function AdminPage() {
       .then(() => {
         setTimeout(() => setIsSaving(false), 300);
       })
-      .catch(async (serverError) => {
+      .catch(() => {
         setIsSaving(false);
       });
   };
@@ -378,17 +389,22 @@ export default function AdminPage() {
               <TabsTrigger value="archive" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Archief ({artworks?.length || 0})</TabsTrigger>
               <TabsTrigger value="upload" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Upload</TabsTrigger>
               <TabsTrigger value="nas" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Map Scannen</TabsTrigger>
-              <TabsTrigger value="bulk" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Bulk</TabsTrigger>
+              <TabsTrigger value="bulk" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Bulk / Backup</TabsTrigger>
             </TabsList>
 
-            <div className="relative w-full md:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input 
-                placeholder="Zoek in archief..." 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 rounded-full h-10 text-xs bg-muted/30 border-none"
-              />
+            <div className="flex gap-4 items-center">
+               <Button variant="outline" size="sm" onClick={handleExportArchive} className="hidden md:flex rounded-full text-[9px] uppercase font-bold tracking-widest border-accent/20 text-accent hover:bg-accent hover:text-white transition-all h-10">
+                <History className="w-3 h-3 mr-2" /> Backup Maken
+              </Button>
+              <div className="relative w-full md:w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input 
+                  placeholder="Zoek in archief..." 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 rounded-full h-10 text-xs bg-muted/30 border-none"
+                />
+              </div>
             </div>
           </div>
 
@@ -450,7 +466,7 @@ export default function AdminPage() {
                   </div>
                   <Button onClick={handleScanFolder} className="w-full h-20 rounded-2xl font-bold uppercase tracking-widest bg-accent hover:bg-accent/90 text-lg shadow-lg group">
                     <FolderOpen className="mr-4 w-8 h-8 group-hover:scale-110 transition-transform" />
-                    Hoofdmap Kiezen & Analyseren
+                    Hoofdmap Kiezen (Submappen = Zalen)
                   </Button>
                 </div>
               </Card>
@@ -461,11 +477,18 @@ export default function AdminPage() {
             <div className="max-w-4xl mx-auto space-y-6">
               <Card className="p-8 rounded-3xl border-border bg-card/50 shadow-xl">
                 <div className="space-y-6">
-                  <Label className="text-[10px] uppercase font-bold">Gevonden Schilderijen (JSON)</Label>
-                  <Textarea placeholder='Eerst een map scannen...' value={bulkJson} onChange={(e) => setBulkJson(e.target.value)} className="min-h-[400px] font-mono text-[10px] rounded-2xl bg-black/5" />
+                  <div className="flex justify-between items-center">
+                    <Label className="text-[10px] uppercase font-bold">Portefeuille Data (JSON)</Label>
+                    <div className="flex gap-2">
+                       <Button variant="ghost" size="sm" onClick={handleExportArchive} className="h-7 text-[8px] uppercase font-bold">Huidig archief ophalen</Button>
+                       <Button variant="ghost" size="sm" onClick={() => navigator.clipboard.writeText(bulkJson)} className="h-7 text-[8px] uppercase font-bold"><Copy className="w-3 h-3 mr-1" /> Kopieer JSON</Button>
+                    </div>
+                  </div>
+                  <Textarea placeholder='Plak hier uw backup JSON om alles in één keer te herstellen...' value={bulkJson} onChange={(e) => setBulkJson(e.target.value)} className="min-h-[400px] font-mono text-[10px] rounded-2xl bg-black/5" />
                   <Button onClick={handleBulkUpload} disabled={loading || !bulkJson} className="w-full h-14 rounded-xl font-bold uppercase tracking-widest shadow-xl">
-                    {loading ? <Loader2 className="animate-spin" /> : <><Upload className="mr-2 w-4 h-4" /> Toevoegen aan Archief</>}
+                    {loading ? <Loader2 className="animate-spin" /> : <><Upload className="mr-2 w-4 h-4" /> Importeer / Herstel Alles</>}
                   </Button>
+                  <p className="text-[9px] text-muted-foreground italic text-center">Let op: dit voegt de items toe aan de database. Dubbele items worden niet automatisch verwijderd.</p>
                 </div>
               </Card>
             </div>
