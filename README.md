@@ -16,16 +16,21 @@ Als DSM zegt dat de map `web` verplaatst is of als je geen rechten kunt toekenne
 1. **Maak een nieuwe map:**
    - Ga naar **Configuratiescherm** > **Gedeelde map** > **Maken**.
    - Noem de map bijv. `atelier-fotos`.
-   - Geef jezelf (admin) en de groep `http` **Lezen** rechten.
 
-2. **Koppel de nieuwe map aan Web Station:**
+2. **Rechten toekennen aan 'http' groep:**
+   - In het scherm van je nieuwe map, ga naar **Machtigingen**.
+   - Verander de dropdown linksboven van "Lokale gebruikers" naar **Lokale groepen**.
+   - Zoek de groep `http` en vink **Lezen** aan.
+   - Geef ook jezelf (admin) **Lezen/Schrijven** rechten.
+
+3. **Koppel de nieuwe map aan Web Station:**
    - Open **Web Station**.
    - Ga naar **Webservice-instellingen** -> **Maken**.
-   - Kies **Native scripttaalservice** of **Statische website**.
+   - Kies **Statische website**.
    - Selecteer bij **Document-root** de nieuwe map `atelier-fotos` die je zojuist hebt gemaakt.
    - Geef het een naam (bijv. 'fotos').
 
-3. **Toegang:**
+4. **Toegang:**
    - Je foto's zijn nu bereikbaar via `http://[IP-ADRES-NAS]/fotos/naam-van-foto.jpg`.
 
 ## 3. NAS Map Inlezen in de App

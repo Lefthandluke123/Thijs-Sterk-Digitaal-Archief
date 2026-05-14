@@ -27,7 +27,8 @@ import {
   Tag,
   AlertCircle,
   Info,
-  RefreshCw
+  RefreshCw,
+  UserPlus
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -241,10 +242,31 @@ export default function AdminPage() {
             <div className="max-w-3xl mx-auto space-y-8">
               <div className="text-center space-y-2">
                 <h2 className="text-3xl font-headline font-light">NAS Folder Helper</h2>
-                <p className="text-muted-foreground text-sm">Problemen met de 'web' map? Gebruik deze herstelstappen.</p>
+                <p className="text-muted-foreground text-sm">Beheer je foto's vanaf je eigen Synology server.</p>
               </div>
 
               <div className="grid gap-4">
+                <Accordion type="single" collapsible className="w-full bg-accent/5 rounded-2xl border border-accent/10 px-6">
+                  <AccordionItem value="http-group" className="border-none">
+                    <AccordionTrigger className="text-[11px] uppercase font-bold tracking-widest text-accent hover:no-underline">
+                      <UserPlus className="w-4 h-4 mr-2" /> Hoe voeg ik de 'http' groep toe?
+                    </AccordionTrigger>
+                    <AccordionContent className="space-y-4 pb-6">
+                      <div className="space-y-3 text-sm text-muted-foreground leading-relaxed">
+                        <p>De groep <code>http</code> is een systeemgroep die zorgt dat Web Station de bestanden kan tonen:</p>
+                        <ol className="list-decimal pl-5 space-y-2">
+                          <li>Ga naar <strong>Configuratiescherm</strong> &gt; <strong>Gedeelde map</strong>.</li>
+                          <li>Selecteer je nieuwe map (bijv. <code>atelier-fotos</code>) en klik op <strong>Bewerken</strong>.</li>
+                          <li>Ga naar het tabblad <strong>Machtigingen</strong>.</li>
+                          <li>Klik op het dropdown-menu (linksboven de lijst) waar "Lokale gebruikers" staat en verander dit in <strong>Lokale groepen</strong>.</li>
+                          <li>Zoek de groep <code>http</code> in de lijst en vink het vakje <strong>Lezen</strong> (of Lezen/Schrijven) aan.</li>
+                          <li>Klik op <strong>Opslaan</strong>. Je bestanden zijn nu bereikbaar voor de app.</li>
+                        </ol>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+
                 <Accordion type="single" collapsible className="w-full bg-red-500/5 rounded-2xl border border-red-500/10 px-6">
                   <AccordionItem value="moved-error" className="border-none">
                     <AccordionTrigger className="text-[11px] uppercase font-bold tracking-widest text-red-500 hover:no-underline">
@@ -254,31 +276,11 @@ export default function AdminPage() {
                       <div className="space-y-3 text-sm text-muted-foreground leading-relaxed">
                         <p>Als DSM zegt dat de map <strong>web</strong> is verplaatst, kun je de blokkade omzeilen door een <strong>eigen map</strong> te gebruiken:</p>
                         <ol className="list-decimal pl-5 space-y-2">
-                          <li>Ga naar <strong>Configuratiescherm</strong> &gt; <strong>Gedeelde map</strong> &gt; <strong>Maken</strong>.</li>
-                          <li>Noem de map bijvoorbeeld <code>atelier-fotos</code>.</li>
-                          <li>Geef jezelf en de groep <code>http</code> minimaal <strong>Lezen</strong> rechten.</li>
+                          <li>Maak een nieuwe gedeelde map aan (zie de 'http' instructie hierboven).</li>
                           <li>Open de app <strong>Web Station</strong>.</li>
                           <li>Ga naar <strong>Webservice-instellingen</strong> &gt; <strong>Maken</strong> &gt; <strong>Statische website</strong>.</li>
-                          <li>Selecteer bij "Document-root" je nieuwe map <code>atelier-fotos</code>.</li>
-                          <li>Vul hieronder je nieuwe Basis URL in, bijvoorbeeld: <code>http://[IP-NAS]/fotos/</code> (afhankelijk van je Web Station instelling).</li>
-                        </ol>
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
-
-                <Accordion type="single" collapsible className="w-full bg-accent/5 rounded-2xl border border-accent/10 px-6">
-                  <AccordionItem value="hidden-web-folder" className="border-none">
-                    <AccordionTrigger className="text-[11px] uppercase font-bold tracking-widest text-accent hover:no-underline">
-                      <RefreshCw className="w-4 h-4 mr-2" /> Map 'web' onzichtbaar in File Station?
-                    </AccordionTrigger>
-                    <AccordionContent className="space-y-4 pb-6">
-                      <div className="space-y-3 text-sm text-muted-foreground leading-relaxed">
-                        <p>Zorg dat jouw admin-account expliciete rechten heeft:</p>
-                        <ol className="list-decimal pl-5 space-y-2">
-                          <li>Ga naar <strong>Configuratiescherm</strong> &gt; <strong>Gedeelde map</strong> &gt; Selecteer <code>web</code> &gt; <strong>Bewerken</strong>.</li>
-                          <li>Ga naar <strong>Machtigingen</strong> en vink <strong>Lezen/Schrijven</strong> aan bij jouw naam.</li>
-                          <li>De map verschijnt nu direct in File Station.</li>
+                          <li>Selecteer bij "Document-root" je nieuwe map.</li>
+                          <li>Vul hieronder je nieuwe Basis URL in, bijvoorbeeld: <code>http://[IP-NAS]/fotos/</code>.</li>
                         </ol>
                       </div>
                     </AccordionContent>
