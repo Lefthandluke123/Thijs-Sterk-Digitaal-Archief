@@ -30,7 +30,6 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState('db');
   const [newTagInputs, setNewTagInputs] = useState<Record<string, string>>({});
   
-  // Wachtwoord beveiliging: 'gabbes'
   const [password, setPassword] = useState('');
   const [isAuthorized, setIsAuthorized] = useState(false);
 
