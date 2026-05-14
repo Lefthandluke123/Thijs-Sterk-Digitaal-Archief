@@ -28,7 +28,8 @@ import {
   AlertCircle,
   Info,
   RefreshCw,
-  UserPlus
+  UserPlus,
+  Globe
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -105,9 +106,10 @@ export default function AdminPage() {
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       if (imageExtensions.test(file.name)) {
-        const relativePath = file.webkitRelativePath || file.name;
+        // We nemen alleen de bestandsnaam, omdat de Base URL meestal al naar de juiste map wijst
+        const fileName = file.name;
         const fileNameOnly = file.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
-        const finalUrl = baseUrlClean + relativePath;
+        const finalUrl = baseUrlClean + fileName;
 
         if (artworksToImport.length === 0) {
           setPreviewUrl(finalUrl);
@@ -249,38 +251,37 @@ export default function AdminPage() {
                 <Accordion type="single" collapsible className="w-full bg-accent/5 rounded-2xl border border-accent/10 px-6">
                   <AccordionItem value="http-group" className="border-none">
                     <AccordionTrigger className="text-[11px] uppercase font-bold tracking-widest text-accent hover:no-underline">
-                      <UserPlus className="w-4 h-4 mr-2" /> Hoe voeg ik de 'http' groep toe?
+                      <UserPlus className="w-4 h-4 mr-2" /> Hoe machtig ik de 'http' groep?
                     </AccordionTrigger>
                     <AccordionContent className="space-y-4 pb-6">
                       <div className="space-y-3 text-sm text-muted-foreground leading-relaxed">
-                        <p>De groep <code>http</code> is een systeemgroep die zorgt dat Web Station de bestanden kan tonen:</p>
+                        <p>De groep <code>http</code> is essentieel om de foto's via de browser te tonen:</p>
                         <ol className="list-decimal pl-5 space-y-2">
                           <li>Ga naar <strong>Configuratiescherm</strong> &gt; <strong>Gedeelde map</strong>.</li>
-                          <li>Selecteer je nieuwe map (bijv. <code>atelier-fotos</code>) en klik op <strong>Bewerken</strong>.</li>
-                          <li>Ga naar het tabblad <strong>Machtigingen</strong>.</li>
-                          <li>Klik op het dropdown-menu (linksboven de lijst) waar "Lokale gebruikers" staat en verander dit in <strong>Lokale groepen</strong>.</li>
-                          <li>Zoek de groep <code>http</code> in de lijst en vink het vakje <strong>Lezen</strong> (of Lezen/Schrijven) aan.</li>
-                          <li>Klik op <strong>Opslaan</strong>. Je bestanden zijn nu bereikbaar voor de app.</li>
+                          <li>Selecteer je map en klik op <strong>Bewerken</strong> &gt; <strong>Machtigingen</strong>.</li>
+                          <li>Klik op het dropdown-menu en kies <strong>Lokale groepen</strong>.</li>
+                          <li>Zoek <code>http</code> en vink <strong>Lezen</strong> aan.</li>
                         </ol>
                       </div>
                     </AccordionContent>
                   </AccordionItem>
                 </Accordion>
 
-                <Accordion type="single" collapsible className="w-full bg-red-500/5 rounded-2xl border border-red-500/10 px-6">
+                <Accordion type="single" collapsible className="w-full bg-blue-500/5 rounded-2xl border border-blue-500/10 px-6">
                   <AccordionItem value="moved-error" className="border-none">
-                    <AccordionTrigger className="text-[11px] uppercase font-bold tracking-widest text-red-500 hover:no-underline">
-                      <AlertCircle className="w-4 h-4 mr-2" /> Fout: "Map is verplaatst"? (Plan B)
+                    <AccordionTrigger className="text-[11px] uppercase font-bold tracking-widest text-blue-500 hover:no-underline">
+                      <Globe className="w-4 h-4 mr-2" /> CRUCIAAL: Web Station koppelen
                     </AccordionTrigger>
                     <AccordionContent className="space-y-4 pb-6">
                       <div className="space-y-3 text-sm text-muted-foreground leading-relaxed">
-                        <p>Als DSM zegt dat de map <strong>web</strong> is verplaatst, kun je de blokkade omzeilen door een <strong>eigen map</strong> te gebruiken:</p>
+                        <p>Zelfs met de juiste rechten moet Web Station weten dat de map "gepubliceerd" mag worden:</p>
                         <ol className="list-decimal pl-5 space-y-2">
-                          <li>Maak een nieuwe gedeelde map aan (zie de 'http' instructie hierboven).</li>
-                          <li>Open de app <strong>Web Station</strong>.</li>
-                          <li>Ga naar <strong>Webservice-instellingen</strong> &gt; <strong>Maken</strong> &gt; <strong>Statische website</strong>.</li>
-                          <li>Selecteer bij "Document-root" je nieuwe map.</li>
-                          <li>Vul hieronder je nieuwe Basis URL in, bijvoorbeeld: <code>http://[IP-NAS]/fotos/</code>.</li>
+                          <li>Open de app <strong>Web Station</strong> op je NAS.</li>
+                          <li>Ga naar <strong>Webservice-instellingen</strong> &gt; <strong>Maken</strong>.</li>
+                          <li>Kies <strong>Statische website</strong>.</li>
+                          <li>Selecteer jouw nieuwe map als <strong>Document-root</strong>.</li>
+                          <li>Geef het een naam (bijv. <code>fotos</code>).</li>
+                          <li>Je Basis URL hieronder wordt dan: <code>http://[IP-NAS]/fotos/</code>.</li>
                         </ol>
                       </div>
                     </AccordionContent>
@@ -291,9 +292,9 @@ export default function AdminPage() {
               <Card className="p-8 rounded-3xl border-border bg-card/50 shadow-xl space-y-8">
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label className="text-[10px] uppercase font-bold">1. Basis URL van je NAS (poort 80/443)</Label>
+                    <Label className="text-[10px] uppercase font-bold">1. Basis URL van je NAS</Label>
                     <Input value={nasBaseUrl} onChange={(e) => setNasBaseUrl(e.target.value)} className="rounded-xl font-mono text-xs" />
-                    <p className="text-[9px] text-muted-foreground italic">Bijv: http://192.168.178.15/ of http://nas.local/</p>
+                    <p className="text-[9px] text-muted-foreground italic">Bijv: http://192.168.178.15/fotos/ (vergeet de laatste slash niet)</p>
                   </div>
                   
                   <div className="pt-4 border-t border-border/20">
@@ -315,11 +316,8 @@ export default function AdminPage() {
                           <a href={previewUrl} target="_blank" rel="noopener noreferrer"><ExternalLink className="w-3 h-3" /></a>
                         </Button>
                       </div>
-                      <p className="text-[9px] text-muted-foreground italic">Klik op het icoontje. Als de foto opent, klopt je Basis URL.</p>
+                      <p className="text-[9px] text-muted-foreground italic">Klik op het icoontje. Als de foto opent, klopt de koppeling.</p>
                     </div>
-                    <Button onClick={() => setActiveTab('bulk')} className="w-full rounded-xl bg-primary/20 text-primary border border-primary/20 uppercase text-[10px] font-bold tracking-widest h-12">
-                      Ga naar Bulk Import ({nasFileCount} bestanden)
-                    </Button>
                   </div>
                 )}
               </Card>
@@ -366,7 +364,6 @@ export default function AdminPage() {
               </div>
             )}
             
-            {/* Navigation Arrows */}
             <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-6 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
               <button onClick={(e) => { e.stopPropagation(); navigateEditing('prev'); }} className="p-4 rounded-full bg-background/20 backdrop-blur-md pointer-events-auto hover:bg-background/40 transition-colors">
                 <ChevronLeft className="w-8 h-8" />
@@ -386,11 +383,8 @@ export default function AdminPage() {
             </div>
           </div>
 
-          {/* Master Bottom Bar */}
           <div className="w-full bg-background/95 backdrop-blur-md border-t border-border/10 p-4 md:px-8 md:py-6 shadow-2xl">
             <div className="max-w-[1400px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
-              
-              {/* Info Column */}
               <div className="md:col-span-3 space-y-4">
                 <div className="space-y-1.5">
                   <Label className="text-[9px] uppercase font-bold tracking-widest opacity-50">Titel</Label>
@@ -420,7 +414,6 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              {/* Tags Column */}
               <div className="md:col-span-3 space-y-4">
                 <Label className="text-[9px] uppercase font-bold tracking-widest opacity-50 flex items-center gap-2">
                   <Tag className="w-3 h-3" /> Thema's / Tags
@@ -443,7 +436,6 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              {/* Sliders Column */}
               <div className="md:col-span-3 space-y-4">
                 <div className="space-y-3">
                   <Label className="text-[9px] uppercase font-bold tracking-widest opacity-50 flex justify-between">
@@ -471,7 +463,6 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              {/* Description Column */}
               <div className="md:col-span-3 space-y-1.5">
                 <Label className="text-[9px] uppercase font-bold tracking-widest opacity-50">Omschrijving</Label>
                 <Textarea 
@@ -481,12 +472,6 @@ export default function AdminPage() {
                   placeholder="Beschrijf het werk..."
                 />
               </div>
-
-            </div>
-            
-            {/* Keyboard hint */}
-            <div className="text-center mt-4 opacity-20 text-[8px] uppercase tracking-[0.3em] font-bold">
-              Gebruik de pijltjestoetsen om te bladeren door het archief
             </div>
           </div>
         </DialogContent>

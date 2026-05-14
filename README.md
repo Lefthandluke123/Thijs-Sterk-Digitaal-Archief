@@ -8,10 +8,9 @@ Zorg dat in je [Firebase Console](https://console.firebase.google.com/) het volg
 - **Firestore Database:** In productie-modus of test-modus.
 - **Authentication:** Schakel de 'Email/Password' of 'Google' provider in.
 
-## 2. NAS Map Herstellen (Synology)
+## 2. NAS Map Herstellen (Synology) - PLAN B
 
-### Fout: "Map is verplaatst" of "web" map onbereikbaar
-Als DSM zegt dat de map `web` verplaatst is of als je geen rechten kunt toekennen, volg dan dit **Plan B**:
+Als de standaard `web` map niet werkt of "verplaatst" is, volg dan deze stappen:
 
 1. **Maak een nieuwe map:**
    - Ga naar **Configuratiescherm** > **Gedeelde map** > **Maken**.
@@ -23,12 +22,13 @@ Als DSM zegt dat de map `web` verplaatst is of als je geen rechten kunt toekenne
    - Zoek de groep `http` en vink **Lezen** aan.
    - Geef ook jezelf (admin) **Lezen/Schrijven** rechten.
 
-3. **Koppel de nieuwe map aan Web Station:**
-   - Open **Web Station**.
-   - Ga naar **Webservice-instellingen** -> **Maken**.
+3. **Koppel de nieuwe map aan Web Station (CRUCIAAL):**
+   - Open de app **Web Station** op je NAS.
+   - Ga naar **Webservice-instellingen** -> klik op **Maken**.
    - Kies **Statische website**.
-   - Selecteer bij **Document-root** de nieuwe map `atelier-fotos` die je zojuist hebt gemaakt.
-   - Geef het een naam (bijv. 'fotos').
+   - Selecteer bij **Document-root** de map die je zojuist hebt gemaakt (`atelier-fotos`).
+   - Geef het een naam/alias (bijv. 'fotos').
+   - Klik op **Voltooien**.
 
 4. **Toegang:**
    - Je foto's zijn nu bereikbaar via `http://[IP-ADRES-NAS]/fotos/naam-van-foto.jpg`.
