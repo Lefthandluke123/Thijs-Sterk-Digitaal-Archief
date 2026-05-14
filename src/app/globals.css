@@ -4,7 +4,6 @@
 
 @layer base {
   :root {
-    /* Achtergrondkleur: #d5dc96 (H:66, S:46%, L:73%) */
     --background: 66 46% 73%;
     --foreground: 201 30% 15%;
     --card: 66 46% 76%;
@@ -17,9 +16,7 @@
     --secondary-foreground: 201 30% 20%;
     --muted: 66 20% 60%;
     --muted-foreground: 201 15% 35%;
-    /* Accentkleur: #cc9a07 (H:45, S:89%, L:41%) */
     --accent: 45 89% 41%; 
-    /* Accent tekst: lichtgrijs (H:0, S:0%, L:90%) */
     --accent-foreground: 0 0% 90%;
     --border: 66 20% 60%;
     --input: 66 20% 60%;

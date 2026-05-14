@@ -100,7 +100,7 @@ export default function AdminPage() {
   const handleAddTag = async (artId: string, currentTags: string[]) => {
     if (!firestore) return;
     const tagValue = newTagInputs[artId]?.trim();
-    if (!tagValue || currentTags?.includes(tagValue)) return;
+    if (!tagValue || (currentTags || []).includes(tagValue)) return;
     
     const updatedTags = [...(currentTags || []), tagValue];
     const artRef = doc(firestore, 'artworks', artId);
