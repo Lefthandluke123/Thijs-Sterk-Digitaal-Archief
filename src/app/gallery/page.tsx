@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
@@ -137,12 +136,12 @@ function GalleryContent() {
 
       <Dialog open={!!selectedArtwork} onOpenChange={() => setSelectedArtwork(null)}>
         <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background/98 backdrop-blur-3xl border-none rounded-none overflow-hidden">
-          <div className="relative flex-1 flex items-center justify-center overflow-hidden bg-black/5">
+          <div className="relative flex-1 h-[67vh] flex items-center justify-center overflow-hidden bg-black/5 group">
             {selectedArtwork && (
               <img 
                 src={selectedArtwork.imageUrl} 
                 alt={selectedArtwork.title} 
-                className="max-w-full max-h-[85vh] object-contain p-4 md:p-12"
+                className="max-w-full max-h-[90%] object-contain p-4 md:p-12 shadow-2xl transition-all duration-500"
                 style={{
                   clipPath: `inset(${selectedArtwork.cropTop || 0}% ${selectedArtwork.cropRight || 0}% ${selectedArtwork.cropBottom || 0}% ${selectedArtwork.cropLeft || 0}%)`,
                   filter: `brightness(${selectedArtwork.brightness || 1})`
@@ -150,31 +149,31 @@ function GalleryContent() {
               />
             )}
             <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-6 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-              <button onClick={(e) => { e.stopPropagation(); navigateGallery('prev'); }} className="p-3 rounded-full bg-background/10 backdrop-blur-sm pointer-events-auto hover:bg-background/20 transition-colors">
-                <ChevronLeft className="w-6 h-6" />
+              <button onClick={(e) => { e.stopPropagation(); navigateGallery('prev'); }} className="p-4 rounded-full bg-background/20 backdrop-blur-md pointer-events-auto hover:bg-background/40 transition-colors">
+                <ChevronLeft className="w-8 h-8" />
               </button>
-              <button onClick={(e) => { e.stopPropagation(); navigateGallery('next'); }} className="p-3 rounded-full bg-background/10 backdrop-blur-sm pointer-events-auto hover:bg-background/20 transition-colors">
-                <ChevronRight className="w-6 h-6" />
+              <button onClick={(e) => { e.stopPropagation(); navigateGallery('next'); }} className="p-4 rounded-full bg-background/20 backdrop-blur-md pointer-events-auto hover:bg-background/40 transition-colors">
+                <ChevronRight className="w-8 h-8" />
               </button>
             </div>
             <DialogClose className="absolute top-8 right-8 z-50 p-2 bg-background/10 backdrop-blur-sm rounded-full hover:bg-background/20 transition-colors">
-              <X className="w-5 h-5 opacity-50" />
+              <X className="w-6 h-6 opacity-50" />
             </DialogClose>
           </div>
 
-          <div className="w-full bg-background/95 backdrop-blur-md py-8 px-8 border-t border-border/10">
-            <div className="max-w-4xl mx-auto flex flex-col items-center text-center gap-4">
-              <DialogTitle className="font-headline text-4xl md:text-6xl font-light text-foreground tracking-tight">
+          <div className="h-[33vh] w-full bg-background/95 backdrop-blur-md py-12 px-8 border-t border-border/10 shadow-2xl flex flex-col items-center justify-center overflow-y-auto">
+            <div className="max-w-5xl mx-auto flex flex-col items-center text-center gap-8">
+              <DialogTitle className="font-headline text-5xl md:text-7xl font-light text-foreground tracking-tight leading-tight uppercase">
                 {selectedArtwork?.title}
               </DialogTitle>
-              <div className="text-[11px] md:text-[12px] uppercase tracking-[0.3em] text-accent font-bold flex flex-wrap gap-x-8 gap-y-2 justify-center items-center opacity-80">
+              <div className="text-[12px] md:text-[14px] uppercase tracking-[0.4em] text-accent font-bold flex flex-wrap gap-x-10 gap-y-4 justify-center items-center opacity-80">
                 <span>{selectedArtwork?.series}</span>
-                <span className="hidden md:inline w-1.5 h-1.5 rounded-full bg-accent/30" />
+                <span className="hidden md:inline w-2 h-2 rounded-full bg-accent/30" />
                 <span>{selectedArtwork?.year}</span>
-                <span className="hidden md:inline w-1.5 h-1.5 rounded-full bg-accent/30" />
+                <span className="hidden md:inline w-2 h-2 rounded-full bg-accent/30" />
                 <span>{selectedArtwork?.medium}</span>
               </div>
-              <Button variant="outline" size="lg" className="rounded-full text-[10px] uppercase tracking-[0.2em] px-12 h-12 border-primary/20 mt-4">
+              <Button variant="outline" size="lg" className="rounded-full text-[11px] uppercase tracking-[0.2em] px-16 h-14 border-primary/20 mt-4 hover:bg-accent hover:text-white hover:border-accent transition-all">
                 Interesse in dit werk?
               </Button>
             </div>

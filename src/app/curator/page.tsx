@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -204,12 +203,12 @@ export default function CuratorPage() {
 
       <Dialog open={!!selectedArtwork} onOpenChange={() => setSelectedArtwork(null)}>
         <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background/98 backdrop-blur-3xl border-none rounded-none overflow-hidden">
-          <div className="relative flex-1 flex items-center justify-center overflow-hidden bg-black/5">
+          <div className="relative flex-1 h-[67vh] flex items-center justify-center overflow-hidden bg-black/5">
             {selectedArtwork && (
               <img 
                 src={selectedArtwork.imageUrl} 
                 alt={selectedArtwork.title} 
-                className="max-w-full max-h-[80vh] object-contain p-4 md:p-12 shadow-2xl transition-all duration-500" 
+                className="max-w-full max-h-[90%] object-contain p-4 md:p-12 shadow-2xl transition-all duration-500" 
                 style={{
                   clipPath: `inset(${selectedArtwork.cropTop || 0}% ${selectedArtwork.cropRight || 0}% ${selectedArtwork.cropBottom || 0}% ${selectedArtwork.cropLeft || 0}%)`,
                   filter: `brightness(${selectedArtwork.brightness || 1})`
@@ -221,21 +220,21 @@ export default function CuratorPage() {
             </DialogClose>
           </div>
 
-          <div className="w-full bg-background/95 backdrop-blur-md py-10 px-8 border-t border-border/10 shadow-2xl">
-            <div className="max-w-5xl mx-auto flex flex-col items-center text-center gap-6">
+          <div className="h-[33vh] w-full bg-background/95 backdrop-blur-md py-12 px-8 border-t border-border/10 shadow-2xl flex flex-col items-center justify-center overflow-y-auto">
+            <div className="max-w-5xl mx-auto flex flex-col items-center text-center gap-8">
               <DialogTitle className="font-headline text-5xl md:text-7xl font-light text-foreground tracking-tight leading-tight uppercase">
                 {selectedArtwork?.title}
               </DialogTitle>
               
-              <div className="text-[11px] md:text-[13px] uppercase tracking-[0.4em] text-accent font-bold flex flex-wrap gap-x-8 gap-y-3 justify-center items-center opacity-80">
+              <div className="text-[12px] md:text-[14px] uppercase tracking-[0.4em] text-accent font-bold flex flex-wrap gap-x-10 gap-y-4 justify-center items-center opacity-80">
                 <span>{selectedArtwork?.series}</span>
-                <span className="hidden md:inline w-1.5 h-1.5 rounded-full bg-accent/30" />
+                <span className="hidden md:inline w-2 h-2 rounded-full bg-accent/30" />
                 <span>{selectedArtwork?.year}</span>
-                <span className="hidden md:inline w-1.5 h-1.5 rounded-full bg-accent/30" />
+                <span className="hidden md:inline w-2 h-2 rounded-full bg-accent/30" />
                 <span>{selectedArtwork?.medium}</span>
               </div>
               
-              <Button variant="outline" size="lg" className="rounded-full text-[10px] uppercase tracking-[0.2em] px-12 h-14 border-primary/20 mt-4 hover:bg-accent hover:text-white hover:border-accent transition-all">
+              <Button variant="outline" size="lg" className="rounded-full text-[11px] uppercase tracking-[0.2em] px-16 h-14 border-primary/20 mt-4 hover:bg-accent hover:text-white hover:border-accent transition-all">
                 Interesse in dit werk?
               </Button>
             </div>

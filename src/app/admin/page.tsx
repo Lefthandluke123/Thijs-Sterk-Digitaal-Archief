@@ -204,7 +204,6 @@ export default function AdminPage() {
       }
       const fileNameOnly = file.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
 
-      // Dubbel-check op titel EN serie
       const isDuplicate = artworks?.some(art => 
         art.title.toLowerCase() === fileNameOnly.toLowerCase() && 
         art.series.toLowerCase() === detectedSeries.toLowerCase()
@@ -284,7 +283,6 @@ export default function AdminPage() {
       for (const item of artworksArray) {
         const { id, ...rest } = item;
         
-        // Dubbel-check op URL of op titel+serie
         const isDuplicate = artworks?.some(art => 
           art.imageUrl === rest.imageUrl || 
           (art.title.toLowerCase() === rest.title.toLowerCase() && art.series.toLowerCase() === rest.series.toLowerCase())
@@ -516,12 +514,12 @@ export default function AdminPage() {
 
       <Dialog open={!!editingId} onOpenChange={() => setEditingId(null)}>
         <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background/98 backdrop-blur-3xl border-none rounded-none overflow-hidden">
-          <div className="relative flex-1 flex items-center justify-center overflow-hidden bg-black/5">
+          <div className="relative flex-1 h-[67vh] flex items-center justify-center overflow-hidden bg-black/5">
             {editingArtwork && (
               <img 
                 src={editingArtwork.imageUrl} 
                 alt={editingArtwork.title} 
-                className="max-w-[95%] max-h-[85%] object-contain p-4 transition-all duration-300 shadow-2xl" 
+                className="max-w-[95%] max-h-[90%] object-contain p-4 transition-all duration-300 shadow-2xl" 
                 style={{
                   clipPath: `inset(${editingArtwork.cropTop || 0}% ${editingArtwork.cropRight || 0}% ${editingArtwork.cropBottom || 0}% ${editingArtwork.cropLeft || 0}%)`,
                   filter: `brightness(${editingArtwork.brightness || 1})`
@@ -540,22 +538,22 @@ export default function AdminPage() {
             </div>
           </div>
 
-          <div className="w-full bg-background/95 backdrop-blur-md border-t border-border/10 p-2 shadow-2xl">
-            <div className="max-w-[1400px] mx-auto grid grid-cols-4 gap-4 items-start pb-4">
-              <div className="space-y-2">
-                <DialogTitle className="font-headline text-2xl md:text-3xl font-light text-center mb-1 leading-tight truncate px-4">
+          <div className="h-[33vh] w-full bg-background/95 backdrop-blur-md border-t border-border/10 p-6 shadow-2xl overflow-y-auto">
+            <div className="max-w-[1400px] mx-auto grid grid-cols-4 gap-8 items-start h-full">
+              <div className="space-y-4">
+                <DialogTitle className="font-headline text-3xl md:text-4xl font-light text-center mb-2 leading-tight truncate px-4">
                   {editingArtwork?.title}
                 </DialogTitle>
                 <div className="flex items-center justify-between px-2">
-                  <Label className="text-[7px] uppercase font-bold opacity-50">Uitgelicht</Label>
+                  <Label className="text-[8px] uppercase font-bold opacity-50">Uitgelicht op home</Label>
                   <Switch checked={editingArtwork?.featured || false} onCheckedChange={(val) => editingArtwork && updateArtworkField(editingArtwork.id, 'featured', val)} />
                 </div>
-                <Input defaultValue={editingArtwork?.title || ''} onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'title', e.target.value)} placeholder="Titel" className="h-7 text-xs font-headline bg-muted/10 border-none px-2" />
-                <div className="space-y-1">
-                  <Input defaultValue={editingArtwork?.series || ''} onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'series', e.target.value)} placeholder="Zaal (Serie)" className="h-7 text-[8px] bg-muted/10 border-none px-2 text-accent font-bold" />
-                  <div className="flex flex-wrap gap-1 max-h-12 overflow-y-auto">
+                <Input defaultValue={editingArtwork?.title || ''} onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'title', e.target.value)} placeholder="Titel" className="h-8 text-sm font-headline bg-muted/10 border-none px-3" />
+                <div className="space-y-2">
+                  <Input defaultValue={editingArtwork?.series || ''} onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'series', e.target.value)} placeholder="Zaal (Serie)" className="h-8 text-[10px] bg-muted/10 border-none px-3 text-accent font-bold" />
+                  <div className="flex flex-wrap gap-1.5 max-h-16 overflow-y-auto">
                     {existingSeries.map(s => (
-                      <button key={s} onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, 'series', s)} className="px-1.5 py-0.5 rounded-full text-[6px] font-bold uppercase bg-accent/10 text-accent hover:bg-accent/20">
+                      <button key={s} onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, 'series', s)} className="px-2 py-0.5 rounded-full text-[8px] font-bold uppercase bg-accent/10 text-accent hover:bg-accent/20 transition-colors">
                         {s}
                       </button>
                     ))}
@@ -563,38 +561,40 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <div className="grid grid-cols-2 gap-2">
-                  <Input defaultValue={editingArtwork?.year || ''} onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'year', e.target.value)} placeholder="Jaar" className="h-7 text-[8px] bg-muted/10 border-none px-2" />
-                  <Input defaultValue={editingArtwork?.medium || ''} onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'medium', e.target.value)} placeholder="Medium" className="h-7 text-[8px] bg-muted/10 border-none px-2" />
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <Input defaultValue={editingArtwork?.year || ''} onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'year', e.target.value)} placeholder="Jaar" className="h-8 text-[10px] bg-muted/10 border-none px-3" />
+                  <Input defaultValue={editingArtwork?.medium || ''} onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'medium', e.target.value)} placeholder="Medium" className="h-8 text-[10px] bg-muted/10 border-none px-3" />
                 </div>
-                <div className="flex flex-wrap gap-1 max-h-16 overflow-y-auto pt-1">
+                <div className="flex flex-wrap gap-1.5 pt-1">
                   {STANDARD_TAGS.map(tag => (
-                    <button key={tag} onClick={() => editingArtwork && toggleArtworkTag(editingArtwork, tag)} className={cn("px-1 py-0.5 rounded-full text-[6px] font-bold uppercase border", editingArtwork?.tags?.includes(tag) ? "bg-accent text-white border-accent" : "bg-background/50 text-muted-foreground border-border/40")}>
+                    <button key={tag} onClick={() => editingArtwork && toggleArtworkTag(editingArtwork, tag)} className={cn("px-2 py-1 rounded-full text-[8px] font-bold uppercase border transition-all", editingArtwork?.tags?.includes(tag) ? "bg-accent text-white border-accent" : "bg-background/50 text-muted-foreground border-border/40 hover:border-accent/40")}>
                       {tag}
                     </button>
                   ))}
                 </div>
               </div>
 
-              <div className="space-y-2 pt-1">
-                <Label className="text-[7px] uppercase font-bold opacity-40 block">Helderheid ({editingArtwork?.brightness?.toFixed(2) || '1.00'})</Label>
-                <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, 'brightness', Math.max(0, (editingArtwork.brightness || 1) - 0.01))}><Minus className="w-3 h-3" /></Button>
-                  <Slider value={[editingArtwork?.brightness || 1]} max={2} step={0.01} onValueChange={([val]) => editingArtwork && updateArtworkField(editingArtwork.id, 'brightness', val)} className="flex-1" />
-                  <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, 'brightness', Math.min(2, (editingArtwork.brightness || 1) + 0.01))}><Plus className="w-3 h-3" /></Button>
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-[8px] uppercase font-bold opacity-40 block mb-2">Helderheid ({editingArtwork?.brightness?.toFixed(2) || '1.00'})</Label>
+                  <div className="flex items-center gap-3">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, 'brightness', Math.max(0, (editingArtwork.brightness || 1) - 0.01))}><Minus className="w-4 h-4" /></Button>
+                    <Slider value={[editingArtwork?.brightness || 1]} max={2} step={0.01} onValueChange={([val]) => editingArtwork && updateArtworkField(editingArtwork.id, 'brightness', val)} className="flex-1" />
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, 'brightness', Math.min(2, (editingArtwork.brightness || 1) + 0.01))}><Plus className="w-4 h-4" /></Button>
+                  </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-6">
                   {['Top', 'Bottom'].map(side => {
                     const field = `crop${side}`;
                     const currentVal = editingArtwork?.[field as keyof typeof editingArtwork] as number || 0;
                     return (
-                      <div key={side} className="space-y-1">
-                        <Label className="text-[6px] uppercase font-bold opacity-40">{side} {currentVal}%</Label>
-                        <div className="flex items-center gap-1.5">
-                          <Button variant="ghost" size="icon" className="h-5 w-5 rounded-full" onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, field, Math.max(0, currentVal - 1))}><Minus className="w-2.5 h-2.5" /></Button>
+                      <div key={side} className="space-y-2">
+                        <Label className="text-[8px] uppercase font-bold opacity-40">{side} Crop {currentVal}%</Label>
+                        <div className="flex items-center gap-2">
+                          <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, field, Math.max(0, currentVal - 1))}><Minus className="w-3 h-3" /></Button>
                           <Slider value={[currentVal]} max={50} step={1} onValueChange={([val]) => editingArtwork && updateArtworkField(editingArtwork.id, field, val)} className="flex-1" />
-                          <Button variant="ghost" size="icon" className="h-5 w-5 rounded-full" onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, field, Math.min(50, currentVal + 1))}><Plus className="w-2.5 h-2.5" /></Button>
+                          <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, field, Math.min(50, currentVal + 1))}><Plus className="w-3 h-3" /></Button>
                         </div>
                       </div>
                     );
@@ -602,28 +602,28 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <div className="space-y-2 pt-1">
-                <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-6">
                   {['Left', 'Right'].map(side => {
                     const field = `crop${side}`;
                     const currentVal = editingArtwork?.[field as keyof typeof editingArtwork] as number || 0;
                     return (
-                      <div key={side} className="space-y-1">
-                        <Label className="text-[6px] uppercase font-bold opacity-40">{side} {currentVal}%</Label>
-                        <div className="flex items-center gap-1.5">
-                          <Button variant="ghost" size="icon" className="h-5 w-5 rounded-full" onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, field, Math.max(0, currentVal - 1))}><Minus className="w-2.5 h-2.5" /></Button>
+                      <div key={side} className="space-y-2">
+                        <Label className="text-[8px] uppercase font-bold opacity-40">{side} Crop {currentVal}%</Label>
+                        <div className="flex items-center gap-2">
+                          <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, field, Math.max(0, currentVal - 1))}><Minus className="w-3 h-3" /></Button>
                           <Slider value={[currentVal]} max={50} step={1} onValueChange={([val]) => editingArtwork && updateArtworkField(editingArtwork.id, field, val)} className="flex-1" />
-                          <Button variant="ghost" size="icon" className="h-5 w-5 rounded-full" onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, field, Math.min(50, currentVal + 1))}><Plus className="w-2.5 h-2.5" /></Button>
+                          <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, field, Math.min(50, currentVal + 1))}><Plus className="w-3 h-3" /></Button>
                         </div>
                       </div>
                     );
                   })}
                 </div>
-                <div className="flex items-center justify-between pt-1">
-                  <div className="flex items-center gap-1 opacity-40 text-[7px] uppercase font-bold">
-                    {isSaving ? <><Loader2 className="w-2.5 h-2.5 animate-spin" /> ...</> : <><CheckCircle2 className="w-2.5 h-2.5" /> Opgeslagen</>}
+                <div className="flex items-center justify-between pt-4 border-t border-border/10">
+                  <div className="flex items-center gap-2 opacity-50 text-[9px] uppercase font-bold">
+                    {isSaving ? <><Loader2 className="w-3 h-3 animate-spin" /> Bezig met opslaan...</> : <><CheckCircle2 className="w-3 h-3 text-green-500" /> Wijzigingen opgeslagen</>}
                   </div>
-                  <Button onClick={() => setEditingId(null)} className="h-7 px-8 text-[8px] uppercase tracking-widest font-bold">Gereed</Button>
+                  <Button onClick={() => setEditingId(null)} className="h-10 px-10 text-[10px] uppercase tracking-widest font-bold bg-primary text-white hover:bg-primary/90 rounded-full shadow-lg">Gereed</Button>
                 </div>
               </div>
             </div>
