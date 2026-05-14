@@ -1,4 +1,3 @@
-
 # Thijs Sterk Retrospectief Portfolio
 
 Dit project is het officiële eerbetoon aan het werk van Thijs Sterk (1913-1982).

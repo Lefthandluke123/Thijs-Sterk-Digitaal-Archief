@@ -25,10 +25,6 @@ export const metadata: Metadata = {
     locale: 'nl_NL',
     type: 'website',
   },
-  robots: {
-    index: true,
-    follow: true,
-  },
 };
 
 export default function RootLayout({
@@ -47,7 +43,7 @@ export default function RootLayout({
         <FirebaseClientProvider>
           <Navbar />
           {children}
-          {children && <Footer />}
+          <Footer />
         </FirebaseClientProvider>
       </body>
     </html>
