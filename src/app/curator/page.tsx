@@ -121,16 +121,15 @@ export default function CuratorPage() {
                 {filteredArtworks.map((item) => (
                   <div key={item.id} className="group relative cursor-pointer" onClick={() => setSelectedArtwork(item)}>
                     <div className="relative aspect-[4/5] overflow-hidden rounded-sm bg-muted/20">
-                      <Image 
+                      <img 
                         src={item.imageUrl} 
                         alt={item.title} 
-                        fill 
-                        className="object-cover transition-all duration-700 ease-out group-hover:scale-[1.03]" 
-                        unoptimized={isExternalStorage(item.imageUrl)} 
+                        className="w-full h-full object-cover transition-all duration-700 ease-out group-hover:scale-[1.03]" 
                         style={{
                           clipPath: `inset(${item.cropTop || 0}% ${item.cropRight || 0}% ${item.cropBottom || 0}% ${item.cropLeft || 0}%)`,
                           filter: `brightness(${item.brightness || 1})`
                         }}
+                        onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Beeld+Fout'; }}
                       />
                       {/* Watermark */}
                       <div className="absolute bottom-2 right-2 z-10 pointer-events-none opacity-20 text-[6px] uppercase tracking-widest text-white font-bold bg-black/20 px-1 rounded-sm">
@@ -156,22 +155,20 @@ export default function CuratorPage() {
       </div>
 
       <Dialog open={!!selectedArtwork} onOpenChange={() => setSelectedArtwork(null)}>
-        <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background/98 backdrop-blur-3xl border-none rounded-none">
+        <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background/98 backdrop-blur-3xl border-none rounded-none overflow-hidden">
           <div className="relative flex-1 flex items-center justify-center overflow-hidden group bg-black/5">
             {selectedArtwork && (
               <div className="relative w-full h-full flex items-center justify-center">
-                <Image 
+                <img 
                   src={selectedArtwork.imageUrl} 
                   alt={selectedArtwork.title} 
-                  fill 
-                  className="object-contain p-4 md:p-12" 
-                  unoptimized={isExternalStorage(selectedArtwork.imageUrl)} 
+                  className="max-w-full max-h-full object-contain p-4 md:p-12" 
                   style={{
                     clipPath: `inset(${selectedArtwork.cropTop || 0}% ${selectedArtwork.cropRight || 0}% ${selectedArtwork.cropBottom || 0}% ${selectedArtwork.cropLeft || 0}%)`,
                     filter: `brightness(${selectedArtwork.brightness || 1})`
                   }}
+                  onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Beeld+Fout'; }}
                 />
-                {/* Visual Watermark Overlay in Dialog */}
                 <div className="absolute inset-0 pointer-events-none flex items-center justify-center opacity-[0.03] select-none rotate-[-45deg]">
                   <span className="text-6xl md:text-8xl font-bold uppercase tracking-[0.5em] text-foreground">
                     Erven Thijs Sterk
