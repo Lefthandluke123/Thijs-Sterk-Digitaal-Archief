@@ -8,22 +8,23 @@ Zorg dat in je [Firebase Console](https://console.firebase.google.com/) het volg
 - **Authentication:** Schakel de 'Email/Password' of 'Google' provider in.
 
 ## 2. NAS Map Herstellen (Synology)
-Als de `web` map op je NAS niet meer toegankelijk is of als je foutmeldingen krijgt over Apache:
+Als de `web` map op je NAS niet meer zichtbaar is in File Station:
 
-1. **Backend Server Installeren:**
-   - Ga naar het **Package Center** in DSM.
-   - Zoek naar **Apache HTTP Server 2.4** (of 2.2) en installeer deze.
-   - Alternatief: Zorg dat **Nginx** is geïnstalleerd.
+1. **Map handmatig aanmaken:**
+   - Ga naar **Configuratiescherm** > **Gedeelde map**.
+   - Klik op **Maken** > **Maken**.
+   - Voer bij Naam exact `web` in.
+   - Klik op Volgende tot je bij **Machtigingen** bent.
+   - Zoek de groep `http` en geef deze **Lezen/Schrijven** rechten.
 
-2. **Web Station Configureren:**
+2. **Backend Server Configureren:**
+   - Ga naar het **Package Center** en installeer **Apache HTTP Server 2.4**.
    - Open de **Web Station** app.
    - Ga naar **Webservice-instellingen** -> **Default Service** -> **Bewerken**.
-   - Kies bij **HTTP-back-endserver** voor **Apache** of **Nginx**.
-   - Dit zorgt ervoor dat de `web` map weer door de server wordt 'geserveerd'.
+   - Kies bij **HTTP-back-endserver** voor de zojuist geïnstalleerde Apache of Nginx.
 
-3. **Rechten:**
-   - Ga naar **Configuratiescherm** > **Gedeelde map** > **web** > **Bewerken** > **Machtigingen**.
-   - Geef de groep `http` leesrechten.
+3. **Rechten controleren:**
+   - Zorg dat in **Configuratiescherm** > **Gedeelde map** > **web** > **Bewerken** > **Machtigingen** de groep `http` echt op 'Lezen' staat.
 
 ## 3. NAS Map Inlezen in de App
 In het `/admin` gedeelte vind je de **NAS Folder Helper**:
@@ -44,5 +45,3 @@ git branch -M main
 git remote add origin https://github.com/JOUW_GEBRUIKERSNAAM/thijs-sterk-portfolio.git
 git push -u origin main
 ```
-
-Ga daarna in de Firebase Console naar **App Hosting** en verbind je GitHub repo om de site live te zetten.

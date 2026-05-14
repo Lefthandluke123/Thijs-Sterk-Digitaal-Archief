@@ -21,7 +21,8 @@ import {
   Link as LinkIcon,
   ExternalLink,
   Info,
-  AlertCircle
+  AlertCircle,
+  HelpCircle
 } from 'lucide-react';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -31,6 +32,7 @@ import { Slider } from '@/components/ui/slider';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 export default function AdminPage() {
   const firestore = useFirestore();
@@ -40,7 +42,6 @@ export default function AdminPage() {
   const directoryInputRef = useRef<HTMLInputElement>(null);
   
   // NAS Helper state
-  // We houden de URL flexibel zodat de gebruiker kan experimenteren met/zonder /web/
   const [nasBaseUrl, setNasBaseUrl] = useState('https://192-168-178-15.doggyfew.direct.quickconnect.to/');
   const [nasFileCount, setNasFileCount] = useState(0);
   const [previewUrl, setPreviewUrl] = useState('');
@@ -89,9 +90,7 @@ export default function AdminPage() {
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       if (imageExtensions.test(file.name)) {
-        // webkitRelativePath bevat het pad vanaf de geselecteerde map
         const relativePath = file.webkitRelativePath || file.name;
-        
         const fileNameOnly = file.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
         const finalUrl = baseUrlClean + relativePath;
 
@@ -321,53 +320,67 @@ export default function AdminPage() {
           </TabsContent>
 
           <TabsContent value="nas">
-            <div className="max-w-2xl mx-auto space-y-6">
+            <div className="max-w-3xl mx-auto space-y-8">
               <div className="text-center space-y-2">
                 <h2 className="text-3xl font-headline font-light">NAS Folder Helper</h2>
-                <p className="text-muted-foreground text-sm">Problemen met de /web map? Pas hier de URL aan om te testen.</p>
+                <p className="text-muted-foreground text-sm">Beheer je afbeeldingen direct vanaf je Synology NAS.</p>
               </div>
 
-              {nasBaseUrl.includes('/web/') && (
-                <Alert className="bg-amber-500/5 border-amber-500/20">
-                  <AlertCircle className="h-4 w-4 text-amber-500" />
-                  <AlertTitle className="text-[10px] uppercase font-bold text-amber-600">Check /web Map</AlertTitle>
-                  <AlertDescription className="text-xs text-amber-700/80">
-                    Je URL bevat momenteel `/web/`. Als de map op je NAS niet meer toegankelijk is, probeer deze prefix dan te verwijderen of te veranderen naar de naam van je nieuwe gedeelde map.
-                  </AlertDescription>
-                </Alert>
-              )}
+              <Accordion type="single" collapsible className="w-full bg-accent/5 rounded-2xl border border-accent/10 px-6">
+                <AccordionItem value="missing-web-folder" className="border-none">
+                  <AccordionTrigger className="text-[11px] uppercase font-bold tracking-widest text-accent hover:no-underline">
+                    <HelpCircle className="w-4 h-4 mr-2" /> Map 'web' ontbreekt in File Station?
+                  </AccordionTrigger>
+                  <AccordionContent className="space-y-4 pb-6">
+                    <div className="space-y-3 text-sm text-muted-foreground leading-relaxed">
+                      <p>Als de map <strong>web</strong> niet zichtbaar is, volg dan deze stappen in DSM:</p>
+                      <ol className="list-decimal pl-5 space-y-2">
+                        <li>Ga naar <strong>Configuratiescherm</strong> &gt; <strong>Gedeelde map</strong>.</li>
+                        <li>Klik op <strong>Maken</strong> &gt; <strong>Maken</strong> en noem de map exact <code>web</code>.</li>
+                        <li>Ga bij de machtigingen naar de groep <strong>http</strong> en geef deze <strong>Lezen</strong> rechten.</li>
+                        <li>Installeer <strong>Web Station</strong> via het Package Center als dat nog niet is gebeurd.</li>
+                        <li>Controleer in de Web Station app of de <strong>Default Service</strong> is ingesteld op Apache of Nginx.</li>
+                      </ol>
+                      <p className="italic bg-background/50 p-3 rounded-lg border border-border/20">
+                        Zodra de map 'web' bestaat, kun je daar je map met foto's in plaatsen. Die verschijnt dan weer in File Station.
+                      </p>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
               
               <Card className="p-8 rounded-3xl border-border bg-card/50 shadow-xl space-y-8">
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label className="text-[10px] uppercase font-bold">1. Basis URL van je NAS</Label>
                     <Input value={nasBaseUrl} onChange={(e) => setNasBaseUrl(e.target.value)} className="rounded-xl font-mono text-xs" />
-                    <p className="text-[9px] text-muted-foreground italic">Experimenteer hier met het pad (bijv. wel of geen /web/).</p>
+                    <p className="text-[9px] text-muted-foreground italic">Gebruik je QuickConnect adres. Vergeet de afsluitende / niet.</p>
                   </div>
                   
                   <div className="pt-4 border-t border-border/20">
-                    <Label className="text-[10px] uppercase font-bold mb-4 block">2. Selecteer de map</Label>
+                    <Label className="text-[10px] uppercase font-bold mb-4 block">2. Selecteer de map op je NAS</Label>
                     <Button onClick={handleScanFolder} className="w-full h-20 rounded-2xl font-bold uppercase tracking-widest bg-accent hover:bg-accent/90 text-lg shadow-lg group">
                       <FolderOpen className="mr-4 w-8 h-8 group-hover:scale-110 transition-transform" />
-                      Kies Map op NAS
+                      Map Selecteren
                     </Button>
+                    <p className="text-[9px] text-muted-foreground mt-2 text-center">Koppel je NAS als lokale schijf om de map direct te kunnen aanwijzen.</p>
                   </div>
                 </div>
 
                 {previewUrl && (
                   <div className="space-y-4 pt-6 border-t border-border/20">
                     <div className="bg-muted/30 p-4 rounded-xl space-y-2">
-                      <Label className="text-[9px] uppercase font-bold">Voorbeeld van gegenereerde link:</Label>
+                      <Label className="text-[9px] uppercase font-bold">Test Link (werkt dit?):</Label>
                       <div className="flex items-center gap-2 overflow-hidden">
                         <code className="text-[10px] text-primary truncate flex-1">{previewUrl}</code>
                         <Button variant="ghost" size="icon" className="h-6 w-6" asChild title="Test link">
                           <a href={previewUrl} target="_blank" rel="noopener noreferrer"><ExternalLink className="w-3 h-3" /></a>
                         </Button>
                       </div>
-                      <p className="text-[9px] text-muted-foreground italic">Klik op het icoontje. Als de foto opent, is de URL correct!</p>
+                      <p className="text-[9px] text-muted-foreground italic">Klik op het icoontje. Als de foto opent, zijn je NAS-instellingen correct.</p>
                     </div>
                     <Button onClick={() => setActiveTab('bulk')} className="w-full rounded-xl bg-primary/20 text-primary border border-primary/20 uppercase text-[10px] font-bold tracking-widest h-12">
-                      Naar Bulk Import ({nasFileCount} bestanden)
+                      Ga naar Bulk Import ({nasFileCount} bestanden)
                     </Button>
                   </div>
                 )}
