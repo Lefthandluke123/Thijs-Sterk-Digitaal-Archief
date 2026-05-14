@@ -16,36 +16,6 @@
       "description": "Portret van de kunstenaar aan het werk.",
       "imageUrl": "https://picsum.photos/seed/artist/800/1000",
       "imageHint": "vintage artist portrait"
-    },
-    {
-      "id": "artwork-1",
-      "title": "De Branding bij Hargen",
-      "series": "Waterpartijen",
-      "year": "1962",
-      "medium": "Olieverf op doek",
-      "description": "De dynamiek van de zee gevangen in krachtige streken.",
-      "imageUrl": "https://picsum.photos/seed/art1/800/1000",
-      "imageHint": "sea waves painting"
-    },
-    {
-      "id": "artwork-2",
-      "title": "Stilleven met Klaprozen",
-      "series": "Bloemen",
-      "year": "1958",
-      "medium": "Aquarel",
-      "description": "Een verfijnde studie van kleur en kwetsbaarheid.",
-      "imageUrl": "https://picsum.photos/seed/art2/800/1000",
-      "imageHint": "flower painting"
-    },
-    {
-      "id": "artwork-3",
-      "title": "Avondlicht over Groet",
-      "series": "Landschappen",
-      "year": "1970",
-      "medium": "Olieverf",
-      "description": "De stilte van het Noord-Hollandse dorp bij zonsondergang.",
-      "imageUrl": "https://picsum.photos/seed/art3/800/1000",
-      "imageHint": "village landscape painting"
     }
   ]
 }
