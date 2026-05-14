@@ -56,10 +56,9 @@ export default function AdminPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const directoryInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const uploadDirInputRef = useRef<HTMLInputElement>(null);
   
   const [nasBaseUrl, setNasBaseUrl] = useState('http://192.168.178.15/fotos/');
-  const [manualTitle, setManualTitle] = useState('');
-  const [manualUrl, setManualUrl] = useState('');
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState('');
@@ -138,10 +137,10 @@ export default function AdminPage() {
         const relativePath = (file as any).webkitRelativePath || "";
         const pathParts = relativePath.split('/');
         
-        // Detect series: if selected root contains folders, pathParts[1] is usually the subfolder
+        // Root is index 0. Immediate subfolder is index 1.
         let detectedSeries = "Hoofdcollectie";
         if (pathParts.length > 2) {
-          detectedSeries = pathParts[1];
+          detectedSeries = pathParts[pathParts.length - 2];
         }
 
         const fileNameOnly = file.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
@@ -169,13 +168,12 @@ export default function AdminPage() {
     setBulkJson(JSON.stringify(artworksToImport, null, 2));
     setActiveTab('bulk');
     toast({ 
-      title: "Mappen Analyse Voltooid", 
-      description: `${artworksToImport.length} foto's verdeeld over collecties gebaseerd op mappen.` 
+      title: "Map Analyse Voltooid", 
+      description: `${artworksToImport.length} foto's verdeeld over collecties gebaseerd op de mappenstructuur.` 
     });
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
+  const handleBatchProcess = async (files: FileList | null, toCloud: boolean = true) => {
     if (!files || files.length === 0 || !storage || !firestore) return;
 
     setIsUploading(true);
@@ -185,6 +183,9 @@ export default function AdminPage() {
 
     for (let i = 0; i < totalFiles; i++) {
       const file = files[i];
+      const imageExtensions = /\.(jpe?g|png|webp|avif)$/i;
+      if (!imageExtensions.test(file.name)) continue;
+
       setUploadStatus(`Verwerken: ${file.name} (${i + 1}/${totalFiles})`);
       
       const uniqueId = Math.random().toString(36).substring(7);
@@ -195,9 +196,16 @@ export default function AdminPage() {
         const downloadUrl = await getDownloadURL(snapshot.ref);
         const fileNameOnly = file.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
         
+        const relativePath = (file as any).webkitRelativePath || "";
+        const pathParts = relativePath.split('/');
+        let detectedSeries = "Nieuwe Uploads";
+        if (pathParts.length > 2) {
+          detectedSeries = pathParts[pathParts.length - 2];
+        }
+
         const newArtwork = {
           title: fileNameOnly,
-          series: "Nieuwe Uploads",
+          series: detectedSeries,
           imageUrl: downloadUrl,
           medium: "Olieverf op doek",
           year: new Date().getFullYear().toString(),
@@ -221,10 +229,9 @@ export default function AdminPage() {
       }
     }
 
-    toast({ title: "Batch Voltooid", description: `${startedCount} foto's zijn verwerkt.` });
+    toast({ title: "Batch Voltooid", description: `${startedCount} foto's zijn verwerkt en toegevoegd.` });
     setIsUploading(false);
     setUploadStatus('');
-    if (fileInputRef.current) fileInputRef.current.value = '';
     setActiveTab('archive');
   };
 
@@ -289,7 +296,8 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-background flex flex-col pt-14">
       <input type="file" ref={directoryInputRef} style={{ display: 'none' }} onChange={handleDirectoryChange} {...({ webkitdirectory: "", directory: "" } as any)} />
-      <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={handleFileUpload} accept="image/*" multiple />
+      <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={(e) => handleBatchProcess(e.target.files)} accept="image/*" multiple />
+      <input type="file" ref={uploadDirInputRef} style={{ display: 'none' }} onChange={(e) => handleBatchProcess(e.target.files)} {...({ webkitdirectory: "", directory: "" } as any)} />
 
       <header className="h-16 border-b border-border bg-background/95 backdrop-blur-sm sticky top-14 z-40 px-8 flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -307,7 +315,7 @@ export default function AdminPage() {
             <TabsList className="bg-muted/50 p-1 rounded-full w-fit">
               <TabsTrigger value="archive" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Archief ({artworks?.length || 0})</TabsTrigger>
               <TabsTrigger value="upload" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Uploaden</TabsTrigger>
-              <TabsTrigger value="nas" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Map Importeren</TabsTrigger>
+              <TabsTrigger value="nas" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Map Importeren (NAS)</TabsTrigger>
               <TabsTrigger value="bulk" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Backup & Bulk</TabsTrigger>
             </TabsList>
 
@@ -368,11 +376,11 @@ export default function AdminPage() {
           <TabsContent value="nas">
             <Card className="p-12 rounded-3xl border-border bg-card/50 shadow-xl max-w-2xl mx-auto text-center space-y-8">
               <div className="space-y-4">
-                <h3 className="font-headline text-2xl font-light">Hoofdmap Selecteren</h3>
-                <p className="text-sm text-muted-foreground">Kies een map op uw computer of server. Elke submap wordt automatisch een nieuwe "Zaal" in uw galerie.</p>
+                <h3 className="font-headline text-2xl font-light">Hoofdmap Selecteren (NAS)</h3>
+                <p className="text-sm text-muted-foreground">Kies een map op uw NAS of computer. Submappen worden automatisch herkent als aparte zalen.</p>
               </div>
               <div className="space-y-4">
-                <Label className="text-[10px] uppercase font-bold text-left block">Basis URL (bijv. van uw NAS)</Label>
+                <Label className="text-[10px] uppercase font-bold text-left block">Basis URL</Label>
                 <Input value={nasBaseUrl} onChange={(e) => setNasBaseUrl(e.target.value)} className="rounded-xl font-mono text-xs" />
                 <Button onClick={handleScanFolder} className="w-full h-20 rounded-2xl font-bold uppercase tracking-widest bg-accent hover:bg-accent/90 text-lg shadow-lg">
                   <FolderOpen className="mr-4 w-8 h-8" />
@@ -380,6 +388,28 @@ export default function AdminPage() {
                 </Button>
               </div>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="upload">
+             <Card className="p-10 rounded-3xl border-dashed border-2 border-accent/20 bg-accent/5 flex flex-col items-center justify-center space-y-8 max-w-2xl mx-auto">
+                <CloudUpload className="w-12 h-12 text-accent" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+                  <Button onClick={() => fileInputRef.current?.click()} disabled={isUploading} className="h-20 rounded-2xl font-bold uppercase tracking-widest shadow-xl flex flex-col items-center justify-center gap-2">
+                    <Plus className="w-5 h-5" />
+                    Bestanden Kiezen
+                  </Button>
+                  <Button onClick={() => uploadDirInputRef.current?.click()} disabled={isUploading} variant="secondary" className="h-20 rounded-2xl font-bold uppercase tracking-widest shadow-xl flex flex-col items-center justify-center gap-2">
+                    <FolderOpen className="w-5 h-5" />
+                    Mappen Uploaden
+                  </Button>
+                </div>
+                {isUploading && (
+                  <div className="w-full space-y-3">
+                    <Progress value={uploadProgress} className="h-1" />
+                    <p className="text-[10px] uppercase font-bold text-accent text-center">{uploadStatus}</p>
+                  </div>
+                )}
+              </Card>
           </TabsContent>
 
           <TabsContent value="bulk">
@@ -397,22 +427,6 @@ export default function AdminPage() {
               </Button>
             </Card>
           </TabsContent>
-
-          <TabsContent value="upload">
-             <Card className="p-10 rounded-3xl border-dashed border-2 border-accent/20 bg-accent/5 flex flex-col items-center justify-center space-y-6 max-w-2xl mx-auto">
-                <CloudUpload className="w-12 h-12 text-accent" />
-                <Button onClick={() => fileInputRef.current?.click()} disabled={isUploading} className="w-full h-14 rounded-2xl font-bold uppercase tracking-widest shadow-xl">
-                  {isUploading ? <Loader2 className="animate-spin mr-2" /> : <Plus className="mr-2" />}
-                  Bestanden Kiezen
-                </Button>
-                {isUploading && (
-                  <div className="w-full space-y-3">
-                    <Progress value={uploadProgress} className="h-1" />
-                    <p className="text-[10px] uppercase font-bold text-accent text-center">{uploadStatus}</p>
-                  </div>
-                )}
-              </Card>
-          </TabsContent>
         </Tabs>
       </main>
 
@@ -423,7 +437,7 @@ export default function AdminPage() {
               <img 
                 src={editingArtwork.imageUrl} 
                 alt={editingArtwork.title} 
-                className="max-w-[90%] max-h-[80%] object-contain p-4 transition-all duration-300 shadow-2xl" 
+                className="max-w-[95%] max-h-[85%] object-contain p-4 transition-all duration-300 shadow-2xl" 
                 style={{
                   clipPath: `inset(${editingArtwork.cropTop || 0}% ${editingArtwork.cropRight || 0}% ${editingArtwork.cropBottom || 0}% ${editingArtwork.cropLeft || 0}%)`,
                   filter: `brightness(${editingArtwork.brightness || 1})`
@@ -442,53 +456,43 @@ export default function AdminPage() {
             </div>
           </div>
 
-          <div className="w-full bg-background/95 backdrop-blur-md border-t border-border/10 p-4 shadow-2xl">
-            <div className="max-w-[1400px] mx-auto grid grid-cols-4 gap-8 items-start">
-              <div className="space-y-3">
-                <DialogTitle className="font-headline text-3xl font-light text-center mb-4 leading-tight">
+          <div className="w-full bg-background/95 backdrop-blur-md border-t border-border/10 p-2 shadow-2xl">
+            <div className="max-w-[1400px] mx-auto grid grid-cols-4 gap-4 items-start pb-4">
+              <div className="space-y-2">
+                <DialogTitle className="font-headline text-2xl font-light text-center mb-1 leading-tight truncate">
                   {editingArtwork?.title}
                 </DialogTitle>
-                <div className="flex items-center justify-between">
-                  <Label className="text-[8px] uppercase font-bold opacity-50">Uitgelicht</Label>
+                <div className="flex items-center justify-between px-2">
+                  <Label className="text-[7px] uppercase font-bold opacity-50">Uitgelicht</Label>
                   <Switch checked={editingArtwork?.featured || false} onCheckedChange={(val) => editingArtwork && updateArtworkField(editingArtwork.id, 'featured', val)} />
                 </div>
-                <Input defaultValue={editingArtwork?.title || ''} onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'title', e.target.value)} placeholder="Titel" className="h-8 text-xs font-headline bg-muted/10 border-none px-2" />
-                <Input defaultValue={editingArtwork?.series || ''} onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'series', e.target.value)} placeholder="Selectie / Serie (Zaal)" className="h-8 text-[9px] bg-muted/10 border-none px-2 text-accent font-bold" />
-                <div className="flex flex-wrap gap-1 max-h-16 overflow-y-auto">
-                  {existingSeries.map(s => (
-                    <button key={s} onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, 'series', s)} className={cn("text-[6px] uppercase font-bold px-1 py-0.5 rounded-sm", editingArtwork?.series === s ? "bg-accent text-white" : "bg-muted/30")}>
-                      {s}
-                    </button>
-                  ))}
-                </div>
+                <Input defaultValue={editingArtwork?.title || ''} onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'title', e.target.value)} placeholder="Titel" className="h-7 text-xs font-headline bg-muted/10 border-none px-2" />
+                <Input defaultValue={editingArtwork?.series || ''} onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'series', e.target.value)} placeholder="Zaal (Serie)" className="h-7 text-[8px] bg-muted/10 border-none px-2 text-accent font-bold" />
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <div className="grid grid-cols-2 gap-2">
-                  <Input defaultValue={editingArtwork?.year || ''} onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'year', e.target.value)} placeholder="Jaar" className="h-8 text-[9px] bg-muted/10 border-none" />
-                  <Input defaultValue={editingArtwork?.medium || ''} onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'medium', e.target.value)} placeholder="Medium" className="h-8 text-[9px] bg-muted/10 border-none" />
+                  <Input defaultValue={editingArtwork?.year || ''} onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'year', e.target.value)} placeholder="Jaar" className="h-7 text-[8px] bg-muted/10 border-none px-2" />
+                  <Input defaultValue={editingArtwork?.medium || ''} onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'medium', e.target.value)} placeholder="Medium" className="h-7 text-[8px] bg-muted/10 border-none px-2" />
                 </div>
-                <Label className="text-[8px] uppercase font-bold opacity-50">Thema's</Label>
-                <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
+                <div className="flex flex-wrap gap-1 max-h-16 overflow-y-auto pt-1">
                   {STANDARD_TAGS.map(tag => (
-                    <button key={tag} onClick={() => editingArtwork && toggleArtworkTag(editingArtwork, tag)} className={cn("px-1.5 py-0.5 rounded-full text-[6px] font-bold uppercase border", editingArtwork?.tags?.includes(tag) ? "bg-accent text-white border-accent" : "bg-background/50 text-muted-foreground border-border/40")}>
+                    <button key={tag} onClick={() => editingArtwork && toggleArtworkTag(editingArtwork, tag)} className={cn("px-1 py-0.5 rounded-full text-[6px] font-bold uppercase border", editingArtwork?.tags?.includes(tag) ? "bg-accent text-white border-accent" : "bg-background/50 text-muted-foreground border-border/40")}>
                       {tag}
                     </button>
                   ))}
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <Label className="text-[8px] uppercase font-bold opacity-40">Helderheid ({editingArtwork?.brightness?.toFixed(2) || '1.00'})</Label>
-                </div>
+              <div className="space-y-2 pt-1">
+                <Label className="text-[7px] uppercase font-bold opacity-40 block">Helderheid ({editingArtwork?.brightness?.toFixed(2) || '1.00'})</Label>
                 <Slider value={[editingArtwork?.brightness || 1]} max={2} step={0.01} onValueChange={([val]) => editingArtwork && updateArtworkField(editingArtwork.id, 'brightness', val)} />
                 <div className="grid grid-cols-2 gap-4">
                   {['Top', 'Bottom'].map(side => {
                     const field = `crop${side}`;
                     return (
                       <div key={side} className="space-y-1">
-                        <Label className="text-[7px] uppercase font-bold opacity-40">{side} {editingArtwork?.[field] || 0}%</Label>
+                        <Label className="text-[6px] uppercase font-bold opacity-40">{side} {editingArtwork?.[field] || 0}%</Label>
                         <Slider value={[editingArtwork?.[field] || 0]} max={50} step={1} onValueChange={([val]) => editingArtwork && updateArtworkField(editingArtwork.id, field, val)} />
                       </div>
                     );
@@ -496,23 +500,23 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-2 pt-1">
                 <div className="grid grid-cols-2 gap-4">
                   {['Left', 'Right'].map(side => {
                     const field = `crop${side}`;
                     return (
                       <div key={side} className="space-y-1">
-                        <Label className="text-[7px] uppercase font-bold opacity-40">{side} {editingArtwork?.[field] || 0}%</Label>
+                        <Label className="text-[6px] uppercase font-bold opacity-40">{side} {editingArtwork?.[field] || 0}%</Label>
                         <Slider value={[editingArtwork?.[field] || 0]} max={50} step={1} onValueChange={([val]) => editingArtwork && updateArtworkField(editingArtwork.id, field, val)} />
                       </div>
                     );
                   })}
                 </div>
-                <div className="flex flex-col gap-2 pt-2">
-                  <Button onClick={() => setEditingId(null)} className="h-8 text-[9px] uppercase tracking-widest font-bold">Gereed</Button>
-                  <div className="flex items-center justify-center gap-1 opacity-40 text-[7px] uppercase font-bold">
+                <div className="flex items-center justify-between pt-1">
+                  <div className="flex items-center gap-1 opacity-40 text-[7px] uppercase font-bold">
                     {isSaving ? <><Loader2 className="w-2.5 h-2.5 animate-spin" /> ...</> : <><CheckCircle2 className="w-2.5 h-2.5" /> Opgeslagen</>}
                   </div>
+                  <Button onClick={() => setEditingId(null)} className="h-7 px-8 text-[8px] uppercase tracking-widest font-bold">Gereed</Button>
                 </div>
               </div>
             </div>

@@ -5,7 +5,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
-import { Loader2, Sparkles, X, Maximize2, Play, RotateCcw } from 'lucide-react';
+import { Loader2, X, Maximize2, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogTitle, DialogClose } from '@/components/ui/dialog';
 
@@ -71,7 +71,7 @@ export default function CuratorPage() {
       : [...activeTags, tag];
     
     setActiveTags(newTags);
-    setShowResults(false); // Verberg resultaten bij wijzigen selectie
+    setShowResults(false);
   };
 
   const handlePresent = () => {
@@ -96,18 +96,17 @@ export default function CuratorPage() {
 
   return (
     <main className="min-h-screen bg-background pt-14">
-      {/* Header met Instructies */}
       <div className="w-full bg-accent/5 border-b border-border/10 py-16 md:py-24">
         <div className="container mx-auto px-6 max-w-5xl text-center space-y-6">
           <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-accent mb-2 block">Curator Tool</span>
           <h1 className="font-headline text-5xl md:text-7xl font-light text-foreground tracking-tight">
             Stel <span className="italic">Uw Selectie</span> samen
           </h1>
-          <div className="space-y-2 py-4">
+          <div className="space-y-4 py-4">
             <p className="text-foreground text-xl font-light leading-relaxed max-w-2xl mx-auto">
               Klik uw thema&apos;s en klik dan op presenteer selectie.
             </p>
-            <p className="text-muted-foreground text-xs uppercase tracking-widest font-bold">
+            <p className="text-muted-foreground text-[10px] uppercase tracking-widest font-bold">
               De X-knop brengt u terug naar de beginstand.
             </p>
           </div>
@@ -116,7 +115,6 @@ export default function CuratorPage() {
 
       <div className="container mx-auto max-w-7xl px-6 py-12 pb-32">
         <div className="space-y-16">
-          {/* Tag Selectie */}
           <div className="flex flex-col items-center space-y-10">
             <div className="flex flex-wrap justify-center gap-3 md:gap-4 max-w-4xl">
               {allAvailableTags.map(tag => {
@@ -139,7 +137,6 @@ export default function CuratorPage() {
               })}
             </div>
 
-            {/* Actie Knoppen */}
             <div className="flex items-center gap-6">
               <Button 
                 onClick={handleReset} 
@@ -161,7 +158,6 @@ export default function CuratorPage() {
             </div>
           </div>
 
-          {/* Resultaten Sectie */}
           <div className={cn("pt-16 border-t border-border/10 transition-all duration-700", showResults ? "opacity-100" : "opacity-0 pointer-events-none")}>
             {loading ? (
               <div className="flex flex-col items-center justify-center py-20">
@@ -200,7 +196,6 @@ export default function CuratorPage() {
         </div>
       </div>
 
-      {/* Master Viewer Dialog */}
       <Dialog open={!!selectedArtwork} onOpenChange={() => setSelectedArtwork(null)}>
         <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background/98 backdrop-blur-3xl border-none rounded-none overflow-hidden">
           <div className="relative flex-1 flex items-center justify-center overflow-hidden bg-black/5">
@@ -208,7 +203,7 @@ export default function CuratorPage() {
               <img 
                 src={selectedArtwork.imageUrl} 
                 alt={selectedArtwork.title} 
-                className="max-w-full max-h-[85vh] object-contain p-4 md:p-12 shadow-2xl transition-all duration-500" 
+                className="max-w-full max-h-[80vh] object-contain p-4 md:p-12 shadow-2xl transition-all duration-500" 
                 style={{
                   clipPath: `inset(${selectedArtwork.cropTop || 0}% ${selectedArtwork.cropRight || 0}% ${selectedArtwork.cropBottom || 0}% ${selectedArtwork.cropLeft || 0}%)`,
                   filter: `brightness(${selectedArtwork.brightness || 1})`
@@ -220,9 +215,9 @@ export default function CuratorPage() {
             </DialogClose>
           </div>
 
-          <div className="w-full bg-background/95 backdrop-blur-md py-12 px-8 border-t border-border/10 shadow-2xl">
+          <div className="w-full bg-background/95 backdrop-blur-md py-10 px-8 border-t border-border/10 shadow-2xl">
             <div className="max-w-5xl mx-auto flex flex-col items-center text-center gap-6">
-              <DialogTitle className="font-headline text-5xl md:text-7xl font-light text-foreground tracking-tight leading-tight">
+              <DialogTitle className="font-headline text-5xl md:text-7xl font-light text-foreground tracking-tight leading-tight uppercase">
                 {selectedArtwork?.title}
               </DialogTitle>
               
@@ -234,7 +229,7 @@ export default function CuratorPage() {
                 <span>{selectedArtwork?.medium}</span>
               </div>
               
-              <Button variant="outline" size="lg" className="rounded-full text-[10px] uppercase tracking-[0.2em] px-12 h-14 border-primary/20 mt-6 hover:bg-accent hover:text-white hover:border-accent transition-all">
+              <Button variant="outline" size="lg" className="rounded-full text-[10px] uppercase tracking-[0.2em] px-12 h-14 border-primary/20 mt-4 hover:bg-accent hover:text-white hover:border-accent transition-all">
                 Interesse in dit werk?
               </Button>
             </div>
