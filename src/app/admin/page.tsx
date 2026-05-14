@@ -18,7 +18,8 @@ import {
   Image as ImageIcon,
   FolderOpen,
   RefreshCw,
-  Scissors
+  Scissors,
+  Search
 } from 'lucide-react';
 import Image from 'next/image';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -37,7 +38,7 @@ export default function AdminPage() {
   const [bulkJson, setBulkJson] = useState('');
   const [activeTab, setActiveTab] = useState('archive');
   
-  // NAS Helper state met jouw specifieke URL
+  // NAS Helper state
   const [nasBaseUrl, setNasBaseUrl] = useState('https://192-168-178-15.doggyfew.direct.quickconnect.to:5001/web/');
   const [nasFileNames, setNasFileNames] = useState('');
 
@@ -74,6 +75,57 @@ export default function AdminPage() {
     }
   };
 
+  const handleScanFolder = async () => {
+    try {
+      // Gebruik de moderne Directory Picker API
+      const dirHandle = await (window as any).showDirectoryPicker();
+      const files: string[] = [];
+      
+      for await (const entry of dirHandle.values()) {
+        if (entry.kind === 'file' && /\.(jpe?g|png|webp|avif)$/i.test(entry.name)) {
+          files.push(entry.name);
+        }
+      }
+      
+      if (files.length === 0) {
+        toast({ variant: "destructive", title: "Geen foto's", description: "Geen geschikte afbeeldingen gevonden in deze map." });
+        return;
+      }
+
+      setNasFileNames(files.join('\n'));
+      toast({ title: "Map gelezen", description: `${files.length} afbeeldingen gevonden.` });
+      
+      // Genereer direct de JSON voor de Bulk tab
+      const baseUrlClean = nasBaseUrl.endsWith('/') ? nasBaseUrl : nasBaseUrl + '/';
+      const generated = files.map(file => {
+        const title = file.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
+        return {
+          title: title || "Zonder titel",
+          series: "Import " + new Date().toLocaleDateString(),
+          imageUrl: baseUrlClean + file,
+          medium: "Olieverf op doek",
+          year: "",
+          description: "",
+          imageHint: "painting",
+          tags: [],
+          cropTop: 0,
+          cropBottom: 0,
+          cropLeft: 0,
+          cropRight: 0,
+          brightness: 1
+        };
+      });
+      setBulkJson(JSON.stringify(generated, null, 2));
+      setActiveTab('bulk');
+
+    } catch (err: any) {
+      if (err.name !== 'AbortError') {
+        console.error(err);
+        toast({ variant: "destructive", title: "Fout bij inlezen", description: "Zorg dat je een moderne browser gebruikt en de map toestemming geeft." });
+      }
+    }
+  };
+
   const handleAddManualArtwork = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!firestore || !newArtwork.title || !newArtwork.imageUrl) {
@@ -96,6 +148,7 @@ export default function AdminPage() {
           description: "", imageUrl: "", imageHint: "painting", 
           tags: [], cropTop: 0, cropBottom: 0, cropLeft: 0, cropRight: 0, brightness: 1 
         });
+        setActiveTab('archive');
       })
       .catch(async (err) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
@@ -139,37 +192,16 @@ export default function AdminPage() {
     }
   };
 
-  const handleNasImport = () => {
-    if (!nasBaseUrl || !nasFileNames) {
-      toast({ variant: "destructive", title: "Invoer onvolledig", description: "Basis URL en Bestandsnamen zijn nodig." });
-      return;
-    }
-    
-    const files = nasFileNames.split('\n').map(f => f.trim()).filter(f => f !== '');
-    const baseUrlClean = nasBaseUrl.endsWith('/') ? nasBaseUrl : nasBaseUrl + '/';
-    
-    const generatedArtworks = files.map(file => {
-      const title = file.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
-      return {
-        title: title || "Zonder titel",
-        series: "NAS Import",
-        imageUrl: baseUrlClean + file,
-        medium: "Olieverf op doek",
-        year: "",
-        description: "",
-        imageHint: "painting",
-        tags: [],
-        cropTop: 0,
-        cropBottom: 0,
-        cropLeft: 0,
-        cropRight: 0,
-        brightness: 1
-      };
+  const updateArtworkValue = (id: string, field: string, value: any) => {
+    if (!firestore) return;
+    const artRef = doc(firestore, 'artworks', id);
+    updateDoc(artRef, { [field]: value }).catch(async (err) => {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: artRef.path,
+        operation: 'update',
+        requestResourceData: { [field]: value }
+      }));
     });
-    
-    setBulkJson(JSON.stringify(generatedArtworks, null, 2));
-    setActiveTab('bulk');
-    toast({ title: "Links gegenereerd", description: "Controleer de JSON en klik op Start Import." });
   };
 
   const handleDeleteArtwork = (artId: string) => {
@@ -179,18 +211,6 @@ export default function AdminPage() {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: artRef.path,
         operation: 'delete'
-      }));
-    });
-  };
-
-  const updateArtworkValue = (id: string, field: string, value: any) => {
-    if (!firestore) return;
-    const artRef = doc(firestore, 'artworks', id);
-    updateDoc(artRef, { [field]: value }).catch(async (err) => {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: artRef.path,
-        operation: 'update',
-        requestResourceData: { [field]: value }
       }));
     });
   };
@@ -315,7 +335,7 @@ export default function AdminPage() {
           <TabsContent value="new">
             <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-12">
               <div className="space-y-6">
-                <h2 className="text-3xl font-headline font-light mb-8">Nieuw Werk</h2>
+                <h2 className="text-3xl font-headline font-light mb-8">Handmatige Toevoeging</h2>
                 <Card className="p-8 rounded-3xl border-border bg-card/50 shadow-xl">
                   <form onSubmit={handleAddManualArtwork} className="space-y-5">
                     <div className="space-y-2">
@@ -338,10 +358,10 @@ export default function AdminPage() {
                     </div>
                     <div className="space-y-2">
                       <Label className="text-[10px] uppercase font-bold">Afbeelding URL</Label>
-                      <Input value={newArtwork.imageUrl} onChange={(e) => setNewArtwork(prev => ({ ...prev, imageUrl: e.target.value }))} required className="rounded-xl" placeholder="https://mijn-nas.nl/web/schilderij.jpg" />
+                      <Input value={newArtwork.imageUrl} onChange={(e) => setNewArtwork(prev => ({ ...prev, imageUrl: e.target.value }))} required className="rounded-xl" placeholder="https://..." />
                     </div>
                     <Button type="submit" disabled={loading} className="w-full h-14 rounded-xl font-bold uppercase tracking-widest">
-                      {loading ? <Loader2 className="animate-spin" /> : <><Plus className="mr-2 w-4 h-4" /> Opslaan in Archief</>}
+                      {loading ? <Loader2 className="animate-spin" /> : <><Plus className="mr-2 w-4 h-4" /> Opslaan</>}
                     </Button>
                   </form>
                 </Card>
@@ -349,7 +369,7 @@ export default function AdminPage() {
 
               <div className="space-y-6">
                 <h2 className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground flex items-center gap-2">
-                  <Scissors className="w-3 h-3" /> Live Cropper & Helderheid
+                  <Scissors className="w-3 h-3" /> Live Preview & Cropper
                 </h2>
                 <div className="sticky top-32 space-y-8">
                   <div className="relative aspect-square rounded-2xl overflow-hidden bg-muted/20 border-2 border-dashed border-border flex items-center justify-center">
@@ -368,7 +388,7 @@ export default function AdminPage() {
                     ) : (
                       <div className="text-center p-8 opacity-20">
                         <ImageIcon className="w-12 h-12 mx-auto mb-2" />
-                        <p className="text-center text-[10px] uppercase font-bold">Voer een URL in voor preview</p>
+                        <p className="text-center text-[10px] uppercase font-bold">Voer een URL in</p>
                       </div>
                     )}
                   </div>
@@ -404,43 +424,62 @@ export default function AdminPage() {
 
           <TabsContent value="nas">
             <div className="max-w-2xl mx-auto space-y-6">
-              <h2 className="text-3xl font-headline font-light text-center">NAS Folder Helper</h2>
-              <p className="text-center text-muted-foreground text-sm">Genereer direct import-links voor mappen op je NAS.</p>
+              <div className="text-center space-y-2">
+                <h2 className="text-3xl font-headline font-light">Automatische NAS Import</h2>
+                <p className="text-muted-foreground text-sm">Scan een map op je NAS en importeer alle foto's direct.</p>
+              </div>
               
-              <Card className="p-8 rounded-3xl border-border bg-card/50 shadow-xl space-y-6">
-                <div className="space-y-2">
-                  <Label className="text-[10px] uppercase font-bold">Basis URL (NAS map)</Label>
-                  <Input 
-                    placeholder="https://jouwnas.nl:5001/web/schilderijen/" 
-                    value={nasBaseUrl}
-                    onChange={(e) => setNasBaseUrl(e.target.value)}
-                    className="rounded-xl"
-                  />
-                  <p className="text-[9px] text-muted-foreground italic">Dit wijst naar de 'web' map op je NAS. Gebruik DSM poort 5001 voor beveiligde toegang.</p>
+              <Card className="p-8 rounded-3xl border-border bg-card/50 shadow-xl space-y-8">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-[10px] uppercase font-bold">Stap 1: Controleer Basis URL</Label>
+                    <Input 
+                      value={nasBaseUrl}
+                      onChange={(e) => setNasBaseUrl(e.target.value)}
+                      className="rounded-xl font-mono text-xs"
+                    />
+                    <p className="text-[9px] text-muted-foreground italic">Dit adres wordt voor elke gevonden bestandsnaam geplakt.</p>
+                  </div>
+                  
+                  <div className="pt-4 border-t border-border/20">
+                    <Label className="text-[10px] uppercase font-bold mb-4 block">Stap 2: Map selecteren</Label>
+                    <Button 
+                      onClick={handleScanFolder} 
+                      className="w-full h-20 rounded-2xl font-bold uppercase tracking-widest bg-accent hover:bg-accent/90 text-lg shadow-lg group"
+                    >
+                      <FolderOpen className="mr-4 w-8 h-8 group-hover:scale-110 transition-transform" />
+                      Scan NAS Map
+                    </Button>
+                    <p className="text-[10px] text-center mt-4 text-muted-foreground">
+                      Tip: Koppel de NAS map eerst als netwerkschijf op je computer om deze te kunnen selecteren.
+                    </p>
+                  </div>
                 </div>
-                
-                <div className="space-y-2">
-                  <Label className="text-[10px] uppercase font-bold">Bestandsnamen (één per regel)</Label>
-                  <Textarea 
-                    placeholder={"landschap-1.jpg\nstilleven-bloemen.png\nzee-zonsondergang.webp"} 
-                    value={nasFileNames}
-                    onChange={(e) => setNasFileNames(e.target.value)}
-                    className="min-h-[200px] font-mono text-xs rounded-2xl"
-                  />
-                  <p className="text-[9px] text-muted-foreground italic">Kopieer alle bestandsnamen uit je map en plak ze hier.</p>
-                </div>
-                
-                <Button onClick={handleNasImport} className="w-full h-14 rounded-xl font-bold uppercase tracking-widest bg-accent hover:bg-accent/90">
-                  <FolderOpen className="mr-2 w-4 h-4" /> Genereer Import Code
-                </Button>
+
+                {nasFileNames && (
+                  <div className="space-y-4 pt-6 border-t border-border/20">
+                    <div className="flex justify-between items-center">
+                      <Label className="text-[10px] uppercase font-bold">Gevonden bestanden</Label>
+                      <Button variant="ghost" size="sm" onClick={() => setNasFileNames('')} className="h-6 text-[8px] uppercase">Wis</Button>
+                    </div>
+                    <div className="max-h-40 overflow-y-auto bg-black/5 p-4 rounded-xl border border-border/20">
+                      <pre className="text-[9px] font-mono text-muted-foreground">{nasFileNames}</pre>
+                    </div>
+                    <Button onClick={() => setActiveTab('bulk')} className="w-full rounded-xl bg-primary/20 text-primary border border-primary/20">
+                      Naar Import Overzicht
+                    </Button>
+                  </div>
+                )}
               </Card>
             </div>
           </TabsContent>
 
           <TabsContent value="bulk">
-            <div className="max-w-2xl mx-auto space-y-6">
-              <h2 className="text-3xl font-headline font-light text-center">Bulk Import</h2>
-              <p className="text-center text-muted-foreground text-sm mb-8">Importeer meerdere kunstwerken tegelijk via JSON.</p>
+            <div className="max-w-4xl mx-auto space-y-6">
+              <div className="text-center">
+                <h2 className="text-3xl font-headline font-light">Bulk Overzicht</h2>
+                <p className="text-muted-foreground text-sm">Controleer de data en start de import naar de database.</p>
+              </div>
               
               <Card className="p-8 rounded-3xl border-border bg-card/50 shadow-xl">
                 <div className="space-y-6">
@@ -452,14 +491,18 @@ export default function AdminPage() {
                       </Button>
                     </div>
                     <Textarea 
-                      placeholder='[{"title": "Mooi Werk", "series": "Landschappen", "imageUrl": "https://..."}]' 
+                      placeholder='Importeer data via de NAS Folder tab...' 
                       value={bulkJson} 
                       onChange={(e) => setBulkJson(e.target.value)}
-                      className="min-h-[300px] font-mono text-xs rounded-2xl"
+                      className="min-h-[400px] font-mono text-[10px] rounded-2xl bg-black/5"
                     />
                   </div>
-                  <Button onClick={handleBulkUpload} disabled={loading || !bulkJson} className="w-full h-14 rounded-xl font-bold uppercase tracking-widest">
-                    {loading ? <Loader2 className="animate-spin" /> : <><Upload className="mr-2 w-4 h-4" /> Start Import</>}
+                  <Button 
+                    onClick={handleBulkUpload} 
+                    disabled={loading || !bulkJson} 
+                    className="w-full h-14 rounded-xl font-bold uppercase tracking-widest shadow-xl"
+                  >
+                    {loading ? <Loader2 className="animate-spin" /> : <><Upload className="mr-2 w-4 h-4" /> Start Definitieve Import</>}
                   </Button>
                 </div>
               </Card>
