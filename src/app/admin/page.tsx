@@ -30,7 +30,8 @@ import {
   RefreshCw,
   UserPlus,
   Globe,
-  Settings2
+  Settings2,
+  CloudOff
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -56,7 +57,7 @@ export default function AdminPage() {
   const directoryInputRef = useRef<HTMLInputElement>(null);
   
   // NAS Helper state
-  const [nasBaseUrl, setNasBaseUrl] = useState('http://192.168.178.15/');
+  const [nasBaseUrl, setNasBaseUrl] = useState('http://192.168.178.15/fotos/');
   const [nasFileCount, setNasFileCount] = useState(0);
   const [previewUrl, setPreviewUrl] = useState('');
 
@@ -255,12 +256,12 @@ export default function AdminPage() {
                     </AccordionTrigger>
                     <AccordionContent className="space-y-4 pb-6">
                       <div className="space-y-3 text-sm text-muted-foreground leading-relaxed">
-                        <p className="font-bold text-blue-600">Let op: Gebruik het tabblad 'Webservice', NIET 'Webportaal'.</p>
+                        <p className="font-bold text-blue-600">Cruciaal: Gebruik het tabblad 'Webservice', NIET 'Webportaal'.</p>
                         <ol className="list-decimal pl-5 space-y-2">
-                          <li>Open de app <strong>Web Station</strong>.</li>
+                          <li>Open de app <strong>Web Station</strong> op je NAS.</li>
                           <li>Klik in het linkermenu op <strong>Webservice</strong>.</li>
                           <li>Klik bovenaan op de knop <strong>Maken</strong>.</li>
-                          <li>Kies <strong>Statische website</strong> (hier zie je GEEN virtuele host).</li>
+                          <li>Kies <strong>Statische website</strong>.</li>
                           <li>Geef een naam (bijv. <code>fotos</code>).</li>
                           <li>Selecteer jouw nieuwe map als <strong>Document-root</strong>.</li>
                           <li>Klik op <strong>Voltooien</strong>.</li>
@@ -280,7 +281,7 @@ export default function AdminPage() {
                     </AccordionTrigger>
                     <AccordionContent className="space-y-4 pb-6">
                       <div className="space-y-3 text-sm text-muted-foreground leading-relaxed">
-                        <p>De groep <code>http</code> is een systeemgroep. Je hoeft deze niet zelf te maken:</p>
+                        <p>De groep <code>http</code> is een systeemgroep. Zo vind je deze:</p>
                         <ol className="list-decimal pl-5 space-y-2">
                           <li>Ga naar <strong>Configuratiescherm</strong> &gt; <strong>Gedeelde map</strong>.</li>
                           <li>Selecteer je map en klik op <strong>Bewerken</strong> &gt; <strong>Machtigingen</strong>.</li>
@@ -291,6 +292,16 @@ export default function AdminPage() {
                     </AccordionContent>
                   </AccordionItem>
                 </Accordion>
+
+                <div className="bg-orange-500/10 border border-orange-500/20 p-6 rounded-2xl flex gap-4 items-start">
+                  <CloudOff className="w-10 h-10 text-orange-500 shrink-0" />
+                  <div className="space-y-2">
+                    <h4 className="text-[10px] uppercase font-bold text-orange-600">Waarom geen Google Drive of Dropbox?</h4>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      Google Drive en Dropbox genereren geen "directe" afbeeldingslinks. Ze sturen de website naar een preview-pagina, waardoor de foto's niet geladen kunnen worden. Je NAS (of Firebase Storage) is de enige manier om je eigen beheer te behouden.
+                    </p>
+                  </div>
+                </div>
               </div>
               
               <Card className="p-8 rounded-3xl border-border bg-card/50 shadow-xl space-y-8">
@@ -298,7 +309,7 @@ export default function AdminPage() {
                   <div className="space-y-2">
                     <Label className="text-[10px] uppercase font-bold">1. Basis URL van je NAS</Label>
                     <Input value={nasBaseUrl} onChange={(e) => setNasBaseUrl(e.target.value)} className="rounded-xl font-mono text-xs" />
-                    <p className="text-[9px] text-muted-foreground italic">Bijv: http://192.168.178.15/fotos/ (vergeet de laatste slash niet)</p>
+                    <p className="text-[9px] text-muted-foreground italic">Bijv: http://192.168.178.15/fotos/ (eindig altijd met een slash)</p>
                   </div>
                   
                   <div className="pt-4 border-t border-border/20">
@@ -320,7 +331,7 @@ export default function AdminPage() {
                           <a href={previewUrl} target="_blank" rel="noopener noreferrer"><ExternalLink className="w-3 h-3" /></a>
                         </Button>
                       </div>
-                      <p className="text-[9px] text-muted-foreground italic">Klik op het icoontje. Als de foto opent, klopt de koppeling.</p>
+                      <p className="text-[9px] text-muted-foreground italic">Klik op het icoontje. Als de foto opent in een nieuw tabblad, klopt de koppeling.</p>
                     </div>
                   </div>
                 )}

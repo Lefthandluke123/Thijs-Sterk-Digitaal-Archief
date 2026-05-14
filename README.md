@@ -10,7 +10,7 @@ Zorg dat in je [Firebase Console](https://console.firebase.google.com/) het volg
 
 ## 2. NAS Map Herstellen (Synology DSM 7+)
 
-Als de standaard `web` map niet werkt, volg dan deze stappen om een eigen map te publiceren:
+Als de standaard `web` map niet werkt of "verplaatst" is, volg dan deze stappen om een eigen map te publiceren:
 
 1. **Maak een nieuwe map:**
    - Ga naar **Configuratiescherm** > **Gedeelde map** > **Maken**.
@@ -24,16 +24,19 @@ Als de standaard `web` map niet werkt, volg dan deze stappen om een eigen map te
 
 3. **Koppel de nieuwe map in Web Station (CRUCIAAL):**
    - Open de app **Web Station** op je NAS.
-   - Ga in het linkermenu naar **Webservice** (NIET naar Webportaal/Web Portal).
+   - Ga in het linkermenu naar **Webservice** (NIET naar Webportaal).
    - Klik op de knop **Maken** bovenaan.
-   - Kies in de lijst die verschijnt voor **Statische website**.
+   - Kies in de lijst voor **Statische website**.
    - Geef een naam (bijv. 'fotos') en selecteer bij **Document-root** de map die je zojuist hebt gemaakt (`atelier-fotos`).
    - Klik op **Voltooien**.
 
 4. **Toegang:**
    - Je foto's zijn nu bereikbaar via `http://[IP-ADRES-NAS]/fotos/naam-van-foto.jpg`.
 
-## 3. NAS Map Inlezen in de App
+## 3. Waarom geen Google Drive of Dropbox?
+Google Drive en Dropbox zijn niet ontworpen voor direct hosting. De links die zij genereren verwijzen naar een "preview pagina" en niet naar het ruwe afbeeldingsbestand. Hierdoor kan de website de beelden niet inladen. De NAS (of Firebase Storage) is de enige stabiele oplossing.
+
+## 4. NAS Map Inlezen in de App
 In het `/admin` gedeelte vind je de **NAS Folder Helper**:
 1. Koppel je NAS map als een lokale schijf op je computer.
 2. Klik op **Scan NAS Map**.
