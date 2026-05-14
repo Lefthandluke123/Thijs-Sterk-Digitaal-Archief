@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
@@ -17,6 +16,7 @@ import {
   ArrowLeft,
   Upload,
   Plus,
+  Minus,
   FolderOpen,
   X,
   ChevronLeft,
@@ -569,14 +569,23 @@ export default function AdminPage() {
 
               <div className="space-y-2 pt-1">
                 <Label className="text-[7px] uppercase font-bold opacity-40 block">Helderheid ({editingArtwork?.brightness?.toFixed(2) || '1.00'})</Label>
-                <Slider value={[editingArtwork?.brightness || 1]} max={2} step={0.01} onValueChange={([val]) => editingArtwork && updateArtworkField(editingArtwork.id, 'brightness', val)} />
+                <div className="flex items-center gap-2">
+                  <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, 'brightness', Math.max(0, (editingArtwork.brightness || 1) - 0.01))}><Minus className="w-3 h-3" /></Button>
+                  <Slider value={[editingArtwork?.brightness || 1]} max={2} step={0.01} onValueChange={([val]) => editingArtwork && updateArtworkField(editingArtwork.id, 'brightness', val)} className="flex-1" />
+                  <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, 'brightness', Math.min(2, (editingArtwork.brightness || 1) + 0.01))}><Plus className="w-3 h-3" /></Button>
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                   {['Top', 'Bottom'].map(side => {
                     const field = `crop${side}`;
+                    const currentVal = editingArtwork?.[field as keyof typeof editingArtwork] as number || 0;
                     return (
                       <div key={side} className="space-y-1">
-                        <Label className="text-[6px] uppercase font-bold opacity-40">{side} {editingArtwork?.[field as keyof typeof editingArtwork] || 0}%</Label>
-                        <Slider value={[editingArtwork?.[field as keyof typeof editingArtwork] as number || 0]} max={50} step={1} onValueChange={([val]) => editingArtwork && updateArtworkField(editingArtwork.id, field, val)} />
+                        <Label className="text-[6px] uppercase font-bold opacity-40">{side} {currentVal}%</Label>
+                        <div className="flex items-center gap-1.5">
+                          <Button variant="ghost" size="icon" className="h-5 w-5 rounded-full" onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, field, Math.max(0, currentVal - 1))}><Minus className="w-2.5 h-2.5" /></Button>
+                          <Slider value={[currentVal]} max={50} step={1} onValueChange={([val]) => editingArtwork && updateArtworkField(editingArtwork.id, field, val)} className="flex-1" />
+                          <Button variant="ghost" size="icon" className="h-5 w-5 rounded-full" onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, field, Math.min(50, currentVal + 1))}><Plus className="w-2.5 h-2.5" /></Button>
+                        </div>
                       </div>
                     );
                   })}
@@ -587,10 +596,15 @@ export default function AdminPage() {
                 <div className="grid grid-cols-2 gap-4">
                   {['Left', 'Right'].map(side => {
                     const field = `crop${side}`;
+                    const currentVal = editingArtwork?.[field as keyof typeof editingArtwork] as number || 0;
                     return (
                       <div key={side} className="space-y-1">
-                        <Label className="text-[6px] uppercase font-bold opacity-40">{side} {editingArtwork?.[field as keyof typeof editingArtwork] || 0}%</Label>
-                        <Slider value={[editingArtwork?.[field as keyof typeof editingArtwork] as number || 0]} max={50} step={1} onValueChange={([val]) => editingArtwork && updateArtworkField(editingArtwork.id, field, val)} />
+                        <Label className="text-[6px] uppercase font-bold opacity-40">{side} {currentVal}%</Label>
+                        <div className="flex items-center gap-1.5">
+                          <Button variant="ghost" size="icon" className="h-5 w-5 rounded-full" onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, field, Math.max(0, currentVal - 1))}><Minus className="w-2.5 h-2.5" /></Button>
+                          <Slider value={[currentVal]} max={50} step={1} onValueChange={([val]) => editingArtwork && updateArtworkField(editingArtwork.id, field, val)} className="flex-1" />
+                          <Button variant="ghost" size="icon" className="h-5 w-5 rounded-full" onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, field, Math.min(50, currentVal + 1))}><Plus className="w-2.5 h-2.5" /></Button>
+                        </div>
                       </div>
                     );
                   })}
