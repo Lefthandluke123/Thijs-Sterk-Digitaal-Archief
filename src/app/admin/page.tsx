@@ -37,8 +37,8 @@ export default function AdminPage() {
   const [bulkJson, setBulkJson] = useState('');
   const [activeTab, setActiveTab] = useState('archive');
   
-  // NAS Helper state
-  const [nasBaseUrl, setNasBaseUrl] = useState('https://192-168-178-15.doggyfew.direct.quickconnect.to:5001/web/schilderijen/');
+  // NAS Helper state met jouw specifieke URL
+  const [nasBaseUrl, setNasBaseUrl] = useState('https://192-168-178-15.doggyfew.direct.quickconnect.to:5001/web/');
   const [nasFileNames, setNasFileNames] = useState('');
 
   const [newArtwork, setNewArtwork] = useState({
@@ -416,7 +416,7 @@ export default function AdminPage() {
                     onChange={(e) => setNasBaseUrl(e.target.value)}
                     className="rounded-xl"
                   />
-                  <p className="text-[9px] text-muted-foreground italic">Tip: /volume1/web op je NAS wordt meestal geserveerd via poort 80/443 of DSM poort 5001.</p>
+                  <p className="text-[9px] text-muted-foreground italic">Dit wijst naar de 'web' map op je NAS. Gebruik DSM poort 5001 voor beveiligde toegang.</p>
                 </div>
                 
                 <div className="space-y-2">
