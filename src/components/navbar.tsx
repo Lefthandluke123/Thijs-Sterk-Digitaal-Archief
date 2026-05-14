@@ -12,7 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, LayoutGrid, Palette, Info, Mail } from 'lucide-react';
 
 export function Navbar() {
   const pathname = usePathname();
@@ -50,15 +50,37 @@ export function Navbar() {
           >
             Home
           </Link>
-          <Link 
-            href="/gallery"
-            className={cn(
-              "px-2 sm:px-4 py-1.5 rounded-full text-[9px] sm:text-[10px] font-semibold tracking-widest uppercase transition-all duration-300",
-              pathname === "/gallery" ? "bg-accent/90 text-accent-foreground shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-            )}
-          >
-            Galerie
-          </Link>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className={cn(
+                  "px-2 sm:px-4 py-1.5 rounded-full text-[9px] sm:text-[10px] font-semibold tracking-widest uppercase transition-all duration-300 flex items-center gap-1 outline-none",
+                  pathname.includes('/gallery') ? "bg-accent/90 text-accent-foreground shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                )}
+              >
+                Galerie <ChevronDown className="w-3 h-3 opacity-50" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="bg-background/98 backdrop-blur-xl border-border/40 rounded-2xl min-w-[200px] p-2 shadow-2xl">
+              <DropdownMenuItem asChild className="text-[9px] uppercase font-bold tracking-[0.15em] focus:bg-accent focus:text-accent-foreground rounded-xl cursor-pointer p-3 mb-1">
+                <Link href="/gallery" className="flex items-center gap-2">
+                  <LayoutGrid className="w-3 h-3" /> Alle Werken
+                </Link>
+              </DropdownMenuItem>
+              <div className="h-px bg-border/20 my-1 mx-2" />
+              <DropdownMenuItem asChild className="text-[9px] uppercase font-bold tracking-[0.15em] focus:bg-accent focus:text-accent-foreground rounded-xl cursor-pointer p-3 mb-1">
+                <Link href="/gallery?series=Landschappen">Landschappen</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild className="text-[9px] uppercase font-bold tracking-[0.15em] focus:bg-accent focus:text-accent-foreground rounded-xl cursor-pointer p-3 mb-1">
+                <Link href="/gallery?series=Monumentaal">Monumentaal / Glas</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild className="text-[9px] uppercase font-bold tracking-[0.15em] focus:bg-accent focus:text-accent-foreground rounded-xl cursor-pointer p-3">
+                <Link href="/gallery?series=Bloemen">Stillevens & Bloemen</Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           <Link 
             href="/curator"
             className={cn(
@@ -84,7 +106,7 @@ export function Navbar() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="bg-background/98 backdrop-blur-xl border-border/40 rounded-2xl min-w-[180px] p-2 shadow-2xl">
               <DropdownMenuItem asChild className="text-[9px] uppercase font-bold tracking-[0.15em] focus:bg-accent focus:text-accent-foreground rounded-xl cursor-pointer p-3 mb-1">
-                <Link href="/#about">Thijs Sterk</Link>
+                <Link href="/#about">Biografie</Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild className="text-[9px] uppercase font-bold tracking-[0.15em] focus:bg-accent focus:text-accent-foreground rounded-xl cursor-pointer p-3 mb-1">
                 <Link href="/hanneke">Hanneke Sterk</Link>

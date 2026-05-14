@@ -1,21 +1,28 @@
 
 "use client";
 
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import Image from 'next/image';
+import React, { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { Dialog, DialogContent, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Maximize2, Loader2, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Maximize2, Loader2, X, ChevronLeft, ChevronRight, LayoutGrid, Palette, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export default function GalleryPage() {
+function GalleryContent() {
+  const searchParams = useSearchParams();
+  const initialSeries = searchParams.get('series') || "Alle";
+  
   const [selectedArtwork, setSelectedArtwork] = useState<any | null>(null);
-  const [activeSeries, setActiveSeries] = useState<string>("Alle");
+  const [activeSeries, setActiveSeries] = useState<string>(initialSeries);
   const [activeTags, setActiveTags] = useState<string[]>([]);
   const firestore = useFirestore();
   
+  useEffect(() => {
+    setActiveSeries(searchParams.get('series') || "Alle");
+  }, [searchParams]);
+
   const artworksQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'artworks'), orderBy('createdAt', 'desc'));
@@ -66,16 +73,33 @@ export default function GalleryPage() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedArtwork, navigateGallery]);
 
-  const isExternalStorage = (url: string) => {
-    return url?.includes('quickconnect.to') || url?.includes('192-168');
+  const toggleTag = (tag: string) => {
+    setActiveTags(prev => 
+      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+    );
   };
+
+  const artworksBySeries = useMemo(() => {
+    if (!artworks || activeSeries !== "Alle") return null;
+    const grouped: { [key: string]: any[] } = {};
+    artworks.forEach(art => {
+      const s = art.series || "Andere";
+      if (!grouped[s]) grouped[s] = [];
+      grouped[s].push(art);
+    });
+    return grouped;
+  }, [artworks, activeSeries]);
 
   return (
     <main className="min-h-screen bg-background pt-14">
       <div className="w-full bg-secondary/5 border-b border-border/10 py-12 md:py-20">
         <div className="container mx-auto px-6 max-w-7xl">
-          <h1 className="font-headline text-5xl md:text-7xl font-light text-foreground text-center tracking-tight">Galerie</h1>
-          <p className="text-center text-accent mt-4 uppercase tracking-[0.3em] text-[10px] font-bold">Het Volledige Oeuvre</p>
+          <h1 className="font-headline text-5xl md:text-7xl font-light text-foreground text-center tracking-tight">
+            {activeSeries === "Alle" ? "Galerie" : <span className="italic">{activeSeries}</span>}
+          </h1>
+          <p className="text-center text-accent mt-4 uppercase tracking-[0.3em] text-[10px] font-bold">
+            {activeSeries === "Alle" ? "Het Volledige Oeuvre" : `Collectie: ${activeSeries}`}
+          </p>
         </div>
       </div>
 
@@ -104,7 +128,7 @@ export default function GalleryPage() {
                 </div>
               </div>
 
-              {allAvailableTags.length > 0 && (
+              {activeSeries !== "Alle" && allAvailableTags.length > 0 && (
                 <div className="flex flex-wrap gap-2 pt-4 border-t border-border/5 mt-4">
                   {allAvailableTags.map(tag => (
                     <button
@@ -122,33 +146,72 @@ export default function GalleryPage() {
               )}
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8">
-              {filteredArtworks.map((item) => (
-                <div key={item.id} className="group relative cursor-pointer" onClick={() => setSelectedArtwork(item)}>
-                  <div className="relative aspect-[4/5] overflow-hidden rounded-sm bg-muted/20">
-                    <img 
-                      src={item.imageUrl} 
-                      alt={item.title} 
-                      className="w-full h-full object-cover transition-all duration-700 ease-out group-hover:scale-[1.03]"
-                      style={{
-                        clipPath: `inset(${item.cropTop || 0}% ${item.cropRight || 0}% ${item.cropBottom || 0}% ${item.cropLeft || 0}%)`,
-                        filter: `brightness(${item.brightness || 1})`
-                      }}
-                      onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Beeld+niet+gevonden'; }}
-                    />
-                    <div className="absolute bottom-2 right-2 z-10 pointer-events-none opacity-20 text-[6px] uppercase tracking-widest text-white font-bold bg-black/20 px-1 rounded-sm">
-                      &copy; Erven Thijs Sterk
+            {activeSeries === "Alle" && artworksBySeries ? (
+              <div className="space-y-24">
+                {Object.entries(artworksBySeries).map(([series, items]) => (
+                  <section key={series} className="space-y-8">
+                    <div className="flex items-center justify-between border-b border-border/10 pb-4">
+                      <h2 className="font-headline text-3xl font-light italic">{series}</h2>
+                      <button 
+                        onClick={() => setActiveSeries(series)}
+                        className="text-[10px] uppercase font-bold tracking-widest text-accent flex items-center gap-2 hover:translate-x-1 transition-transform"
+                      >
+                        Open deze zaal <ArrowRight className="w-3 h-3" />
+                      </button>
                     </div>
-                    <div className="absolute inset-0 bg-background/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <Maximize2 className="text-white/60 w-6 h-6" />
+                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
+                      {items.slice(0, 6).map((item) => (
+                        <div key={item.id} className="group relative cursor-pointer" onClick={() => setSelectedArtwork(item)}>
+                          <div className="relative aspect-[4/5] overflow-hidden rounded-sm bg-muted/20">
+                            <img 
+                              src={item.imageUrl} 
+                              alt={item.title} 
+                              className="w-full h-full object-cover transition-all duration-700 ease-out group-hover:scale-[1.03]"
+                              style={{
+                                clipPath: `inset(${item.cropTop || 0}% ${item.cropRight || 0}% ${item.cropBottom || 0}% ${item.cropLeft || 0}%)`,
+                                filter: `brightness(${item.brightness || 1})`
+                              }}
+                              onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Beeld+Fout'; }}
+                            />
+                          </div>
+                          <div className="mt-2 text-center opacity-60 group-hover:opacity-100 transition-opacity">
+                            <h3 className="text-[8px] font-bold uppercase tracking-widest truncate">{item.title}</h3>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8">
+                {filteredArtworks.map((item) => (
+                  <div key={item.id} className="group relative cursor-pointer" onClick={() => setSelectedArtwork(item)}>
+                    <div className="relative aspect-[4/5] overflow-hidden rounded-sm bg-muted/20">
+                      <img 
+                        src={item.imageUrl} 
+                        alt={item.title} 
+                        className="w-full h-full object-cover transition-all duration-700 ease-out group-hover:scale-[1.03]"
+                        style={{
+                          clipPath: `inset(${item.cropTop || 0}% ${item.cropRight || 0}% ${item.cropBottom || 0}% ${item.cropLeft || 0}%)`,
+                          filter: `brightness(${item.brightness || 1})`
+                        }}
+                        onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Beeld+Fout'; }}
+                      />
+                      <div className="absolute bottom-2 right-2 z-10 pointer-events-none opacity-20 text-[6px] uppercase tracking-widest text-white font-bold bg-black/20 px-1 rounded-sm">
+                        &copy; Erven Thijs Sterk
+                      </div>
+                      <div className="absolute inset-0 bg-background/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <Maximize2 className="text-white/60 w-6 h-6" />
+                      </div>
+                    </div>
+                    <div className="mt-4 text-center">
+                      <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-foreground">{item.title}</h3>
                     </div>
                   </div>
-                  <div className="mt-4 text-center">
-                    <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-foreground">{item.title}</h3>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </>
         )}
       </div>
@@ -166,7 +229,7 @@ export default function GalleryPage() {
                     clipPath: `inset(${selectedArtwork.cropTop || 0}% ${selectedArtwork.cropRight || 0}% ${selectedArtwork.cropBottom || 0}% ${selectedArtwork.cropLeft || 0}%)`,
                     filter: `brightness(${selectedArtwork.brightness || 1})`
                   }}
-                  onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Beeld+niet+gevonden'; }}
+                  onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Beeld+Fout'; }}
                 />
                 <div className="absolute inset-0 pointer-events-none flex items-center justify-center opacity-[0.03] select-none rotate-[-45deg]">
                   <span className="text-6xl md:text-9xl font-bold uppercase tracking-[0.5em] text-foreground">
@@ -210,5 +273,13 @@ export default function GalleryPage() {
         </DialogContent>
       </Dialog>
     </main>
+  );
+}
+
+export default function GalleryPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin" /></div>}>
+      <GalleryContent />
+    </Suspense>
   );
 }
