@@ -35,7 +35,8 @@ import {
   Calendar,
   Type,
   Star,
-  LayoutGrid
+  LayoutGrid,
+  CheckCircle2
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -566,7 +567,7 @@ export default function AdminPage() {
       <Dialog open={!!editingId} onOpenChange={() => setEditingId(null)}>
         <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background/98 backdrop-blur-3xl border-none rounded-none overflow-hidden">
           <DialogTitle className="sr-only">Master Editor - {editingArtwork?.title}</DialogTitle>
-          <DialogDescription className="sr-only">Pas details, uitsnede en helderheid aan.</DialogDescription>
+          <DialogDescription className="sr-only">Pas details, uitsnede en helderheid aan. Wijzigingen worden automatisch opgeslagen.</DialogDescription>
           
           <div className="relative flex-1 flex items-center justify-center overflow-hidden group bg-black/10">
             {editingArtwork && (
@@ -603,8 +604,8 @@ export default function AdminPage() {
             </div>
           </div>
 
-          <div className="w-full bg-background/95 backdrop-blur-md border-t border-border/10 p-4 md:px-8 md:py-6 shadow-2xl overflow-y-auto max-h-[40vh]">
-            <div className="max-w-[1400px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+          <div className="w-full bg-background/95 backdrop-blur-md border-t border-border/10 p-4 md:px-8 md:py-6 shadow-2xl overflow-y-auto max-h-[45vh]">
+            <div className="max-w-[1400px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-8 items-start mb-6">
               <div className="md:col-span-3 space-y-4">
                 <div className="flex items-center justify-between">
                   <Label className="text-[9px] uppercase font-bold tracking-widest opacity-50 flex items-center gap-1"><Star className="w-3 h-3" /> Uitgelicht (Home)</Label>
@@ -751,6 +752,16 @@ export default function AdminPage() {
                   placeholder="Beschrijf het werk..."
                 />
               </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-6 border-t border-border/10 max-w-[1400px] mx-auto">
+              <div className="flex items-center gap-2 text-accent/60">
+                <CheckCircle2 className="w-4 h-4" />
+                <span className="text-[10px] uppercase font-bold tracking-widest">Alle wijzigingen zijn direct opgeslagen in de cloud.</span>
+              </div>
+              <Button onClick={() => setEditingId(null)} className="rounded-full px-10 h-10 font-bold uppercase tracking-[0.2em] text-[10px] shadow-xl">
+                Gereed & Sluiten
+              </Button>
             </div>
           </div>
         </DialogContent>
