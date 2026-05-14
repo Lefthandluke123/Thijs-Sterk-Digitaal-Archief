@@ -1,8 +1,9 @@
+
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import Image from 'next/image';
-import { useCollection, useFirestore } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { Dialog, DialogContent, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -15,7 +16,7 @@ export default function GalleryPage() {
   const [activeTags, setActiveTags] = useState<string[]>([]);
   const firestore = useFirestore();
   
-  const artworksQuery = useMemo(() => {
+  const artworksQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'artworks'), orderBy('createdAt', 'desc'));
   }, [firestore]);
@@ -46,10 +47,6 @@ export default function GalleryPage() {
     });
   }, [artworks, activeSeries, activeTags]);
 
-  const toggleTag = (tag: string) => {
-    setActiveTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
-  };
-
   const navigateGallery = useCallback((direction: 'next' | 'prev') => {
     if (!selectedArtwork || !filteredArtworks.length) return;
     const currentIndex = filteredArtworks.findIndex(art => art.id === selectedArtwork.id);
@@ -68,6 +65,10 @@ export default function GalleryPage() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedArtwork, navigateGallery]);
+
+  const isExternalStorage = (url: string) => {
+    return url?.includes('quickconnect.to') || url?.includes('192-168');
+  };
 
   return (
     <main className="min-h-screen bg-background pt-14">
@@ -133,9 +134,7 @@ export default function GalleryPage() {
                         clipPath: `inset(${item.cropTop || 0}% ${item.cropRight || 0}% ${item.cropBottom || 0}% ${item.cropLeft || 0}%)`,
                         filter: `brightness(${item.brightness || 1})`
                       }}
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Beeld+niet+gevonden';
-                      }}
+                      onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Beeld+niet+gevonden'; }}
                     />
                     <div className="absolute bottom-2 right-2 z-10 pointer-events-none opacity-20 text-[6px] uppercase tracking-widest text-white font-bold bg-black/20 px-1 rounded-sm">
                       &copy; Erven Thijs Sterk
@@ -155,7 +154,7 @@ export default function GalleryPage() {
       </div>
 
       <Dialog open={!!selectedArtwork} onOpenChange={() => setSelectedArtwork(null)}>
-        <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background/98 backdrop-blur-3xl border-none rounded-none">
+        <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background/98 backdrop-blur-3xl border-none rounded-none overflow-hidden">
           <div className="relative flex-1 flex items-center justify-center overflow-hidden group bg-black/5">
             {selectedArtwork && (
               <div className="relative w-full h-full flex items-center justify-center">
@@ -167,9 +166,7 @@ export default function GalleryPage() {
                     clipPath: `inset(${selectedArtwork.cropTop || 0}% ${selectedArtwork.cropRight || 0}% ${selectedArtwork.cropBottom || 0}% ${selectedArtwork.cropLeft || 0}%)`,
                     filter: `brightness(${selectedArtwork.brightness || 1})`
                   }}
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Beeld+niet+gevonden';
-                  }}
+                  onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Beeld+niet+gevonden'; }}
                 />
                 <div className="absolute inset-0 pointer-events-none flex items-center justify-center opacity-[0.03] select-none rotate-[-45deg]">
                   <span className="text-6xl md:text-9xl font-bold uppercase tracking-[0.5em] text-foreground">

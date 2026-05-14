@@ -1,8 +1,9 @@
+
 "use client";
 
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { useFirestore, useCollection } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, doc, serverTimestamp, deleteDoc, addDoc, query, orderBy, updateDoc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -15,34 +16,41 @@ import {
   Plus,
   Image as ImageIcon,
   FolderOpen,
-  RefreshCw,
   Scissors,
   Settings,
-  Link as LinkIcon,
   ExternalLink,
-  Info,
-  AlertCircle,
-  HelpCircle
+  HelpCircle,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  Maximize2,
+  Tag
 } from 'lucide-react';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Dialog, DialogContent, DialogClose, DialogTitle } from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
+
+const STANDARD_TAGS = [
+  "Groet", "Schoorl", "Hargen", "Amsterdam", "Frankrijk", 
+  "Griekenland", "Olieverf", "Aquarel", "Monumentaal", "Glas in lood",
+  "Bloemen", "Dieren", "Water", "Portretten"
+];
 
 export default function AdminPage() {
   const firestore = useFirestore();
   const [loading, setLoading] = useState(false);
   const [bulkJson, setBulkJson] = useState('');
   const [activeTab, setActiveTab] = useState('archive');
+  const [editingArtwork, setEditingArtwork] = useState<any | null>(null);
   const directoryInputRef = useRef<HTMLInputElement>(null);
   
   // NAS Helper state
-  const [nasBaseUrl, setNasBaseUrl] = useState('https://192-168-178-15.doggyfew.direct.quickconnect.to/');
+  const [nasBaseUrl, setNasBaseUrl] = useState('http://192.168.178.15/');
   const [nasFileCount, setNasFileCount] = useState(0);
   const [previewUrl, setPreviewUrl] = useState('');
 
@@ -62,12 +70,31 @@ export default function AdminPage() {
     brightness: 1,
   });
 
-  const artworksQuery = useMemo(() => {
+  const artworksQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'artworks'), orderBy('createdAt', 'desc'));
   }, [firestore]);
 
   const { data: artworks } = useCollection(artworksQuery);
+
+  const navigateEditing = useCallback((direction: 'next' | 'prev') => {
+    if (!editingArtwork || !artworks) return;
+    const currentIndex = artworks.findIndex(art => art.id === editingArtwork.id);
+    let nextIndex = direction === 'next' 
+      ? (currentIndex + 1) % artworks.length 
+      : (currentIndex - 1 + artworks.length) % artworks.length;
+    setEditingArtwork(artworks[nextIndex]);
+  }, [editingArtwork, artworks]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!editingArtwork) return;
+      if (e.key === 'ArrowRight') navigateEditing('next');
+      if (e.key === 'ArrowLeft') navigateEditing('prev');
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [editingArtwork, navigateEditing]);
 
   const handleScanFolder = () => {
     if (directoryInputRef.current) {
@@ -116,22 +143,9 @@ export default function AdminPage() {
       }
     }
 
-    if (artworksToImport.length === 0) {
-      toast({ 
-        variant: "destructive", 
-        title: "Geen foto's", 
-        description: "Geen geschikte afbeeldingen gevonden." 
-      });
-      return;
-    }
-
     setNasFileCount(artworksToImport.length);
     setBulkJson(JSON.stringify(artworksToImport, null, 2));
     setActiveTab('bulk');
-    
-    if (directoryInputRef.current) {
-      directoryInputRef.current.value = '';
-    }
   };
 
   const handleAddManualArtwork = (e: React.FormEvent) => {
@@ -140,9 +154,7 @@ export default function AdminPage() {
 
     setLoading(true);
     const artworkCol = collection(firestore, 'artworks');
-    const data = { ...newArtwork, createdAt: serverTimestamp() };
-
-    addDoc(artworkCol, data)
+    addDoc(artworkCol, { ...newArtwork, createdAt: serverTimestamp() })
       .then(() => {
         toast({ title: "Toegevoegd" });
         setNewArtwork({ 
@@ -186,15 +198,24 @@ export default function AdminPage() {
     }
   };
 
-  const updateArtworkValue = (id: string, field: string, value: any) => {
+  const updateArtworkField = (id: string, field: string, value: any) => {
     if (!firestore) return;
     const artRef = doc(firestore, 'artworks', id);
     updateDoc(artRef, { [field]: value });
   };
 
+  const toggleArtworkTag = (artwork: any, tag: string) => {
+    const currentTags = artwork.tags || [];
+    const newTags = currentTags.includes(tag) 
+      ? currentTags.filter((t: string) => t !== tag)
+      : [...currentTags, tag];
+    updateArtworkField(artwork.id, 'tags', newTags);
+  };
+
   const handleDeleteArtwork = (artId: string) => {
-    if (!firestore || !confirm("Verwijderen?")) return;
+    if (!firestore || !confirm("Weet u het zeker? Dit kan niet ongedaan gemaakt worden.")) return;
     deleteDoc(doc(firestore, 'artworks', artId));
+    if (editingArtwork?.id === artId) setEditingArtwork(null);
   };
 
   return (
@@ -213,47 +234,36 @@ export default function AdminPage() {
 
       <main className="flex-1 p-8 max-w-7xl mx-auto w-full">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-          <TabsList className="bg-muted/50 p-1 rounded-full w-fit mx-auto overflow-x-auto no-scrollbar max-w-full">
+          <TabsList className="bg-muted/50 p-1 rounded-full w-fit mx-auto">
             <TabsTrigger value="archive" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Archief</TabsTrigger>
             <TabsTrigger value="new" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Nieuw Werk</TabsTrigger>
             <TabsTrigger value="nas" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">NAS Folder Helper</TabsTrigger>
             <TabsTrigger value="bulk" className="rounded-full px-8 text-[10px] uppercase font-bold tracking-widest">Bulk Import</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="archive">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <TabsContent value="archive" className="mt-0">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {artworks?.map((art: any) => (
-                <Card key={art.id} className="overflow-hidden bg-card border-border rounded-2xl group flex flex-col">
-                  <div className="relative aspect-[4/3] bg-muted/20 overflow-hidden">
+                <Card 
+                  key={art.id} 
+                  className="overflow-hidden bg-card border-border rounded-xl group cursor-pointer transition-shadow hover:shadow-lg"
+                  onClick={() => setEditingArtwork(art)}
+                >
+                  <div className="relative aspect-square bg-muted/20 overflow-hidden">
                     <img src={art.imageUrl} alt={art.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      style={{ clipPath: `inset(${art.cropTop || 0}% ${art.cropRight || 0}% ${art.cropBottom || 0}% ${art.cropLeft || 0}%)`, filter: `brightness(${art.brightness || 1})` }}
-                      onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Check+Link'; }}
+                      style={{ 
+                        clipPath: `inset(${art.cropTop || 0}% ${art.cropRight || 0}% ${art.cropBottom || 0}% ${art.cropLeft || 0}%)`, 
+                        filter: `brightness(${art.brightness || 1})` 
+                      }}
+                      onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Beeld+niet+gevonden'; }}
                     />
-                    <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
-                      <Button variant="destructive" size="icon" onClick={() => handleDeleteArtwork(art.id)} className="rounded-full h-8 w-8">
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </Button>
+                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <Maximize2 className="text-white w-6 h-6" />
                     </div>
                   </div>
-                  <CardContent className="p-6 flex-1 flex flex-col justify-between">
-                    <div>
-                      <h4 className="font-headline text-xl font-light mb-1">{art.title}</h4>
-                      <p className="text-[9px] text-accent font-bold uppercase tracking-widest mb-4">{art.series} &bull; {art.year || 'Onbekend'}</p>
-                    </div>
-                    <div className="space-y-4 pt-4 border-t border-border/50">
-                      <div className="space-y-2">
-                        <Label className="text-[9px] uppercase font-bold flex justify-between">Helderheid <span>{art.brightness?.toFixed(2) || '1.00'}</span></Label>
-                        <Slider defaultValue={[art.brightness || 1]} max={2} step={0.01} onValueCommit={([val]) => updateArtworkValue(art.id, 'brightness', val)} />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        {['Top', 'Bottom', 'Left', 'Right'].map(side => (
-                          <div key={side} className="space-y-1">
-                            <Label className="text-[8px] uppercase font-bold">Crop {side}</Label>
-                            <Slider defaultValue={[art[`crop${side}`] || 0]} max={50} step={1} onValueCommit={([val]) => updateArtworkValue(art.id, `crop${side}`, val)} />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                  <CardContent className="p-3">
+                    <h4 className="font-headline text-sm font-light truncate">{art.title}</h4>
+                    <p className="text-[8px] text-accent font-bold uppercase tracking-widest">{art.series}</p>
                   </CardContent>
                 </Card>
               ))}
@@ -276,45 +286,16 @@ export default function AdminPage() {
                     </div>
                     <div className="space-y-2">
                       <Label className="text-[10px] uppercase font-bold">Afbeelding URL</Label>
-                      <Input value={newArtwork.imageUrl} onChange={(e) => setNewArtwork(prev => ({ ...prev, imageUrl: e.target.value }))} required className="rounded-xl" placeholder="https://..." />
+                      <Input value={newArtwork.imageUrl} onChange={(e) => setNewArtwork(prev => ({ ...prev, imageUrl: e.target.value }))} required className="rounded-xl" placeholder="http://..." />
                     </div>
                     <Button type="submit" disabled={loading} className="w-full h-14 rounded-xl font-bold uppercase tracking-widest">
-                      {loading ? <Loader2 className="animate-spin" /> : <><Plus className="mr-2 w-4 h-4" /> Opslaan</>}
+                      {loading ? <Loader2 className="animate-spin" /> : <><Plus className="mr-2 w-4 h-4" /> Toevoegen aan Archief</>}
                     </Button>
                   </form>
                 </Card>
               </div>
-
-              <div className="space-y-6">
-                <h2 className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground flex items-center gap-2">
-                  <Scissors className="w-3 h-3" /> Live Preview & Cropper
-                </h2>
-                <div className="sticky top-32 space-y-8">
-                  <div className="relative aspect-square rounded-2xl overflow-hidden bg-muted/20 border-2 border-dashed border-border flex items-center justify-center">
-                    {newArtwork.imageUrl ? (
-                      <img src={newArtwork.imageUrl} alt="Preview" className="w-full h-full object-cover" 
-                        style={{ clipPath: `inset(${newArtwork.cropTop}% ${newArtwork.cropRight}% ${newArtwork.cropBottom}% ${newArtwork.cropLeft}%)`, filter: `brightness(${newArtwork.brightness})` }}
-                        onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Beeld+niet+gevonden'; }}
-                      />
-                    ) : (
-                      <div className="text-center p-8 opacity-20"><ImageIcon className="w-12 h-12 mx-auto mb-2" /><p className="text-[10px] uppercase font-bold">Voer URL in</p></div>
-                    )}
-                  </div>
-                  <div className="space-y-6 bg-card/30 p-6 rounded-2xl border border-border/40">
-                    <div className="space-y-3">
-                      <Label className="text-[10px] uppercase font-bold flex justify-between">Helderheid <span>{newArtwork.brightness.toFixed(2)}</span></Label>
-                      <Slider value={[newArtwork.brightness]} max={2} step={0.01} onValueChange={([v]) => setNewArtwork(p => ({ ...p, brightness: v }))} />
-                    </div>
-                    <div className="grid grid-cols-2 gap-x-8 gap-y-6">
-                      {['Top', 'Bottom', 'Left', 'Right'].map(side => (
-                        <div key={side} className="space-y-3">
-                          <Label className="text-[10px] uppercase font-bold">Crop {side} ({newArtwork[`crop${side}`]}%)</Label>
-                          <Slider value={[newArtwork[`crop${side}`]]} max={50} step={1} onValueChange={([v]) => setNewArtwork(p => ({ ...p, [`crop${side}`]: v }))} />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
+              <div className="space-y-6 opacity-40">
+                <p className="text-sm italic">Gebruik de preview in het archief om de uitsnede en helderheid aan te passen na het toevoegen.</p>
               </div>
             </div>
           </TabsContent>
@@ -323,7 +304,7 @@ export default function AdminPage() {
             <div className="max-w-3xl mx-auto space-y-8">
               <div className="text-center space-y-2">
                 <h2 className="text-3xl font-headline font-light">NAS Folder Helper</h2>
-                <p className="text-muted-foreground text-sm">Beheer je afbeeldingen direct vanaf je Synology NAS.</p>
+                <p className="text-muted-foreground text-sm">Bereid je bulk-import voor door je NAS map te scannen.</p>
               </div>
 
               <Accordion type="single" collapsible className="w-full bg-accent/5 rounded-2xl border border-accent/10 px-6">
@@ -337,13 +318,9 @@ export default function AdminPage() {
                       <ol className="list-decimal pl-5 space-y-2">
                         <li>Ga naar <strong>Configuratiescherm</strong> &gt; <strong>Gedeelde map</strong>.</li>
                         <li>Klik op <strong>Maken</strong> &gt; <strong>Maken</strong> en noem de map exact <code>web</code>.</li>
-                        <li>Ga bij de machtigingen naar de groep <strong>http</strong> en geef deze <strong>Lezen</strong> rechten.</li>
-                        <li>Installeer <strong>Web Station</strong> via het Package Center als dat nog niet is gebeurd.</li>
-                        <li>Controleer in de Web Station app of de <strong>Default Service</strong> is ingesteld op Apache of Nginx.</li>
+                        <li>Geef de groep <strong>http</strong> minimaal <strong>Lezen</strong> rechten.</li>
+                        <li>Controleer in <strong>Web Station</strong> of de service actief is op poort 80/443.</li>
                       </ol>
-                      <p className="italic bg-background/50 p-3 rounded-lg border border-border/20">
-                        Zodra de map 'web' bestaat, kun je daar je map met foto's in plaatsen. Die verschijnt dan weer in File Station.
-                      </p>
                     </div>
                   </AccordionContent>
                 </AccordionItem>
@@ -354,30 +331,29 @@ export default function AdminPage() {
                   <div className="space-y-2">
                     <Label className="text-[10px] uppercase font-bold">1. Basis URL van je NAS</Label>
                     <Input value={nasBaseUrl} onChange={(e) => setNasBaseUrl(e.target.value)} className="rounded-xl font-mono text-xs" />
-                    <p className="text-[9px] text-muted-foreground italic">Gebruik je QuickConnect adres. Vergeet de afsluitende / niet.</p>
+                    <p className="text-[9px] text-muted-foreground italic">Bijv: http://192.168.178.15/ of je QuickConnect adres.</p>
                   </div>
                   
                   <div className="pt-4 border-t border-border/20">
-                    <Label className="text-[10px] uppercase font-bold mb-4 block">2. Selecteer de map op je NAS</Label>
+                    <Label className="text-[10px] uppercase font-bold mb-4 block">2. Selecteer de map</Label>
                     <Button onClick={handleScanFolder} className="w-full h-20 rounded-2xl font-bold uppercase tracking-widest bg-accent hover:bg-accent/90 text-lg shadow-lg group">
                       <FolderOpen className="mr-4 w-8 h-8 group-hover:scale-110 transition-transform" />
-                      Map Selecteren
+                      Map Scannen
                     </Button>
-                    <p className="text-[9px] text-muted-foreground mt-2 text-center">Koppel je NAS als lokale schijf om de map direct te kunnen aanwijzen.</p>
                   </div>
                 </div>
 
                 {previewUrl && (
                   <div className="space-y-4 pt-6 border-t border-border/20">
                     <div className="bg-muted/30 p-4 rounded-xl space-y-2">
-                      <Label className="text-[9px] uppercase font-bold">Test Link (werkt dit?):</Label>
+                      <Label className="text-[9px] uppercase font-bold">Voorbeeld Link:</Label>
                       <div className="flex items-center gap-2 overflow-hidden">
                         <code className="text-[10px] text-primary truncate flex-1">{previewUrl}</code>
-                        <Button variant="ghost" size="icon" className="h-6 w-6" asChild title="Test link">
+                        <Button variant="ghost" size="icon" className="h-6 w-6" asChild>
                           <a href={previewUrl} target="_blank" rel="noopener noreferrer"><ExternalLink className="w-3 h-3" /></a>
                         </Button>
                       </div>
-                      <p className="text-[9px] text-muted-foreground italic">Klik op het icoontje. Als de foto opent, zijn je NAS-instellingen correct.</p>
+                      <p className="text-[9px] text-muted-foreground italic">Klik op het icoontje. Als de foto opent, klopt je Basis URL.</p>
                     </div>
                     <Button onClick={() => setActiveTab('bulk')} className="w-full rounded-xl bg-primary/20 text-primary border border-primary/20 uppercase text-[10px] font-bold tracking-widest h-12">
                       Ga naar Bulk Import ({nasFileCount} bestanden)
@@ -405,6 +381,151 @@ export default function AdminPage() {
           </TabsContent>
         </Tabs>
       </main>
+
+      {/* Master Editor Dialog */}
+      <Dialog open={!!editingArtwork} onOpenChange={() => setEditingArtwork(null)}>
+        <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background/98 backdrop-blur-3xl border-none rounded-none overflow-hidden">
+          <div className="relative flex-1 flex items-center justify-center overflow-hidden group bg-black/5">
+            {editingArtwork && (
+              <div className="relative w-full h-full flex items-center justify-center">
+                <img 
+                  src={editingArtwork.imageUrl} 
+                  alt={editingArtwork.title} 
+                  className="max-w-full max-h-full object-contain p-4 md:p-12 transition-all duration-300" 
+                  style={{
+                    clipPath: `inset(${editingArtwork.cropTop || 0}% ${editingArtwork.cropRight || 0}% ${editingArtwork.cropBottom || 0}% ${editingArtwork.cropLeft || 0}%)`,
+                    filter: `brightness(${editingArtwork.brightness || 1})`
+                  }}
+                  onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Beeld+niet+gevonden'; }}
+                />
+              </div>
+            )}
+            
+            {/* Navigation Arrows */}
+            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-6 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+              <button onClick={(e) => { e.stopPropagation(); navigateEditing('prev'); }} className="p-4 rounded-full bg-background/20 backdrop-blur-md pointer-events-auto hover:bg-background/40 transition-colors">
+                <ChevronLeft className="w-8 h-8" />
+              </button>
+              <button onClick={(e) => { e.stopPropagation(); navigateEditing('next'); }} className="p-4 rounded-full bg-background/20 backdrop-blur-md pointer-events-auto hover:bg-background/40 transition-colors">
+                <ChevronRight className="w-8 h-8" />
+              </button>
+            </div>
+
+            <div className="absolute top-8 right-8 z-50 flex gap-4">
+               <Button variant="destructive" size="icon" onClick={() => handleDeleteArtwork(editingArtwork.id)} className="rounded-full h-10 w-10 opacity-50 hover:opacity-100">
+                <Trash2 className="w-5 h-5" />
+              </Button>
+              <DialogClose className="p-2 bg-background/20 backdrop-blur-md rounded-full hover:bg-background/40 transition-colors">
+                <X className="w-6 h-6" />
+              </DialogClose>
+            </div>
+          </div>
+
+          {/* Master Bottom Bar */}
+          <div className="w-full bg-background/95 backdrop-blur-md border-t border-border/10 p-4 md:px-8 md:py-6 shadow-2xl">
+            <div className="max-w-[1400px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+              
+              {/* Info Column */}
+              <div className="md:col-span-3 space-y-4">
+                <div className="space-y-1.5">
+                  <Label className="text-[9px] uppercase font-bold tracking-widest opacity-50">Titel</Label>
+                  <Input 
+                    value={editingArtwork?.title || ''} 
+                    onChange={(e) => updateArtworkField(editingArtwork.id, 'title', e.target.value)} 
+                    className="h-8 text-sm font-headline bg-transparent border-none focus-visible:ring-0 p-0"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label className="text-[9px] uppercase font-bold tracking-widest opacity-50">Serie</Label>
+                    <Input 
+                      value={editingArtwork?.series || ''} 
+                      onChange={(e) => updateArtworkField(editingArtwork.id, 'series', e.target.value)} 
+                      className="h-8 text-[10px] bg-transparent border-none focus-visible:ring-0 p-0 text-accent font-bold"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[9px] uppercase font-bold tracking-widest opacity-50">Jaar</Label>
+                    <Input 
+                      value={editingArtwork?.year || ''} 
+                      onChange={(e) => updateArtworkField(editingArtwork.id, 'year', e.target.value)} 
+                      className="h-8 text-[10px] bg-transparent border-none focus-visible:ring-0 p-0"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Tags Column */}
+              <div className="md:col-span-3 space-y-4">
+                <Label className="text-[9px] uppercase font-bold tracking-widest opacity-50 flex items-center gap-2">
+                  <Tag className="w-3 h-3" /> Thema's / Tags
+                </Label>
+                <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto no-scrollbar">
+                  {STANDARD_TAGS.map(tag => (
+                    <button
+                      key={tag}
+                      onClick={() => toggleArtworkTag(editingArtwork, tag)}
+                      className={cn(
+                        "px-2 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-tighter transition-all border",
+                        editingArtwork?.tags?.includes(tag) 
+                          ? "bg-accent text-white border-accent" 
+                          : "bg-background/50 text-muted-foreground border-border/40 hover:border-accent/40"
+                      )}
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Sliders Column */}
+              <div className="md:col-span-3 space-y-4">
+                <div className="space-y-3">
+                  <Label className="text-[9px] uppercase font-bold tracking-widest opacity-50 flex justify-between">
+                    Helderheid <span>{editingArtwork?.brightness?.toFixed(2) || '1.00'}</span>
+                  </Label>
+                  <Slider 
+                    value={[editingArtwork?.brightness || 1]} 
+                    max={2} 
+                    step={0.01} 
+                    onValueChange={([val]) => updateArtworkField(editingArtwork.id, 'brightness', val)} 
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+                  {['Top', 'Bottom', 'Left', 'Right'].map(side => (
+                    <div key={side} className="space-y-2">
+                      <Label className="text-[8px] uppercase font-bold opacity-40">Crop {side} ({editingArtwork?.[`crop${side}`] || 0}%)</Label>
+                      <Slider 
+                        value={[editingArtwork?.[`crop${side}`] || 0]} 
+                        max={50} 
+                        step={1} 
+                        onValueChange={([val]) => updateArtworkField(editingArtwork.id, `crop${side}`, val)} 
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Description Column */}
+              <div className="md:col-span-3 space-y-1.5">
+                <Label className="text-[9px] uppercase font-bold tracking-widest opacity-50">Omschrijving</Label>
+                <Textarea 
+                  value={editingArtwork?.description || ''} 
+                  onChange={(e) => updateArtworkField(editingArtwork.id, 'description', e.target.value)} 
+                  className="h-24 text-[10px] bg-background/20 border-border/40 resize-none rounded-xl"
+                  placeholder="Beschrijf het werk..."
+                />
+              </div>
+
+            </div>
+            
+            {/* Keyboard hint */}
+            <div className="text-center mt-4 opacity-20 text-[8px] uppercase tracking-[0.3em] font-bold">
+              Gebruik de pijltjestoetsen om te bladeren door het archief
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
