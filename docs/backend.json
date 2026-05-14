@@ -79,9 +79,13 @@
     },
     "Interaction": {
       "title": "Interaction",
-      "description": "Een anonieme registratie van een bezoekersactie.",
+      "description": "Een registratie van een bezoekersactie met persistent ID.",
       "type": "object",
       "properties": {
+        "visitorId": {
+          "type": "string",
+          "description": "Unieke persistent ID van de bezoeker"
+        },
         "type": {
           "type": "string",
           "enum": ["view_artwork", "filter_tags"],

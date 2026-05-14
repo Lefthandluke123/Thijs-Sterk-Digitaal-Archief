@@ -2,7 +2,6 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
-import Image from 'next/image';
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
@@ -19,8 +18,19 @@ const STANDARD_TAGS = [
 export default function CuratorPage() {
   const [activeTags, setActiveTags] = useState<string[]>([]);
   const [selectedArtwork, setSelectedArtwork] = useState<any | null>(null);
+  const [visitorId, setVisitorId] = useState<string>("");
   const firestore = useFirestore();
   
+  useEffect(() => {
+    // Discreet tracking ID in localStorage/cookie
+    let vid = localStorage.getItem('ts_visitor_id');
+    if (!vid) {
+      vid = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      localStorage.setItem('ts_visitor_id', vid);
+    }
+    setVisitorId(vid);
+  }, []);
+
   const artworksQuery = useMemo(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'artworks'), orderBy('createdAt', 'desc'));
@@ -48,14 +58,13 @@ export default function CuratorPage() {
   }, [artworks, activeTags]);
 
   const logInteraction = (type: 'view_artwork' | 'filter_tags', data: any) => {
-    if (!firestore) return;
+    if (!firestore || !visitorId) return;
     addDoc(collection(firestore, 'interactions'), {
+      visitorId,
       type,
       ...data,
       timestamp: serverTimestamp()
-    }).catch(() => {
-      // Stil falen voor de gebruiker
-    });
+    }).catch(() => {});
   };
 
   const toggleTag = (tag: string) => {
@@ -152,9 +161,6 @@ export default function CuratorPage() {
                         }}
                         onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Beeld+Fout'; }}
                       />
-                      <div className="absolute bottom-2 right-2 z-10 pointer-events-none opacity-20 text-[6px] uppercase tracking-widest text-white font-bold bg-black/20 px-1 rounded-sm">
-                        &copy; Erven Thijs Sterk
-                      </div>
                       <div className="absolute inset-0 bg-background/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                         <Maximize2 className="text-white/60 w-6 h-6" />
                       </div>
@@ -189,11 +195,6 @@ export default function CuratorPage() {
                   }}
                   onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Beeld+Fout'; }}
                 />
-                <div className="absolute inset-0 pointer-events-none flex items-center justify-center opacity-[0.03] select-none rotate-[-45deg]">
-                  <span className="text-6xl md:text-8xl font-bold uppercase tracking-[0.5em] text-foreground">
-                    Erven Thijs Sterk
-                  </span>
-                </div>
               </div>
             )}
             <DialogClose className="absolute top-8 right-8 z-50 p-2 bg-background/10 backdrop-blur-sm rounded-full hover:bg-background/20 transition-colors">
@@ -203,8 +204,8 @@ export default function CuratorPage() {
 
           <div className="w-full bg-background/95 backdrop-blur-md py-8 md:py-12 px-8 border-t border-border/10">
             <div className="max-w-4xl mx-auto flex flex-col items-center text-center gap-6">
-              <div className="space-y-3">
-                <DialogTitle className="font-headline text-3xl md:text-5xl font-light text-foreground tracking-tight">
+              <div className="space-y-3 text-center">
+                <DialogTitle className="font-headline text-4xl md:text-6xl font-light text-foreground tracking-tight">
                   {selectedArtwork?.title}
                 </DialogTitle>
                 <div className="text-[10px] md:text-[11px] uppercase tracking-[0.3em] text-accent font-bold flex flex-wrap gap-x-6 gap-y-2 justify-center items-center opacity-80">
