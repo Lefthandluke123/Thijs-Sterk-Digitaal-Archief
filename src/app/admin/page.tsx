@@ -1,10 +1,9 @@
-
 "use client";
 
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useFirestore, useCollection } from '@/firebase';
-import { collection, doc, serverTimestamp, deleteDoc, addDoc, query, orderBy, updateDoc, getDocs } from 'firebase/firestore';
+import { collection, doc, serverTimestamp, deleteDoc, addDoc, query, orderBy, updateDoc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
@@ -24,7 +23,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export default function AdminPage() {
   const firestore = useFirestore();
