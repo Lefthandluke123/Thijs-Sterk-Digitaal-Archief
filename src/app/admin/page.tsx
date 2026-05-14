@@ -27,7 +27,8 @@ import {
   CheckCircle2,
   Copy,
   History,
-  CloudUpload
+  CloudUpload,
+  Square
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -57,6 +58,7 @@ export default function AdminPage() {
   const directoryInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadDirInputRef = useRef<HTMLInputElement>(null);
+  const cancelUploadRef = useRef(false);
   
   const [nasBaseUrl, setNasBaseUrl] = useState('http://192.168.178.15/fotos/');
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -137,7 +139,6 @@ export default function AdminPage() {
         const relativePath = (file as any).webkitRelativePath || "";
         const pathParts = relativePath.split('/');
         
-        // Root is index 0. Immediate subfolder is index 1.
         let detectedSeries = "Hoofdcollectie";
         if (pathParts.length > 2) {
           detectedSeries = pathParts[pathParts.length - 2];
@@ -173,20 +174,26 @@ export default function AdminPage() {
     });
   };
 
-  const handleBatchProcess = async (files: FileList | null, toCloud: boolean = true) => {
+  const handleBatchProcess = async (files: FileList | null) => {
     if (!files || files.length === 0 || !storage || !firestore) return;
 
     setIsUploading(true);
     setUploadProgress(0);
+    cancelUploadRef.current = false;
     const totalFiles = files.length;
     let startedCount = 0;
 
     for (let i = 0; i < totalFiles; i++) {
+      if (cancelUploadRef.current) {
+        toast({ title: "Upload Gestopt", description: "Het proces is afgebroken op uw verzoek." });
+        break;
+      }
+
       const file = files[i];
       const imageExtensions = /\.(jpe?g|png|webp|avif)$/i;
       if (!imageExtensions.test(file.name)) continue;
 
-      setUploadStatus(`Verwerken: ${file.name} (${i + 1}/${totalFiles})`);
+      setUploadStatus(`Uploaden: ${file.name} (${i + 1}/${totalFiles})`);
       
       const uniqueId = Math.random().toString(36).substring(7);
       const storageRef = ref(storage, `artworks/${Date.now()}_${uniqueId}_${file.name}`);
@@ -229,10 +236,12 @@ export default function AdminPage() {
       }
     }
 
-    toast({ title: "Batch Voltooid", description: `${startedCount} foto's zijn verwerkt en toegevoegd.` });
     setIsUploading(false);
     setUploadStatus('');
-    setActiveTab('archive');
+    if (!cancelUploadRef.current) {
+      toast({ title: "Batch Voltooid", description: `${startedCount} foto's zijn verwerkt en toegevoegd.` });
+      setActiveTab('archive');
+    }
   };
 
   const handleBulkUpload = async () => {
@@ -404,9 +413,19 @@ export default function AdminPage() {
                   </Button>
                 </div>
                 {isUploading && (
-                  <div className="w-full space-y-3">
+                  <div className="w-full space-y-4">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[10px] uppercase font-bold text-accent">{uploadStatus}</p>
+                      <Button 
+                        variant="destructive" 
+                        size="sm" 
+                        className="h-7 px-4 rounded-full text-[8px] uppercase font-bold tracking-widest"
+                        onClick={() => cancelUploadRef.current = true}
+                      >
+                        <Square className="w-3 h-3 mr-1 fill-current" /> Stop Upload
+                      </Button>
+                    </div>
                     <Progress value={uploadProgress} className="h-1" />
-                    <p className="text-[10px] uppercase font-bold text-accent text-center">{uploadStatus}</p>
                   </div>
                 )}
               </Card>
@@ -459,7 +478,7 @@ export default function AdminPage() {
           <div className="w-full bg-background/95 backdrop-blur-md border-t border-border/10 p-2 shadow-2xl">
             <div className="max-w-[1400px] mx-auto grid grid-cols-4 gap-4 items-start pb-4">
               <div className="space-y-2">
-                <DialogTitle className="font-headline text-2xl font-light text-center mb-1 leading-tight truncate">
+                <DialogTitle className="font-headline text-2xl md:text-3xl font-light text-center mb-1 leading-tight truncate px-4">
                   {editingArtwork?.title}
                 </DialogTitle>
                 <div className="flex items-center justify-between px-2">
@@ -467,7 +486,16 @@ export default function AdminPage() {
                   <Switch checked={editingArtwork?.featured || false} onCheckedChange={(val) => editingArtwork && updateArtworkField(editingArtwork.id, 'featured', val)} />
                 </div>
                 <Input defaultValue={editingArtwork?.title || ''} onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'title', e.target.value)} placeholder="Titel" className="h-7 text-xs font-headline bg-muted/10 border-none px-2" />
-                <Input defaultValue={editingArtwork?.series || ''} onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'series', e.target.value)} placeholder="Zaal (Serie)" className="h-7 text-[8px] bg-muted/10 border-none px-2 text-accent font-bold" />
+                <div className="space-y-1">
+                  <Input defaultValue={editingArtwork?.series || ''} onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'series', e.target.value)} placeholder="Zaal (Serie)" className="h-7 text-[8px] bg-muted/10 border-none px-2 text-accent font-bold" />
+                  <div className="flex flex-wrap gap-1 max-h-12 overflow-y-auto">
+                    {existingSeries.map(s => (
+                      <button key={s} onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, 'series', s)} className="px-1.5 py-0.5 rounded-full text-[6px] font-bold uppercase bg-accent/10 text-accent hover:bg-accent/20">
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -526,3 +554,4 @@ export default function AdminPage() {
     </div>
   );
 }
+
