@@ -24,9 +24,9 @@ Als de standaard `web` map niet werkt, volg dan deze stappen om een eigen map te
 
 3. **Koppel de nieuwe map in Web Station (CRUCIAAL):**
    - Open de app **Web Station** op je NAS.
-   - Ga in het linkermenu naar **Webservice** (of Webservice-instellingen).
-   - Klik op de knop **Maken**.
-   - Kies in het pop-up venster voor **Statische website**.
+   - Ga in het linkermenu naar **Webservice** (NIET naar Webportaal/Web Portal).
+   - Klik op de knop **Maken** bovenaan.
+   - Kies in de lijst die verschijnt voor **Statische website**.
    - Geef een naam (bijv. 'fotos') en selecteer bij **Document-root** de map die je zojuist hebt gemaakt (`atelier-fotos`).
    - Klik op **Voltooien**.
 

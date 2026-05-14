@@ -29,7 +29,8 @@ import {
   Info,
   RefreshCw,
   UserPlus,
-  Globe
+  Globe,
+  Settings2
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -254,13 +255,13 @@ export default function AdminPage() {
                     </AccordionTrigger>
                     <AccordionContent className="space-y-4 pb-6">
                       <div className="space-y-3 text-sm text-muted-foreground leading-relaxed">
-                        <p>In de nieuwste versie van Web Station volg je deze route:</p>
+                        <p className="font-bold text-blue-600">Let op: Gebruik het tabblad 'Webservice', NIET 'Webportaal'.</p>
                         <ol className="list-decimal pl-5 space-y-2">
                           <li>Open de app <strong>Web Station</strong>.</li>
-                          <li>Klik links op <strong>Webservice</strong> (of Webservice-instellingen).</li>
-                          <li>Klik op de knop <strong>Maken</strong> bovenaan.</li>
-                          <li>Kies <strong>Statische website</strong> in de lijst die verschijnt.</li>
-                          <li>Vul een naam in (bijv. <code>fotos</code>).</li>
+                          <li>Klik in het linkermenu op <strong>Webservice</strong>.</li>
+                          <li>Klik bovenaan op de knop <strong>Maken</strong>.</li>
+                          <li>Kies <strong>Statische website</strong> (hier zie je GEEN virtuele host).</li>
+                          <li>Geef een naam (bijv. <code>fotos</code>).</li>
                           <li>Selecteer jouw nieuwe map als <strong>Document-root</strong>.</li>
                           <li>Klik op <strong>Voltooien</strong>.</li>
                         </ol>
@@ -279,12 +280,12 @@ export default function AdminPage() {
                     </AccordionTrigger>
                     <AccordionContent className="space-y-4 pb-6">
                       <div className="space-y-3 text-sm text-muted-foreground leading-relaxed">
-                        <p>De groep <code>http</code> is nodig om de foto's te mogen 'tonen' in een browser:</p>
+                        <p>De groep <code>http</code> is een systeemgroep. Je hoeft deze niet zelf te maken:</p>
                         <ol className="list-decimal pl-5 space-y-2">
                           <li>Ga naar <strong>Configuratiescherm</strong> &gt; <strong>Gedeelde map</strong>.</li>
                           <li>Selecteer je map en klik op <strong>Bewerken</strong> &gt; <strong>Machtigingen</strong>.</li>
-                          <li>Kies in de dropdown bovenaan voor <strong>Lokale groepen</strong>.</li>
-                          <li>Zoek <code>http</code> en vink <strong>Lezen</strong> aan.</li>
+                          <li>Kies in de dropdown bovenaan voor <strong>Lokale groepen</strong> (ipv Lokale gebruikers).</li>
+                          <li>Zoek <code>http</code> in de lijst en vink <strong>Lezen</strong> aan.</li>
                         </ol>
                       </div>
                     </AccordionContent>
