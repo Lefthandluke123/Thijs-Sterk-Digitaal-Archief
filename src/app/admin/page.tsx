@@ -52,7 +52,6 @@ export default function AdminPage() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // Beveiliging met het gevraagde wachtwoord
     if (password === 'gabbes') {
       setIsAuthorized(true);
       toast({ title: "Toegang verleend", description: "Welkom in het atelier." });
