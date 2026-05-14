@@ -98,9 +98,9 @@ export default function CuratorPage() {
     <main className="min-h-screen bg-background pt-14">
       <div className="w-full bg-accent/5 border-b border-border/10 py-16 md:py-24">
         <div className="container mx-auto px-6 max-w-5xl text-center space-y-6">
-          <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-accent mb-2 block">Curator Tool</span>
+          <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-accent mb-2 block">Uw Eigen Zaal</span>
           <h1 className="font-headline text-5xl md:text-7xl font-light text-foreground tracking-tight">
-            Stel <span className="italic">Uw Selectie</span> samen
+            Stel <span className="italic">Uw Zaal</span> samen
           </h1>
           <div className="space-y-4 py-4">
             <p className="text-foreground text-xl font-light leading-relaxed max-w-2xl mx-auto">
@@ -144,7 +144,7 @@ export default function CuratorPage() {
                 size="lg"
                 className="rounded-full h-14 px-8 text-[10px] uppercase font-bold tracking-widest text-accent/60 hover:text-accent border border-accent/20"
               >
-                <X className="w-4 h-4 mr-2" /> Wis selectie
+                <X className="w-4 h-4 mr-2" /> Wis zaal
               </Button>
               
               <Button 

@@ -12,7 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, LayoutGrid, Palette, Info, Mail } from 'lucide-react';
+import { ChevronDown, LayoutGrid } from 'lucide-react';
 
 export function Navbar() {
   const pathname = usePathname();
@@ -59,13 +59,13 @@ export function Navbar() {
                   pathname.includes('/gallery') ? "bg-accent/90 text-accent-foreground shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
                 )}
               >
-                Galerie <ChevronDown className="w-3 h-3 opacity-50" />
+                Zalen <ChevronDown className="w-3 h-3 opacity-50" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="bg-background/98 backdrop-blur-xl border-border/40 rounded-2xl min-w-[200px] p-2 shadow-2xl">
               <DropdownMenuItem asChild className="text-[9px] uppercase font-bold tracking-[0.15em] focus:bg-accent focus:text-accent-foreground rounded-xl cursor-pointer p-3 mb-1">
                 <Link href="/gallery" className="flex items-center gap-2">
-                  <LayoutGrid className="w-3 h-3" /> Alle Werken
+                  <LayoutGrid className="w-3 h-3" /> Alle Zalen
                 </Link>
               </DropdownMenuItem>
               <div className="h-px bg-border/20 my-1 mx-2" />
@@ -88,7 +88,7 @@ export function Navbar() {
               pathname === "/curator" ? "bg-accent/90 text-accent-foreground shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
             )}
           >
-            Uw Selectie
+            Uw Eigen Zaal
           </Link>
 
           <DropdownMenu>

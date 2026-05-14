@@ -94,10 +94,10 @@ function GalleryContent() {
       <div className="w-full bg-secondary/5 border-b border-border/10 py-12 md:py-20">
         <div className="container mx-auto px-6 max-w-7xl">
           <h1 className="font-headline text-5xl md:text-7xl font-light text-foreground text-center tracking-tight">
-            {activeSeries === "Alle" ? "Galerie" : <span className="italic">{activeSeries}</span>}
+            {activeSeries === "Alle" ? "Zalen" : <span className="italic">{activeSeries}</span>}
           </h1>
           <p className="text-center text-accent mt-4 uppercase tracking-[0.3em] text-[10px] font-bold">
-            {activeSeries === "Alle" ? "Het Volledige Oeuvre" : `Collectie: ${activeSeries}`}
+            {activeSeries === "Alle" ? "Het Volledige Oeuvre" : `Zaal: ${activeSeries}`}
           </p>
         </div>
       </div>

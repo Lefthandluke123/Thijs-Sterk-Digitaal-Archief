@@ -34,7 +34,7 @@ export function Hero() {
         
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up delay-300">
           <Button size="lg" className="rounded-full px-12 bg-accent hover:bg-accent/90 text-accent-foreground font-medium h-14 text-lg" asChild>
-            <a href="/gallery">Bekijk de Galerie</a>
+            <a href="/gallery">Bekijk de Zalen</a>
           </Button>
           <Button variant="outline" size="lg" className="rounded-full px-12 border-primary text-primary hover:bg-primary/5 font-medium h-14 text-lg group" asChild>
             <a href="#about">
