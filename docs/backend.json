@@ -76,6 +76,36 @@
         "series",
         "imageUrl"
       ]
+    },
+    "Interaction": {
+      "title": "Interaction",
+      "description": "Een anonieme registratie van een bezoekersactie.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["view_artwork", "filter_tags"],
+          "description": "Het type interactie"
+        },
+        "artworkId": {
+          "type": "string",
+          "description": "ID van het bekeken kunstwerk"
+        },
+        "artworkTitle": {
+          "type": "string",
+          "description": "Titel van het bekeken kunstwerk"
+        },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "De geselecteerde filters"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Tijdstip van de interactie"
+        }
+      }
     }
   },
   "auth": {
@@ -87,6 +117,10 @@
     "/artworks/{artworkId}": {
       "schema": "Artwork",
       "description": "Collectie van alle kunstwerken"
+    },
+    "/interactions/{interactionId}": {
+      "schema": "Interaction",
+      "description": "Log van bezoekersinteracties voor analyse"
     }
   }
 }

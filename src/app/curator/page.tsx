@@ -1,10 +1,10 @@
 
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Image from 'next/image';
 import { useCollection, useFirestore } from '@/firebase';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { collection, query, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Loader2, Sparkles, X, Maximize2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -47,10 +47,35 @@ export default function CuratorPage() {
     });
   }, [artworks, activeTags]);
 
+  const logInteraction = (type: 'view_artwork' | 'filter_tags', data: any) => {
+    if (!firestore) return;
+    addDoc(collection(firestore, 'interactions'), {
+      type,
+      ...data,
+      timestamp: serverTimestamp()
+    }).catch(() => {
+      // Stil falen voor de gebruiker
+    });
+  };
+
   const toggleTag = (tag: string) => {
-    setActiveTags(prev => 
-      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
-    );
+    const newTags = activeTags.includes(tag) 
+      ? activeTags.filter(t => t !== tag) 
+      : [...activeTags, tag];
+    
+    setActiveTags(newTags);
+    
+    if (newTags.length > 0) {
+      logInteraction('filter_tags', { tags: newTags });
+    }
+  };
+
+  const handleArtworkClick = (artwork: any) => {
+    setSelectedArtwork(artwork);
+    logInteraction('view_artwork', { 
+      artworkId: artwork.id, 
+      artworkTitle: artwork.title 
+    });
   };
 
   return (
@@ -115,7 +140,7 @@ export default function CuratorPage() {
             ) : filteredArtworks.length > 0 ? (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8 animate-fade-in-up">
                 {filteredArtworks.map((item) => (
-                  <div key={item.id} className="group relative cursor-pointer" onClick={() => setSelectedArtwork(item)}>
+                  <div key={item.id} className="group relative cursor-pointer" onClick={() => handleArtworkClick(item)}>
                     <div className="relative aspect-[4/5] overflow-hidden rounded-sm bg-muted/20">
                       <img 
                         src={item.imageUrl} 
