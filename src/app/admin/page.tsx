@@ -13,7 +13,8 @@ import {
   X,
   Save,
   Loader2,
-  Lock
+  Lock,
+  ArrowLeft
 } from 'lucide-react';
 import Image from 'next/image';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -30,7 +31,7 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState('db');
   const [newTagInputs, setNewTagInputs] = useState<Record<string, string>>({});
   
-  // Wachtwoord beveiliging
+  // Wachtwoord beveiliging: 'gabbes'
   const [password, setPassword] = useState('');
   const [isAuthorized, setIsAuthorized] = useState(false);
 
@@ -203,8 +204,8 @@ export default function AdminPage() {
                 Betreden
               </Button>
             </form>
-            <Link href="/" className="text-[9px] uppercase tracking-widest font-bold text-muted-foreground hover:text-foreground transition-colors pt-4">
-              Terug naar de site
+            <Link href="/" className="text-[9px] uppercase tracking-widest font-bold text-muted-foreground hover:text-foreground transition-colors pt-4 flex items-center gap-2">
+              <ArrowLeft className="w-3 h-3" /> Terug naar de site
             </Link>
           </div>
         </Card>
@@ -384,7 +385,9 @@ export default function AdminPage() {
                   if (!firestore || !confirm("Weet je dit heel zeker? Alle kunstwerken worden definitief gewist.")) return;
                   setLoading(true);
                   const snaps = await getDocs(collection(firestore, 'artworks'));
-                  snaps.docs.forEach(d => deleteDoc(d.ref));
+                  for (const d of snaps.docs) {
+                    await deleteDoc(d.ref);
+                  }
                   toast({ title: "Archief leeggemaakt" });
                   setLoading(false);
                 }} disabled={loading} className="h-10 px-6 border-destructive text-destructive font-bold text-[10px] uppercase tracking-widest">Reset DB</Button>
