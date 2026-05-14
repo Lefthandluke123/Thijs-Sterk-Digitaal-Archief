@@ -9,13 +9,14 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 import { 
   Trash2, 
   Loader2, 
   ArrowLeft,
   Upload,
   Plus,
-  Minus,
   FolderOpen,
   X,
   ChevronLeft,
@@ -140,6 +141,8 @@ export default function AdminPage() {
         const pathParts = relativePath.split('/');
         
         let detectedSeries = "Hoofdcollectie";
+        // Als we in een map zitten, is het pad 'Hoofdmap/Zaal/Foto.jpg'
+        // pathParts.length zou dan 3 zijn. De zaal is pathParts[1]
         if (pathParts.length > 2) {
           detectedSeries = pathParts[pathParts.length - 2];
         }
@@ -170,7 +173,7 @@ export default function AdminPage() {
     setActiveTab('bulk');
     toast({ 
       title: "Map Analyse Voltooid", 
-      description: `${artworksToImport.length} foto's verdeeld over collecties gebaseerd op de mappenstructuur.` 
+      description: `${artworksToImport.length} foto's verdeeld over zalen gebaseerd op de mappenstructuur.` 
     });
   };
 
@@ -185,7 +188,7 @@ export default function AdminPage() {
 
     for (let i = 0; i < totalFiles; i++) {
       if (cancelUploadRef.current) {
-        toast({ title: "Upload Gestopt", description: "Het proces is afgebroken op uw verzoek." });
+        toast({ title: "Upload Gestopt", description: "Het proces is afgebroken." });
         break;
       }
 
@@ -228,18 +231,27 @@ export default function AdminPage() {
           createdAt: serverTimestamp()
         };
 
-        await addDoc(collection(firestore, 'artworks'), newArtwork);
+        addDoc(collection(firestore, 'artworks'), newArtwork)
+          .catch(async (err) => {
+             const permissionError = new FirestorePermissionError({
+              path: 'artworks',
+              operation: 'create',
+              requestResourceData: newArtwork,
+            });
+            errorEmitter.emit('permission-error', permissionError);
+          });
+          
         startedCount++;
         setUploadProgress((startedCount / totalFiles) * 100);
       } catch (error: any) {
-        console.error('Storage error:', error);
+        toast({ variant: "destructive", title: "Storage Fout", description: `Kon ${file.name} niet uploaden.` });
       }
     }
 
     setIsUploading(false);
     setUploadStatus('');
     if (!cancelUploadRef.current) {
-      toast({ title: "Batch Voltooid", description: `${startedCount} foto's zijn verwerkt en toegevoegd.` });
+      toast({ title: "Batch Voltooid", description: `${startedCount} foto's zijn verwerkt.` });
       setActiveTab('archive');
     }
   };
@@ -253,9 +265,11 @@ export default function AdminPage() {
       
       for (const item of artworksArray) {
         const { id, ...rest } = item;
-        await addDoc(collection(firestore, 'artworks'), {
+        addDoc(collection(firestore, 'artworks'), {
           ...rest,
           createdAt: serverTimestamp()
+        }).catch(async () => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'artworks', operation: 'create' }));
         });
       }
       
@@ -277,15 +291,18 @@ export default function AdminPage() {
     });
     setBulkJson(JSON.stringify(exportData, null, 2));
     setActiveTab('bulk');
-    toast({ title: "Backup Gegenereerd", description: "Kopieer de JSON-tekst en bewaar deze veilig." });
+    toast({ title: "Backup Gegenereerd", description: "Kopieer de JSON-tekst onder Backup & Bulk." });
   };
 
   const updateArtworkField = async (id: string, field: string, value: any) => {
     if (!firestore || !id) return;
     setIsSaving(true);
     const artRef = doc(firestore, 'artworks', id);
-    await updateDoc(artRef, { [field]: value });
-    setTimeout(() => setIsSaving(false), 500);
+    updateDoc(artRef, { [field]: value })
+      .catch(async () => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: artRef.path, operation: 'update', requestResourceData: { [field]: value } }));
+      })
+      .finally(() => setTimeout(() => setIsSaving(false), 500));
   };
 
   const toggleArtworkTag = (artwork: any, tag: string) => {
@@ -297,8 +314,11 @@ export default function AdminPage() {
   };
 
   const handleDeleteArtwork = (artId: string) => {
-    if (!firestore || !confirm("Weet u het zeker?")) return;
-    deleteDoc(doc(firestore, 'artworks', artId));
+    if (!firestore || !confirm("Weet u het zeker? Dit werk wordt definitief verwijderd.")) return;
+    deleteDoc(doc(firestore, 'artworks', artId))
+      .catch(async () => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `artworks/${artId}`, operation: 'delete' }));
+      });
     if (editingId === artId) setEditingId(null);
   };
 
@@ -345,7 +365,7 @@ export default function AdminPage() {
                 <Loader2 className="w-8 h-8 animate-spin text-accent" />
                 <p className="text-sm font-light italic">Laden...</p>
               </div>
-            ) : (
+            ) : artworks && artworks.length > 0 ? (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
                 {filteredArtworks.map((art: any) => (
                   <Card 
@@ -364,7 +384,7 @@ export default function AdminPage() {
                         }}
                       />
                       <div className="absolute top-2 right-2 flex gap-1">
-                        {art.featured && <Badge className="bg-accent text-white p-1"><Star className="w-3 h-3 fill-white" /></Badge>}
+                        {art.featured && <Star className="w-3 h-3 fill-white" />}
                         <Badge className={cn("text-white p-1", art.imageUrl.includes('firebasestorage') ? "bg-blue-500" : "bg-orange-500")}>
                           {art.imageUrl.includes('firebasestorage') ? <Cloud className="w-3 h-3" /> : <HardDrive className="w-3 h-3" />}
                         </Badge>
@@ -379,6 +399,11 @@ export default function AdminPage() {
                   </Card>
                 ))}
               </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-32 text-center opacity-40">
+                <FolderOpen className="w-12 h-12 mb-4" />
+                <p className="text-sm italic">Nog geen werken in het archief.</p>
+              </div>
             )}
           </TabsContent>
 
@@ -386,7 +411,7 @@ export default function AdminPage() {
             <Card className="p-12 rounded-3xl border-border bg-card/50 shadow-xl max-w-2xl mx-auto text-center space-y-8">
               <div className="space-y-4">
                 <h3 className="font-headline text-2xl font-light">Hoofdmap Selecteren (NAS)</h3>
-                <p className="text-sm text-muted-foreground">Kies een map op uw NAS of computer. Submappen worden automatisch herkent als aparte zalen.</p>
+                <p className="text-sm text-muted-foreground">Kies een hoofdmap op uw NAS of computer. Alle submappen worden automatisch herkend als aparte zalen.</p>
               </div>
               <div className="space-y-4">
                 <Label className="text-[10px] uppercase font-bold text-left block">Basis URL</Label>
@@ -436,13 +461,13 @@ export default function AdminPage() {
               <div className="flex justify-between items-center">
                 <Label className="text-[10px] uppercase font-bold">Backup Data (JSON)</Label>
                 <div className="flex gap-2">
-                  <Button variant="ghost" size="sm" onClick={handleExportArchive} className="h-7 text-[8px] uppercase font-bold"><History className="w-3 h-3 mr-1" /> Exporteer</Button>
+                  <Button variant="ghost" size="sm" onClick={handleExportArchive} className="h-7 text-[8px] uppercase font-bold"><History className="w-3 h-3 mr-1" /> Genereer Backup</Button>
                   <Button variant="ghost" size="sm" onClick={() => navigator.clipboard.writeText(bulkJson)} className="h-7 text-[8px] uppercase font-bold"><Copy className="w-3 h-3 mr-1" /> Kopieer</Button>
                 </div>
               </div>
               <Textarea value={bulkJson} onChange={(e) => setBulkJson(e.target.value)} className="min-h-[400px] font-mono text-[10px] rounded-2xl bg-black/5" />
               <Button onClick={handleBulkUpload} disabled={loading || !bulkJson} className="w-full h-14 rounded-xl font-bold uppercase tracking-widest shadow-xl">
-                {loading ? <Loader2 className="animate-spin" /> : <><Upload className="mr-2 w-4 h-4" /> Importeer / Herstel</>}
+                {loading ? <Loader2 className="animate-spin" /> : <><Upload className="mr-2 w-4 h-4" /> Importeer Backup</>}
               </Button>
             </Card>
           </TabsContent>
@@ -520,8 +545,8 @@ export default function AdminPage() {
                     const field = `crop${side}`;
                     return (
                       <div key={side} className="space-y-1">
-                        <Label className="text-[6px] uppercase font-bold opacity-40">{side} {editingArtwork?.[field] || 0}%</Label>
-                        <Slider value={[editingArtwork?.[field] || 0]} max={50} step={1} onValueChange={([val]) => editingArtwork && updateArtworkField(editingArtwork.id, field, val)} />
+                        <Label className="text-[6px] uppercase font-bold opacity-40">{side} {editingArtwork?.[field as keyof typeof editingArtwork] || 0}%</Label>
+                        <Slider value={[editingArtwork?.[field as keyof typeof editingArtwork] as number || 0]} max={50} step={1} onValueChange={([val]) => editingArtwork && updateArtworkField(editingArtwork.id, field, val)} />
                       </div>
                     );
                   })}
@@ -534,8 +559,8 @@ export default function AdminPage() {
                     const field = `crop${side}`;
                     return (
                       <div key={side} className="space-y-1">
-                        <Label className="text-[6px] uppercase font-bold opacity-40">{side} {editingArtwork?.[field] || 0}%</Label>
-                        <Slider value={[editingArtwork?.[field] || 0]} max={50} step={1} onValueChange={([val]) => editingArtwork && updateArtworkField(editingArtwork.id, field, val)} />
+                        <Label className="text-[6px] uppercase font-bold opacity-40">{side} {editingArtwork?.[field as keyof typeof editingArtwork] || 0}%</Label>
+                        <Slider value={[editingArtwork?.[field as keyof typeof editingArtwork] as number || 0]} max={50} step={1} onValueChange={([val]) => editingArtwork && updateArtworkField(editingArtwork.id, field, val)} />
                       </div>
                     );
                   })}

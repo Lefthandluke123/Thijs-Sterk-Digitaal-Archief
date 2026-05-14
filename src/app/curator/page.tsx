@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Loader2, X, Maximize2, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogTitle, DialogClose } from '@/components/ui/dialog';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 const STANDARD_TAGS = [
   "Groet", "Schoorl", "Hargen", "Amsterdam", "Frankrijk", 
@@ -57,12 +59,16 @@ export default function CuratorPage() {
 
   const logInteraction = (type: 'view_artwork' | 'filter_tags', data: any) => {
     if (!firestore || !visitorId) return;
-    addDoc(collection(firestore, 'interactions'), {
+    const logData = {
       visitorId,
       type,
       ...data,
       timestamp: serverTimestamp()
-    }).catch(() => {});
+    };
+    addDoc(collection(firestore, 'interactions'), logData)
+      .catch(async () => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'interactions', operation: 'create', requestResourceData: logData }));
+      });
   };
 
   const toggleTag = (tag: string) => {
@@ -98,16 +104,16 @@ export default function CuratorPage() {
     <main className="min-h-screen bg-background pt-14">
       <div className="w-full bg-accent/5 border-b border-border/10 py-16 md:py-24">
         <div className="container mx-auto px-6 max-w-5xl text-center space-y-6">
-          <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-accent mb-2 block">Uw Eigen Zaal</span>
+          <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-accent mb-2 block">Uw Persoonlijke Ruimte</span>
           <h1 className="font-headline text-5xl md:text-7xl font-light text-foreground tracking-tight">
-            Stel <span className="italic">Uw Zaal</span> samen
+            Uw Eigen <span className="italic">Zaal</span>
           </h1>
           <div className="space-y-4 py-4">
             <p className="text-foreground text-xl font-light leading-relaxed max-w-2xl mx-auto">
               Klik uw thema&apos;s en klik dan op presenteer selectie.
             </p>
             <p className="text-muted-foreground text-[10px] uppercase tracking-widest font-bold">
-              De X-knop brengt u terug naar de beginstand.
+              De X-knop (Wis Zaal) brengt u terug naar de beginstand.
             </p>
           </div>
         </div>
@@ -144,7 +150,7 @@ export default function CuratorPage() {
                 size="lg"
                 className="rounded-full h-14 px-8 text-[10px] uppercase font-bold tracking-widest text-accent/60 hover:text-accent border border-accent/20"
               >
-                <X className="w-4 h-4 mr-2" /> Wis zaal
+                <X className="w-4 h-4 mr-2" /> Wis Zaal
               </Button>
               
               <Button 
@@ -187,11 +193,11 @@ export default function CuratorPage() {
                   </div>
                 ))}
               </div>
-            ) : (
+            ) : showResults ? (
               <div className="py-20 text-center opacity-40">
                 <p className="text-sm font-light italic">Geen werken gevonden met deze combinatie van thema&apos;s.</p>
               </div>
-            )}
+            ) : null}
           </div>
         </div>
       </div>
