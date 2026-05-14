@@ -25,7 +25,8 @@ import {
   ChevronRight,
   Maximize2,
   Tag,
-  AlertCircle
+  AlertCircle,
+  Info
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -286,14 +287,20 @@ export default function AdminPage() {
                     </AccordionTrigger>
                     <AccordionContent className="space-y-4 pb-6">
                       <div className="space-y-3 text-sm text-muted-foreground leading-relaxed">
-                        <p>Als de map <strong>web</strong> bestaat maar niet verschijnt in File Station, moet je jouw gebruiker expliciet rechten geven:</p>
+                        <p>Als de map <strong>web</strong> bestaat maar niet verschijnt in File Station, moet je jouw gebruikersnaam expliciet rechten geven:</p>
                         <ol className="list-decimal pl-5 space-y-2">
                           <li>Ga naar <strong>Configuratiescherm</strong> &gt; <strong>Gedeelde map</strong>.</li>
                           <li>Selecteer de map <code>web</code> en klik op <strong>Bewerken</strong>.</li>
                           <li>Ga naar het tabblad <strong>Machtigingen</strong>.</li>
-                          <li>Zoek je eigen gebruikersnaam (bijv. 'admin') en zorg dat het vinkje bij <strong>Lezen/Schrijven</strong> aan staat.</li>
-                          <li>Klik op Opslaan. De map is nu direct zichtbaar in File Station.</li>
+                          <li>Zoek je eigen gebruikersnaam (bijv. 'admin') en zet het vinkje bij <strong>Lezen/Schrijven</strong> aan.</li>
+                          <li>Klik op Opslaan. De map verschijnt nu direct in File Station.</li>
                         </ol>
+                        <div className="flex items-start gap-2 bg-accent/10 p-3 rounded-lg border border-accent/20 mt-4">
+                          <Info className="w-4 h-4 text-accent shrink-0 mt-0.5" />
+                          <p className="text-[11px] text-accent font-medium">
+                            <strong>Over de groep 'http':</strong> Je hoeft deze groep niet aan te maken. Het is een systeemgroep die Synology automatisch beheert. Zoek hem op in de lijst bij stap 4 en zorg dat hij minimaal "Lezen" rechten heeft.
+                          </p>
+                        </div>
                       </div>
                     </AccordionContent>
                   </AccordionItem>
@@ -310,7 +317,7 @@ export default function AdminPage() {
                         <ol className="list-decimal pl-5 space-y-2">
                           <li>Ga naar <strong>Configuratiescherm</strong> &gt; <strong>Gedeelde map</strong> &gt; <strong>Maken</strong>.</li>
                           <li>Noem de map exact <code>web</code>.</li>
-                          <li>Geef de groep <strong>http</strong> minimaal <strong>Lezen</strong> rechten.</li>
+                          <li>Geef de (reeds bestaande) groep <strong>http</strong> minimaal <strong>Lezen</strong> rechten.</li>
                           <li>Zorg in <strong>Web Station</strong> dat er een back-end server (Apache 2.4 of Nginx) is geselecteerd.</li>
                         </ol>
                       </div>

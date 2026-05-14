@@ -1,3 +1,4 @@
+
 # Thijs Sterk Portfolio - Live zetten
 
 Dit project is nu uitgerust met een intelligente NAS Folder Scanner.
@@ -23,7 +24,8 @@ Als de `web` map wel bestaat op je NAS, maar niet zichtbaar is in File Station:
    - Kies bij **HTTP-back-endserver** voor de zojuist geïnstalleerde Apache of Nginx.
 
 3. **Rechten voor de website (Technisch):**
-   - Zorg dat in **Configuratiescherm** > **Gedeelde map** > **web** > **Bewerken** > **Machtigingen** de groep `http` op minimaal **Lezen** staat.
+   - Zorg dat in **Configuratiescherm** > **Gedeelde map** > **web** > **Bewerken** > **Machtigingen** de groep `http` op minimaal **Lezen** staat. 
+   - *Let op:* Je hoeft de groep `http` niet zelf aan te maken; dit is een systeemgroep die al aanwezig is als Web Station is geïnstalleerd.
 
 ## 3. NAS Map Inlezen in de App
 In het `/admin` gedeelte vind je de **NAS Folder Helper**:
