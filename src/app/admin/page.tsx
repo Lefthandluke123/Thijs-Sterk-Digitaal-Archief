@@ -17,7 +17,8 @@ import {
   FolderOpen,
   RefreshCw,
   Scissors,
-  Settings
+  Settings,
+  Link as LinkIcon
 } from 'lucide-react';
 import Image from 'next/image';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -37,7 +38,7 @@ export default function AdminPage() {
   
   // NAS Helper state
   const [nasBaseUrl, setNasBaseUrl] = useState('https://192-168-178-15.doggyfew.direct.quickconnect.to:5001/web/');
-  const [nasFileNames, setNasFileNames] = useState('');
+  const [nasFileCount, setNasFileCount] = useState(0);
 
   const [newArtwork, setNewArtwork] = useState({
     title: "",
@@ -72,17 +73,36 @@ export default function AdminPage() {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    const imageFiles: string[] = [];
+    const artworksToImport: any[] = [];
     const imageExtensions = /\.(jpe?g|png|webp|avif)$/i;
+    const baseUrlClean = nasBaseUrl.endsWith('/') ? nasBaseUrl : nasBaseUrl + '/';
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       if (imageExtensions.test(file.name)) {
-        imageFiles.push(file.name);
+        // Gebruik webkitRelativePath om de mapnaam mee te nemen
+        const relativePath = file.webkitRelativePath || file.name;
+        const fileNameOnly = file.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
+        
+        artworksToImport.push({
+          title: fileNameOnly || "Zonder titel",
+          series: "Import " + new Date().toLocaleDateString(),
+          imageUrl: baseUrlClean + relativePath,
+          medium: "Olieverf op doek",
+          year: "",
+          description: "",
+          imageHint: "painting",
+          tags: [],
+          cropTop: 0,
+          cropBottom: 0,
+          cropLeft: 0,
+          cropRight: 0,
+          brightness: 1
+        });
       }
     }
 
-    if (imageFiles.length === 0) {
+    if (artworksToImport.length === 0) {
       toast({ 
         variant: "destructive", 
         title: "Geen foto's", 
@@ -91,33 +111,12 @@ export default function AdminPage() {
       return;
     }
 
-    setNasFileNames(imageFiles.join('\n'));
-    
-    const baseUrlClean = nasBaseUrl.endsWith('/') ? nasBaseUrl : nasBaseUrl + '/';
-    const generated = imageFiles.map(file => {
-      const title = file.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
-      return {
-        title: title || "Zonder titel",
-        series: "Import " + new Date().toLocaleDateString(),
-        imageUrl: baseUrlClean + file,
-        medium: "Olieverf op doek",
-        year: "",
-        description: "",
-        imageHint: "painting",
-        tags: [],
-        cropTop: 0,
-        cropBottom: 0,
-        cropLeft: 0,
-        cropRight: 0,
-        brightness: 1
-      };
-    });
-    
-    setBulkJson(JSON.stringify(generated, null, 2));
+    setNasFileCount(artworksToImport.length);
+    setBulkJson(JSON.stringify(artworksToImport, null, 2));
     setActiveTab('bulk');
     toast({ 
       title: "Map gelezen", 
-      description: `${imageFiles.length} afbeeldingen gevonden en klaargezet voor import.` 
+      description: `${artworksToImport.length} afbeeldingen gevonden inclusief map-paden.` 
     });
     
     if (directoryInputRef.current) {
@@ -222,7 +221,6 @@ export default function AdminPage() {
     });
   };
 
-  // Helper om te checken of een URL van de NAS komt
   const isNASUrl = (url: string) => url?.includes('quickconnect.to') || url?.includes('192.168');
 
   return (
@@ -264,30 +262,18 @@ export default function AdminPage() {
               {artworks?.map((art: any) => (
                 <Card key={art.id} className="overflow-hidden bg-card border-border rounded-2xl group flex flex-col">
                   <div className="relative aspect-[4/3] bg-muted/20 overflow-hidden">
-                    {/* Gebruik standaard img voor NAS om Next.js proxying te omzeilen indien nodig */}
-                    {isNASUrl(art.imageUrl) ? (
-                      <img 
-                        src={art.imageUrl} 
-                        alt={art.title} 
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        style={{
-                          clipPath: `inset(${art.cropTop || 0}% ${art.cropRight || 0}% ${art.cropBottom || 0}% ${art.cropLeft || 0}%)`,
-                          filter: `brightness(${art.brightness || 1})`
-                        }}
-                      />
-                    ) : (
-                      <Image 
-                        src={art.imageUrl} 
-                        alt={art.title} 
-                        fill 
-                        className="object-cover transition-transform duration-500 group-hover:scale-105" 
-                        unoptimized
-                        style={{
-                          clipPath: `inset(${art.cropTop || 0}% ${art.cropRight || 0}% ${art.cropBottom || 0}% ${art.cropLeft || 0}%)`,
-                          filter: `brightness(${art.brightness || 1})`
-                        }}
-                      />
-                    )}
+                    <img 
+                      src={art.imageUrl} 
+                      alt={art.title} 
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      style={{
+                        clipPath: `inset(${art.cropTop || 0}% ${art.cropRight || 0}% ${art.cropBottom || 0}% ${art.cropLeft || 0}%)`,
+                        filter: `brightness(${art.brightness || 1})`
+                      }}
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Beeld+niet+gevonden';
+                      }}
+                    />
                     <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
                       <Button variant="destructive" size="icon" onClick={() => handleDeleteArtwork(art.id)} className="rounded-full h-8 w-8">
                         <Trash2 className="w-3.5 h-3.5" />
@@ -379,29 +365,18 @@ export default function AdminPage() {
                 <div className="sticky top-32 space-y-8">
                   <div className="relative aspect-square rounded-2xl overflow-hidden bg-muted/20 border-2 border-dashed border-border flex items-center justify-center">
                     {newArtwork.imageUrl ? (
-                      isNASUrl(newArtwork.imageUrl) ? (
-                        <img 
-                          src={newArtwork.imageUrl} 
-                          alt="Preview" 
-                          className="w-full h-full object-cover" 
-                          style={{
-                            clipPath: `inset(${newArtwork.cropTop}% ${newArtwork.cropRight}% ${newArtwork.cropBottom}% ${newArtwork.cropLeft}%)`,
-                            filter: `brightness(${newArtwork.brightness})`
-                          }}
-                        />
-                      ) : (
-                        <Image 
-                          src={newArtwork.imageUrl} 
-                          alt="Preview" 
-                          fill 
-                          className="object-cover" 
-                          unoptimized
-                          style={{
-                            clipPath: `inset(${newArtwork.cropTop}% ${newArtwork.cropRight}% ${newArtwork.cropBottom}% ${newArtwork.cropLeft}%)`,
-                            filter: `brightness(${newArtwork.brightness})`
-                          }}
-                        />
-                      )
+                      <img 
+                        src={newArtwork.imageUrl} 
+                        alt="Preview" 
+                        className="w-full h-full object-cover" 
+                        style={{
+                          clipPath: `inset(${newArtwork.cropTop}% ${newArtwork.cropRight}% ${newArtwork.cropBottom}% ${newArtwork.cropLeft}%)`,
+                          filter: `brightness(${newArtwork.brightness})`
+                        }}
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Preview+niet+mogelijk';
+                        }}
+                      />
                     ) : (
                       <div className="text-center p-8 opacity-20">
                         <ImageIcon className="w-12 h-12 mx-auto mb-2" />
@@ -443,19 +418,20 @@ export default function AdminPage() {
             <div className="max-w-2xl mx-auto space-y-6">
               <div className="text-center space-y-2">
                 <h2 className="text-3xl font-headline font-light">NAS Folder Helper</h2>
-                <p className="text-muted-foreground text-sm">Selecteer de map op je NAS waar je foto's staan om ze direct te indexeren.</p>
+                <p className="text-muted-foreground text-sm">Selecteer de map op je NAS. De app neemt automatisch de mapnaam mee in de links.</p>
               </div>
               
               <Card className="p-8 rounded-3xl border-border bg-card/50 shadow-xl space-y-8">
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label className="text-[10px] uppercase font-bold">1. Basis URL van je NAS</Label>
+                    <Label className="text-[10px] uppercase font-bold">1. Basis URL van je NAS (Web Station/HTTP)</Label>
                     <Input 
                       value={nasBaseUrl}
                       onChange={(e) => setNasBaseUrl(e.target.value)}
                       className="rounded-xl font-mono text-xs"
+                      placeholder="Bijv: https://mijn-nas.quickconnect.to/web/"
                     />
-                    <p className="text-[9px] text-muted-foreground italic">Dit adres wordt voor elke bestandsnaam geplakt om werkende links te maken.</p>
+                    <p className="text-[9px] text-muted-foreground italic">Zorg dat deze URL eindigt op een slash. De mapnaam van je keuze wordt hier achter geplakt.</p>
                   </div>
                   
                   <div className="pt-4 border-t border-border/20">
@@ -465,22 +441,19 @@ export default function AdminPage() {
                       className="w-full h-20 rounded-2xl font-bold uppercase tracking-widest bg-accent hover:bg-accent/90 text-lg shadow-lg group"
                     >
                       <FolderOpen className="mr-4 w-8 h-8 group-hover:scale-110 transition-transform" />
-                      Selecteer Map op NAS
+                      Kies Map op NAS
                     </Button>
                   </div>
                 </div>
 
-                {nasFileNames && (
-                  <div className="space-y-4 pt-6 border-t border-border/20">
-                    <div className="flex justify-between items-center">
-                      <Label className="text-[10px] uppercase font-bold">Gevonden bestanden</Label>
-                      <Button variant="ghost" size="sm" onClick={() => setNasFileNames('')} className="h-6 text-[8px] uppercase">Wis</Button>
+                {nasFileCount > 0 && (
+                  <div className="space-y-4 pt-6 border-t border-border/20 text-center">
+                    <div className="flex justify-center items-center gap-2 text-primary font-bold animate-pulse">
+                      <LinkIcon className="w-4 h-4" />
+                      <span>{nasFileCount} bestanden gevonden met correcte paden!</span>
                     </div>
-                    <div className="max-h-40 overflow-y-auto bg-black/5 p-4 rounded-xl border border-border/20">
-                      <pre className="text-[9px] font-mono text-muted-foreground">{nasFileNames}</pre>
-                    </div>
-                    <Button onClick={() => setActiveTab('bulk')} className="w-full rounded-xl bg-primary/20 text-primary border border-primary/20 uppercase text-[10px] font-bold tracking-widest">
-                      Genereer Bulk Data
+                    <Button onClick={() => setActiveTab('bulk')} className="w-full rounded-xl bg-primary/20 text-primary border border-primary/20 uppercase text-[10px] font-bold tracking-widest h-12">
+                      Bekijk en Importeer Data
                     </Button>
                   </div>
                 )}
@@ -492,7 +465,7 @@ export default function AdminPage() {
             <div className="max-w-4xl mx-auto space-y-6">
               <div className="text-center">
                 <h2 className="text-3xl font-headline font-light">Bulk Overzicht</h2>
-                <p className="text-muted-foreground text-sm">Controleer de data en start de import.</p>
+                <p className="text-muted-foreground text-sm">Controleer of de URL's kloppen voordat je importeert.</p>
               </div>
               
               <Card className="p-8 rounded-3xl border-border bg-card/50 shadow-xl">
