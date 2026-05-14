@@ -9,7 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
-import { Send, Mail, MapPin, Instagram, Linkedin, Phone } from 'lucide-react';
+import { Send, Mail, MapPin, Phone } from 'lucide-react';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Naam moet minimaal 2 tekens bevatten." }),
