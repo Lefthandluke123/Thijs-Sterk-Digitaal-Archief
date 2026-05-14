@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { useFirestore, useCollection, useMemoFirebase, useStorage } from '@/firebase';
 import { collection, doc, serverTimestamp, deleteDoc, addDoc, query, orderBy, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
@@ -167,13 +169,14 @@ export default function AdminPage() {
     setIsUploading(true);
     setUploadProgress(0);
     const totalFiles = files.length;
-    let completedCount = 0;
+    let startedCount = 0;
 
     for (let i = 0; i < totalFiles; i++) {
       const file = files[i];
-      setUploadStatus(`Uploaden: ${file.name} (${i + 1}/${totalFiles})`);
+      setUploadStatus(`Verwerken: ${file.name} (${i + 1}/${totalFiles})`);
       
-      const storageRef = ref(storage, `artworks/${Date.now()}_${file.name}`);
+      const uniqueId = Math.random().toString(36).substring(7);
+      const storageRef = ref(storage, `artworks/${Date.now()}_${uniqueId}_${file.name}`);
 
       try {
         const snapshot = await uploadBytes(storageRef, file);
@@ -198,28 +201,37 @@ export default function AdminPage() {
           createdAt: serverTimestamp()
         };
 
-        await addDoc(collection(firestore, 'artworks'), newArtwork);
-        completedCount++;
-        setUploadProgress((completedCount / totalFiles) * 100);
+        const artworkCol = collection(firestore, 'artworks');
+        addDoc(artworkCol, newArtwork).catch(async (serverError) => {
+          const permissionError = new FirestorePermissionError({
+            path: 'artworks',
+            operation: 'create',
+            requestResourceData: newArtwork,
+          });
+          errorEmitter.emit('permission-error', permissionError);
+        });
+
+        startedCount++;
+        setUploadProgress((startedCount / totalFiles) * 100);
       } catch (error: any) {
-        console.error(error);
+        console.error('Storage error:', error);
         toast({ 
           variant: "destructive", 
           title: "Upload Mislukt", 
-          description: `Kon ${file.name} niet uploaden. Is Firebase Storage actief?` 
+          description: `Kon ${file.name} niet uploaden naar de cloud. Controleer de Storage-instellingen in Firebase.` 
         });
       }
     }
 
     toast({ 
-      title: "Batch Voltooid", 
-      description: `${completedCount} van de ${totalFiles} foto's zijn toegevoegd aan het archief.` 
+      title: "Batch Gestart", 
+      description: `${startedCount} van de ${totalFiles} foto's worden verwerkt en verschijnen zometeen in het archief.` 
     });
     
     setIsUploading(false);
     setUploadStatus('');
     if (fileInputRef.current) fileInputRef.current.value = '';
-    setActiveTab('archive');
+    setTimeout(() => setActiveTab('archive'), 800);
   };
 
   const handleManualAdd = async () => {
@@ -244,7 +256,16 @@ export default function AdminPage() {
         createdAt: serverTimestamp()
       };
 
-      await addDoc(collection(firestore, 'artworks'), newArtwork);
+      const artworkCol = collection(firestore, 'artworks');
+      addDoc(artworkCol, newArtwork).catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: 'artworks',
+          operation: 'create',
+          requestResourceData: newArtwork,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
+
       toast({ title: "Toegevoegd", description: "Het werk staat nu in het archief." });
       setManualTitle('');
       setManualUrl('');
@@ -265,7 +286,7 @@ export default function AdminPage() {
       const artworkCol = collection(firestore, 'artworks');
       
       artworksArray.forEach((item: any) => {
-        addDoc(artworkCol, {
+        const payload = {
           ...item,
           createdAt: serverTimestamp(),
           cropTop: item.cropTop || 0,
@@ -274,6 +295,15 @@ export default function AdminPage() {
           cropRight: item.cropRight || 0,
           brightness: item.brightness || 1,
           tags: item.tags || []
+        };
+        
+        addDoc(artworkCol, payload).catch(async (serverError) => {
+          const permissionError = new FirestorePermissionError({
+            path: 'artworks',
+            operation: 'create',
+            requestResourceData: payload,
+          });
+          errorEmitter.emit('permission-error', permissionError);
         });
       });
       
@@ -290,7 +320,14 @@ export default function AdminPage() {
   const updateArtworkField = (id: string, field: string, value: any) => {
     if (!firestore) return;
     const artRef = doc(firestore, 'artworks', id);
-    updateDoc(artRef, { [field]: value });
+    updateDoc(artRef, { [field]: value }).catch(async (serverError) => {
+      const permissionError = new FirestorePermissionError({
+        path: artRef.path,
+        operation: 'update',
+        requestResourceData: { [field]: value },
+      });
+      errorEmitter.emit('permission-error', permissionError);
+    });
   };
 
   const toggleArtworkTag = (artwork: any, tag: string) => {
@@ -303,7 +340,14 @@ export default function AdminPage() {
 
   const handleDeleteArtwork = (artId: string) => {
     if (!firestore || !confirm("Weet u het zeker? Dit kan niet ongedaan gemaakt worden.")) return;
-    deleteDoc(doc(firestore, 'artworks', artId));
+    const artRef = doc(firestore, 'artworks', artId);
+    deleteDoc(artRef).catch(async (serverError) => {
+      const permissionError = new FirestorePermissionError({
+        path: artRef.path,
+        operation: 'delete',
+      });
+      errorEmitter.emit('permission-error', permissionError);
+    });
     if (editingArtwork?.id === artId) setEditingArtwork(null);
   };
 
