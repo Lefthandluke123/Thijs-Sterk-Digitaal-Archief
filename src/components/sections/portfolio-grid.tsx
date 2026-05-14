@@ -1,30 +1,55 @@
+
 "use client";
 
 import React, { useState, useMemo } from 'react';
-import { useCollection, useFirestore } from '@/firebase';
-import { collection, query, orderBy, limit } from 'firebase/firestore';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy, where, limit } from 'firebase/firestore';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Maximize2, Loader2, X } from 'lucide-react';
+import { Maximize2, Loader2, X, Star } from 'lucide-react';
 
 export function PortfolioGrid() {
   const [selectedArtwork, setSelectedArtwork] = useState<any | null>(null);
   const firestore = useFirestore();
 
-  const artworksQuery = useMemo(() => {
+  const artworksQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'artworks'), orderBy('createdAt', 'desc'), limit(12));
+    // We proberen eerst uitgelichte werken te tonen, anders de nieuwste
+    return query(
+      collection(firestore, 'artworks'), 
+      where('featured', '==', true),
+      limit(12)
+    );
   }, [firestore]);
 
-  const { data: artworks, loading } = useCollection(artworksQuery);
+  const latestQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(
+      collection(firestore, 'artworks'),
+      orderBy('createdAt', 'desc'),
+      limit(12)
+    );
+  }, [firestore]);
+
+  const { data: featuredArtworks, loading: loadingFeatured } = useCollection(artworksQuery);
+  const { data: latestArtworks, loading: loadingLatest } = useCollection(latestQuery);
+
+  const displayArtworks = useMemo(() => {
+    if (featuredArtworks && featuredArtworks.length > 0) return featuredArtworks;
+    return latestArtworks || [];
+  }, [featuredArtworks, latestArtworks]);
+
+  const loading = loadingFeatured && loadingLatest;
 
   return (
     <section className="py-24 bg-background px-4" id="portfolio">
       <div className="container mx-auto">
         <div className="flex flex-col md:flex-row items-end justify-between mb-16 gap-4">
           <div className="max-w-xl">
-            <h2 className="font-headline text-4xl md:text-5xl font-light mb-4">Geselecteerde Werken</h2>
-            <p className="text-muted-foreground text-lg">Een collectie recente verkenningen van textuur en licht.</p>
+            <h2 className="font-headline text-4xl md:text-5xl font-light mb-4">
+              {featuredArtworks && featuredArtworks.length > 0 ? 'Meester Selectie' : 'Recente Werken'}
+            </h2>
+            <p className="text-muted-foreground text-lg">Een collectie geselecteerde verkenningar van textuur en licht.</p>
           </div>
           <div className="flex gap-8 text-[10px] font-bold tracking-widest uppercase">
             <a href="/gallery" className="text-muted-foreground hover:text-foreground transition-colors pb-1 border-b border-transparent hover:border-accent">Alle Werken</a>
@@ -35,9 +60,9 @@ export function PortfolioGrid() {
           <div className="flex justify-center py-20">
             <Loader2 className="w-8 h-8 animate-spin text-primary/30" />
           </div>
-        ) : artworks && artworks.length > 0 ? (
+        ) : displayArtworks.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-            {artworks.map((art) => (
+            {displayArtworks.map((art) => (
               <div 
                 key={art.id} 
                 className="group relative cursor-pointer"
@@ -56,6 +81,9 @@ export function PortfolioGrid() {
                       (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Check+Link';
                     }}
                   />
+                  <div className="absolute top-2 left-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {art.featured && <Star className="w-4 h-4 text-accent fill-accent" />}
+                  </div>
                   <div className="absolute bottom-2 right-2 z-10 pointer-events-none opacity-20 text-[6px] uppercase tracking-widest text-white font-bold bg-black/20 px-1 rounded-sm">
                     &copy; Erven Thijs Sterk
                   </div>

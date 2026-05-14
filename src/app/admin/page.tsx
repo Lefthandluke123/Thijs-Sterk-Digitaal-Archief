@@ -23,7 +23,6 @@ import {
   Maximize2,
   Tag,
   Info,
-  UserPlus,
   Globe,
   CloudUpload,
   X,
@@ -33,9 +32,9 @@ import {
   Cloud,
   HardDrive,
   Link as LinkIcon,
-  CheckCircle2,
   Calendar,
-  Type
+  Type,
+  Star
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -45,6 +44,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogClose, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 
 const STANDARD_TAGS = [
@@ -148,7 +148,8 @@ export default function AdminPage() {
           cropBottom: 0,
           cropLeft: 0,
           cropRight: 0,
-          brightness: 1
+          brightness: 1,
+          featured: false
         });
       }
     }
@@ -198,6 +199,7 @@ export default function AdminPage() {
           cropLeft: 0,
           cropRight: 0,
           brightness: 1,
+          featured: false,
           createdAt: serverTimestamp()
         };
 
@@ -253,6 +255,7 @@ export default function AdminPage() {
         cropLeft: 0,
         cropRight: 0,
         brightness: 1,
+        featured: false,
         createdAt: serverTimestamp()
       };
 
@@ -294,6 +297,7 @@ export default function AdminPage() {
           cropLeft: item.cropLeft || 0,
           cropRight: item.cropRight || 0,
           brightness: item.brightness || 1,
+          featured: item.featured || false,
           tags: item.tags || []
         };
         
@@ -406,7 +410,10 @@ export default function AdminPage() {
                 {filteredArtworks.map((art: any) => (
                   <Card 
                     key={art.id} 
-                    className="overflow-hidden bg-card border-border rounded-2xl group cursor-pointer transition-all hover:ring-2 hover:ring-accent/40"
+                    className={cn(
+                      "overflow-hidden bg-card border-border rounded-2xl group cursor-pointer transition-all hover:ring-2 hover:ring-accent/40",
+                      art.featured && "ring-2 ring-accent shadow-lg"
+                    )}
                     onClick={() => setEditingId(art.id)}
                   >
                     <div className="relative aspect-square bg-muted/20 overflow-hidden">
@@ -418,6 +425,9 @@ export default function AdminPage() {
                         onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Beeld+Fout'; }}
                       />
                       <div className="absolute top-2 right-2 flex gap-1">
+                        {art.featured && (
+                          <Badge className="bg-accent text-white border-none p-1 shadow-md"><Star className="w-3 h-3 fill-white" /></Badge>
+                        )}
                         {isStorageUrl(art.imageUrl) ? (
                           <Badge className="bg-blue-500 text-white border-none p-1"><Cloud className="w-3 h-3" /></Badge>
                         ) : (
@@ -586,6 +596,14 @@ export default function AdminPage() {
           <div className="w-full bg-background/95 backdrop-blur-md border-t border-border/10 p-4 md:px-8 md:py-6 shadow-2xl overflow-y-auto max-h-[40vh]">
             <div className="max-w-[1400px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
               <div className="md:col-span-3 space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label className="text-[9px] uppercase font-bold tracking-widest opacity-50 flex items-center gap-1"><Star className="w-3 h-3" /> Uitgelicht (Home)</Label>
+                  <Switch 
+                    checked={editingArtwork?.featured || false} 
+                    onCheckedChange={(val) => editingArtwork && updateArtworkField(editingArtwork.id, 'featured', val)} 
+                  />
+                </div>
+
                 <div className="space-y-1.5">
                   <Label className="text-[9px] uppercase font-bold tracking-widest opacity-50 flex items-center gap-1"><Type className="w-3 h-3" /> Titel</Label>
                   <Input 
@@ -597,7 +615,7 @@ export default function AdminPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <Label className="text-[9px] uppercase font-bold tracking-widest opacity-50">Serie</Label>
+                    <Label className="text-[9px] uppercase font-bold tracking-widest opacity-50">Selectie / Serie</Label>
                     <Input 
                       key={editingArtwork?.id + '-series'}
                       defaultValue={editingArtwork?.series || ''} 

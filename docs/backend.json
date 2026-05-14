@@ -61,6 +61,10 @@
           "type": "number",
           "description": "Helderheid factor (1.0 is standaard)"
         },
+        "featured": {
+          "type": "boolean",
+          "description": "Of dit werk op de voorpagina moet verschijnen"
+        },
         "createdAt": {
           "type": "string",
           "format": "date-time",
