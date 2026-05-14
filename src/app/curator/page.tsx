@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo } from 'react';
@@ -50,11 +51,6 @@ export default function CuratorPage() {
     setActiveTags(prev => 
       prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
     );
-  };
-
-  const isExternalStorage = (url: string) => {
-    if (!url) return false;
-    return url.includes('quickconnect.to') || url.includes('gofile.me') || url.includes('192-168');
   };
 
   return (
@@ -131,7 +127,6 @@ export default function CuratorPage() {
                         }}
                         onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Beeld+Fout'; }}
                       />
-                      {/* Watermark */}
                       <div className="absolute bottom-2 right-2 z-10 pointer-events-none opacity-20 text-[6px] uppercase tracking-widest text-white font-bold bg-black/20 px-1 rounded-sm">
                         &copy; Erven Thijs Sterk
                       </div>
@@ -181,28 +176,22 @@ export default function CuratorPage() {
             </DialogClose>
           </div>
 
-          <div className="w-full bg-background/95 backdrop-blur-md py-1.5 px-8 border-t border-border/10 flex items-center justify-center min-h-[48px]">
-            <div className="max-w-6xl w-full flex items-center justify-between gap-4">
-              <div className="flex items-center gap-6 overflow-hidden">
-                <DialogTitle className="font-headline text-sm font-light text-foreground leading-none whitespace-nowrap">
+          <div className="w-full bg-background/95 backdrop-blur-md py-8 md:py-12 px-8 border-t border-border/10">
+            <div className="max-w-4xl mx-auto flex flex-col items-center text-center gap-6">
+              <div className="space-y-3">
+                <DialogTitle className="font-headline text-3xl md:text-5xl font-light text-foreground tracking-tight">
                   {selectedArtwork?.title}
                 </DialogTitle>
-                <div className="text-[8px] uppercase tracking-[0.2em] text-muted-foreground opacity-70 flex gap-3 items-center overflow-hidden whitespace-nowrap">
+                <div className="text-[10px] md:text-[11px] uppercase tracking-[0.3em] text-accent font-bold flex flex-wrap gap-x-6 gap-y-2 justify-center items-center opacity-80">
+                  <span>{selectedArtwork?.series}</span>
+                  <span className="hidden md:inline w-1 h-1 rounded-full bg-accent/30" />
                   <span>{selectedArtwork?.year}</span>
-                  {selectedArtwork?.tags?.length > 0 && (
-                    <>
-                      <span className="opacity-30">|</span>
-                      <div className="flex gap-2">
-                        {selectedArtwork.tags.map((t: string) => (
-                          <span key={t} className="text-primary font-bold">#{t}</span>
-                        ))}
-                      </div>
-                    </>
-                  )}
+                  <span className="hidden md:inline w-1 h-1 rounded-full bg-accent/30" />
+                  <span>{selectedArtwork?.medium}</span>
                 </div>
               </div>
-              <Button variant="outline" size="sm" className="rounded-full text-[8px] uppercase tracking-widest px-4 h-7 border-primary/20 hover:bg-primary/5 shrink-0">
-                Interesse?
+              <Button variant="outline" size="lg" className="rounded-full text-[10px] uppercase tracking-[0.2em] px-12 h-12 border-primary/20 hover:bg-primary/5 hover:border-primary transition-all">
+                Interesse in dit werk?
               </Button>
             </div>
           </div>

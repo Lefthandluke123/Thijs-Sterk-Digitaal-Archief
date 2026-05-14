@@ -14,7 +14,6 @@ export function PortfolioGrid() {
 
   const artworksQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    // We proberen eerst uitgelichte werken te tonen, anders de nieuwste
     return query(
       collection(firestore, 'artworks'), 
       where('featured', '==', true),
@@ -105,8 +104,8 @@ export function PortfolioGrid() {
       </div>
 
       <Dialog open={!!selectedArtwork} onOpenChange={() => setSelectedArtwork(null)}>
-        <DialogContent className="max-w-[95vw] w-full h-[90vh] p-0 overflow-hidden border-none bg-background/95 backdrop-blur-xl flex flex-col md:flex-row shadow-2xl">
-          <div className="relative flex-1 bg-black/90 flex items-center justify-center overflow-hidden">
+        <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background/98 backdrop-blur-3xl border-none rounded-none overflow-hidden">
+          <div className="relative flex-1 bg-black/5 flex items-center justify-center overflow-hidden group">
             {selectedArtwork && (
               <div className="relative w-full h-full flex items-center justify-center">
                 <img
@@ -122,30 +121,34 @@ export function PortfolioGrid() {
                   }}
                 />
                 <div className="absolute inset-0 pointer-events-none flex items-center justify-center opacity-[0.03] select-none rotate-[-45deg]">
-                  <span className="text-6xl md:text-8xl font-bold uppercase tracking-[0.5em] text-foreground">
+                  <span className="text-6xl md:text-9xl font-bold uppercase tracking-[0.5em] text-foreground">
                     Erven Thijs Sterk
                   </span>
                 </div>
               </div>
             )}
-            <DialogClose className="absolute top-4 left-4 z-10 p-1.5 bg-background/20 backdrop-blur-md rounded-full text-white hover:bg-background/40 transition-colors">
-              <X className="w-5 h-5" />
+            <DialogClose className="absolute top-8 right-8 z-50 p-2 bg-background/10 backdrop-blur-sm rounded-full hover:bg-background/20 transition-colors">
+              <X className="w-5 h-5 opacity-50" />
             </DialogClose>
           </div>
-          <div className="w-full md:w-[320px] p-8 flex flex-col justify-center bg-background border-l border-border/50 overflow-y-auto">
-            <DialogHeader className="mb-6">
-              <div className="text-accent font-semibold tracking-widest uppercase text-[9px] mb-2">{selectedArtwork?.series}</div>
-              <DialogTitle className="font-headline text-3xl font-light mb-2 leading-tight">{selectedArtwork?.title}</DialogTitle>
-              <DialogDescription className="text-muted-foreground text-xs border-l border-accent pl-3 italic">
-                {selectedArtwork?.medium} &bull; {selectedArtwork?.year}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-6">
-              <p className="text-foreground/80 leading-relaxed text-sm">{selectedArtwork?.description}</p>
-              <div className="pt-6 border-t border-border/50 flex flex-col gap-3">
-                <Button className="bg-primary hover:bg-primary/90 text-white rounded-full h-10 w-full text-xs font-semibold shadow-md">Informeer</Button>
-                <Button variant="ghost" size="sm" className="text-[10px] uppercase tracking-widest" onClick={() => setSelectedArtwork(null)}>Sluiten</Button>
+          
+          <div className="w-full bg-background/95 backdrop-blur-md py-8 md:py-12 px-8 border-t border-border/10">
+            <div className="max-w-4xl mx-auto flex flex-col items-center text-center gap-6">
+              <div className="space-y-3">
+                <DialogTitle className="font-headline text-3xl md:text-5xl font-light text-foreground tracking-tight">
+                  {selectedArtwork?.title}
+                </DialogTitle>
+                <div className="text-[10px] md:text-[11px] uppercase tracking-[0.3em] text-accent font-bold flex flex-wrap gap-x-6 gap-y-2 justify-center items-center opacity-80">
+                  <span>{selectedArtwork?.series}</span>
+                  <span className="hidden md:inline w-1 h-1 rounded-full bg-accent/30" />
+                  <span>{selectedArtwork?.year}</span>
+                  <span className="hidden md:inline w-1 h-1 rounded-full bg-accent/30" />
+                  <span>{selectedArtwork?.medium}</span>
+                </div>
               </div>
+              <Button variant="outline" size="lg" className="rounded-full text-[10px] uppercase tracking-[0.2em] px-12 h-12 border-primary/20 hover:bg-primary/5 hover:border-primary transition-all">
+                Interesse in dit werk?
+              </Button>
             </div>
           </div>
         </DialogContent>
