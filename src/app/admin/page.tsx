@@ -106,7 +106,6 @@ export default function AdminPage() {
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       if (imageExtensions.test(file.name)) {
-        // We nemen alleen de bestandsnaam, omdat de Base URL meestal al naar de juiste map wijst
         const fileName = file.name;
         const fileNameOnly = file.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
         const finalUrl = baseUrlClean + fileName;
@@ -248,40 +247,44 @@ export default function AdminPage() {
               </div>
 
               <div className="grid gap-4">
-                <Accordion type="single" collapsible className="w-full bg-accent/5 rounded-2xl border border-accent/10 px-6">
-                  <AccordionItem value="http-group" className="border-none">
-                    <AccordionTrigger className="text-[11px] uppercase font-bold tracking-widest text-accent hover:no-underline">
-                      <UserPlus className="w-4 h-4 mr-2" /> Hoe machtig ik de 'http' groep?
+                <Accordion type="single" collapsible className="w-full bg-blue-500/5 rounded-2xl border border-blue-500/10 px-6">
+                  <AccordionItem value="webstation-dsm7" className="border-none">
+                    <AccordionTrigger className="text-[11px] uppercase font-bold tracking-widest text-blue-500 hover:no-underline">
+                      <Globe className="w-4 h-4 mr-2" /> Stap 3: Web Station instellen (DSM 7)
                     </AccordionTrigger>
                     <AccordionContent className="space-y-4 pb-6">
                       <div className="space-y-3 text-sm text-muted-foreground leading-relaxed">
-                        <p>De groep <code>http</code> is essentieel om de foto's via de browser te tonen:</p>
+                        <p>In de nieuwste versie van Web Station volg je deze route:</p>
                         <ol className="list-decimal pl-5 space-y-2">
-                          <li>Ga naar <strong>Configuratiescherm</strong> &gt; <strong>Gedeelde map</strong>.</li>
-                          <li>Selecteer je map en klik op <strong>Bewerken</strong> &gt; <strong>Machtigingen</strong>.</li>
-                          <li>Klik op het dropdown-menu en kies <strong>Lokale groepen</strong>.</li>
-                          <li>Zoek <code>http</code> en vink <strong>Lezen</strong> aan.</li>
+                          <li>Open de app <strong>Web Station</strong>.</li>
+                          <li>Klik links op <strong>Webservice</strong> (of Webservice-instellingen).</li>
+                          <li>Klik op de knop <strong>Maken</strong> bovenaan.</li>
+                          <li>Kies <strong>Statische website</strong> in de lijst die verschijnt.</li>
+                          <li>Vul een naam in (bijv. <code>fotos</code>).</li>
+                          <li>Selecteer jouw nieuwe map als <strong>Document-root</strong>.</li>
+                          <li>Klik op <strong>Voltooien</strong>.</li>
                         </ol>
+                        <p className="mt-4 pt-4 border-t border-blue-500/10 italic text-[11px]">
+                          Na deze stappen is je Basis URL: <code>http://[IP-NAS]/fotos/</code>
+                        </p>
                       </div>
                     </AccordionContent>
                   </AccordionItem>
                 </Accordion>
 
-                <Accordion type="single" collapsible className="w-full bg-blue-500/5 rounded-2xl border border-blue-500/10 px-6">
-                  <AccordionItem value="moved-error" className="border-none">
-                    <AccordionTrigger className="text-[11px] uppercase font-bold tracking-widest text-blue-500 hover:no-underline">
-                      <Globe className="w-4 h-4 mr-2" /> CRUCIAAL: Web Station koppelen
+                <Accordion type="single" collapsible className="w-full bg-accent/5 rounded-2xl border border-accent/10 px-6">
+                  <AccordionItem value="http-group" className="border-none">
+                    <AccordionTrigger className="text-[11px] uppercase font-bold tracking-widest text-accent hover:no-underline">
+                      <UserPlus className="w-4 h-4 mr-2" /> Stap 2: De 'http' groep machtigen
                     </AccordionTrigger>
                     <AccordionContent className="space-y-4 pb-6">
                       <div className="space-y-3 text-sm text-muted-foreground leading-relaxed">
-                        <p>Zelfs met de juiste rechten moet Web Station weten dat de map "gepubliceerd" mag worden:</p>
+                        <p>De groep <code>http</code> is nodig om de foto's te mogen 'tonen' in een browser:</p>
                         <ol className="list-decimal pl-5 space-y-2">
-                          <li>Open de app <strong>Web Station</strong> op je NAS.</li>
-                          <li>Ga naar <strong>Webservice-instellingen</strong> &gt; <strong>Maken</strong>.</li>
-                          <li>Kies <strong>Statische website</strong>.</li>
-                          <li>Selecteer jouw nieuwe map als <strong>Document-root</strong>.</li>
-                          <li>Geef het een naam (bijv. <code>fotos</code>).</li>
-                          <li>Je Basis URL hieronder wordt dan: <code>http://[IP-NAS]/fotos/</code>.</li>
+                          <li>Ga naar <strong>Configuratiescherm</strong> &gt; <strong>Gedeelde map</strong>.</li>
+                          <li>Selecteer je map en klik op <strong>Bewerken</strong> &gt; <strong>Machtigingen</strong>.</li>
+                          <li>Kies in de dropdown bovenaan voor <strong>Lokale groepen</strong>.</li>
+                          <li>Zoek <code>http</code> en vink <strong>Lezen</strong> aan.</li>
                         </ol>
                       </div>
                     </AccordionContent>

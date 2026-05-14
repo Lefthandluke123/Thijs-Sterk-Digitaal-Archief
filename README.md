@@ -8,9 +8,9 @@ Zorg dat in je [Firebase Console](https://console.firebase.google.com/) het volg
 - **Firestore Database:** In productie-modus of test-modus.
 - **Authentication:** Schakel de 'Email/Password' of 'Google' provider in.
 
-## 2. NAS Map Herstellen (Synology) - PLAN B
+## 2. NAS Map Herstellen (Synology DSM 7+)
 
-Als de standaard `web` map niet werkt of "verplaatst" is, volg dan deze stappen:
+Als de standaard `web` map niet werkt, volg dan deze stappen om een eigen map te publiceren:
 
 1. **Maak een nieuwe map:**
    - Ga naar **Configuratiescherm** > **Gedeelde map** > **Maken**.
@@ -20,14 +20,14 @@ Als de standaard `web` map niet werkt of "verplaatst" is, volg dan deze stappen:
    - In het scherm van je nieuwe map, ga naar **Machtigingen**.
    - Verander de dropdown linksboven van "Lokale gebruikers" naar **Lokale groepen**.
    - Zoek de groep `http` en vink **Lezen** aan.
-   - Geef ook jezelf (admin) **Lezen/Schrijven** rechten.
+   - Geef ook jezelf (admin) **Lezen/Schrijven** rechten zodat de map zichtbaar wordt in File Station.
 
-3. **Koppel de nieuwe map aan Web Station (CRUCIAAL):**
+3. **Koppel de nieuwe map in Web Station (CRUCIAAL):**
    - Open de app **Web Station** op je NAS.
-   - Ga naar **Webservice-instellingen** -> klik op **Maken**.
-   - Kies **Statische website**.
-   - Selecteer bij **Document-root** de map die je zojuist hebt gemaakt (`atelier-fotos`).
-   - Geef het een naam/alias (bijv. 'fotos').
+   - Ga in het linkermenu naar **Webservice** (of Webservice-instellingen).
+   - Klik op de knop **Maken**.
+   - Kies in het pop-up venster voor **Statische website**.
+   - Geef een naam (bijv. 'fotos') en selecteer bij **Document-root** de map die je zojuist hebt gemaakt (`atelier-fotos`).
    - Klik op **Voltooien**.
 
 4. **Toegang:**
@@ -39,11 +39,3 @@ In het `/admin` gedeelte vind je de **NAS Folder Helper**:
 2. Klik op **Scan NAS Map**.
 3. De app leest nu alle bestanden in. Gebruik de **Test Link** knop om te zien of een afbeelding opent.
 4. Ga naar de **Bulk Import** tab om alles met één klik toe te voegen aan je archief.
-
-## 4. Naar GitHub Pushen
-```bash
-git init
-git add .
-git commit -m "Atelier hersteld met automatische map scanner"
-git push -u origin main
-```
