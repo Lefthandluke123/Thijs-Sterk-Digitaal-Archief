@@ -3,8 +3,8 @@
 
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { useFirestore, useCollection, useMemoFirebase, useStorage } from '@/firebase';
-import { collection, doc, serverTimestamp, deleteDoc, addDoc, query, orderBy, updateDoc, writeBatch } from 'firebase/firestore';
+import { useFirestore, useCollection, useMemoFirebase, useStorage, useDoc } from '@/firebase';
+import { collection, doc, serverTimestamp, deleteDoc, addDoc, query, orderBy, updateDoc, writeBatch, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -32,7 +32,8 @@ import {
   Archive,
   Square,
   CheckSquare,
-  Copy
+  Copy,
+  Type
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -132,6 +133,12 @@ export default function AdminPage() {
 
   const { data: artworks, loading: isCollectionLoading } = useCollection(artworksQuery);
 
+  const siteSettingsRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, 'settings', 'site');
+  }, [firestore]);
+  const { data: siteSettings } = useDoc(siteSettingsRef);
+
   const allSeries = useMemo(() => {
     if (!artworks) return [];
     return Array.from(new Set(artworks.map(a => a.series || "Geen zaal"))).sort();
@@ -193,6 +200,15 @@ export default function AdminPage() {
       .finally(() => {
         setTimeout(() => setIsSaving(false), 100);
       });
+  };
+
+  const updateSettingsField = async (field: string, value: string) => {
+    if (!firestore) return;
+    setIsSaving(true);
+    const settingsRef = doc(firestore, 'settings', 'site');
+    setDoc(settingsRef, { [field]: value }, { merge: true })
+      .catch(async () => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: settingsRef.path, operation: 'update' })))
+      .finally(() => setIsSaving(false));
   };
 
   const handleBulkMove = async () => {
@@ -365,9 +381,10 @@ export default function AdminPage() {
       <main className="flex-1 p-8 max-w-7xl mx-auto w-full">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <TabsList className="bg-muted/50 p-1 rounded-full w-fit">
+            <TabsList className="bg-muted/50 p-1 rounded-full w-fit flex flex-wrap justify-center h-auto">
               <TabsTrigger value="archive" className="rounded-full px-6 text-[9px] uppercase font-bold tracking-widest">Archief ({artworks?.length || 0})</TabsTrigger>
               <TabsTrigger value="upload" className="rounded-full px-6 text-[9px] uppercase font-bold tracking-widest">Cloud Upload</TabsTrigger>
+              <TabsTrigger value="texts" className="rounded-full px-6 text-[9px] uppercase font-bold tracking-widest">Pagina Teksten</TabsTrigger>
               <TabsTrigger value="bulk" className="rounded-full px-6 text-[9px] uppercase font-bold tracking-widest">Bulk Import/Export</TabsTrigger>
             </TabsList>
             <div className="relative w-full md:w-64">
@@ -507,6 +524,59 @@ export default function AdminPage() {
                   </div>
                 )}
               </Card>
+          </TabsContent>
+
+          <TabsContent value="texts" className="space-y-6">
+            <Card className="p-8 rounded-3xl max-w-4xl mx-auto space-y-8">
+              <div className="flex items-center gap-3 border-b border-black/5 pb-4">
+                <Type className="w-5 h-5 text-accent" />
+                <h2 className="text-[12px] font-black uppercase tracking-[0.2em]">Pagina Teksten Beheren</h2>
+              </div>
+              
+              <div className="grid gap-8">
+                <div className="space-y-2">
+                  <Label className="text-[9px] font-black uppercase tracking-widest text-accent">Biografie Homepagina</Label>
+                  <Textarea 
+                    defaultValue={siteSettings?.homeBio || ''} 
+                    onBlur={(e) => updateSettingsField('homeBio', e.target.value)}
+                    placeholder="De tekst die onder 'De Biografie' verschijnt op de voorpagina..."
+                    className="min-h-[150px] bg-black/5 border-none rounded-xl p-4 text-sm"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-[9px] font-black uppercase tracking-widest text-accent">Hanneke Sterk Pagina</Label>
+                  <Textarea 
+                    defaultValue={siteSettings?.hannekeBio || ''} 
+                    onBlur={(e) => updateSettingsField('hannekeBio', e.target.value)}
+                    className="min-h-[120px] bg-black/5 border-none rounded-xl p-4 text-sm"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-[9px] font-black uppercase tracking-widest text-accent">Beatrijs Sterk Pagina</Label>
+                  <Textarea 
+                    defaultValue={siteSettings?.beatrijsBio || ''} 
+                    onBlur={(e) => updateSettingsField('beatrijsBio', e.target.value)}
+                    className="min-h-[120px] bg-black/5 border-none rounded-xl p-4 text-sm"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-[9px] font-black uppercase tracking-widest text-accent">Peter Bes Pagina</Label>
+                  <Textarea 
+                    defaultValue={siteSettings?.peterBesBio || ''} 
+                    onBlur={(e) => updateSettingsField('peterBesBio', e.target.value)}
+                    className="min-h-[120px] bg-black/5 border-none rounded-xl p-4 text-sm"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-4 flex items-center gap-2">
+                {isSaving ? <Loader2 className="w-3 h-3 animate-spin text-accent" /> : <CheckCircle2 className="w-3 h-3 text-green-500" />}
+                <span className="text-[9px] font-black uppercase tracking-widest opacity-40">{isSaving ? 'Opslaan...' : 'Alle teksten opgeslagen'}</span>
+              </div>
+            </Card>
           </TabsContent>
 
           <TabsContent value="bulk">

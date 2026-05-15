@@ -3,8 +3,19 @@
 
 import React from 'react';
 import Image from 'next/image';
+import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 
 export default function HannekeSterkPage() {
+  const firestore = useFirestore();
+  const siteSettingsRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, 'settings', 'site');
+  }, [firestore]);
+  const { data: siteSettings } = useDoc(siteSettingsRef);
+
+  const bioText = siteSettings?.hannekeBio || `Als dochter van Thijs Sterk groeide Hanneke op te midden van de geur van olieverf en het strijklicht van het atelier. Haar perspectief op het werk van haar vader is diepgeworteld in persoonlijke herinneringen aan zijn scheppingsproces.\n\nSamen met haar zus Beatrijs draagt zij zorg voor de artistieke nalatenschap, waarbij het ontsluiten van zijn oeuvre voor een nieuwe generatie centraal staat. "Mijn vader schilderde niet wat hij zag, maar wat hij voelde bij het landschap," aldus Hanneke.`;
+
   return (
     <main className="min-h-screen bg-background pt-24 pb-32">
       <div className="container mx-auto px-6 max-w-5xl">
@@ -30,13 +41,8 @@ export default function HannekeSterkPage() {
             <span className="text-accent font-medium tracking-[0.2em] uppercase text-[10px] block">Dochter & Nalatenschap</span>
             <h1 className="font-headline text-3xl md:text-5xl font-light leading-tight">Hanneke <span className="italic">Sterk</span></h1>
             
-            <div className="space-y-6 text-lg text-muted-foreground leading-relaxed font-light">
-              <p>
-                Als dochter van Thijs Sterk groeide Hanneke op te midden van de geur van olieverf en het strijklicht van het atelier. Haar perspectief op het werk van haar vader is diepgeworteld in persoonlijke herinneringen aan zijn scheppingsproces.
-              </p>
-              <p>
-                Samen met haar zus Beatrijs draagt zij zorg voor de artistieke nalatenschap, waarbij het ontsluiten van zijn oeuvre voor een nieuwe generatie centraal staat. "Mijn vader schilderde niet wat hij zag, maar wat hij voelde bij het landschap," aldus Hanneke.
-              </p>
+            <div className="space-y-6 text-lg text-muted-foreground leading-relaxed font-light whitespace-pre-line">
+              {bioText}
             </div>
           </div>
         </div>

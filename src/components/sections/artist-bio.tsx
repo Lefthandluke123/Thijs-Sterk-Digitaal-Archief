@@ -1,11 +1,23 @@
+
 "use client";
 
 import React from 'react';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 
 export function ArtistBio() {
+  const firestore = useFirestore();
   const portrait = PlaceHolderImages.find(img => img.id === 'artist-portrait');
+
+  const siteSettingsRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, 'settings', 'site');
+  }, [firestore]);
+  const { data: siteSettings } = useDoc(siteSettingsRef);
+
+  const bioText = siteSettings?.homeBio || `Thijs Sterk (1913-1982) wijdde zijn leven aan het doorgronden van de atmosferische kwaliteiten van de Lage Landen. Geboren in een tijd van grote verandering, vond hij zijn rust in de uitgestrekte waterpartijen en het immer veranderende licht boven het polderlandschap.\n\nZijn vroege werk kenmerkt zich door een meesterlijke beheersing van de figuratieve traditie, maar gedurende zijn carrière bewoog hij zich steeds verder naar de kern. Hij liet de details varen om de ruimte en de emotie van de plek te vangen in brede, textuurrijke streken.\n\n"Licht is niet iets dat op een object valt," schreef hij in 1954 in zijn dagboek, "het is de ruimte die tussen mij en de wereld ademt." Vandaag de dag wordt zijn oeuvre beschouwd als een cruciale schakel in de overgang naar de naoorlogse abstractie in de Nederlandse schilderkunst.`;
 
   return (
     <section className="py-24 bg-secondary/30 px-4" id="about">
@@ -15,7 +27,7 @@ export function ArtistBio() {
             <div className="relative">
               <div className="absolute -top-6 -left-6 w-24 h-24 border-t-2 border-l-2 border-accent" />
               <div className="relative aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl">
-                {portrait && (
+                {portrait ? (
                   <Image
                     src={portrait.imageUrl}
                     alt="Portret van Thijs Sterk"
@@ -23,6 +35,10 @@ export function ArtistBio() {
                     className="object-cover"
                     data-ai-hint="vintage artist portrait"
                   />
+                ) : (
+                  <div className="w-full h-full bg-muted/20 flex items-center justify-center">
+                    <span className="text-[10px] font-black uppercase opacity-20">Portret</span>
+                  </div>
                 )}
               </div>
             </div>
@@ -32,16 +48,8 @@ export function ArtistBio() {
             <span className="text-accent font-medium tracking-widest uppercase text-sm mb-4 block">De Biografie</span>
             <h2 className="font-headline text-4xl md:text-5xl font-light mb-8 leading-tight">Een leven gewijd aan de <span className="italic">Essentie</span></h2>
             
-            <div className="space-y-6 text-lg text-muted-foreground leading-relaxed">
-              <p>
-                Thijs Sterk (1913-1982) wijdde zijn leven aan het doorgronden van de atmosferische kwaliteiten van de Lage Landen. Geboren in een tijd van grote verandering, vond hij zijn rust in de uitgestrekte waterpartijen en het immer veranderende licht boven het polderlandschap.
-              </p>
-              <p>
-                Zijn vroege werk kenmerkt zich door een meesterlijke beheersing van de figuratieve traditie, maar gedurende zijn carrière bewoog hij zich steeds verder naar de kern. Hij liet de details varen om de ruimte en de emotie van de plek te vangen in brede, textuurrijke streken.
-              </p>
-              <p>
-                "Licht is niet iets dat op een object valt," schreef hij in 1954 in zijn dagboek, "het is de ruimte die tussen mij en de wereld ademt." Vandaag de dag wordt zijn oeuvre beschouwd als een cruciale schakel in de overgang naar de naoorlogse abstractie in de Nederlandse schilderkunst.
-              </p>
+            <div className="space-y-6 text-lg text-muted-foreground leading-relaxed font-light whitespace-pre-line">
+              {bioText}
             </div>
             
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-8 mt-12 pt-12 border-t border-border">

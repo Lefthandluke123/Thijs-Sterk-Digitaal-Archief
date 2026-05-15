@@ -113,7 +113,7 @@
     },
     "Settings": {
       "title": "Settings",
-      "description": "Algemene website instellingen. Openbaar leesbaar.",
+      "description": "Algemene website instellingen en teksten. Openbaar leesbaar.",
       "type": "object",
       "properties": {
         "logoUrl": {
@@ -123,6 +123,22 @@
         "siteTitle": {
           "type": "string",
           "description": "De titel van de website"
+        },
+        "homeBio": {
+          "type": "string",
+          "description": "Biografie op de homepagina"
+        },
+        "hannekeBio": {
+          "type": "string",
+          "description": "Biografie van Hanneke Sterk"
+        },
+        "beatrijsBio": {
+          "type": "string",
+          "description": "Biografie van Beatrijs Sterk"
+        },
+        "peterBesBio": {
+          "type": "string",
+          "description": "Biografie van Peter Bes"
         }
       }
     }
@@ -135,15 +151,15 @@
   "firestore": {
     "/artworks/{artworkId}": {
       "schema": "Artwork",
-      "description": "Collectie van alle kunstwerken (Publieke Leesrechten geactiveerd)"
+      "description": "Collectie van alle kunstwerken"
     },
     "/interactions/{interactionId}": {
       "schema": "Interaction",
-      "description": "Log van bezoekersinteracties (Publieke Schrijfrechten)"
+      "description": "Log van bezoekersinteracties"
     },
     "/settings/site": {
       "schema": "Settings",
-      "description": "Website configuratie (Publieke Leesrechten)"
+      "description": "Website configuratie en teksten"
     }
   }
 }

@@ -3,8 +3,19 @@
 
 import React from 'react';
 import Image from 'next/image';
+import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 
 export default function PeterBesPage() {
+  const firestore = useFirestore();
+  const siteSettingsRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, 'settings', 'site');
+  }, [firestore]);
+  const { data: siteSettings } = useDoc(siteSettingsRef);
+
+  const bioText = siteSettings?.peterBesBio || `Peter Bes was een leerling van Thijs Sterk. Onder de vleugels van zijn meester ontwikkelde hij een eigen vormentaal, terwijl hij de lessen over licht en compositie altijd in zijn hart hield.\n\nDe band tussen leermeester en leerling was meer dan louter technisch; het was een gedeelde zoektocht naar de ziel van het schilderen. Zijn herinneringen werpen een uniek licht op de didactische en menselijke kant van Thijs. Peter herinnert hem als een strenge maar rechtvaardige mentor die altijd zocht naar de essentie.`;
+
   return (
     <main className="min-h-screen bg-background pt-24 pb-32">
       <div className="container mx-auto px-6 max-w-5xl">
@@ -30,13 +41,8 @@ export default function PeterBesPage() {
             <span className="text-accent font-medium tracking-[0.2em] uppercase text-[10px] block">Leerling & Kunstenaar</span>
             <h1 className="font-headline text-3xl md:text-5xl font-light leading-tight">Peter <span className="italic">Bes</span></h1>
             
-            <div className="space-y-6 text-lg text-muted-foreground leading-relaxed font-light">
-              <p>
-                Peter Bes was een leerling van Thijs Sterk. Onder de vleugels van zijn meester ontwikkelde hij een eigen vormentaal, terwijl hij de lessen over licht en compositie altijd in zijn hart hield.
-              </p>
-              <p>
-                De band tussen leermeester en leerling was meer dan louter technisch; het was een gedeelde zoektocht naar de ziel van het schilderen. Zijn herinneringen werpen een uniek licht op de didactische en menselijke kant van Thijs. Peter herinnert hem als een strenge maar rechtvaardige mentor die altijd zocht naar de essentie.
-              </p>
+            <div className="space-y-6 text-lg text-muted-foreground leading-relaxed font-light whitespace-pre-line">
+              {bioText}
             </div>
           </div>
         </div>

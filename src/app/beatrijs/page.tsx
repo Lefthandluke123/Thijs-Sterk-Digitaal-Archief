@@ -3,8 +3,19 @@
 
 import React from 'react';
 import Image from 'next/image';
+import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 
 export default function BeatrijsSterkPage() {
+  const firestore = useFirestore();
+  const siteSettingsRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, 'settings', 'site');
+  }, [firestore]);
+  const { data: siteSettings } = useDoc(siteSettingsRef);
+
+  const bioText = siteSettings?.beatrijsBio || `Beatrijs Sterk deelt als dochter de passie voor het landschap en de atmosferische rust die haar vaders werk zo typeert. Zij ziet het archief niet slechts als een verzameling beelden, maar als een levende geschiedenis van een kunstenaarsleven.\n\nHaar bijdrage aan dit retrospectief is essentieel voor het duiden van de intiemere momenten en de visie die Thijs Sterk had op de wereld om hem heen. Voor Beatrijs is de website een manier om het licht dat haar vader ving, door te geven.`;
+
   return (
     <main className="min-h-screen bg-background pt-24 pb-32">
       <div className="container mx-auto px-6 max-w-5xl">
@@ -30,13 +41,8 @@ export default function BeatrijsSterkPage() {
             <span className="text-accent font-medium tracking-[0.2em] uppercase text-[10px] block">Dochter & Nalatenschap</span>
             <h1 className="font-headline text-3xl md:text-5xl font-light leading-tight">Beatrijs <span className="italic">Sterk</span></h1>
             
-            <div className="space-y-6 text-lg text-muted-foreground leading-relaxed font-light">
-              <p>
-                Beatrijs Sterk deelt als dochter de passie voor het landschap en de atmosferische rust die haar vaders werk zo typeert. Zij ziet het archief niet slechts als een verzameling beelden, maar als een levende geschiedenis van een kunstenaarsleven.
-              </p>
-              <p>
-                Haar bijdrage aan dit retrospectief is essentieel voor het duiden van de intiemere momenten en de visie die Thijs Sterk had op de wereld om hem heen. Voor Beatrijs is de website een manier om het licht dat haar vader ving, door te geven.
-              </p>
+            <div className="space-y-6 text-lg text-muted-foreground leading-relaxed font-light whitespace-pre-line">
+              {bioText}
             </div>
           </div>
         </div>
