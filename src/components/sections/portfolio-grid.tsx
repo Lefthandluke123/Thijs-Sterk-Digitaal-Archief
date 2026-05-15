@@ -103,7 +103,7 @@ export function PortfolioGrid() {
             </div>
             <DialogClose className="absolute top-8 right-8 z-50 p-3 bg-background/10 backdrop-blur-sm rounded-full hover:bg-background/20"><X className="w-6 h-6 opacity-40" /></DialogClose>
           </div>
-          <div className="h-[25vh] w-full bg-background/95 backdrop-blur-md py-8 px-12 border-t border-border/10 flex flex-col items-center justify-center overflow-y-auto">
+          <div className="h-[25vh] w-full bg-background/95 backdrop-blur-md py-8 px-12 border-t border-border/10 flex flex-col items-center justify-center overflow-y-auto text-center">
             <h2 className="font-headline text-[12px] md:text-[14px] font-light uppercase tracking-tight text-center text-foreground/60 mb-4">{selectedArtwork?.title}</h2>
             <div className="text-[11px] md:text-[13px] uppercase font-black tracking-[0.4em] text-accent flex flex-wrap gap-x-10 gap-y-3 justify-center items-center opacity-100">
               <span className="bg-accent/10 px-4 py-1 rounded-sm">Zaal: {selectedArtwork?.series}</span>

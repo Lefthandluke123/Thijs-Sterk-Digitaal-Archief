@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -11,11 +11,29 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Loader2 } from 'lucide-react';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query } from 'firebase/firestore';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export function Navbar() {
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
+  const firestore = useFirestore();
+
+  const artworksQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'artworks'));
+  }, [firestore]);
+
+  const { data: dbArtworks } = useCollection(artworksQuery);
+
+  const seriesNames = useMemo(() => {
+    const fromDb = dbArtworks?.map(art => art.series) || [];
+    const fromPlaceholders = PlaceHolderImages.map(art => art.series);
+    const combined = Array.from(new Set([...fromDb, ...fromPlaceholders].filter(Boolean)));
+    return (combined as string[]).sort();
+  }, [dbArtworks]);
 
   useEffect(() => {
     setMounted(true);
@@ -59,16 +77,18 @@ export function Navbar() {
                 Zalen <ChevronDown className="w-2.5 h-2.5 opacity-50" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-background/98 backdrop-blur-xl border-border/40 rounded-2xl min-w-[200px] p-2 shadow-2xl">
-              <DropdownMenuItem asChild className="text-[9px] uppercase font-bold tracking-[0.15em] focus:bg-accent focus:text-accent-foreground rounded-xl cursor-pointer p-3 mb-1">
-                <Link href="/gallery?series=Landschappen">Landschappen</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild className="text-[9px] uppercase font-bold tracking-[0.15em] focus:bg-accent focus:text-accent-foreground rounded-xl cursor-pointer p-3 mb-1">
-                <Link href="/gallery?series=Monumentaal">Monumentaal / Glas</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild className="text-[9px] uppercase font-bold tracking-[0.15em] focus:bg-accent focus:text-accent-foreground rounded-xl cursor-pointer p-3">
-                <Link href="/gallery?series=Bloemen">Stillevens & Bloemen</Link>
-              </DropdownMenuItem>
+            <DropdownMenuContent align="end" className="bg-background/98 backdrop-blur-xl border-border/40 rounded-2xl min-w-[220px] p-2 shadow-2xl">
+              {seriesNames.length > 0 ? (
+                seriesNames.map((name) => (
+                  <DropdownMenuItem key={name} asChild className="text-[9px] uppercase font-bold tracking-[0.15em] focus:bg-accent focus:text-accent-foreground rounded-xl cursor-pointer p-3 mb-1">
+                    <Link href={`/gallery?series=${encodeURIComponent(name)}`}>{name}</Link>
+                  </DropdownMenuItem>
+                ))
+              ) : (
+                <div className="p-4 text-center">
+                  <Loader2 className="w-4 h-4 animate-spin mx-auto opacity-20" />
+                </div>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
 
