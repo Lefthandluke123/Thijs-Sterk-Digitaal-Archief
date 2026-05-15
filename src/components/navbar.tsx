@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -26,11 +25,11 @@ export function Navbar() {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/60 backdrop-blur-sm border-b border-border/30">
       <div className="container mx-auto px-6 h-14 flex items-center justify-between">
-        <Link href="/" className="flex items-center group h-12">
+        <Link href="/" className="flex items-center group h-14">
           <img 
             src="/logo.png" 
-            alt="Thijs Sterk Logo" 
-            className="h-10 w-auto object-contain transition-transform group-hover:scale-105" 
+            alt="Logo" 
+            className="h-12 w-auto object-contain transition-transform group-hover:scale-105" 
             onError={(e) => {
               (e.target as HTMLImageElement).style.display = 'none';
               const span = (e.target as HTMLImageElement).parentElement?.querySelector('.fallback-text');

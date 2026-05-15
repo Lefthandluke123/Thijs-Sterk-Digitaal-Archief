@@ -11,11 +11,14 @@ export default function PeterBesPage() {
           <div className="lg:col-span-5">
             <div className="relative aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl bg-secondary/20">
               <Image 
-                src="https://picsum.photos/seed/peterbes/800/1000" 
+                src="/peter-bes.jpg" 
                 alt="Peter Bes" 
                 fill 
                 className="object-cover" 
                 data-ai-hint="portrait artist man"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = 'https://picsum.photos/seed/peterbes/800/1000';
+                }}
               />
               <div className="absolute bottom-4 right-4 z-10 opacity-20 text-[8px] uppercase tracking-widest text-white font-bold bg-black/40 px-2 py-1 rounded-sm">
                 &copy; Erven Thijs Sterk
