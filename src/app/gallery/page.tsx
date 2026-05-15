@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
@@ -137,7 +136,7 @@ function GalleryContent() {
 
       <Dialog open={!!selectedArtwork} onOpenChange={() => setSelectedArtwork(null)}>
         <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background/98 backdrop-blur-3xl border-none rounded-none overflow-hidden">
-          <div className="relative h-[67vh] w-full flex items-center justify-center overflow-hidden bg-black/5 group">
+          <div className="relative h-[80vh] w-full flex items-center justify-center overflow-hidden bg-black/5 group">
             {selectedArtwork && (
               <img 
                 src={selectedArtwork.imageUrl} 
@@ -162,21 +161,18 @@ function GalleryContent() {
             </DialogClose>
           </div>
 
-          <div className="h-[33vh] w-full bg-background/95 backdrop-blur-md py-16 px-12 border-t border-border/10 shadow-2xl flex flex-col items-center justify-center overflow-y-auto">
-            <div className="max-w-6xl mx-auto flex flex-col items-center text-center gap-10">
-              <DialogTitle className="font-headline text-6xl md:text-8xl font-light text-foreground tracking-tighter leading-tight uppercase">
+          <div className="h-[20vh] w-full bg-background/95 backdrop-blur-md py-8 px-12 border-t border-border/10 shadow-2xl flex flex-col items-center justify-center overflow-y-auto">
+            <div className="max-w-6xl mx-auto flex flex-col items-center text-center gap-6">
+              <DialogTitle className="font-headline text-3xl md:text-5xl font-light text-foreground tracking-tighter leading-tight uppercase">
                 {selectedArtwork?.title}
               </DialogTitle>
-              <div className="text-[14px] md:text-[16px] uppercase font-black tracking-[0.5em] text-accent flex flex-wrap gap-x-12 gap-y-6 justify-center items-center opacity-80">
+              <div className="text-[14px] md:text-[16px] uppercase font-black tracking-[0.4em] text-accent flex flex-wrap gap-x-12 gap-y-4 justify-center items-center opacity-80">
                 <span>{selectedArtwork?.series}</span>
-                <span className="hidden md:inline w-2 h-2 rounded-full bg-accent/40" />
+                <span className="hidden md:inline w-1.5 h-1.5 rounded-full bg-accent/40" />
                 <span>{selectedArtwork?.year}</span>
-                <span className="hidden md:inline w-2 h-2 rounded-full bg-accent/40" />
+                <span className="hidden md:inline w-1.5 h-1.5 rounded-full bg-accent/40" />
                 <span>{selectedArtwork?.medium}</span>
               </div>
-              <Button variant="outline" size="lg" className="rounded-full text-[12px] font-black uppercase tracking-[0.4em] px-20 h-16 border-primary/20 mt-8 hover:bg-accent hover:text-white hover:border-accent transition-all shadow-xl active:scale-95">
-                Interesse in dit werk?
-              </Button>
             </div>
           </div>
         </DialogContent>
