@@ -101,14 +101,12 @@ export default function AdminPage() {
   const [newTagInput, setNewTagInput] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadDirInputRef = useRef<HTMLInputElement>(null);
-  const jsonFileInputRef = useRef<HTMLInputElement>(null);
   
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
-  // Local crop values for smooth UI updates
   const [localCrops, setLocalCrops] = useState<Record<string, number>>({});
 
   const artworksQuery = useMemoFirebase(() => {
@@ -175,13 +173,11 @@ export default function AdminPage() {
   };
 
   const handleLocalStep = (field: string, delta: number, min = 0, max = 50) => {
-    if (!editingArtwork) return;
-    setLocalCrops(prev => {
-      const current = prev[field] ?? (editingArtwork as any)[field] ?? (field === 'brightness' ? 1 : 0);
-      const next = Math.min(max, Math.max(min, current + delta));
-      updateArtworkField(editingArtwork.id, field, next);
-      return { ...prev, [field]: next };
-    });
+    if (!editingArtwork || !editingId) return;
+    const current = localCrops[field] ?? (editingArtwork as any)[field] ?? (field === 'brightness' ? 1 : 0);
+    const next = Math.min(max, Math.max(min, current + delta));
+    setLocalCrops(prev => ({ ...prev, [field]: next }));
+    updateArtworkField(editingId, field, next);
   };
 
   const toggleTag = (tag: string) => {
@@ -201,6 +197,49 @@ export default function AdminPage() {
       updateArtworkField(editingArtwork.id, 'tags', [...currentTags, tag]);
     }
     setNewTagInput('');
+  };
+
+  const handleBatchProcess = async (files: FileList | null) => {
+    if (!files || !firestore || !storage) return;
+    
+    setIsUploading(true);
+    setUploadProgress(0);
+    const totalFiles = files.length;
+    let processed = 0;
+
+    const filesArray = Array.from(files);
+    
+    for (const file of filesArray) {
+      if (file.type.startsWith('image/')) {
+        setUploadStatus(`Uploading ${file.name}...`);
+        try {
+          const storageRef = ref(storage, `artworks/${Date.now()}_${file.name}`);
+          const snapshot = await uploadBytes(storageRef, file);
+          const downloadUrl = await getDownloadURL(snapshot.ref);
+
+          await addDoc(collection(firestore, 'artworks'), {
+            title: file.name.split('.')[0],
+            series: "Nieuw",
+            year: new Date().getFullYear().toString(),
+            medium: "Onbekend",
+            imageUrl: downloadUrl,
+            tags: [],
+            featured: false,
+            createdAt: serverTimestamp(),
+            cropTop: 0, cropBottom: 0, cropLeft: 0, cropRight: 0, brightness: 1
+          });
+        } catch (e) {
+          console.error(`Error uploading ${file.name}:`, e);
+        }
+      }
+      processed++;
+      setUploadProgress((processed / totalFiles) * 100);
+    }
+
+    setIsUploading(false);
+    setUploadStatus('Klaar!');
+    toast({ title: "Upload Voltooid", description: `${processed} bestanden verwerkt.` });
+    setActiveTab('archive');
   };
 
   return (
@@ -446,8 +485,4 @@ export default function AdminPage() {
       </Dialog>
     </div>
   );
-}
-
-function handleBatchProcess(files: FileList | null) {
-  // Mock logic since implementation is in AdminPage
 }
