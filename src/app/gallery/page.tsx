@@ -31,7 +31,7 @@ function GalleryContent() {
   }, [dbArtworks]);
 
   const seriesNames = useMemo(() => {
-    const names = Array.from(new Set(artworks.map(art => art.series || "Andere")));
+    const names = Array.from(new Set(artworks.map(art => art.series || "Geen zaal")));
     return names.sort();
   }, [artworks]);
 
@@ -46,7 +46,7 @@ function GalleryContent() {
 
   const filteredArtworks = useMemo(() => {
     if (!activeSeries) return [];
-    return artworks.filter(art => (art.series || "Andere") === activeSeries);
+    return artworks.filter(art => (art.series || "Geen zaal") === activeSeries);
   }, [artworks, activeSeries]);
 
   const navigateGallery = useCallback((direction: 'next' | 'prev') => {

@@ -32,7 +32,7 @@ import {
   CheckSquare,
   Square,
   MoveHorizontal,
-  AlertTriangle
+  Archive
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -134,7 +134,7 @@ export default function AdminPage() {
 
   const allSeries = useMemo(() => {
     if (!artworks) return [];
-    return Array.from(new Set(artworks.map(a => a.series || "Onbekend"))).sort();
+    return Array.from(new Set(artworks.map(a => a.series || "Geen zaal"))).sort();
   }, [artworks]);
 
   const filteredArtworks = useMemo(() => {
@@ -236,18 +236,18 @@ export default function AdminPage() {
     }
   };
 
-  const handleDeleteCurrentSeries = async () => {
+  const handleCloseCurrentSeries = async () => {
     if (!firestore || !filterSeries || filteredArtworks.length === 0) return;
     setIsSaving(true);
     const batch = writeBatch(firestore);
     filteredArtworks.forEach(art => {
       const artRef = doc(firestore, 'artworks', art.id);
-      batch.delete(artRef);
+      batch.update(artRef, { series: "Geen zaal" });
     });
     
     try {
       await batch.commit();
-      toast({ title: "Zaal gesloten", description: `Alle ${filteredArtworks.length} werken uit ${filterSeries} zijn verwijderd.` });
+      toast({ title: "Zaal gesloten", description: `Alle ${filteredArtworks.length} werken uit ${filterSeries} zijn teruggezet naar het archief.` });
       setFilterSeries(null);
     } catch (e) {
       toast({ variant: "destructive", title: "Fout bij het sluiten van de zaal" });
@@ -303,7 +303,7 @@ export default function AdminPage() {
         const downloadUrl = await getDownloadURL(snapshot.ref);
         await addDoc(collection(firestore, 'artworks'), {
           title: file.name.split('.')[0],
-          series: filterSeries || "Nieuw",
+          series: filterSeries || "Geen zaal",
           year: new Date().getFullYear().toString(),
           medium: "Olieverf",
           imageUrl: downloadUrl,
@@ -401,23 +401,23 @@ export default function AdminPage() {
             </div>
 
             <div className="flex justify-between items-center h-12">
-               {filterSeries && (
+               {filterSeries && filterSeries !== "Geen zaal" && (
                  <AlertDialog>
                    <AlertDialogTrigger asChild>
-                     <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-600 hover:bg-red-50 text-[9px] uppercase font-black tracking-widest">
-                       <Trash2 className="w-3 h-3 mr-2" /> Zaal "{filterSeries}" sluiten & legen
+                     <Button variant="ghost" size="sm" className="text-accent hover:text-accent/80 hover:bg-accent/5 text-[9px] uppercase font-black tracking-widest">
+                       <Archive className="w-3 h-3 mr-2" /> Zaal "{filterSeries}" sluiten (terug naar archief)
                      </Button>
                    </AlertDialogTrigger>
                    <AlertDialogContent>
                      <AlertDialogHeader>
                        <AlertDialogTitle>Zaal sluiten?</AlertDialogTitle>
                        <AlertDialogDescription>
-                         Dit zal ALLE {filteredArtworks.length} schilderijen in de zaal "{filterSeries}" definitief verwijderen. Deze actie kan niet ongedaan worden gemaakt.
+                         Dit zal alle {filteredArtworks.length} schilderijen in de zaal "{filterSeries}" verplaatsen naar "Geen zaal". De schilderijen blijven bewaard in uw archief.
                        </AlertDialogDescription>
                      </AlertDialogHeader>
                      <AlertDialogFooter>
                        <AlertDialogCancel>Annuleren</AlertDialogCancel>
-                       <AlertDialogAction onClick={handleDeleteCurrentSeries} className="bg-red-500 hover:bg-red-600">Verwijderen</AlertDialogAction>
+                       <AlertDialogAction onClick={handleCloseCurrentSeries} className="bg-accent">Zaal Sluiten</AlertDialogAction>
                      </AlertDialogFooter>
                    </AlertDialogContent>
                  </AlertDialog>
@@ -575,7 +575,7 @@ export default function AdminPage() {
           <div className="h-[25vh] w-full bg-background border-t border-black/10 px-8 py-4 overflow-y-auto">
             <div className="flex items-start gap-12 w-full min-h-full">
               
-              <div className="flex flex-col gap-4 min-w-[180px] border-r border-black/5 pr-8">
+              <div className="flex flex-col gap-4 min-w-[200px] border-r border-black/5 pr-8">
                 <div className="space-y-1">
                   <Label className="text-[10px] font-black text-black uppercase tracking-widest">Titel</Label>
                   <Input 
@@ -586,12 +586,12 @@ export default function AdminPage() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-[10px] font-black text-black uppercase tracking-widest">Zaal (Serie)</Label>
+                  <Label className="text-[10px] font-black text-accent uppercase tracking-widest">Zaal (Serie)</Label>
                   <Input 
                     key={`${editingId}-series`}
                     defaultValue={editingArtwork?.series || ''} 
                     onBlur={(e) => editingId && updateArtworkField(editingId, 'series', e.target.value)} 
-                    className="h-8 text-[10px] font-black text-black uppercase border-none bg-black/5 rounded-sm p-2 focus-visible:ring-0"
+                    className="h-8 text-[10px] font-black text-accent uppercase border-none bg-accent/5 rounded-sm p-2 focus-visible:ring-0"
                   />
                 </div>
                 <div className="flex items-center justify-between bg-black/5 p-2 rounded-sm">
