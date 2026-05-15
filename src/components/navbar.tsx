@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
@@ -18,6 +18,8 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export function Navbar() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const currentSeries = searchParams.get('series');
   const [mounted, setMounted] = useState(false);
   const firestore = useFirestore();
 
@@ -41,6 +43,18 @@ export function Navbar() {
 
   if (!mounted) return null;
 
+  const NavLink = ({ href, children, active }: { href: string; children: React.ReactNode; active: boolean }) => (
+    <Link 
+      href={href}
+      className={cn(
+        "px-3 py-1.5 rounded-full text-[9px] font-bold tracking-widest uppercase transition-all duration-300",
+        active ? "bg-accent/90 text-accent-foreground" : "text-muted-foreground hover:text-foreground"
+      )}
+    >
+      {children}
+    </Link>
+  );
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/60 backdrop-blur-sm border-b border-border/10">
       <div className="container mx-auto px-6 h-14 flex items-center justify-between">
@@ -55,23 +69,15 @@ export function Navbar() {
           />
         </Link>
         
-        <div className="flex items-center gap-1 sm:gap-1.5">
-          <Link 
-            href="/"
-            className={cn(
-              "px-3 py-1.5 rounded-full text-[9px] font-bold tracking-widest uppercase transition-all duration-300",
-              pathname === "/" ? "bg-accent/90 text-accent-foreground" : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            Home
-          </Link>
+        <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto no-scrollbar max-w-[70%]">
+          <NavLink href="/" active={pathname === "/"}>Home</NavLink>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
                 className={cn(
                   "px-3 py-1.5 rounded-full text-[9px] font-bold tracking-widest uppercase transition-all duration-300 flex items-center gap-1 outline-none",
-                  pathname.includes('/gallery') ? "bg-accent/90 text-accent-foreground" : "text-muted-foreground hover:text-foreground"
+                  pathname.includes('/gallery') && !['Monumentaal', 'Glas in lood'].includes(currentSeries || '') ? "bg-accent/90 text-accent-foreground" : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 Zalen <ChevronDown className="w-2.5 h-2.5 opacity-50" />
@@ -92,15 +98,21 @@ export function Navbar() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Link 
-            href="/curator"
-            className={cn(
-              "px-3 py-1.5 rounded-full text-[9px] font-bold tracking-widest uppercase transition-all duration-300",
-              pathname === "/curator" ? "bg-accent/90 text-accent-foreground" : "text-muted-foreground hover:text-foreground"
-            )}
+          <NavLink 
+            href="/gallery?series=Monumentaal" 
+            active={pathname === "/gallery" && currentSeries === "Monumentaal"}
           >
-            Uw Zaal
-          </Link>
+            Monumentaal
+          </NavLink>
+
+          <NavLink 
+            href="/gallery?series=Glas in lood" 
+            active={pathname === "/gallery" && currentSeries === "Glas in lood"}
+          >
+            Glas in lood
+          </NavLink>
+
+          <NavLink href="/curator" active={pathname === "/curator"}>Uw Zaal</NavLink>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
