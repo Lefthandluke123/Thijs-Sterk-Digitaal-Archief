@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
@@ -129,7 +130,7 @@ function GalleryContent() {
       </div>
 
       <Dialog open={!!selectedArtwork} onOpenChange={() => setSelectedArtwork(null)}>
-        <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background/98 backdrop-blur-3xl border-none rounded-none overflow-hidden">
+        <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background/98 backdrop-blur-3xl border-none rounded-none overflow-hidden outline-none">
           <DialogTitle className="sr-only">Viewer (85/15)</DialogTitle>
           <div className="relative h-[85vh] w-full flex items-center justify-center overflow-hidden bg-black/5 group">
             {selectedArtwork && (
