@@ -10,8 +10,10 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, Loader2 } from 'lucide-react';
+import { ChevronDown, Loader2, Sparkles, LayoutGrid } from 'lucide-react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
@@ -34,7 +36,8 @@ export function Navbar() {
     const fromDb = dbArtworks?.map(art => art.series) || [];
     const fromPlaceholders = PlaceHolderImages.map(art => art.series);
     const combined = Array.from(new Set([...fromDb, ...fromPlaceholders].filter(Boolean)));
-    return (combined as string[]).sort();
+    // We filteren Monumentaal en Glas in lood uit de algemene lijst omdat ze eigen knoppen hebben
+    return (combined as string[]).filter(s => s !== "Monumentaal" && s !== "Glas in lood").sort();
   }, [dbArtworks]);
 
   useEffect(() => {
@@ -69,7 +72,7 @@ export function Navbar() {
           />
         </Link>
         
-        <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto no-scrollbar max-w-[70%]">
+        <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto no-scrollbar max-w-[80%]">
           <NavLink href="/" active={pathname === "/"}>Home</NavLink>
 
           <DropdownMenu>
@@ -77,24 +80,35 @@ export function Navbar() {
               <button
                 className={cn(
                   "px-3 py-1.5 rounded-full text-[9px] font-bold tracking-widest uppercase transition-all duration-300 flex items-center gap-1 outline-none",
-                  pathname.includes('/gallery') && !['Monumentaal', 'Glas in lood'].includes(currentSeries || '') ? "bg-accent/90 text-accent-foreground" : "text-muted-foreground hover:text-foreground"
+                  (pathname.includes('/gallery') && !['Monumentaal', 'Glas in lood'].includes(currentSeries || '')) || pathname.includes('/curator') 
+                    ? "bg-accent/90 text-accent-foreground" 
+                    : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                Zalen <ChevronDown className="w-2.5 h-2.5 opacity-50" />
+                Beeldend <ChevronDown className="w-2.5 h-2.5 opacity-50" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-background/98 backdrop-blur-xl border-border/40 rounded-2xl min-w-[220px] p-2 shadow-2xl">
+            <DropdownMenuContent align="start" className="bg-background/98 backdrop-blur-xl border-border/40 rounded-2xl min-w-[240px] p-2 shadow-2xl">
+              <DropdownMenuLabel className="text-[8px] uppercase tracking-[0.2em] opacity-40 px-3 py-2">Zalen & Collecties</DropdownMenuLabel>
               {seriesNames.length > 0 ? (
                 seriesNames.map((name) => (
                   <DropdownMenuItem key={name} asChild className="text-[9px] uppercase font-bold tracking-[0.15em] focus:bg-accent focus:text-accent-foreground rounded-xl cursor-pointer p-3 mb-1">
-                    <Link href={`/gallery?series=${encodeURIComponent(name)}`}>{name}</Link>
+                    <Link href={`/gallery?series=${encodeURIComponent(name)}`} className="flex items-center justify-between w-full">
+                      {name}
+                    </Link>
                   </DropdownMenuItem>
                 ))
               ) : (
-                <div className="p-4 text-center">
-                  <Loader2 className="w-4 h-4 animate-spin mx-auto opacity-20" />
-                </div>
+                <div className="p-4 text-center text-[8px] uppercase opacity-20">Geen actieve zalen</div>
               )}
+              
+              <DropdownMenuSeparator className="bg-border/20 my-2" />
+              
+              <DropdownMenuItem asChild className="text-[9px] uppercase font-bold tracking-[0.15em] focus:bg-black focus:text-white rounded-xl cursor-pointer p-3">
+                <Link href="/curator" className="flex items-center gap-2">
+                  <Sparkles className="w-3 h-3 text-accent" /> Uw Zaal
+                </Link>
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -111,8 +125,6 @@ export function Navbar() {
           >
             Glas in lood
           </NavLink>
-
-          <NavLink href="/curator" active={pathname === "/curator"}>Uw Zaal</NavLink>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
