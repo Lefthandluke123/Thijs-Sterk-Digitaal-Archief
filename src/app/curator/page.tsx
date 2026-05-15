@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -224,7 +223,7 @@ export default function CuratorPage() {
 
       <Dialog open={!!selectedArtwork} onOpenChange={() => setSelectedArtwork(null)}>
         <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background border-none rounded-none overflow-hidden outline-none">
-          <div className="relative h-[80vh] w-full flex items-center justify-center overflow-hidden bg-black/5 group">
+          <div className="relative h-[85vh] w-full flex items-center justify-center overflow-hidden bg-black/5 group">
             {selectedArtwork && (
               <img 
                 src={selectedArtwork.imageUrl} 
@@ -249,13 +248,13 @@ export default function CuratorPage() {
             </DialogClose>
           </div>
 
-          <div className="h-[20vh] w-full bg-white py-8 px-12 border-t-2 border-black shadow-2xl flex flex-col items-center justify-center overflow-y-auto">
-            <div className="max-w-6xl mx-auto flex flex-col items-center text-center gap-4">
-              <DialogTitle className="font-headline text-xl md:text-2xl font-light text-black tracking-tight leading-tight uppercase">
+          <div className="h-[15vh] w-full bg-white py-4 px-12 border-t-2 border-black shadow-2xl flex flex-col items-center justify-center overflow-y-auto">
+            <div className="max-w-6xl mx-auto flex flex-col items-center text-center gap-2">
+              <DialogTitle className="font-headline text-lg md:text-xl font-light text-black tracking-tight leading-tight uppercase">
                 {selectedArtwork?.title}
               </DialogTitle>
               
-              <div className="text-[10px] md:text-[11px] uppercase font-black tracking-[0.3em] text-black flex flex-wrap gap-x-8 gap-y-2 justify-center items-center opacity-60">
+              <div className="text-[11px] md:text-[12px] uppercase font-black tracking-[0.3em] text-black flex flex-wrap gap-x-8 gap-y-2 justify-center items-center opacity-90">
                 <span>{selectedArtwork?.series}</span>
                 <span className="hidden md:inline w-1 h-1 rounded-full bg-black" />
                 <span>{selectedArtwork?.year}</span>
