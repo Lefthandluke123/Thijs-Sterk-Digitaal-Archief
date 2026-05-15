@@ -4,7 +4,7 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useFirestore, useCollection, useMemoFirebase, useStorage } from '@/firebase';
-import { collection, doc, serverTimestamp, deleteDoc, addDoc, query, orderBy, updateDoc } from 'firebase/firestore';
+import { collection, doc, serverTimestamp, deleteDoc, addDoc, query, orderBy, updateDoc, writeBatch } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -28,7 +28,10 @@ import {
   Tag,
   FileJson,
   Layers,
-  Filter
+  Filter,
+  CheckSquare,
+  Square,
+  MoveHorizontal
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -39,12 +42,6 @@ import { Progress } from '@/components/ui/progress';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
-
-const STANDARD_TAGS = [
-  "Groet", "Schoorl", "Hargen", "Amsterdam", "Frankrijk", 
-  "Griekenland", "Olieverf", "Aquarel", "Monumentaal", "Glas in lood",
-  "Bloemen", "Dieren", "Water", "Portretten", "Atmosferisch", "Licht", "Polder", "Kust"
-];
 
 function RepeatButton({ onStep, children, className, disabled }: { onStep: () => void, children: React.ReactNode, className?: string, disabled?: boolean }) {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -111,6 +108,9 @@ export default function AdminPage() {
   const [uploadStatus, setUploadStatus] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [bulkMoveSeries, setBulkMoveSeries] = useState('');
+
   const [localCrops, setLocalCrops] = useState<Record<string, number>>({});
 
   const artworksQuery = useMemoFirebase(() => {
@@ -170,6 +170,32 @@ export default function AdminPage() {
       .finally(() => {
         setTimeout(() => setIsSaving(false), 100);
       });
+  };
+
+  const handleBulkMove = async () => {
+    if (!firestore || selectedIds.length === 0 || !bulkMoveSeries.trim()) return;
+    setIsSaving(true);
+    const batch = writeBatch(firestore);
+    selectedIds.forEach(id => {
+      const artRef = doc(firestore, 'artworks', id);
+      batch.update(artRef, { series: bulkMoveSeries.trim() });
+    });
+    
+    try {
+      await batch.commit();
+      toast({ title: "Bulk verplaatsing gelukt", description: `${selectedIds.length} werken verplaatst naar ${bulkMoveSeries}` });
+      setSelectedIds([]);
+      setBulkMoveSeries('');
+    } catch (e) {
+      toast({ variant: "destructive", title: "Fout bij bulk verplaatsing" });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const toggleSelect = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
   };
 
   const handleLocalStep = (field: string, delta: number, min = 0, max = 50) => {
@@ -246,6 +272,12 @@ export default function AdminPage() {
     toast({ title: "JSON Geëxporteerd" });
   };
 
+  const STANDARD_TAGS = [
+    "Groet", "Schoorl", "Hargen", "Amsterdam", "Frankrijk", 
+    "Griekenland", "Olieverf", "Aquarel", "Monumentaal", "Glas in lood",
+    "Bloemen", "Dieren", "Water", "Portretten", "Atmosferisch", "Licht", "Polder", "Kust"
+  ];
+
   return (
     <div className="min-h-screen bg-background flex flex-col pt-14">
       <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={(e) => handleBatchProcess(e.target.files)} accept="image/*" multiple />
@@ -283,7 +315,7 @@ export default function AdminPage() {
           </div>
 
           <TabsContent value="archive" className="space-y-6">
-            <div className="flex items-center gap-4 overflow-x-auto pb-2 no-scrollbar border-b border-black/5">
+            <div className="flex flex-wrap items-center gap-4 overflow-x-auto pb-2 no-scrollbar border-b border-black/5">
               <Button 
                 variant={filterSeries === null ? "default" : "outline"} 
                 size="sm" 
@@ -305,10 +337,44 @@ export default function AdminPage() {
               ))}
             </div>
 
+            {selectedIds.length > 0 && (
+              <div className="bg-accent/10 border border-accent/20 p-4 rounded-2xl flex items-center justify-between animate-in fade-in slide-in-from-top-4">
+                <div className="flex items-center gap-4">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-accent">{selectedIds.length} geselecteerd</span>
+                  <div className="flex items-center gap-2">
+                    <Input 
+                      placeholder="Nieuwe zaalnaam..." 
+                      value={bulkMoveSeries} 
+                      onChange={(e) => setBulkMoveSeries(e.target.value)}
+                      className="h-8 text-[10px] font-black uppercase border-accent/30 bg-white w-48"
+                    />
+                    <Button onClick={handleBulkMove} disabled={isSaving || !bulkMoveSeries} size="sm" className="h-8 rounded-full text-[9px] font-black uppercase tracking-widest bg-accent">
+                      <MoveHorizontal className="w-3 h-3 mr-2" /> Verplaats naar Zaal
+                    </Button>
+                  </div>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => setSelectedIds([])} className="text-[9px] font-black uppercase tracking-widest">Annuleren</Button>
+              </div>
+            )}
+
             {isCollectionLoading ? <div className="flex justify-center py-20"><Loader2 className="animate-spin opacity-20" /></div> : artworks && artworks.length > 0 ? (
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
                 {filteredArtworks.map((art: any) => (
-                  <Card key={art.id} className={cn("overflow-hidden bg-card border-border rounded-xl group cursor-pointer transition-all hover:ring-1 hover:ring-accent", art.featured && "ring-1 ring-accent")} onClick={() => setEditingId(art.id)}>
+                  <Card 
+                    key={art.id} 
+                    className={cn(
+                      "overflow-hidden bg-card border-border rounded-xl group cursor-pointer transition-all hover:ring-1 hover:ring-accent relative",
+                      art.featured && "ring-1 ring-accent",
+                      selectedIds.includes(art.id) && "ring-2 ring-accent bg-accent/5"
+                    )} 
+                    onClick={() => setEditingId(art.id)}
+                  >
+                    <button 
+                      onClick={(e) => toggleSelect(e, art.id)}
+                      className="absolute top-2 left-2 z-10 w-6 h-6 rounded-full bg-white/80 border-2 border-accent flex items-center justify-center transition-all hover:scale-110"
+                    >
+                      {selectedIds.includes(art.id) ? <CheckSquare className="w-4 h-4 text-accent fill-accent" /> : <Square className="w-4 h-4 text-accent/30" />}
+                    </button>
                     <div className="relative aspect-square bg-muted/20">
                       <img src={art.imageUrl} className="w-full h-full object-cover" style={{ clipPath: `inset(${art.cropTop || 0}% ${art.cropRight || 0}% ${art.cropBottom || 0}% ${art.cropLeft || 0}%)`, filter: `brightness(${art.brightness || 1})` }} />
                     </div>
