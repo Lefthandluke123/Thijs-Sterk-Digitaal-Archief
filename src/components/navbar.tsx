@@ -25,13 +25,12 @@ export function Navbar() {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/60 backdrop-blur-sm border-b border-border/30">
       <div className="container mx-auto px-6 h-14 flex items-center justify-between">
-        <Link href="/" className="flex items-center group h-10">
+        <Link href="/" className="flex items-center group h-12">
           <img 
             src="/logo.png" 
             alt="Logo" 
             className="h-full w-auto object-contain transition-transform group-hover:scale-105" 
             onError={(e) => {
-              // Fallback naar tekst als logo.png niet bestaat
               (e.target as HTMLImageElement).style.display = 'none';
               const span = (e.target as HTMLImageElement).parentElement?.querySelector('.fallback-text');
               if (span) (span as HTMLElement).style.display = 'block';
