@@ -151,8 +151,8 @@ export default function CuratorPage() {
 
       <Dialog open={!!selectedArtwork} onOpenChange={() => setSelectedArtwork(null)}>
         <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background border-none rounded-none overflow-hidden outline-none">
-          <DialogTitle className="sr-only">Viewer (85/15)</DialogTitle>
-          <div className="relative h-[85vh] w-full flex items-center justify-center overflow-hidden bg-black/5 group">
+          <DialogTitle className="sr-only">Viewer (75/25)</DialogTitle>
+          <div className="relative h-[75vh] w-full flex items-center justify-center overflow-hidden bg-black/5 group">
             {selectedArtwork && (
               <img src={selectedArtwork.imageUrl} className="max-w-full max-h-[90%] object-contain p-4 md:p-16 shadow-2xl transition-all" style={{ clipPath: `inset(${selectedArtwork.cropTop || 0}% ${selectedArtwork.cropRight || 0}% ${selectedArtwork.cropBottom || 0}% ${selectedArtwork.cropLeft || 0}%)`, filter: `brightness(${selectedArtwork.brightness || 1})` }} />
             )}
@@ -162,13 +162,13 @@ export default function CuratorPage() {
             </div>
             <DialogClose className="absolute top-8 right-8 z-50 p-2.5 bg-white/10 backdrop-blur-sm rounded-full border border-black/20 hover:bg-white/20 transition-all"><X className="w-5 h-5 opacity-40" /></DialogClose>
           </div>
-          <div className="h-[15vh] w-full bg-white py-4 px-12 border-t border-black/5 flex flex-col items-center justify-center overflow-y-auto">
-            <h2 className="font-headline text-[10px] md:text-[12px] font-light uppercase tracking-tight text-black/60">{selectedArtwork?.title}</h2>
-            <div className="text-[10px] md:text-[12px] uppercase font-black tracking-[0.3em] flex gap-8 opacity-100 mt-2 text-accent">
-              <span>{selectedArtwork?.series}</span>
-              <span className="w-1 h-1 rounded-full bg-accent/30 self-center" />
+          <div className="h-[25vh] w-full bg-white py-8 px-12 border-t border-black/5 flex flex-col items-center justify-center overflow-y-auto">
+            <h2 className="font-headline text-[12px] md:text-[14px] font-light uppercase tracking-tight text-black/60 mb-4">{selectedArtwork?.title}</h2>
+            <div className="text-[11px] md:text-[13px] uppercase font-black tracking-[0.4em] flex flex-wrap gap-x-10 gap-y-3 justify-center items-center opacity-100 text-accent">
+              <span className="bg-accent/10 px-4 py-1 rounded-sm">Zaal: {selectedArtwork?.series}</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-accent/30 self-center hidden md:inline" />
               <span>{selectedArtwork?.year}</span>
-              <span className="w-1 h-1 rounded-full bg-accent/30 self-center" />
+              <span className="w-1.5 h-1.5 rounded-full bg-accent/30 self-center hidden md:inline" />
               <span>{selectedArtwork?.medium}</span>
             </div>
           </div>

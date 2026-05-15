@@ -382,9 +382,9 @@ export default function AdminPage() {
 
       <Dialog open={!!editingId} onOpenChange={() => setEditingId(null)}>
         <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background border-none rounded-none overflow-hidden outline-none">
-          <DialogTitle className="sr-only">Master Editor (85/15)</DialogTitle>
+          <DialogTitle className="sr-only">Master Editor (75/25)</DialogTitle>
           
-          <div className="relative h-[85vh] w-full flex items-center justify-center overflow-hidden bg-[#f3f3f3] group">
+          <div className="relative h-[75vh] w-full flex items-center justify-center overflow-hidden bg-[#f3f3f3] group">
             {editingArtwork && (
               <img 
                 src={editingArtwork.imageUrl} 
@@ -405,50 +405,58 @@ export default function AdminPage() {
             </div>
           </div>
 
-          <div className="h-[15vh] w-full bg-background border-t border-black/10 px-8 py-2">
-            <div className="flex items-start gap-12 w-full h-full overflow-hidden">
+          <div className="h-[25vh] w-full bg-background border-t border-black/10 px-8 py-4 overflow-y-auto">
+            <div className="flex items-start gap-12 w-full min-h-full">
               
-              <div className="flex flex-col gap-2 min-w-[140px] border-r border-black/5 pr-8 h-full">
+              <div className="flex flex-col gap-4 min-w-[180px] border-r border-black/5 pr-8">
                 <div className="space-y-1">
-                  <Label className="text-[9px] font-black text-black uppercase tracking-widest">Titel</Label>
+                  <Label className="text-[10px] font-black text-black uppercase tracking-widest">Titel</Label>
                   <Input 
-                    key={editingId}
+                    key={`${editingId}-title`}
                     defaultValue={editingArtwork?.title || ''} 
                     onBlur={(e) => editingId && updateArtworkField(editingId, 'title', e.target.value)} 
-                    className="h-6 text-[9px] font-black text-black uppercase border-none bg-black/5 rounded-sm p-1.5 focus-visible:ring-0"
+                    className="h-8 text-[10px] font-black text-black uppercase border-none bg-black/5 rounded-sm p-2 focus-visible:ring-0"
                   />
                 </div>
-                <div className="flex items-center justify-between bg-black/5 p-1 rounded-sm">
-                  <div className="flex items-center gap-1">
-                    <CheckCircle2 className="w-2.5 h-2.5 text-black/60" />
-                    <span className="text-[9px] font-black text-black uppercase tracking-widest">Home</span>
+                <div className="space-y-1">
+                  <Label className="text-[10px] font-black text-black uppercase tracking-widest">Zaal (Serie)</Label>
+                  <Input 
+                    key={`${editingId}-series`}
+                    defaultValue={editingArtwork?.series || ''} 
+                    onBlur={(e) => editingId && updateArtworkField(editingId, 'series', e.target.value)} 
+                    className="h-8 text-[10px] font-black text-black uppercase border-none bg-black/5 rounded-sm p-2 focus-visible:ring-0"
+                  />
+                </div>
+                <div className="flex items-center justify-between bg-black/5 p-2 rounded-sm">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-3 h-3 text-black/60" />
+                    <span className="text-[10px] font-black text-black uppercase tracking-widest">Home</span>
                   </div>
                   <Switch 
                     checked={editingArtwork?.featured || false} 
                     onCheckedChange={(val) => editingId && updateArtworkField(editingId, 'featured', val)}
-                    className="scale-50 h-3"
                   />
                 </div>
-                <div className="flex items-center gap-2 mt-auto pb-2">
+                <div className="flex items-center gap-2 mt-2">
                   {isSaving ? <Loader2 className="w-3 h-3 animate-spin text-black/20" /> : <CheckCircle2 className="w-3 h-3 text-green-500/30" />}
-                  <span className="text-[9px] font-black text-black/20 uppercase tracking-widest">{isSaving ? 'Saving' : 'Opgeslagen'}</span>
+                  <span className="text-[10px] font-black text-black/20 uppercase tracking-widest">{isSaving ? 'Saving' : 'Opgeslagen'}</span>
                 </div>
               </div>
 
-              <div className="flex flex-col flex-1 h-full min-w-0 border-r border-black/5 pr-8 overflow-hidden">
-                <div className="flex items-center justify-between gap-4 h-[45%] border-b border-black/5 pb-1">
+              <div className="flex flex-col flex-1 min-w-0 border-r border-black/5 pr-8">
+                <div className="flex items-center justify-between gap-6 pb-6 border-b border-black/5">
                   {['Top', 'Bottom', 'Left', 'Right'].map(side => {
                     const field = `crop${side}`;
                     const currentVal = localCrops[field] ?? (editingArtwork as any)?.[field] ?? 0;
                     return (
-                      <div key={side} className="flex flex-col items-center gap-0.5">
-                        <span className="text-[9px] font-black text-black uppercase tracking-widest">{side} {currentVal.toFixed(1)}%</span>
-                        <div className="flex items-center gap-1.5">
+                      <div key={side} className="flex flex-col items-center gap-2">
+                        <span className="text-[10px] font-black text-black uppercase tracking-widest">{side} {currentVal.toFixed(1)}%</span>
+                        <div className="flex items-center gap-2">
                           <RepeatButton 
                             onStep={() => handleLocalStep(field, -0.1)}
-                            className="h-8 w-8"
+                            className="h-10 w-10"
                           >
-                            <Minus className="h-4 w-4 text-black" />
+                            <Minus className="h-5 w-5 text-black" />
                           </RepeatButton>
                           <Slider 
                             value={[currentVal]} 
@@ -458,13 +466,13 @@ export default function AdminPage() {
                               setLocalCrops(prev => ({ ...prev, [field]: val }));
                               editingId && updateArtworkField(editingId, field, val);
                             }}
-                            className="w-14"
+                            className="w-24"
                           />
                           <RepeatButton 
                             onStep={() => handleLocalStep(field, 0.1)}
-                            className="h-8 w-8"
+                            className="h-10 w-10"
                           >
-                            <Plus className="h-4 w-4 text-black" />
+                            <Plus className="h-5 w-5 text-black" />
                           </RepeatButton>
                         </div>
                       </div>
@@ -472,27 +480,27 @@ export default function AdminPage() {
                   })}
                 </div>
 
-                <div className="h-[55%] pt-1 flex flex-col gap-1 overflow-hidden">
+                <div className="pt-4 flex flex-col gap-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-[9px] font-black text-black uppercase tracking-widest">Thema's</span>
-                    <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-black text-black uppercase tracking-widest">Thema's</span>
+                    <div className="flex items-center gap-3">
                       <Input 
                         value={newTagInput}
                         onChange={(e) => setNewTagInput(e.target.value)}
                         placeholder="Nieuw..."
-                        className="h-4 text-[9px] font-black text-black uppercase border-none bg-black/5 rounded-sm p-1 w-20 focus-visible:ring-0"
+                        className="h-7 text-[10px] font-black text-black uppercase border-none bg-black/5 rounded-sm p-2 w-32 focus-visible:ring-0"
                         onKeyDown={(e) => e.key === 'Enter' && addCustomTag()}
                       />
-                      <Button onClick={addCustomTag} variant="ghost" className="h-4 w-4 p-0 bg-black/5 hover:bg-black/10"><Tag className="w-2 h-2" /></Button>
+                      <Button onClick={addCustomTag} variant="ghost" className="h-7 w-7 p-0 bg-black/5 hover:bg-black/10"><Tag className="w-3 h-3" /></Button>
                     </div>
                   </div>
-                  <div className="flex flex-wrap gap-1 overflow-y-auto pr-4 no-scrollbar pb-1">
+                  <div className="flex flex-wrap gap-2 pr-4 pb-4">
                     {STANDARD_TAGS.map(tag => (
                       <button
                         key={tag}
                         onClick={() => toggleTag(tag)}
                         className={cn(
-                          "px-1.5 py-0.5 rounded-sm text-[9px] font-black uppercase tracking-widest border transition-all",
+                          "px-3 py-1.5 rounded-sm text-[10px] font-black uppercase tracking-widest border transition-all",
                           editingArtwork?.tags?.includes(tag)
                             ? "bg-black text-white border-black"
                             : "bg-white text-black border-black/20 hover:border-black/50"
@@ -505,13 +513,13 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <div className="flex flex-col items-center justify-center gap-2 min-w-[140px] h-full">
-                <div className="flex items-center gap-1.5">
-                  <Sun className="w-2.5 h-2.5 text-black/40" />
-                  <span className="text-[9px] font-black text-black uppercase tracking-widest">Licht {(localCrops.brightness ?? editingArtwork?.brightness ?? 1).toFixed(2)}</span>
-                </div>
+              <div className="flex flex-col items-center justify-center gap-6 min-w-[180px]">
                 <div className="flex items-center gap-2">
-                   <RepeatButton onStep={() => handleLocalStep('brightness', -0.01, 0, 2)} className="h-8 w-8"><Minus className="h-4 w-4" /></RepeatButton>
+                  <Sun className="w-4 h-4 text-black/40" />
+                  <span className="text-[10px] font-black text-black uppercase tracking-widest">Licht {(localCrops.brightness ?? editingArtwork?.brightness ?? 1).toFixed(2)}</span>
+                </div>
+                <div className="flex items-center gap-4">
+                   <RepeatButton onStep={() => handleLocalStep('brightness', -0.01, 0, 2)} className="h-10 w-10"><Minus className="h-5 w-5" /></RepeatButton>
                    <Slider 
                     value={[localCrops.brightness ?? editingArtwork?.brightness ?? 1]} 
                     max={2} 
@@ -520,9 +528,9 @@ export default function AdminPage() {
                       setLocalCrops(prev => ({ ...prev, brightness: val }));
                       editingId && updateArtworkField(editingId, 'brightness', val);
                     }}
-                    className="w-20"
+                    className="w-28"
                   />
-                  <RepeatButton onStep={() => handleLocalStep('brightness', 0.01, 0, 2)} className="h-8 w-8"><Plus className="h-4 w-4" /></RepeatButton>
+                  <RepeatButton onStep={() => handleLocalStep('brightness', 0.01, 0, 2)} className="h-10 w-10"><Plus className="h-5 w-5" /></RepeatButton>
                 </div>
               </div>
 
