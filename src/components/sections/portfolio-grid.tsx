@@ -74,7 +74,7 @@ export function PortfolioGrid() {
 
         {loading && displayArtworks.length === 0 ? (
           <div className="flex justify-center py-24"><Loader2 className="animate-spin opacity-30" /></div>
-        ) : (
+        ) : displayArtworks.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {displayArtworks.map(art => (
               <div key={art.id} className="group relative cursor-pointer" onClick={() => setSelectedArtwork(art)}>
@@ -87,6 +87,8 @@ export function PortfolioGrid() {
               </div>
             ))}
           </div>
+        ) : (
+          <div className="py-24 text-center opacity-30 text-[10px] uppercase font-black tracking-widest">Voeg werken toe via het beheerpaneel</div>
         )}
       </div>
 

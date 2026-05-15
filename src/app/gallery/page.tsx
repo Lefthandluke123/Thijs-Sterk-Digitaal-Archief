@@ -74,7 +74,7 @@ function GalleryContent() {
       <div className="w-full bg-secondary/5 border-b border-border/10 py-12 md:py-16">
         <div className="container mx-auto px-6 max-w-7xl">
           <h1 className="font-headline text-[14px] md:text-[16px] font-light text-foreground text-center tracking-tight uppercase">
-            <span className="italic">{activeSeries || "Laden..."}</span>
+            <span className="italic">{activeSeries || (loading ? "Laden..." : "Selecteer een zaal")}</span>
           </h1>
         </div>
       </div>
