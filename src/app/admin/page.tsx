@@ -2,8 +2,8 @@
 
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { useFirestore, useCollection, useMemoFirebase, useStorage, useDoc } from '@/firebase';
-import { collection, doc, serverTimestamp, deleteDoc, addDoc, query, orderBy, updateDoc, setDoc } from 'firebase/firestore';
+import { useFirestore, useCollection, useMemoFirebase, useStorage } from '@/firebase';
+import { collection, doc, serverTimestamp, deleteDoc, addDoc, query, orderBy, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -21,11 +21,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Search,
-  Cloud,
   CheckCircle2,
   Download,
   CloudUpload,
-  Image as ImageIcon,
   Sun,
   Home,
   Tag
@@ -195,33 +193,6 @@ export default function AdminPage() {
     setActiveTab('archive');
   };
 
-  const handleBulkUpload = async () => {
-    if (!firestore || !bulkJson) return;
-    setLoading(true);
-    try {
-      const artworksArray = JSON.parse(bulkJson);
-      const items = Array.isArray(artworksArray) ? artworksArray : [artworksArray];
-      for (const item of items) {
-        const { id, createdAt, ...rest } = item;
-        await addDoc(collection(firestore, 'artworks'), { 
-          ...rest, 
-          createdAt: serverTimestamp(),
-          cropTop: rest.cropTop || 0,
-          cropBottom: rest.cropBottom || 0,
-          cropLeft: rest.cropLeft || 0,
-          cropRight: rest.cropRight || 0,
-          brightness: rest.brightness || 1,
-          tags: rest.tags || []
-        });
-      }
-      toast({ title: "Import voltooid" });
-      setBulkJson('');
-      setActiveTab('archive');
-    } catch (err) {
-      toast({ variant: "destructive", title: "JSON Fout", description: "Ongeldig formaat." });
-    } finally { setLoading(false); }
-  };
-
   const updateArtworkField = async (id: string, field: string, value: any) => {
     if (!firestore || !id) return;
     setIsSaving(true);
@@ -332,7 +303,22 @@ export default function AdminPage() {
               <Textarea value={bulkJson} onChange={(e) => setBulkJson(e.target.value)} placeholder='[{"title": "Werk", "series": "Reeks", "imageUrl": "..."}]' className="min-h-[400px] font-mono text-[10px] rounded-2xl bg-black/5" />
               <div className="grid grid-cols-2 gap-4">
                 <Button onClick={() => jsonFileInputRef.current?.click()} variant="outline" className="h-14 rounded-xl text-[10px] font-bold uppercase tracking-widest">Bestand Kiezen</Button>
-                <Button onClick={handleBulkUpload} disabled={loading || !bulkJson} className="h-14 rounded-xl font-bold uppercase tracking-widest">Importeer naar Cloud</Button>
+                <Button onClick={() => {
+                  if (!firestore || !bulkJson) return;
+                  setLoading(true);
+                  try {
+                    const artworksArray = JSON.parse(bulkJson);
+                    const items = Array.isArray(artworksArray) ? artworksArray : [artworksArray];
+                    items.forEach(item => {
+                      const { id, createdAt, ...rest } = item;
+                      addDoc(collection(firestore, 'artworks'), { ...rest, createdAt: serverTimestamp() });
+                    });
+                    toast({ title: "Import gestart" });
+                    setBulkJson('');
+                    setActiveTab('archive');
+                  } catch (e) { toast({ variant: "destructive", title: "Fout", description: "Ongeldige JSON." }); }
+                  finally { setLoading(false); }
+                }} disabled={loading || !bulkJson} className="h-14 rounded-xl font-bold uppercase tracking-widest">Importeer naar Cloud</Button>
               </div>
             </Card>
           </TabsContent>
@@ -454,7 +440,7 @@ export default function AdminPage() {
 
                 <div className="h-[45%] pt-2 flex flex-col gap-2 overflow-hidden">
                   <div className="flex items-center justify-between">
-                    <span className="text-[8px] font-black text-black uppercase tracking-widest">Thema's</span>
+                    <span className="text-[8px] font-black text-black uppercase tracking-widest">Thema's (klik om te toggelen/verwijderen)</span>
                     <div className="flex items-center gap-2">
                       <Input 
                         value={newTagInput}
@@ -485,9 +471,9 @@ export default function AdminPage() {
                       <button
                         key={tag}
                         onClick={() => toggleTag(tag)}
-                        className="px-2 py-1 rounded-sm text-[8px] font-black uppercase tracking-widest border bg-accent text-white border-accent"
+                        className="px-2 py-1 rounded-sm text-[8px] font-black uppercase tracking-widest border bg-accent text-white border-accent flex items-center gap-1 group/tag"
                       >
-                        {tag}
+                        {tag} <X className="w-2 h-2 opacity-40 group-hover/tag:opacity-100" />
                       </button>
                     ))}
                   </div>

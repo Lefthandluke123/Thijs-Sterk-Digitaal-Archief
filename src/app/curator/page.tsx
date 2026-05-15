@@ -131,10 +131,10 @@ export default function CuratorPage() {
                     key={tag}
                     onClick={() => toggleTag(tag)}
                     className={cn(
-                      "px-10 py-5 rounded-full text-[16px] font-black uppercase tracking-wider transition-all border-2 shadow-xl",
+                      "px-10 py-5 rounded-full text-[16px] font-black uppercase tracking-wider transition-all border-2 border-black shadow-xl",
                       isActive 
-                        ? "bg-black text-white border-black scale-105 shadow-2xl ring-4 ring-black/10" 
-                        : "bg-white text-black border-black hover:bg-black hover:text-white",
+                        ? "bg-black text-white scale-105 shadow-2xl ring-4 ring-black/10" 
+                        : "bg-white text-black hover:bg-black hover:text-white",
                       !isPresentInDb && "opacity-20 grayscale pointer-events-none border-dashed"
                     )}
                   >
