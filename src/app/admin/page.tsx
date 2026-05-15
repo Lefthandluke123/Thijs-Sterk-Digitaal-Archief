@@ -44,6 +44,43 @@ const STANDARD_TAGS = [
   "Bloemen", "Dieren", "Water", "Portretten", "Atmosferisch", "Licht", "Polder", "Kust"
 ];
 
+// Helper component for auto-repeat buttons
+function RepeatButton({ onClick, children, className, disabled }: { onClick: () => void, children: React.ReactNode, className?: string, disabled?: boolean }) {
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const start = useCallback(() => {
+    onClick();
+    timerRef.current = setTimeout(() => {
+      intervalRef.current = setInterval(() => {
+        onClick();
+      }, 50);
+    }, 400);
+  }, [onClick]);
+
+  const stop = useCallback(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    if (intervalRef.current) clearInterval(intervalRef.current);
+  }, []);
+
+  return (
+    <Button
+      variant="outline"
+      size="icon"
+      className={className}
+      disabled={disabled}
+      onMouseDown={start}
+      onMouseUp={stop}
+      onMouseLeave={stop}
+      onTouchStart={start}
+      onTouchEnd={stop}
+      onClick={(e) => { e.preventDefault(); }} // Native click handled by start
+    >
+      {children}
+    </Button>
+  );
+}
+
 export default function AdminPage() {
   const firestore = useFirestore();
   const storage = useStorage();
@@ -56,7 +93,6 @@ export default function AdminPage() {
   const uploadDirInputRef = useRef<HTMLInputElement>(null);
   const jsonFileInputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
-  const cancelUploadRef = useRef(false);
   
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
@@ -110,11 +146,9 @@ export default function AdminPage() {
     if (!files || files.length === 0 || !storage || !firestore) return;
     setIsUploading(true);
     setUploadProgress(0);
-    cancelUploadRef.current = false;
     const totalFiles = files.length;
 
     for (let i = 0; i < totalFiles; i++) {
-      if (cancelUploadRef.current) break;
       const file = files[i];
       if (!/\.(jpe?g|png|webp|avif)$/i.test(file.name)) continue;
 
@@ -345,7 +379,7 @@ export default function AdminPage() {
             <div className="flex items-start gap-12 w-full h-full">
               
               {/* Info & Status */}
-              <div className="flex flex-col gap-4 min-w-[200px]">
+              <div className="flex flex-col gap-4 min-w-[180px]">
                 <div className="space-y-1">
                   <Label className="text-[8px] font-black text-black uppercase tracking-widest">Titel</Label>
                   <Input 
@@ -355,7 +389,7 @@ export default function AdminPage() {
                   />
                 </div>
                 <div className="flex items-center justify-between bg-black/5 p-2 rounded-sm">
-                  <span className="text-[8px] font-black text-black uppercase tracking-widest">Zichtbaar op Home</span>
+                  <span className="text-[8px] font-black text-black uppercase tracking-widest">Home</span>
                   <Switch 
                     checked={editingArtwork?.featured || false} 
                     onCheckedChange={(val) => editingArtwork && updateArtworkField(editingArtwork.id, 'featured', val)}
@@ -367,7 +401,7 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              {/* Crop - Grote Knoppen */}
+              {/* Crop - Monumentale Knoppen */}
               <div className="flex items-center gap-8 border-l border-black/5 pl-8">
                 {['Top', 'Bottom', 'Left', 'Right'].map(side => {
                   const field = `crop${side}`;
@@ -376,17 +410,15 @@ export default function AdminPage() {
                     <div key={side} className="flex flex-col items-center gap-2">
                       <span className="text-[8px] font-black text-black uppercase tracking-widest">{side} {currentVal.toFixed(1)}%</span>
                       <div className="flex items-center gap-3">
-                        <Button 
-                          variant="outline" 
-                          size="icon" 
-                          className="h-14 w-14 border-black/10 hover:bg-black/5"
+                        <RepeatButton 
                           onClick={() => {
-                             const newVal = Math.max(0, currentVal - 0.1);
-                             editingArtwork && updateArtworkField(editingArtwork.id, field, newVal);
+                            const newVal = Math.max(0, currentVal - 0.1);
+                            editingArtwork && updateArtworkField(editingArtwork.id, field, newVal);
                           }}
+                          className="h-14 w-14 border-black/10 hover:bg-black/5"
                         >
                           <Minus className="h-5 w-5 text-black" />
-                        </Button>
+                        </RepeatButton>
                         <Slider 
                           value={[currentVal]} 
                           max={50} 
@@ -394,27 +426,25 @@ export default function AdminPage() {
                           onValueChange={([val]) => editingArtwork && updateArtworkField(editingArtwork.id, field, val)} 
                           className="w-24"
                         />
-                        <Button 
-                          variant="outline" 
-                          size="icon" 
-                          className="h-14 w-14 border-black/10 hover:bg-black/5"
+                        <RepeatButton 
                           onClick={() => {
                             const newVal = Math.min(50, currentVal + 0.1);
                             editingArtwork && updateArtworkField(editingArtwork.id, field, newVal);
                           }}
+                          className="h-14 w-14 border-black/10 hover:bg-black/5"
                         >
                           <Plus className="h-5 w-5 text-black" />
-                        </Button>
+                        </RepeatButton>
                       </div>
                     </div>
                   );
                 })}
               </div>
 
-              {/* Thema's - Meer Ruimte */}
-              <div className="flex flex-col gap-4 border-l border-black/5 pl-8 flex-1 min-w-[400px]">
+              {/* Thema's - Maximale Ruimte */}
+              <div className="flex flex-col gap-4 border-l border-black/5 pl-8 flex-1 min-w-[300px]">
                 <span className="text-[8px] font-black text-black uppercase tracking-widest">Thema's & Tags</span>
-                <div className="flex flex-wrap gap-2 max-h-[15vh] overflow-y-auto pr-2 no-scrollbar">
+                <div className="flex flex-wrap gap-2 max-h-[16vh] overflow-y-auto pr-2 no-scrollbar">
                   {STANDARD_TAGS.map(tag => (
                     <button
                       key={tag}
@@ -432,7 +462,7 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              {/* Licht */}
+              {/* Licht / Donker Slider */}
               <div className="flex flex-col items-center gap-4 border-l border-black/5 pl-8 min-w-[160px]">
                 <span className="text-[8px] font-black text-black uppercase tracking-widest">Licht {(editingArtwork?.brightness || 1).toFixed(2)}</span>
                 <Slider 
