@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 const STANDARD_TAGS = [
   "Groet", "Schoorl", "Hargen", "Amsterdam", "Frankrijk", 
@@ -38,11 +39,18 @@ export default function CuratorPage() {
     return query(collection(firestore, 'artworks'), orderBy('createdAt', 'desc'));
   }, [firestore]);
 
-  const { data: artworks, loading } = useCollection(artworksQuery);
+  const { data: dbArtworks, loading } = useCollection(artworksQuery);
+
+  const artworks = useMemo(() => {
+    if (!dbArtworks || dbArtworks.length === 0) {
+      return PlaceHolderImages.map(img => ({ ...img, createdAt: new Date() }));
+    }
+    return dbArtworks;
+  }, [dbArtworks]);
 
   const allAvailableTags = useMemo(() => {
     const dbTags = new Set<string>();
-    artworks?.forEach(art => {
+    artworks.forEach(art => {
       art.tags?.forEach((tag: string) => dbTags.add(tag));
     });
     const combined = new Set([...STANDARD_TAGS, ...Array.from(dbTags)]);
@@ -50,7 +58,7 @@ export default function CuratorPage() {
   }, [artworks]);
 
   const filteredArtworks = useMemo(() => {
-    if (!artworks || activeTags.length === 0) return [];
+    if (activeTags.length === 0) return [];
     return artworks.filter(art => activeTags.every(tag => art.tags?.includes(tag)));
   }, [artworks, activeTags]);
 
@@ -126,7 +134,7 @@ export default function CuratorPage() {
 
         {showResults && (
           <div className="mt-20 pt-12 border-t border-black/10">
-            {loading ? <div className="flex justify-center py-20"><Loader2 className="animate-spin opacity-30" /></div> : filteredArtworks.length > 0 ? (
+            {loading && dbArtworks?.length === 0 ? <div className="flex justify-center py-20"><Loader2 className="animate-spin opacity-30" /></div> : filteredArtworks.length > 0 ? (
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
                 {filteredArtworks.map(item => (
                   <div key={item.id} className="group cursor-pointer" onClick={() => setSelectedArtwork(item)}>

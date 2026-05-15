@@ -8,7 +8,7 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { ArrowDownRight } from 'lucide-react';
 
 export function Hero() {
-  const heroImage = PlaceHolderImages.find(img => img.id === 'hero-image');
+  const heroImage = PlaceHolderImages.find(img => img.id === 'basis-1' || img.id === 'hero-image');
 
   return (
     <section className="relative min-h-[60vh] flex flex-col items-center justify-center pt-24 px-4 overflow-hidden">
@@ -19,16 +19,16 @@ export function Hero() {
 
       <div className="container mx-auto z-10 text-center">
         <div className="inline-block animate-fade-in-up">
-          <span className="text-primary font-medium tracking-[0.2em] uppercase text-[9px] mb-4 block opacity-60">
+          <span className="text-primary font-medium tracking-[0.2em] uppercase text-[8px] mb-4 block opacity-60">
             Retrospectief &bull; Thijs Sterk (1913-1982)
           </span>
         </div>
         
-        <h1 className="font-headline text-xl md:text-2xl lg:text-3xl font-light tracking-tight text-foreground mb-8 max-w-3xl mx-auto leading-tight animate-fade-in-up delay-100">
+        <h1 className="font-headline text-lg md:text-xl lg:text-2xl font-light tracking-tight text-foreground mb-8 max-w-2xl mx-auto leading-tight animate-fade-in-up delay-100">
           Thijs Sterk: Schilder van <span className="italic">Licht, Ruimte en Water</span>
         </h1>
         
-        <p className="text-muted-foreground text-[10px] md:text-xs max-w-xl mx-auto mb-10 leading-relaxed animate-fade-in-up delay-200 font-light opacity-60 uppercase tracking-[0.1em]">
+        <p className="text-muted-foreground text-[9px] md:text-[10px] max-w-lg mx-auto mb-10 leading-relaxed animate-fade-in-up delay-200 font-light opacity-60 uppercase tracking-[0.1em]">
           Een verkenning van de atmosfeer van de Lage Landen. Van de vroege realistische landschappen tot de verstilde vergezichten van de geest.
         </p>
         

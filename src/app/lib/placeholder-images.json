@@ -1,21 +1,44 @@
+
 {
   "placeholderImages": [
     {
-      "id": "hero-image",
+      "id": "basis-1",
       "title": "Licht over de Polder",
       "series": "Landschappen",
       "year": "1954",
       "medium": "Olieverf op doek",
       "description": "Een representatief werk dat de essentie van Thijs Sterk's visie op licht en ruimte vangt.",
-      "imageUrl": "https://picsum.photos/seed/hero/1200/600",
-      "imageHint": "atmospheric landscape"
+      "imageUrl": "https://picsum.photos/seed/polder1/1200/800",
+      "imageHint": "atmospheric polder",
+      "tags": ["Polder", "Licht", "Olieverf"],
+      "featured": true,
+      "cropTop": 0, "cropBottom": 0, "cropLeft": 0, "cropRight": 0, "brightness": 1
     },
     {
-      "id": "artist-portrait",
-      "title": "Thijs Sterk in zijn Atelier",
-      "description": "Portret van de kunstenaar aan het werk.",
-      "imageUrl": "https://picsum.photos/seed/artist/800/1000",
-      "imageHint": "vintage artist portrait"
+      "id": "basis-2",
+      "title": "De Branding bij Hargen",
+      "series": "Landschappen",
+      "year": "1962",
+      "medium": "Olieverf",
+      "description": "Studie van water en beweging.",
+      "imageUrl": "https://picsum.photos/seed/sea1/1200/800",
+      "imageHint": "sea waves painting",
+      "tags": ["Kust", "Hargen", "Water"],
+      "featured": true,
+      "cropTop": 0, "cropBottom": 0, "cropLeft": 0, "cropRight": 0, "brightness": 1
+    },
+    {
+      "id": "basis-3",
+      "title": "Bloemenstilleven",
+      "series": "Bloemen",
+      "year": "1958",
+      "medium": "Aquarel",
+      "description": "Zachte tonen in het atelier.",
+      "imageUrl": "https://picsum.photos/seed/flowers1/1200/800",
+      "imageHint": "flower still life",
+      "tags": ["Bloemen", "Aquarel"],
+      "featured": true,
+      "cropTop": 0, "cropBottom": 0, "cropLeft": 0, "cropRight": 0, "brightness": 1
     }
   ]
 }

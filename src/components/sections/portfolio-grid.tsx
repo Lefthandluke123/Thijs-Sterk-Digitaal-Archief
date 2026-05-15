@@ -5,8 +5,8 @@ import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where, limit, orderBy } from 'firebase/firestore';
 import { Dialog, DialogContent, DialogTitle, DialogClose } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Maximize2, Loader2, X, Star, ChevronLeft, ChevronRight } from 'lucide-react';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export function PortfolioGrid() {
   const [selectedArtwork, setSelectedArtwork] = useState<any | null>(null);
@@ -26,8 +26,15 @@ export function PortfolioGrid() {
   const { data: latestArtworks, loading: loadingLatest } = useCollection(latestQuery);
 
   const displayArtworks = useMemo(() => {
-    if (featuredArtworks && featuredArtworks.length > 0) return featuredArtworks;
-    return latestArtworks || [];
+    const dbArtworks = featuredArtworks && featuredArtworks.length > 0 
+      ? featuredArtworks 
+      : (latestArtworks || []);
+    
+    // Als de database leeg is, gebruik de basis JSON
+    if (dbArtworks.length === 0) {
+      return PlaceHolderImages.filter(img => img.featured);
+    }
+    return dbArtworks;
   }, [featuredArtworks, latestArtworks]);
 
   const navigateDisplay = useCallback((direction: 'next' | 'prev') => {
@@ -57,16 +64,18 @@ export function PortfolioGrid() {
       <div className="container mx-auto">
         <div className="flex flex-col md:flex-row items-end justify-between mb-16 gap-8">
           <div className="max-w-2xl">
-            <h2 className="font-headline text-5xl md:text-6xl font-light mb-6 tracking-tighter">
-              {featuredArtworks && featuredArtworks.length > 0 ? 'Meester Selectie' : 'Recente Werken'}
+            <h2 className="font-headline text-2xl md:text-3xl font-light mb-4 tracking-tight">
+              Meester <span className="italic">Selectie</span>
             </h2>
           </div>
-          <div className="flex gap-10 text-[11px] font-black tracking-[0.3em] uppercase">
+          <div className="flex gap-10 text-[10px] font-black tracking-[0.3em] uppercase">
             <a href="/gallery" className="text-muted-foreground hover:text-foreground transition-all pb-1 border-b border-transparent hover:border-accent">Bekijk de Zalen</a>
           </div>
         </div>
 
-        {loading ? <div className="flex justify-center py-24"><Loader2 className="animate-spin opacity-30" /></div> : (
+        {loading && displayArtworks.length === 0 ? (
+          <div className="flex justify-center py-24"><Loader2 className="animate-spin opacity-30" /></div>
+        ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {displayArtworks.map(art => (
               <div key={art.id} className="group relative cursor-pointer" onClick={() => setSelectedArtwork(art)}>
@@ -96,8 +105,8 @@ export function PortfolioGrid() {
             <DialogClose className="absolute top-8 right-8 z-50 p-3 bg-background/10 backdrop-blur-sm rounded-full hover:bg-background/20"><X className="w-6 h-6 opacity-40" /></DialogClose>
           </div>
           <div className="h-[15vh] w-full bg-background/95 backdrop-blur-md py-4 px-12 border-t border-border/10 flex flex-col items-center justify-center overflow-y-auto">
-            <h2 className="font-headline text-lg md:text-xl font-light uppercase tracking-tight">{selectedArtwork?.title}</h2>
-            <div className="text-[9px] md:text-[11px] uppercase font-black tracking-[0.3em] text-accent flex gap-8 opacity-90 mt-1">
+            <h2 className="font-headline text-[14px] md:text-[16px] font-light uppercase tracking-tight text-center">{selectedArtwork?.title}</h2>
+            <div className="text-[9px] md:text-[11px] uppercase font-black tracking-[0.3em] text-accent flex gap-8 opacity-90 mt-1.5 justify-center">
               <span>{selectedArtwork?.series}</span>
               <span className="w-1 h-1 rounded-full bg-accent/30 self-center" />
               <span>{selectedArtwork?.year}</span>

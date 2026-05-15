@@ -6,9 +6,9 @@ import { useSearchParams } from 'next/navigation';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { Dialog, DialogContent, DialogTitle, DialogClose } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Maximize2, Loader2, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 function GalleryContent() {
   const searchParams = useSearchParams();
@@ -23,10 +23,16 @@ function GalleryContent() {
     return query(collection(firestore, 'artworks'), orderBy('createdAt', 'desc'));
   }, [firestore]);
 
-  const { data: artworks, loading } = useCollection(artworksQuery);
+  const { data: dbArtworks, loading } = useCollection(artworksQuery);
+
+  const artworks = useMemo(() => {
+    if (!dbArtworks || dbArtworks.length === 0) {
+      return PlaceHolderImages.map(img => ({ ...img, createdAt: new Date() }));
+    }
+    return dbArtworks;
+  }, [dbArtworks]);
 
   const seriesNames = useMemo(() => {
-    if (!artworks) return [];
     const names = Array.from(new Set(artworks.map(art => art.series || "Andere")));
     return names.sort();
   }, [artworks]);
@@ -41,7 +47,7 @@ function GalleryContent() {
   }, [searchParams, seriesNames, activeSeries]);
 
   const filteredArtworks = useMemo(() => {
-    if (!artworks || !activeSeries) return [];
+    if (!activeSeries) return [];
     return artworks.filter(art => (art.series || "Andere") === activeSeries);
   }, [artworks, activeSeries]);
 
@@ -69,17 +75,17 @@ function GalleryContent() {
     <main className="min-h-screen bg-background pt-14">
       <div className="w-full bg-secondary/5 border-b border-border/10 py-12 md:py-16">
         <div className="container mx-auto px-6 max-w-7xl">
-          <h1 className="font-headline text-xl md:text-3xl font-light text-foreground text-center tracking-tighter">
+          <h1 className="font-headline text-lg md:text-xl font-light text-foreground text-center tracking-tighter">
             <span className="italic">{activeSeries || "Laden..."}</span>
           </h1>
-          <p className="text-center text-accent mt-4 uppercase tracking-[0.5em] text-[9px] font-black opacity-80">
+          <p className="text-center text-accent mt-4 uppercase tracking-[0.5em] text-[8px] font-black opacity-80">
             Zaal &bull; {activeSeries || "..."}
           </p>
         </div>
       </div>
 
       <div className="container mx-auto max-w-7xl px-6 pb-32">
-        {loading ? (
+        {loading && dbArtworks?.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-32"><Loader2 className="w-8 h-8 animate-spin text-accent/40" /></div>
         ) : (
           <>
@@ -145,10 +151,10 @@ function GalleryContent() {
               />
             )}
             <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-8 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-              <button onClick={(e) => { e.stopPropagation(); navigateGallery('prev'); }} className="p-4 rounded-full bg-background/20 backdrop-blur-md pointer-events-auto hover:bg-background/40 transition-all shadow-xl">
+              <button onClick={() => navigateGallery('prev')} className="p-4 rounded-full bg-background/20 backdrop-blur-md pointer-events-auto hover:bg-background/40 transition-all shadow-xl">
                 <ChevronLeft className="w-8 h-8" />
               </button>
-              <button onClick={(e) => { e.stopPropagation(); navigateGallery('next'); }} className="p-4 rounded-full bg-background/20 backdrop-blur-md pointer-events-auto hover:bg-background/40 transition-all shadow-xl">
+              <button onClick={() => navigateGallery('next')} className="p-4 rounded-full bg-background/20 backdrop-blur-md pointer-events-auto hover:bg-background/40 transition-all shadow-xl">
                 <ChevronRight className="w-8 h-8" />
               </button>
             </div>
@@ -158,7 +164,7 @@ function GalleryContent() {
           </div>
 
           <div className="h-[15vh] w-full bg-background/95 backdrop-blur-md py-4 px-12 border-t border-border/10 shadow-2xl flex flex-col items-center justify-center overflow-y-auto">
-            <div className="max-w-6xl mx-auto flex flex-col items-center text-center gap-1">
+            <div className="max-w-6xl mx-auto flex flex-col items-center text-center gap-1.5">
               <h2 className="font-headline text-[14px] md:text-[16px] font-light text-foreground tracking-tight leading-tight uppercase">
                 {selectedArtwork?.title}
               </h2>
