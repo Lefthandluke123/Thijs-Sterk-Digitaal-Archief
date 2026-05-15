@@ -31,7 +31,8 @@ import {
   Filter,
   CheckSquare,
   Square,
-  MoveHorizontal
+  MoveHorizontal,
+  AlertTriangle
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -42,6 +43,17 @@ import { Progress } from '@/components/ui/progress';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 function RepeatButton({ onStep, children, className, disabled }: { onStep: () => void, children: React.ReactNode, className?: string, disabled?: boolean }) {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -161,6 +173,17 @@ export default function AdminPage() {
     setEditingId(filteredArtworks[nextIndex].id);
   }, [editingId, filteredArtworks]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!editingId) return;
+      if (e.key === 'ArrowRight') navigateEditing('next');
+      if (e.key === 'ArrowLeft') navigateEditing('prev');
+      if (e.key === 'Escape') setEditingId(null);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [editingId, navigateEditing]);
+
   const updateArtworkField = async (id: string, field: string, value: any) => {
     if (!firestore || !id) return;
     setIsSaving(true);
@@ -188,6 +211,46 @@ export default function AdminPage() {
       setBulkMoveSeries('');
     } catch (e) {
       toast({ variant: "destructive", title: "Fout bij bulk verplaatsing" });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (!firestore || selectedIds.length === 0) return;
+    setIsSaving(true);
+    const batch = writeBatch(firestore);
+    selectedIds.forEach(id => {
+      const artRef = doc(firestore, 'artworks', id);
+      batch.delete(artRef);
+    });
+    
+    try {
+      await batch.commit();
+      toast({ title: "Verwijderen gelukt", description: `${selectedIds.length} werken verwijderd` });
+      setSelectedIds([]);
+    } catch (e) {
+      toast({ variant: "destructive", title: "Fout bij verwijderen" });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteCurrentSeries = async () => {
+    if (!firestore || !filterSeries || filteredArtworks.length === 0) return;
+    setIsSaving(true);
+    const batch = writeBatch(firestore);
+    filteredArtworks.forEach(art => {
+      const artRef = doc(firestore, 'artworks', art.id);
+      batch.delete(artRef);
+    });
+    
+    try {
+      await batch.commit();
+      toast({ title: "Zaal gesloten", description: `Alle ${filteredArtworks.length} werken uit ${filterSeries} zijn verwijderd.` });
+      setFilterSeries(null);
+    } catch (e) {
+      toast({ variant: "destructive", title: "Fout bij het sluiten van de zaal" });
     } finally {
       setIsSaving(false);
     }
@@ -240,7 +303,7 @@ export default function AdminPage() {
         const downloadUrl = await getDownloadURL(snapshot.ref);
         await addDoc(collection(firestore, 'artworks'), {
           title: file.name.split('.')[0],
-          series: "Nieuw",
+          series: filterSeries || "Nieuw",
           year: new Date().getFullYear().toString(),
           medium: "Olieverf",
           imageUrl: downloadUrl,
@@ -337,8 +400,32 @@ export default function AdminPage() {
               ))}
             </div>
 
+            <div className="flex justify-between items-center h-12">
+               {filterSeries && (
+                 <AlertDialog>
+                   <AlertDialogTrigger asChild>
+                     <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-600 hover:bg-red-50 text-[9px] uppercase font-black tracking-widest">
+                       <Trash2 className="w-3 h-3 mr-2" /> Zaal "{filterSeries}" sluiten & legen
+                     </Button>
+                   </AlertDialogTrigger>
+                   <AlertDialogContent>
+                     <AlertDialogHeader>
+                       <AlertDialogTitle>Zaal sluiten?</AlertDialogTitle>
+                       <AlertDialogDescription>
+                         Dit zal ALLE {filteredArtworks.length} schilderijen in de zaal "{filterSeries}" definitief verwijderen. Deze actie kan niet ongedaan worden gemaakt.
+                       </AlertDialogDescription>
+                     </AlertDialogHeader>
+                     <AlertDialogFooter>
+                       <AlertDialogCancel>Annuleren</AlertDialogCancel>
+                       <AlertDialogAction onClick={handleDeleteCurrentSeries} className="bg-red-500 hover:bg-red-600">Verwijderen</AlertDialogAction>
+                     </AlertDialogFooter>
+                   </AlertDialogContent>
+                 </AlertDialog>
+               )}
+            </div>
+
             {selectedIds.length > 0 && (
-              <div className="bg-accent/10 border border-accent/20 p-4 rounded-2xl flex items-center justify-between animate-in fade-in slide-in-from-top-4">
+              <div className="bg-accent/10 border border-accent/20 p-4 rounded-2xl flex flex-wrap items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4">
                 <div className="flex items-center gap-4">
                   <span className="text-[10px] font-black uppercase tracking-widest text-accent">{selectedIds.length} geselecteerd</span>
                   <div className="flex items-center gap-2">
@@ -353,7 +440,26 @@ export default function AdminPage() {
                     </Button>
                   </div>
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => setSelectedIds([])} className="text-[9px] font-black uppercase tracking-widest">Annuleren</Button>
+                <div className="flex items-center gap-2">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                       <Button variant="outline" size="sm" className="h-8 rounded-full text-[9px] font-black uppercase tracking-widest text-red-500 border-red-200">
+                         <Trash2 className="w-3 h-3 mr-2" /> Selectie Verwijderen
+                       </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Selectie verwijderen?</AlertDialogTitle>
+                        <AlertDialogDescription>Weet u zeker dat u deze {selectedIds.length} schilderijen wilt verwijderen?</AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Annuleren</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleBulkDelete} className="bg-red-500">Verwijderen</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                  <Button variant="ghost" size="sm" onClick={() => setSelectedIds([])} className="text-[9px] font-black uppercase tracking-widest">Annuleren</Button>
+                </div>
               </div>
             )}
 
@@ -587,7 +693,7 @@ export default function AdminPage() {
                     step={0.01} 
                     onValueChange={([val]) => {
                       setLocalCrops(prev => ({ ...prev, brightness: val }));
-                      editingId && updateArtworkField(editingId, 'brightness', val);
+                      editingId && updateArtworkField(editingId, field, val);
                     }}
                     className="w-28"
                   />
