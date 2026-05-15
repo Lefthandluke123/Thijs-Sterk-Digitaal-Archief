@@ -613,14 +613,14 @@ export default function AdminPage() {
               <div className="flex flex-col flex-1 min-w-0 border-r border-black/5 pr-8">
                 <div className="flex items-center justify-between gap-6 pb-6 border-b border-black/5">
                   {['Top', 'Bottom', 'Left', 'Right'].map(side => {
-                    const field = `crop${side}`;
-                    const currentVal = localCrops[field] ?? (editingArtwork as any)?.[field] ?? 0;
+                    const fieldName = `crop${side}`;
+                    const currentVal = localCrops[fieldName] ?? (editingArtwork as any)?.[fieldName] ?? 0;
                     return (
                       <div key={side} className="flex flex-col items-center gap-2">
                         <span className="text-[10px] font-black text-black uppercase tracking-widest">{side} {currentVal.toFixed(1)}%</span>
                         <div className="flex items-center gap-2">
                           <RepeatButton 
-                            onStep={() => handleLocalStep(field, -0.1)}
+                            onStep={() => handleLocalStep(fieldName, -0.1)}
                             className="h-10 w-10"
                           >
                             <Minus className="h-5 w-5 text-black" />
@@ -630,13 +630,13 @@ export default function AdminPage() {
                             max={50} 
                             step={0.1} 
                             onValueChange={([val]) => {
-                              setLocalCrops(prev => ({ ...prev, [field]: val }));
-                              editingId && updateArtworkField(editingId, field, val);
+                              setLocalCrops(prev => ({ ...prev, [fieldName]: val }));
+                              editingId && updateArtworkField(editingId, fieldName, val);
                             }}
                             className="w-24"
                           />
                           <RepeatButton 
-                            onStep={() => handleLocalStep(field, 0.1)}
+                            onStep={() => handleLocalStep(fieldName, 0.1)}
                             className="h-10 w-10"
                           >
                             <Plus className="h-5 w-5 text-black" />
@@ -693,7 +693,7 @@ export default function AdminPage() {
                     step={0.01} 
                     onValueChange={([val]) => {
                       setLocalCrops(prev => ({ ...prev, brightness: val }));
-                      editingId && updateArtworkField(editingId, field, val);
+                      editingId && updateArtworkField(editingId, 'brightness', val);
                     }}
                     className="w-28"
                   />
