@@ -33,7 +33,8 @@ import {
   Square,
   CheckSquare,
   Copy,
-  Type
+  Type,
+  ImageIcon
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -350,6 +351,11 @@ export default function AdminPage() {
     toast({ title: "Basis JSON gegenereerd", description: "Kopieer de tekst uit het Bulk-veld en stuur deze naar mij." });
   };
 
+  const copyImageUrl = (url: string) => {
+    navigator.clipboard.writeText(url);
+    toast({ title: "URL Gekopieerd", description: "Plak deze URL nu in het 'Pagina Teksten' beheer bij de juiste persoon." });
+  };
+
   const STANDARD_TAGS = [
     "Groet", "Schoorl", "Hargen", "Amsterdam", "Frankrijk", 
     "Griekenland", "Olieverf", "Aquarel", "Monumentaal", "Glas in lood",
@@ -499,6 +505,13 @@ export default function AdminPage() {
                     </button>
                     <div className="relative aspect-square bg-muted/20">
                       <img src={art.imageUrl} className="w-full h-full object-cover" style={{ clipPath: `inset(${art.cropTop || 0}% ${art.cropRight || 0}% ${art.cropBottom || 0}% ${art.cropLeft || 0}%)`, filter: `brightness(${art.brightness || 1})` }} />
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); copyImageUrl(art.imageUrl); }}
+                        className="absolute bottom-2 right-2 p-1.5 bg-black/60 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/80"
+                        title="Kopieer URL voor Biografie"
+                      >
+                        <Copy className="w-3 h-3" />
+                      </button>
                     </div>
                     <CardContent className="p-2 text-center">
                       <h4 className="text-[9px] font-black text-black uppercase tracking-widest truncate">{art.title}</h4>
@@ -530,51 +543,114 @@ export default function AdminPage() {
             <Card className="p-8 rounded-3xl max-w-4xl mx-auto space-y-8">
               <div className="flex items-center gap-3 border-b border-black/5 pb-4">
                 <Type className="w-5 h-5 text-accent" />
-                <h2 className="text-[12px] font-black uppercase tracking-[0.2em]">Pagina Teksten Beheren</h2>
+                <h2 className="text-[12px] font-black uppercase tracking-[0.2em]">Pagina Teksten & Foto's Beheren</h2>
+              </div>
+
+              <div className="bg-accent/5 p-4 rounded-xl border border-accent/20 flex gap-4 items-center">
+                <ImageIcon className="w-8 h-8 text-accent shrink-0" />
+                <p className="text-[10px] font-bold uppercase tracking-widest text-accent/80 leading-relaxed">
+                  Tip: Gebruik de "Kopieer URL" knop bij een schilderij in het archief om de afbeelding hieronder te koppelen aan een biografie.
+                </p>
               </div>
               
-              <div className="grid gap-8">
-                <div className="space-y-2">
-                  <Label className="text-[9px] font-black uppercase tracking-widest text-accent">Biografie Homepagina</Label>
-                  <Textarea 
-                    defaultValue={siteSettings?.homeBio || ''} 
-                    onBlur={(e) => updateSettingsField('homeBio', e.target.value)}
-                    placeholder="De tekst die onder 'De Biografie' verschijnt op de voorpagina..."
-                    className="min-h-[150px] bg-black/5 border-none rounded-xl p-4 text-sm"
-                  />
+              <div className="grid gap-12">
+                {/* Home Bio Section */}
+                <div className="space-y-4 border-l-2 border-accent/10 pl-6">
+                  <Label className="text-[11px] font-black uppercase tracking-[0.2em] text-accent block mb-2">Homepagina - Thijs Sterk</Label>
+                  <div className="grid gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-[9px] font-black uppercase tracking-widest opacity-40">Afbeelding URL</Label>
+                      <Input 
+                        defaultValue={siteSettings?.homeBioImageUrl || ''} 
+                        onBlur={(e) => updateSettingsField('homeBioImageUrl', e.target.value)}
+                        placeholder="Plak hier de gekopieerde URL van een schilderij..."
+                        className="bg-black/5 border-none h-10 text-xs"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-[9px] font-black uppercase tracking-widest opacity-40">Biografie Tekst</Label>
+                      <Textarea 
+                        defaultValue={siteSettings?.homeBio || ''} 
+                        onBlur={(e) => updateSettingsField('homeBio', e.target.value)}
+                        className="min-h-[120px] bg-black/5 border-none rounded-xl p-4 text-sm"
+                      />
+                    </div>
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-[9px] font-black uppercase tracking-widest text-accent">Hanneke Sterk Pagina</Label>
-                  <Textarea 
-                    defaultValue={siteSettings?.hannekeBio || ''} 
-                    onBlur={(e) => updateSettingsField('hannekeBio', e.target.value)}
-                    className="min-h-[120px] bg-black/5 border-none rounded-xl p-4 text-sm"
-                  />
+                {/* Hanneke Section */}
+                <div className="space-y-4 border-l-2 border-accent/10 pl-6">
+                  <Label className="text-[11px] font-black uppercase tracking-[0.2em] text-accent block mb-2">Hanneke Sterk Pagina</Label>
+                  <div className="grid gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-[9px] font-black uppercase tracking-widest opacity-40">Afbeelding URL</Label>
+                      <Input 
+                        defaultValue={siteSettings?.hannekeBioImageUrl || ''} 
+                        onBlur={(e) => updateSettingsField('hannekeBioImageUrl', e.target.value)}
+                        className="bg-black/5 border-none h-10 text-xs"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-[9px] font-black uppercase tracking-widest opacity-40">Tekst</Label>
+                      <Textarea 
+                        defaultValue={siteSettings?.hannekeBio || ''} 
+                        onBlur={(e) => updateSettingsField('hannekeBio', e.target.value)}
+                        className="min-h-[100px] bg-black/5 border-none rounded-xl p-4 text-sm"
+                      />
+                    </div>
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-[9px] font-black uppercase tracking-widest text-accent">Beatrijs Sterk Pagina</Label>
-                  <Textarea 
-                    defaultValue={siteSettings?.beatrijsBio || ''} 
-                    onBlur={(e) => updateSettingsField('beatrijsBio', e.target.value)}
-                    className="min-h-[120px] bg-black/5 border-none rounded-xl p-4 text-sm"
-                  />
+                {/* Beatrijs Section */}
+                <div className="space-y-4 border-l-2 border-accent/10 pl-6">
+                  <Label className="text-[11px] font-black uppercase tracking-[0.2em] text-accent block mb-2">Beatrijs Sterk Pagina</Label>
+                  <div className="grid gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-[9px] font-black uppercase tracking-widest opacity-40">Afbeelding URL</Label>
+                      <Input 
+                        defaultValue={siteSettings?.beatrijsBioImageUrl || ''} 
+                        onBlur={(e) => updateSettingsField('beatrijsBioImageUrl', e.target.value)}
+                        className="bg-black/5 border-none h-10 text-xs"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-[9px] font-black uppercase tracking-widest opacity-40">Tekst</Label>
+                      <Textarea 
+                        defaultValue={siteSettings?.beatrijsBio || ''} 
+                        onBlur={(e) => updateSettingsField('beatrijsBio', e.target.value)}
+                        className="min-h-[100px] bg-black/5 border-none rounded-xl p-4 text-sm"
+                      />
+                    </div>
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-[9px] font-black uppercase tracking-widest text-accent">Peter Bes Pagina</Label>
-                  <Textarea 
-                    defaultValue={siteSettings?.peterBesBio || ''} 
-                    onBlur={(e) => updateSettingsField('peterBesBio', e.target.value)}
-                    className="min-h-[120px] bg-black/5 border-none rounded-xl p-4 text-sm"
-                  />
+                {/* Peter Bes Section */}
+                <div className="space-y-4 border-l-2 border-accent/10 pl-6">
+                  <Label className="text-[11px] font-black uppercase tracking-[0.2em] text-accent block mb-2">Peter Bes Pagina</Label>
+                  <div className="grid gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-[9px] font-black uppercase tracking-widest opacity-40">Afbeelding URL</Label>
+                      <Input 
+                        defaultValue={siteSettings?.peterBesBioImageUrl || ''} 
+                        onBlur={(e) => updateSettingsField('peterBesBioImageUrl', e.target.value)}
+                        className="bg-black/5 border-none h-10 text-xs"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-[9px] font-black uppercase tracking-widest opacity-40">Tekst</Label>
+                      <Textarea 
+                        defaultValue={siteSettings?.peterBesBio || ''} 
+                        onBlur={(e) => updateSettingsField('peterBesBio', e.target.value)}
+                        className="min-h-[100px] bg-black/5 border-none rounded-xl p-4 text-sm"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div className="pt-4 flex items-center gap-2">
+              <div className="pt-8 flex items-center gap-2 border-t border-black/5">
                 {isSaving ? <Loader2 className="w-3 h-3 animate-spin text-accent" /> : <CheckCircle2 className="w-3 h-3 text-green-500" />}
-                <span className="text-[9px] font-black uppercase tracking-widest opacity-40">{isSaving ? 'Opslaan...' : 'Alle teksten opgeslagen'}</span>
+                <span className="text-[9px] font-black uppercase tracking-widest opacity-40">{isSaving ? 'Opslaan...' : 'Alle teksten en afbeeldingen opgeslagen'}</span>
               </div>
             </Card>
           </TabsContent>

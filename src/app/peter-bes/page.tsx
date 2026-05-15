@@ -15,6 +15,7 @@ export default function PeterBesPage() {
   const { data: siteSettings } = useDoc(siteSettingsRef);
 
   const bioText = siteSettings?.peterBesBio || `Peter Bes was een leerling van Thijs Sterk. Onder de vleugels van zijn meester ontwikkelde hij een eigen vormentaal, terwijl hij de lessen over licht en compositie altijd in zijn hart hield.\n\nDe band tussen leermeester en leerling was meer dan louter technisch; het was een gedeelde zoektocht naar de ziel van het schilderen. Zijn herinneringen werpen een uniek licht op de didactische en menselijke kant van Thijs. Peter herinnert hem als een strenge maar rechtvaardige mentor die altijd zocht naar de essentie.`;
+  const portraitUrl = siteSettings?.peterBesBioImageUrl || 'https://picsum.photos/seed/peterbes/800/1000';
 
   return (
     <main className="min-h-screen bg-background pt-24 pb-32">
@@ -23,14 +24,11 @@ export default function PeterBesPage() {
           <div className="lg:col-span-5">
             <div className="relative aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl bg-secondary/20">
               <Image 
-                src="/peter-bes.jpg" 
+                src={portraitUrl} 
                 alt="Peter Bes" 
                 fill 
                 className="object-cover" 
                 data-ai-hint="portrait artist man"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = 'https://picsum.photos/seed/peterbes/800/1000';
-                }}
               />
               <div className="absolute bottom-4 right-4 z-10 opacity-20 text-[8px] uppercase tracking-widest text-white font-bold bg-black/40 px-2 py-1 rounded-sm">
                 &copy; Erven Thijs Sterk

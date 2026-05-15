@@ -128,17 +128,33 @@
           "type": "string",
           "description": "Biografie op de homepagina"
         },
+        "homeBioImageUrl": {
+          "type": "string",
+          "description": "URL naar de afbeelding bij de biografie op home"
+        },
         "hannekeBio": {
           "type": "string",
           "description": "Biografie van Hanneke Sterk"
+        },
+        "hannekeBioImageUrl": {
+          "type": "string",
+          "description": "URL naar de foto van Hanneke"
         },
         "beatrijsBio": {
           "type": "string",
           "description": "Biografie van Beatrijs Sterk"
         },
+        "beatrijsBioImageUrl": {
+          "type": "string",
+          "description": "URL naar de foto van Beatrijs"
+        },
         "peterBesBio": {
           "type": "string",
           "description": "Biografie van Peter Bes"
+        },
+        "peterBesBioImageUrl": {
+          "type": "string",
+          "description": "URL naar de foto van Peter Bes"
         }
       }
     }

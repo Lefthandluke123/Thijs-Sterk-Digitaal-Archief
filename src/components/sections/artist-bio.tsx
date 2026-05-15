@@ -17,7 +17,8 @@ export function ArtistBio() {
   }, [firestore]);
   const { data: siteSettings } = useDoc(siteSettingsRef);
 
-  const bioText = siteSettings?.homeBio || `Thijs Sterk (1913-1982) wijdde zijn leven aan het doorgronden van de atmosferische kwaliteiten van de Lage Landen. Geboren in een tijd van grote verandering, vond hij zijn rust in de uitgestrekte waterpartijen en het immer veranderende licht boven het polderlandschap.\n\nZijn vroege werk kenmerkt zich door een meesterlijke beheersing van de figuratieve traditie, maar gedurende zijn carrière bewoog hij zich steeds verder naar de kern. Hij liet de details varen om de ruimte en de emotie van de plek te vangen in brede, textuurrijke streken.\n\n"Licht is niet iets dat op een object valt," schreef hij in 1954 in zijn dagboek, "het is de ruimte die tussen mij en de wereld ademt." Vandaag de dag wordt zijn oeuvre beschouwd als een cruciale schakel in de overgang naar de naoorlogse abstractie in de Nederlandse schilderkunst.`;
+  const bioText = siteSettings?.homeBio || `Thijs Sterk (1913-1982) wijdde zijn leven aan het doorgronden van de atmosferische kwaliteiten van de Lage Landen. Geboren in een tijd van grote verandering, vond hij zijn rust in de uitgestrekte waterpartijen en het immer veranderende licht boven het polderlandschap.\n\nZijn vroege werk kenmercht zich door een meesterlijke beheersing van de figuratieve traditie, maar gedurende zijn carrière bewoog hij zich steeds verder naar de kern. Hij liet de details varen om de ruimte en de emotie van de plek te vangen in brede, textuurrijke streken.\n\n"Licht is niet iets dat op een object valt," schreef hij in 1954 in zijn dagboek, "het is de ruimte die tussen mij en de wereld ademt." Vandaag de dag wordt zijn oeuvre beschouwd als een cruciale schakel in de overgang naar de naoorlogse abstractie in de Nederlandse schilderkunst.`;
+  const bioImageUrl = siteSettings?.homeBioImageUrl || (portrait ? portrait.imageUrl : 'https://picsum.photos/seed/thijs/800/1000');
 
   return (
     <section className="py-24 bg-secondary/30 px-4" id="about">
@@ -27,19 +28,13 @@ export function ArtistBio() {
             <div className="relative">
               <div className="absolute -top-6 -left-6 w-24 h-24 border-t-2 border-l-2 border-accent" />
               <div className="relative aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl">
-                {portrait ? (
-                  <Image
-                    src={portrait.imageUrl}
-                    alt="Portret van Thijs Sterk"
-                    fill
-                    className="object-cover"
-                    data-ai-hint="vintage artist portrait"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-muted/20 flex items-center justify-center">
-                    <span className="text-[10px] font-black uppercase opacity-20">Portret</span>
-                  </div>
-                )}
+                <Image
+                  src={bioImageUrl}
+                  alt="Portret van Thijs Sterk"
+                  fill
+                  className="object-cover"
+                  data-ai-hint="vintage artist portrait"
+                />
               </div>
             </div>
           </div>

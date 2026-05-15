@@ -15,6 +15,7 @@ export default function BeatrijsSterkPage() {
   const { data: siteSettings } = useDoc(siteSettingsRef);
 
   const bioText = siteSettings?.beatrijsBio || `Beatrijs Sterk deelt als dochter de passie voor het landschap en de atmosferische rust die haar vaders werk zo typeert. Zij ziet het archief niet slechts als een verzameling beelden, maar als een levende geschiedenis van een kunstenaarsleven.\n\nHaar bijdrage aan dit retrospectief is essentieel voor het duiden van de intiemere momenten en de visie die Thijs Sterk had op de wereld om hem heen. Voor Beatrijs is de website een manier om het licht dat haar vader ving, door te geven.`;
+  const portraitUrl = siteSettings?.beatrijsBioImageUrl || 'https://picsum.photos/seed/beatrijs/800/1000';
 
   return (
     <main className="min-h-screen bg-background pt-24 pb-32">
@@ -23,14 +24,11 @@ export default function BeatrijsSterkPage() {
           <div className="lg:col-span-5">
             <div className="relative aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl bg-secondary/20">
               <Image 
-                src="/beatrijs.jpg" 
+                src={portraitUrl} 
                 alt="Beatrijs Sterk" 
                 fill 
                 className="object-cover" 
                 data-ai-hint="portrait woman"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = 'https://picsum.photos/seed/beatrijs/800/1000';
-                }}
               />
               <div className="absolute bottom-4 right-4 z-10 opacity-20 text-[8px] uppercase tracking-widest text-white font-bold bg-black/40 px-2 py-1 rounded-sm">
                 &copy; Erven Thijs Sterk
