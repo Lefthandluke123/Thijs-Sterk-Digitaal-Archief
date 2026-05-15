@@ -29,8 +29,8 @@ export function Navbar() {
         <Link href="/" className="flex items-center group h-14">
           <img 
             src="/logo.png" 
-            alt="Logo" 
-            className="h-14 w-auto object-contain transition-transform group-hover:scale-105" 
+            alt="Thijs Sterk" 
+            className="h-10 w-auto object-contain transition-transform group-hover:scale-105" 
             onError={(e) => {
               (e.target as HTMLImageElement).style.display = 'none';
               const span = (e.target as HTMLImageElement).parentElement?.querySelector('.fallback-text');
