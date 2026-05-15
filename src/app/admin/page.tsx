@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
@@ -47,7 +46,6 @@ const STANDARD_TAGS = [
   "Bloemen", "Dieren", "Water", "Portretten", "Atmosferisch", "Licht", "Polder", "Kust"
 ];
 
-// Robuuste RepeatButton voor vlijmscherpe 0.1% precisie zonder stale closures
 function RepeatButton({ onStep, children, className, disabled }: { onStep: () => void, children: React.ReactNode, className?: string, disabled?: boolean }) {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -65,7 +63,7 @@ function RepeatButton({ onStep, children, className, disabled }: { onStep: () =>
   const start = useCallback((e: React.MouseEvent | React.TouchEvent) => {
     if (disabled) return;
     e.preventDefault();
-    onStepRef.current(); // Eerste stap
+    onStepRef.current(); 
     timerRef.current = setTimeout(() => {
       intervalRef.current = setInterval(() => {
         onStepRef.current();
@@ -209,9 +207,6 @@ export default function AdminPage() {
       const items = Array.isArray(artworksArray) ? artworksArray : [artworksArray];
       for (const item of items) {
         const { id, createdAt, ...rest } = item;
-        const exists = artworks?.some(a => a.imageUrl === rest.imageUrl);
-        if (exists) continue;
-
         await addDoc(collection(firestore, 'artworks'), { 
           ...rest, 
           createdAt: serverTimestamp(),
@@ -375,7 +370,6 @@ export default function AdminPage() {
         <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background border-none rounded-none overflow-hidden outline-none">
           <DialogTitle className="sr-only">Master Editor (75/25)</DialogTitle>
           
-          {/* Top 75% - Beeld Preview */}
           <div className="relative h-[75vh] w-full flex items-center justify-center overflow-hidden bg-[#f3f3f3] group">
             {editingArtwork && (
               <img 
@@ -397,11 +391,9 @@ export default function AdminPage() {
             </div>
           </div>
 
-          {/* Bottom 25% - Parameterbalk */}
           <div className="h-[25vh] w-full bg-background border-t border-black/10 px-8 py-4">
             <div className="flex items-start gap-12 w-full h-full overflow-hidden">
               
-              {/* Identiteit & Status */}
               <div className="flex flex-col gap-3 min-w-[140px] border-r border-black/5 pr-8 h-full">
                 <div className="space-y-1">
                   <Label className="text-[8px] font-black text-black uppercase tracking-widest">Titel</Label>
@@ -428,10 +420,8 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              {/* Crop & Thema's Stack */}
               <div className="flex flex-col flex-1 h-full min-w-0 border-r border-black/5 pr-8 overflow-hidden">
-                {/* Crops Top */}
-                <div className="flex items-center justify-between gap-4 h-1/2 border-b border-black/5 pb-2">
+                <div className="flex items-center justify-between gap-4 h-[55%] border-b border-black/5 pb-2">
                   {['Top', 'Bottom', 'Left', 'Right'].map(side => {
                     const field = `crop${side}`;
                     const currentVal = (editingArtwork as any)?.[field] || 0;
@@ -474,8 +464,7 @@ export default function AdminPage() {
                   })}
                 </div>
 
-                {/* Thema's Bottom */}
-                <div className="h-1/2 pt-2 flex flex-col gap-2 overflow-hidden">
+                <div className="h-[45%] pt-2 flex flex-col gap-2 overflow-hidden">
                   <div className="flex items-center justify-between">
                     <span className="text-[8px] font-black text-black uppercase tracking-widest">Thema's</span>
                     <div className="flex items-center gap-2">
@@ -489,7 +478,7 @@ export default function AdminPage() {
                       <Button onClick={addCustomTag} variant="ghost" className="h-5 w-5 p-0 bg-black/5 hover:bg-black/10"><Tag className="w-2.5 h-2.5" /></Button>
                     </div>
                   </div>
-                  <div className="flex flex-wrap gap-1 overflow-y-auto pr-4 no-scrollbar pb-2">
+                  <div className="flex flex-wrap gap-1.5 overflow-y-auto pr-4 no-scrollbar pb-2">
                     {STANDARD_TAGS.map(tag => (
                       <button
                         key={tag}
@@ -498,7 +487,7 @@ export default function AdminPage() {
                           "px-2 py-1 rounded-sm text-[8px] font-black uppercase tracking-widest border transition-all",
                           editingArtwork?.tags?.includes(tag)
                             ? "bg-black text-white border-black"
-                            : "bg-transparent text-black border-black/20 hover:border-black/50"
+                            : "bg-white text-black border-black/20 hover:border-black/50"
                         )}
                       >
                         {tag}
@@ -517,7 +506,6 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              {/* Licht/Donker */}
               <div className="flex flex-col items-center justify-center gap-4 min-w-[140px] h-full">
                 <div className="flex items-center gap-2">
                   <Sun className="w-3 h-3 text-black/40" />
