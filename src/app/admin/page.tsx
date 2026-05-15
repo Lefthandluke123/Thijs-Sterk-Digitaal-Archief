@@ -195,7 +195,6 @@ export default function AdminPage() {
       const items = Array.isArray(artworksArray) ? artworksArray : [artworksArray];
       for (const item of items) {
         const { id, createdAt, ...rest } = item;
-        // Check if already exists by imageUrl
         const exists = artworks?.some(a => a.imageUrl === rest.imageUrl);
         if (exists) continue;
 
@@ -375,11 +374,11 @@ export default function AdminPage() {
           </div>
 
           {/* Bottom 25% - Parameterbalk */}
-          <div className="h-[25vh] w-full bg-background border-t border-black/10 px-8 py-6">
+          <div className="h-[25vh] w-full bg-background border-t border-black/10 px-8 py-4">
             <div className="flex items-start gap-12 w-full h-full overflow-hidden">
               
-              {/* Identiteit & Status (Small) */}
-              <div className="flex flex-col gap-4 min-w-[140px] border-r border-black/5 pr-8 h-full">
+              {/* Identiteit & Status */}
+              <div className="flex flex-col gap-3 min-w-[140px] border-r border-black/5 pr-8 h-full">
                 <div className="space-y-1">
                   <Label className="text-[8px] font-black text-black uppercase tracking-widest">Titel</Label>
                   <Input 
@@ -390,7 +389,7 @@ export default function AdminPage() {
                 </div>
                 <div className="flex items-center justify-between bg-black/5 p-1.5 rounded-sm">
                   <div className="flex items-center gap-1.5">
-                    <Home className="w-2 h-2 text-black/40" />
+                    <Home className="w-2.5 h-2.5 text-black/60" />
                     <span className="text-[8px] font-black text-black uppercase tracking-widest">Home</span>
                   </div>
                   <Switch 
@@ -405,7 +404,7 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              {/* Crop & Thema's Stack (Large Area) */}
+              {/* Crop & Thema's Stack */}
               <div className="flex flex-col flex-1 h-full min-w-0 border-r border-black/5 pr-8 overflow-hidden">
                 {/* Crops Top */}
                 <div className="flex items-center gap-10 h-1/2">
@@ -468,7 +467,7 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              {/* Licht/Donker (Right) */}
+              {/* Licht/Donker */}
               <div className="flex flex-col items-center justify-center gap-5 min-w-[160px] h-full">
                 <div className="flex items-center gap-2">
                   <Sun className="w-3 h-3 text-black/40" />
