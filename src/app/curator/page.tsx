@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -102,17 +101,17 @@ export default function CuratorPage() {
 
   return (
     <main className="min-h-screen bg-background pt-14">
-      <div className="w-full bg-accent/10 border-b border-black/10 py-20 md:py-28">
+      <div className="w-full bg-accent/20 border-b-2 border-black py-20 md:py-28">
         <div className="container mx-auto px-6 max-w-5xl text-center space-y-8">
-          <span className="text-[12px] font-black uppercase tracking-[0.5em] text-black mb-2 block">Uw Persoonlijke Ruimte</span>
+          <span className="text-[14px] font-black uppercase tracking-[0.3em] text-black mb-2 block">Uw Persoonlijke Ruimte</span>
           <h1 className="font-headline text-6xl md:text-9xl font-light text-black tracking-tighter">
             Uw Eigen <span className="italic">Zaal</span>
           </h1>
           <div className="space-y-6 py-4">
-            <p className="text-black text-3xl font-normal leading-relaxed max-w-3xl mx-auto">
+            <p className="text-black text-3xl font-bold leading-relaxed max-w-3xl mx-auto">
               Selecteer de thema&apos;s die u aanspreken en presenteer uw eigen collectie.
             </p>
-            <p className="text-black/60 text-[12px] uppercase tracking-[0.4em] font-black opacity-80">
+            <p className="text-black text-[12px] uppercase tracking-[0.2em] font-black">
               U kunt meerdere thema&apos;s combineren voor een specifiekere selectie.
             </p>
           </div>
@@ -121,8 +120,8 @@ export default function CuratorPage() {
 
       <div className="container mx-auto max-w-7xl px-6 py-16 pb-48">
         <div className="space-y-32">
-          <div className="flex flex-col items-center space-y-16">
-            <div className="flex flex-wrap justify-center gap-4 md:gap-6 max-w-6xl">
+          <div className="flex flex-col items-center space-y-20">
+            <div className="flex flex-wrap justify-center gap-4 md:gap-5 max-w-6xl">
               {allAvailableTags.map(tag => {
                 const isPresentInDb = artworks?.some(art => art.tags?.includes(tag));
                 const isActive = activeTags.includes(tag);
@@ -132,11 +131,11 @@ export default function CuratorPage() {
                     key={tag}
                     onClick={() => toggleTag(tag)}
                     className={cn(
-                      "px-10 py-5 rounded-full text-[14px] font-black uppercase tracking-[0.2em] transition-all border-2 shadow-md",
+                      "px-10 py-5 rounded-full text-[16px] font-black uppercase tracking-wider transition-all border-2 shadow-xl",
                       isActive 
                         ? "bg-black text-white border-black scale-105 shadow-2xl ring-4 ring-black/10" 
-                        : "bg-white/40 text-black border-black/40 hover:border-black hover:bg-white",
-                      !isPresentInDb && "opacity-10 grayscale pointer-events-none"
+                        : "bg-white text-black border-black hover:bg-black hover:text-white",
+                      !isPresentInDb && "opacity-20 grayscale pointer-events-none border-dashed"
                     )}
                   >
                     {tag}
@@ -150,7 +149,7 @@ export default function CuratorPage() {
                 onClick={handleReset} 
                 variant="ghost" 
                 size="lg"
-                className="rounded-full h-20 px-12 text-[12px] uppercase font-black tracking-[0.4em] text-black/60 hover:text-black border-2 border-black/20 hover:border-black transition-all hover:bg-black/5"
+                className="rounded-full h-20 px-12 text-[12px] uppercase font-black tracking-[0.3em] text-black border-2 border-black hover:bg-black hover:text-white transition-all shadow-lg"
               >
                 <Eraser className="w-5 h-5 mr-4" /> Wis Selectie
               </Button>
@@ -159,23 +158,23 @@ export default function CuratorPage() {
                 onClick={handlePresent}
                 disabled={activeTags.length === 0}
                 size="lg"
-                className="rounded-full h-20 px-24 bg-black hover:bg-black/90 text-white font-black uppercase tracking-[0.4em] text-[14px] shadow-2xl transition-all active:scale-95 group disabled:opacity-20"
+                className="rounded-full h-20 px-24 bg-black hover:bg-black/90 text-white font-black uppercase tracking-[0.3em] text-[16px] shadow-2xl transition-all active:scale-95 group disabled:opacity-20 border-2 border-black"
               >
                 <Play className="w-6 h-6 mr-4 fill-white group-hover:scale-110 transition-transform" /> Presenteer Zaal
               </Button>
             </div>
           </div>
 
-          <div className={cn("pt-32 border-t border-black/10 transition-all duration-1000", showResults ? "opacity-100 translate-y-0" : "opacity-0 translate-y-20 pointer-events-none")}>
+          <div className={cn("pt-32 border-t-2 border-black transition-all duration-1000", showResults ? "opacity-100 translate-y-0" : "opacity-0 translate-y-20 pointer-events-none")}>
             {loading ? (
               <div className="flex flex-col items-center justify-center py-20">
-                <Loader2 className="w-10 h-10 animate-spin text-black/40" />
+                <Loader2 className="w-10 h-10 animate-spin text-black" />
               </div>
             ) : filteredArtworks.length > 0 && showResults ? (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-16">
                 {filteredArtworks.map((item) => (
                   <div key={item.id} className="group relative cursor-pointer" onClick={() => handleArtworkClick(item)}>
-                    <div className="relative aspect-[4/5] overflow-hidden rounded-sm bg-muted/20 shadow-xl transition-shadow hover:shadow-2xl">
+                    <div className="relative aspect-[4/5] overflow-hidden rounded-sm bg-muted/20 shadow-2xl transition-shadow hover:shadow-inner border border-black/5">
                       <img 
                         src={item.imageUrl} 
                         alt={item.title} 
@@ -185,20 +184,20 @@ export default function CuratorPage() {
                           filter: `brightness(${item.brightness || 1})`
                         }}
                       />
-                      <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
                         <Maximize2 className="text-white w-10 h-10 drop-shadow-2xl scale-75 group-hover:scale-100 transition-transform duration-500" />
                       </div>
                     </div>
                     <div className="mt-8 text-center space-y-2">
-                      <h3 className="text-[12px] font-black uppercase tracking-[0.4em] text-black group-hover:text-black transition-colors">{item.title}</h3>
-                      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-black/40">{item.year}</p>
+                      <h3 className="text-[14px] font-black uppercase tracking-[0.2em] text-black group-hover:underline transition-all">{item.title}</h3>
+                      <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-black/60">{item.year}</p>
                     </div>
                   </div>
                 ))}
               </div>
             ) : showResults ? (
-              <div className="py-32 text-center opacity-40">
-                <p className="text-2xl font-normal italic text-black">Geen werken gevonden met deze combinatie van thema&apos;s.</p>
+              <div className="py-32 text-center">
+                <p className="text-3xl font-black italic text-black uppercase tracking-tight">Geen werken gevonden met deze combinatie.</p>
               </div>
             ) : null}
           </div>
@@ -206,7 +205,7 @@ export default function CuratorPage() {
       </div>
 
       <Dialog open={!!selectedArtwork} onOpenChange={() => setSelectedArtwork(null)}>
-        <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background/98 backdrop-blur-3xl border-none rounded-none overflow-hidden">
+        <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background border-none rounded-none overflow-hidden outline-none">
           <div className="relative h-[67vh] w-full flex items-center justify-center overflow-hidden bg-black/5">
             {selectedArtwork && (
               <img 
@@ -219,26 +218,26 @@ export default function CuratorPage() {
                 }}
               />
             )}
-            <DialogClose className="absolute top-10 right-10 z-50 p-6 bg-background/10 backdrop-blur-md rounded-full hover:bg-background/20 transition-all shadow-xl">
-              <X className="w-8 h-8 text-black opacity-60" />
+            <DialogClose className="absolute top-10 right-10 z-50 p-6 bg-white/80 backdrop-blur-md rounded-full hover:bg-white transition-all shadow-2xl border-2 border-black">
+              <X className="w-8 h-8 text-black" />
             </DialogClose>
           </div>
 
-          <div className="h-[33vh] w-full bg-background/95 backdrop-blur-md py-16 px-12 border-t border-black/10 shadow-2xl flex flex-col items-center justify-center overflow-y-auto">
+          <div className="h-[33vh] w-full bg-white py-16 px-12 border-t-2 border-black shadow-2xl flex flex-col items-center justify-center overflow-y-auto">
             <div className="max-w-6xl mx-auto flex flex-col items-center text-center gap-10">
               <DialogTitle className="font-headline text-6xl md:text-8xl font-light text-black tracking-tighter leading-tight uppercase">
                 {selectedArtwork?.title}
               </DialogTitle>
               
-              <div className="text-[14px] md:text-[18px] uppercase font-black tracking-[0.6em] text-black flex flex-wrap gap-x-16 gap-y-6 justify-center items-center opacity-90">
+              <div className="text-[16px] md:text-[20px] uppercase font-black tracking-[0.4em] text-black flex flex-wrap gap-x-16 gap-y-6 justify-center items-center">
                 <span>{selectedArtwork?.series}</span>
-                <span className="hidden md:inline w-2 h-2 rounded-full bg-black/20" />
+                <span className="hidden md:inline w-2 h-2 rounded-full bg-black" />
                 <span>{selectedArtwork?.year}</span>
-                <span className="hidden md:inline w-2 h-2 rounded-full bg-black/20" />
+                <span className="hidden md:inline w-2 h-2 rounded-full bg-black" />
                 <span>{selectedArtwork?.medium}</span>
               </div>
               
-              <Button variant="outline" size="lg" className="rounded-full text-[13px] font-black uppercase tracking-[0.5em] px-24 h-20 border-black/20 mt-10 hover:bg-black hover:text-white hover:border-black transition-all shadow-xl active:scale-95">
+              <Button variant="outline" size="lg" className="rounded-full text-[14px] font-black uppercase tracking-[0.3em] px-24 h-20 border-2 border-black mt-10 hover:bg-black hover:text-white transition-all shadow-2xl active:scale-95">
                 Interesse in dit werk?
               </Button>
             </div>
