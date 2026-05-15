@@ -73,7 +73,7 @@ function GalleryContent() {
     <main className="min-h-screen bg-background pt-14">
       <div className="w-full bg-secondary/5 border-b border-border/10 py-12 md:py-16">
         <div className="container mx-auto px-6 max-w-7xl">
-          <h1 className="font-headline text-lg font-light text-foreground text-center tracking-tighter">
+          <h1 className="font-headline text-[16px] md:text-[18px] font-light text-foreground text-center tracking-tighter uppercase">
             <span className="italic">{activeSeries || "Laden..."}</span>
           </h1>
           <p className="text-center text-accent mt-4 uppercase tracking-[0.5em] text-[8px] font-black opacity-80">
@@ -163,10 +163,10 @@ function GalleryContent() {
 
           <div className="h-[15vh] w-full bg-background/95 backdrop-blur-md py-4 px-12 border-t border-border/10 shadow-2xl flex flex-col items-center justify-center overflow-y-auto">
             <div className="max-w-6xl mx-auto flex flex-col items-center text-center gap-1.5">
-              <h2 className="font-headline text-[12px] md:text-[14px] font-light text-foreground tracking-tight leading-tight uppercase">
+              <h2 className="font-headline text-[10px] md:text-[12px] font-light text-foreground/60 tracking-tight leading-tight uppercase">
                 {selectedArtwork?.title}
               </h2>
-              <div className="text-[9px] md:text-[11px] uppercase font-black tracking-[0.3em] text-accent flex flex-wrap gap-x-8 gap-y-2 justify-center items-center opacity-100">
+              <div className="text-[10px] md:text-[12px] uppercase font-black tracking-[0.3em] text-accent flex flex-wrap gap-x-8 gap-y-2 justify-center items-center opacity-100 mt-2">
                 <span>{selectedArtwork?.series}</span>
                 <span className="hidden md:inline w-1 h-1 rounded-full bg-accent/40" />
                 <span>{selectedArtwork?.year}</span>

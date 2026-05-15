@@ -30,7 +30,6 @@ export function PortfolioGrid() {
       ? featuredArtworks 
       : (latestArtworks || []);
     
-    // Als de database leeg is, gebruik de basis JSON
     if (dbArtworks.length === 0) {
       return PlaceHolderImages.filter(img => img.featured);
     }
@@ -64,11 +63,11 @@ export function PortfolioGrid() {
       <div className="container mx-auto">
         <div className="flex flex-col md:flex-row items-end justify-between mb-16 gap-8">
           <div className="max-w-2xl">
-            <h2 className="font-headline text-2xl md:text-3xl font-light mb-4 tracking-tight">
+            <h2 className="font-headline text-[18px] md:text-[20px] font-light mb-4 tracking-tight uppercase">
               Meester <span className="italic">Selectie</span>
             </h2>
           </div>
-          <div className="flex gap-10 text-[10px] font-black tracking-[0.3em] uppercase">
+          <div className="flex gap-10 text-[9px] font-black tracking-[0.3em] uppercase">
             <a href="/gallery" className="text-muted-foreground hover:text-foreground transition-all pb-1 border-b border-transparent hover:border-accent">Bekijk de Zalen</a>
           </div>
         </div>
@@ -105,8 +104,8 @@ export function PortfolioGrid() {
             <DialogClose className="absolute top-8 right-8 z-50 p-3 bg-background/10 backdrop-blur-sm rounded-full hover:bg-background/20"><X className="w-6 h-6 opacity-40" /></DialogClose>
           </div>
           <div className="h-[15vh] w-full bg-background/95 backdrop-blur-md py-4 px-12 border-t border-border/10 flex flex-col items-center justify-center overflow-y-auto">
-            <h2 className="font-headline text-[14px] md:text-[16px] font-light uppercase tracking-tight text-center">{selectedArtwork?.title}</h2>
-            <div className="text-[9px] md:text-[11px] uppercase font-black tracking-[0.3em] text-accent flex gap-8 opacity-90 mt-1.5 justify-center">
+            <h2 className="font-headline text-[10px] md:text-[12px] font-light uppercase tracking-tight text-center text-foreground/60">{selectedArtwork?.title}</h2>
+            <div className="text-[10px] md:text-[12px] uppercase font-black tracking-[0.3em] text-accent flex gap-8 opacity-100 mt-2 justify-center">
               <span>{selectedArtwork?.series}</span>
               <span className="w-1 h-1 rounded-full bg-accent/30 self-center" />
               <span>{selectedArtwork?.year}</span>
