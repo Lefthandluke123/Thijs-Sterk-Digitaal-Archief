@@ -22,7 +22,6 @@ import {
   ChevronRight,
   Search,
   Cloud,
-  HardDrive,
   Star,
   CheckCircle2,
   Download,
@@ -35,7 +34,6 @@ import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogClose, DialogTitle } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
@@ -75,19 +73,6 @@ export default function AdminPage() {
 
   const { data: artworks, loading: isCollectionLoading } = useCollection(artworksQuery);
 
-  const existingSeries = useMemo(() => {
-    if (!artworks) return [];
-    const series = new Set<string>();
-    artworks.forEach(art => {
-      if (art.series) series.add(art.series);
-    });
-    return Array.from(series).sort();
-  }, [artworks]);
-
-  const editingArtwork = useMemo(() => {
-    return artworks?.find(art => art.id === editingId) || null;
-  }, [artworks, editingId]);
-
   const filteredArtworks = useMemo(() => {
     if (!artworks) return [];
     return artworks.filter(art => 
@@ -96,6 +81,10 @@ export default function AdminPage() {
       art.tags?.some((t: string) => t.toLowerCase().includes(searchQuery.toLowerCase()))
     );
   }, [artworks, searchQuery]);
+
+  const editingArtwork = useMemo(() => {
+    return artworks?.find(art => art.id === editingId) || null;
+  }, [artworks, editingId]);
 
   const navigateEditing = useCallback((direction: 'next' | 'prev') => {
     if (!editingId || !filteredArtworks.length) return;
@@ -182,7 +171,7 @@ export default function AdminPage() {
       const artworksArray = Array.isArray(data) ? data : [data];
       let added = 0;
       for (const item of artworksArray) {
-        const { id, ...rest } = item;
+        const { id, createdAt, ...rest } = item;
         await addDoc(collection(firestore, 'artworks'), { ...rest, createdAt: serverTimestamp() });
         added++;
       }
@@ -190,7 +179,7 @@ export default function AdminPage() {
       setBulkJson('');
       setActiveTab('archive');
     } catch (err) {
-      toast({ variant: "destructive", title: "JSON Fout" });
+      toast({ variant: "destructive", title: "JSON Fout", description: "Controleer het formaat van de JSON data." });
     } finally { setLoading(false); }
   };
 
@@ -201,8 +190,7 @@ export default function AdminPage() {
     updateDoc(artRef, { [field]: value })
       .catch(async () => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: artRef.path, operation: 'update' })))
       .finally(() => {
-        setTimeout(() => setIsSaving(false), 300);
-        toast({ title: "Opgeslagen", description: `${field}: ${value}`, duration: 1000 });
+        setTimeout(() => setIsSaving(false), 200);
       });
   };
 
@@ -338,7 +326,8 @@ export default function AdminPage() {
         <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background border-none rounded-none overflow-hidden">
           <DialogTitle className="sr-only">Master Editor</DialogTitle>
           
-          <div className="relative h-[85vh] w-full flex items-center justify-center overflow-hidden bg-[#f0f0f0] group">
+          {/* Top 85% - Image Preview */}
+          <div className="relative h-[85vh] w-full flex items-center justify-center overflow-hidden bg-[#f5f5f5] group">
             {editingArtwork && (
               <img 
                 src={editingArtwork.imageUrl} 
@@ -359,56 +348,57 @@ export default function AdminPage() {
             </div>
           </div>
 
+          {/* Bottom 15% - Parameters */}
           <div className="h-[15vh] w-full bg-background border-t border-black/5 px-8 flex items-center overflow-x-auto no-scrollbar">
-            <div className="flex items-center gap-12 w-full">
-              {/* Main Info */}
-              <div className="flex flex-col gap-2 min-w-[200px]">
+            <div className="flex items-center gap-10 w-full">
+              {/* Basic Info & Featured */}
+              <div className="flex flex-col gap-2 min-w-[180px]">
                 <Input 
                   defaultValue={editingArtwork?.title || ''} 
                   onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'title', e.target.value)} 
-                  className="h-7 text-[10px] font-black text-black uppercase border-none bg-black/5 rounded-sm p-2"
+                  className="h-6 text-[8px] font-black text-black uppercase border-none bg-black/5 rounded-sm p-2"
                 />
                 <div className="flex items-center justify-between">
                   <span className="text-[8px] font-black text-black uppercase tracking-widest">Home</span>
                   <Switch 
                     checked={editingArtwork?.featured || false} 
                     onCheckedChange={(val) => editingArtwork && updateArtworkField(editingArtwork.id, 'featured', val)}
-                    className="scale-75"
+                    className="scale-50"
                   />
                 </div>
               </div>
 
-              {/* Crop Controls */}
-              <div className="flex items-center gap-8 border-l border-black/5 pl-8">
+              {/* Crop Controls - Larger Buttons */}
+              <div className="flex items-center gap-6 border-l border-black/5 pl-6">
                 {['Top', 'Bottom', 'Left', 'Right'].map(side => {
                   const field = `crop${side}`;
                   const currentVal = (editingArtwork as any)?.[field] || 0;
                   return (
-                    <div key={side} className="flex flex-col items-center gap-2">
+                    <div key={side} className="flex flex-col items-center gap-1.5">
                       <span className="text-[8px] font-black text-black uppercase tracking-widest">{side} {currentVal.toFixed(1)}%</span>
                       <div className="flex items-center gap-2">
                         <Button 
                           variant="outline" 
                           size="icon" 
-                          className="h-10 w-10 border-black/10"
+                          className="h-10 w-10 border-black/10 hover:bg-black/5"
                           onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, field, Math.max(0, currentVal - 0.1))}
                         >
-                          <Minus className="h-4 w-4" />
+                          <Minus className="h-4 w-4 text-black" />
                         </Button>
                         <Slider 
                           value={[currentVal]} 
                           max={50} 
                           step={0.1} 
                           onValueChange={([val]) => editingArtwork && updateArtworkField(editingArtwork.id, field, val)} 
-                          className="w-24"
+                          className="w-20"
                         />
                         <Button 
                           variant="outline" 
                           size="icon" 
-                          className="h-10 w-10 border-black/10"
+                          className="h-10 w-10 border-black/10 hover:bg-black/5"
                           onClick={() => editingArtwork && updateArtworkField(editingArtwork.id, field, Math.min(50, currentVal + 0.1))}
                         >
-                          <Plus className="h-4 w-4" />
+                          <Plus className="h-4 w-4 text-black" />
                         </Button>
                       </div>
                     </div>
@@ -416,8 +406,8 @@ export default function AdminPage() {
                 })}
               </div>
 
-              {/* Tags/Themes */}
-              <div className="flex flex-col gap-2 border-l border-black/5 pl-8 flex-1 min-w-[300px]">
+              {/* Thema's (Tags) Section */}
+              <div className="flex flex-col gap-2 border-l border-black/5 pl-6 flex-1 min-w-[350px]">
                 <span className="text-[8px] font-black text-black uppercase tracking-widest">Thema's</span>
                 <div className="flex flex-wrap gap-1 max-h-[8vh] overflow-y-auto pr-2 no-scrollbar">
                   {STANDARD_TAGS.map(tag => (
@@ -437,20 +427,21 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              {/* Brightness */}
-              <div className="flex flex-col items-center gap-2 border-l border-black/5 pl-8 min-w-[150px]">
+              {/* Brightness Control */}
+              <div className="flex flex-col items-center gap-2 border-l border-black/5 pl-6 min-w-[140px]">
                 <span className="text-[8px] font-black text-black uppercase tracking-widest">Licht {(editingArtwork?.brightness || 1).toFixed(2)}</span>
                 <Slider 
                   value={[editingArtwork?.brightness || 1]} 
                   max={2} 
                   step={0.01} 
                   onValueChange={([val]) => editingArtwork && updateArtworkField(editingArtwork.id, 'brightness', val)} 
-                  className="w-32"
+                  className="w-24"
                 />
               </div>
 
+              {/* Saving Indicator */}
               <div className="ml-auto">
-                {isSaving ? <Loader2 className="w-4 h-4 animate-spin text-black/20" /> : <CheckCircle2 className="w-4 h-4 text-green-500/40" />}
+                {isSaving ? <Loader2 className="w-3 h-3 animate-spin text-black/20" /> : <CheckCircle2 className="w-3 h-3 text-green-500/30" />}
               </div>
             </div>
           </div>
