@@ -92,7 +92,7 @@ export default function CuratorPage() {
       <div className="w-full bg-accent/10 border-b border-black/10 py-16 md:py-24">
         <div className="container mx-auto px-6 max-w-5xl text-center space-y-8">
           <span className="text-[12px] font-black uppercase tracking-[0.3em] text-black/40 mb-2 block">Uw Persoonlijke Ruimte</span>
-          <h1 className="font-headline text-5xl md:text-7xl font-light text-black tracking-tighter leading-tight">
+          <h1 className="font-headline text-3xl md:text-5xl font-light text-black tracking-tighter leading-tight">
             Uw Eigen <span className="italic">Zaal</span>
           </h1>
         </div>
@@ -157,7 +157,7 @@ export default function CuratorPage() {
             <DialogClose className="absolute top-8 right-8 z-50 p-3 bg-white/80 rounded-full border-2 border-black hover:bg-white"><X className="w-5 h-5" /></DialogClose>
           </div>
           <div className="h-[15vh] w-full bg-white py-4 px-12 border-t-2 border-black flex flex-col items-center justify-center overflow-y-auto">
-            <h2 className="font-headline text-lg md:text-xl font-light uppercase tracking-tight">{selectedArtwork?.title}</h2>
+            <h2 className="font-headline text-[14px] md:text-[18px] font-light uppercase tracking-tight">{selectedArtwork?.title}</h2>
             <div className="text-[9px] md:text-[11px] uppercase font-black tracking-[0.3em] flex gap-8 opacity-90 mt-1">
               <span>{selectedArtwork?.series}</span>
               <span className="w-1 h-1 rounded-full bg-black self-center" />
