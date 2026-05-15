@@ -136,25 +136,28 @@
           "type": "string",
           "description": "Biografie van Hanneke Sterk"
         },
-        "hannekeBioImageUrl": {
-          "type": "string",
-          "description": "URL naar de foto van Hanneke"
+        "hannekeBioImages": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Lijst van afbeeldings-URLs voor Hanneke"
         },
         "beatrijsBio": {
           "type": "string",
           "description": "Biografie van Beatrijs Sterk"
         },
-        "beatrijsBioImageUrl": {
-          "type": "string",
-          "description": "URL naar de foto van Beatrijs"
+        "beatrijsBioImages": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Lijst van afbeeldings-URLs voor Beatrijs"
         },
         "peterBesBio": {
           "type": "string",
           "description": "Biografie van Peter Bes"
         },
-        "peterBesBioImageUrl": {
-          "type": "string",
-          "description": "URL naar de foto van Peter Bes"
+        "peterBesBioImages": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Lijst van afbeeldings-URLs voor Peter Bes"
         }
       }
     }

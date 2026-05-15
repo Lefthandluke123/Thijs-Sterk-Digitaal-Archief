@@ -34,7 +34,8 @@ import {
   CheckSquare,
   Copy,
   Type,
-  ImageIcon
+  ImageIcon,
+  GripVertical
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -203,13 +204,30 @@ export default function AdminPage() {
       });
   };
 
-  const updateSettingsField = async (field: string, value: string) => {
+  const updateSettingsField = async (field: string, value: any) => {
     if (!firestore) return;
     setIsSaving(true);
     const settingsRef = doc(firestore, 'settings', 'site');
     setDoc(settingsRef, { [field]: value }, { merge: true })
       .catch(async () => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: settingsRef.path, operation: 'update' })))
       .finally(() => setIsSaving(false));
+  };
+
+  const addBioImage = (personField: string) => {
+    const currentImages = siteSettings?.[personField] || [];
+    updateSettingsField(personField, [...currentImages, '']);
+  };
+
+  const removeBioImage = (personField: string, index: number) => {
+    const currentImages = [...(siteSettings?.[personField] || [])];
+    currentImages.splice(index, 1);
+    updateSettingsField(personField, currentImages);
+  };
+
+  const updateBioImage = (personField: string, index: number, value: string) => {
+    const currentImages = [...(siteSettings?.[personField] || [])];
+    currentImages[index] = value;
+    updateSettingsField(personField, currentImages);
   };
 
   const handleBulkMove = async () => {
@@ -355,6 +373,32 @@ export default function AdminPage() {
     navigator.clipboard.writeText(url);
     toast({ title: "URL Gekopieerd", description: "Plak deze URL nu in het 'Pagina Teksten' beheer bij de juiste persoon." });
   };
+
+  const BioImageManager = ({ personField, images }: { personField: string, images: string[] }) => (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <Label className="text-[9px] font-black uppercase tracking-widest opacity-40">Afbeeldingen Galerij</Label>
+        <Button variant="outline" size="sm" onClick={() => addBioImage(personField)} className="h-6 rounded-full text-[8px] font-black">
+          <Plus className="w-3 h-3 mr-1" /> Voeg foto toe
+        </Button>
+      </div>
+      <div className="grid gap-2">
+        {images.map((url, idx) => (
+          <div key={idx} className="flex gap-2">
+            <Input 
+              value={url} 
+              onChange={(e) => updateBioImage(personField, idx, e.target.value)}
+              placeholder="Plak hier de gekopieerde URL..."
+              className="bg-black/5 border-none h-8 text-[10px]"
+            />
+            <Button variant="ghost" size="icon" onClick={() => removeBioImage(personField, idx)} className="h-8 w-8 text-red-500 hover:bg-red-50">
+              <X className="w-3 h-3" />
+            </Button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
   const STANDARD_TAGS = [
     "Groet", "Schoorl", "Hargen", "Amsterdam", "Frankrijk", 
@@ -549,7 +593,7 @@ export default function AdminPage() {
               <div className="bg-accent/5 p-4 rounded-xl border border-accent/20 flex gap-4 items-center">
                 <ImageIcon className="w-8 h-8 text-accent shrink-0" />
                 <p className="text-[10px] font-bold uppercase tracking-widest text-accent/80 leading-relaxed">
-                  Tip: Gebruik de "Kopieer URL" knop bij een schilderij in het archief om de afbeelding hieronder te koppelen aan een biografie.
+                  Tip: Voeg meerdere URL's toe om een galerij te vormen. De positie wordt bepaald door de volgorde.
                 </p>
               </div>
               
@@ -559,7 +603,7 @@ export default function AdminPage() {
                   <Label className="text-[11px] font-black uppercase tracking-[0.2em] text-accent block mb-2">Homepagina - Thijs Sterk</Label>
                   <div className="grid gap-4">
                     <div className="space-y-2">
-                      <Label className="text-[9px] font-black uppercase tracking-widest opacity-40">Afbeelding URL</Label>
+                      <Label className="text-[9px] font-black uppercase tracking-widest opacity-40">Hoofdafbeelding URL</Label>
                       <Input 
                         defaultValue={siteSettings?.homeBioImageUrl || ''} 
                         onBlur={(e) => updateSettingsField('homeBioImageUrl', e.target.value)}
@@ -582,14 +626,7 @@ export default function AdminPage() {
                 <div className="space-y-4 border-l-2 border-accent/10 pl-6">
                   <Label className="text-[11px] font-black uppercase tracking-[0.2em] text-accent block mb-2">Hanneke Sterk Pagina</Label>
                   <div className="grid gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-[9px] font-black uppercase tracking-widest opacity-40">Afbeelding URL</Label>
-                      <Input 
-                        defaultValue={siteSettings?.hannekeBioImageUrl || ''} 
-                        onBlur={(e) => updateSettingsField('hannekeBioImageUrl', e.target.value)}
-                        className="bg-black/5 border-none h-10 text-xs"
-                      />
-                    </div>
+                    <BioImageManager personField="hannekeBioImages" images={siteSettings?.hannekeBioImages || []} />
                     <div className="space-y-2">
                       <Label className="text-[9px] font-black uppercase tracking-widest opacity-40">Tekst</Label>
                       <Textarea 
@@ -605,14 +642,7 @@ export default function AdminPage() {
                 <div className="space-y-4 border-l-2 border-accent/10 pl-6">
                   <Label className="text-[11px] font-black uppercase tracking-[0.2em] text-accent block mb-2">Beatrijs Sterk Pagina</Label>
                   <div className="grid gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-[9px] font-black uppercase tracking-widest opacity-40">Afbeelding URL</Label>
-                      <Input 
-                        defaultValue={siteSettings?.beatrijsBioImageUrl || ''} 
-                        onBlur={(e) => updateSettingsField('beatrijsBioImageUrl', e.target.value)}
-                        className="bg-black/5 border-none h-10 text-xs"
-                      />
-                    </div>
+                    <BioImageManager personField="beatrijsBioImages" images={siteSettings?.beatrijsBioImages || []} />
                     <div className="space-y-2">
                       <Label className="text-[9px] font-black uppercase tracking-widest opacity-40">Tekst</Label>
                       <Textarea 
@@ -628,14 +658,7 @@ export default function AdminPage() {
                 <div className="space-y-4 border-l-2 border-accent/10 pl-6">
                   <Label className="text-[11px] font-black uppercase tracking-[0.2em] text-accent block mb-2">Peter Bes Pagina</Label>
                   <div className="grid gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-[9px] font-black uppercase tracking-widest opacity-40">Afbeelding URL</Label>
-                      <Input 
-                        defaultValue={siteSettings?.peterBesBioImageUrl || ''} 
-                        onBlur={(e) => updateSettingsField('peterBesBioImageUrl', e.target.value)}
-                        className="bg-black/5 border-none h-10 text-xs"
-                      />
-                    </div>
+                    <BioImageManager personField="peterBesBioImages" images={siteSettings?.peterBesBioImages || []} />
                     <div className="space-y-2">
                       <Label className="text-[9px] font-black uppercase tracking-widest opacity-40">Tekst</Label>
                       <Textarea 
