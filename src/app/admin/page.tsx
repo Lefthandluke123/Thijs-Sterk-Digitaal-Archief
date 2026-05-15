@@ -22,7 +22,6 @@ import {
   ChevronRight,
   Search,
   Cloud,
-  Star,
   CheckCircle2,
   Download,
   CloudUpload,
