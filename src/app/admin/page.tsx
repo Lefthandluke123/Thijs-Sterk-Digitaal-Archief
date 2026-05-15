@@ -155,7 +155,6 @@ export default function AdminPage() {
     const totalFiles = files.length;
     let completedCount = 0;
 
-    // We process files in parallel to ensure multiple uploads work as expected
     const uploadPromises = Array.from(files).map(async (file) => {
       if (!/\.(jpe?g|png|webp|avif)$/i.test(file.name)) {
         completedCount++;
@@ -169,7 +168,6 @@ export default function AdminPage() {
         const snapshot = await uploadBytes(storageRef, file);
         const downloadUrl = await getDownloadURL(snapshot.ref);
         
-        // No await here for faster batch processing
         addDoc(collection(firestore, 'artworks'), { 
           title: fileNameOnly, 
           series: "Nieuwe Uploads", 
@@ -252,7 +250,9 @@ export default function AdminPage() {
 
       <header className="h-16 border-b border-border bg-background/95 backdrop-blur-sm sticky top-14 z-40 px-8 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <img src="/logo.png" className="h-12 w-auto mr-2" />
+          <Link href="/" className="h-10 w-auto">
+            <img src="/logo.png" className="h-10 w-auto" onError={(e) => (e.target as HTMLImageElement).style.display = 'none'} />
+          </Link>
           <h1 className="font-headline text-xl font-light">Atelier <span className="italic">Beheer</span></h1>
         </div>
         <div className="flex items-center gap-4">
@@ -357,9 +357,9 @@ export default function AdminPage() {
 
       <Dialog open={!!editingId} onOpenChange={() => setEditingId(null)}>
         <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background border-none rounded-none overflow-hidden outline-none">
-          <DialogTitle className="sr-only">Master Editor (75/25)</DialogTitle>
+          <DialogTitle className="sr-only">Master Editor (80/20)</DialogTitle>
           
-          <div className="relative h-[75vh] w-full flex items-center justify-center overflow-hidden bg-[#f3f3f3] group">
+          <div className="relative h-[80vh] w-full flex items-center justify-center overflow-hidden bg-[#f3f3f3] group">
             {editingArtwork && (
               <img 
                 src={editingArtwork.imageUrl} 
@@ -380,7 +380,7 @@ export default function AdminPage() {
             </div>
           </div>
 
-          <div className="h-[25vh] w-full bg-background border-t border-black/10 px-8 py-4">
+          <div className="h-[20vh] w-full bg-background border-t border-black/10 px-8 py-4">
             <div className="flex items-start gap-12 w-full h-full overflow-hidden">
               
               <div className="flex flex-col gap-3 min-w-[140px] border-r border-black/5 pr-8 h-full">
@@ -395,7 +395,7 @@ export default function AdminPage() {
                 <div className="flex items-center justify-between bg-black/5 p-1.5 rounded-sm">
                   <div className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-2.5 h-2.5 text-black/60" />
-                    <span className="text-[8px] font-black text-black uppercase tracking-widest">Op Home</span>
+                    <span className="text-[8px] font-black text-black uppercase tracking-widest">Home</span>
                   </div>
                   <Switch 
                     checked={editingArtwork?.featured || false} 
@@ -455,7 +455,7 @@ export default function AdminPage() {
 
                 <div className="h-[50%] pt-2 flex flex-col gap-2 overflow-hidden">
                   <div className="flex items-center justify-between">
-                    <span className="text-[8px] font-black text-black uppercase tracking-widest">Thema's (klik om te toggelen/verwijderen)</span>
+                    <span className="text-[8px] font-black text-black uppercase tracking-widest">Thema's</span>
                     <div className="flex items-center gap-2">
                       <Input 
                         value={newTagInput}
@@ -482,15 +482,6 @@ export default function AdminPage() {
                         {tag}
                       </button>
                     ))}
-                    {editingArtwork?.tags?.filter((t: string) => !STANDARD_TAGS.includes(t)).map((tag: string) => (
-                      <button
-                        key={tag}
-                        onClick={() => toggleTag(tag)}
-                        className="px-2 py-1 rounded-sm text-[8px] font-black uppercase tracking-widest border bg-accent text-white border-accent flex items-center gap-1 group/tag"
-                      >
-                        {tag} <X className="w-2 h-2 opacity-40 group-hover/tag:opacity-100" />
-                      </button>
-                    ))}
                   </div>
                 </div>
               </div>
@@ -507,7 +498,6 @@ export default function AdminPage() {
                   onValueChange={([val]) => editingArtwork && updateArtworkField(editingArtwork.id, 'brightness', val)} 
                   className="w-24"
                 />
-                <div className="mt-2 opacity-10 font-black text-[8px] uppercase tracking-[0.5em]">Gamma Controls</div>
               </div>
 
             </div>

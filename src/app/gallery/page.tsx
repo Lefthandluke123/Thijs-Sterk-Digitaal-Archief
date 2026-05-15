@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
@@ -124,12 +125,6 @@ function GalleryContent() {
                 </div>
               ))}
             </div>
-            
-            {!loading && filteredArtworks.length === 0 && (
-              <div className="py-20 text-center opacity-40">
-                <p className="text-lg font-light italic">Geen werken gevonden in deze zaal.</p>
-              </div>
-            )}
           </>
         )}
       </div>
@@ -162,15 +157,15 @@ function GalleryContent() {
           </div>
 
           <div className="h-[20vh] w-full bg-background/95 backdrop-blur-md py-8 px-12 border-t border-border/10 shadow-2xl flex flex-col items-center justify-center overflow-y-auto">
-            <div className="max-w-6xl mx-auto flex flex-col items-center text-center gap-6">
-              <DialogTitle className="font-headline text-3xl md:text-5xl font-light text-foreground tracking-tighter leading-tight uppercase">
+            <div className="max-w-6xl mx-auto flex flex-col items-center text-center gap-4">
+              <DialogTitle className="font-headline text-xl md:text-2xl font-light text-foreground tracking-tight leading-tight uppercase">
                 {selectedArtwork?.title}
               </DialogTitle>
-              <div className="text-[14px] md:text-[16px] uppercase font-black tracking-[0.4em] text-accent flex flex-wrap gap-x-12 gap-y-4 justify-center items-center opacity-80">
+              <div className="text-[10px] md:text-[11px] uppercase font-black tracking-[0.3em] text-accent flex flex-wrap gap-x-8 gap-y-2 justify-center items-center opacity-60">
                 <span>{selectedArtwork?.series}</span>
-                <span className="hidden md:inline w-1.5 h-1.5 rounded-full bg-accent/40" />
+                <span className="hidden md:inline w-1 h-1 rounded-full bg-accent/30" />
                 <span>{selectedArtwork?.year}</span>
-                <span className="hidden md:inline w-1.5 h-1.5 rounded-full bg-accent/40" />
+                <span className="hidden md:inline w-1 h-1 rounded-full bg-accent/30" />
                 <span>{selectedArtwork?.medium}</span>
               </div>
             </div>

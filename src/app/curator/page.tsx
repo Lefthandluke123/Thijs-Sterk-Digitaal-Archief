@@ -1,10 +1,11 @@
+
 "use client";
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
-import { Loader2, X, Maximize2, Play, Eraser } from 'lucide-react';
+import { Loader2, X, Maximize2, Play, Eraser, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -55,6 +56,26 @@ export default function CuratorPage() {
       return activeTags.every(tag => art.tags?.includes(tag));
     });
   }, [artworks, activeTags]);
+
+  const navigateResults = useCallback((direction: 'next' | 'prev') => {
+    if (!selectedArtwork || !filteredArtworks.length) return;
+    const currentIndex = filteredArtworks.findIndex(art => art.id === selectedArtwork.id);
+    let nextIndex = direction === 'next' 
+      ? (currentIndex + 1) % filteredArtworks.length 
+      : (currentIndex - 1 + filteredArtworks.length) % filteredArtworks.length;
+    setSelectedArtwork(filteredArtworks[nextIndex]);
+  }, [selectedArtwork, filteredArtworks]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!selectedArtwork) return;
+      if (e.key === 'ArrowRight') navigateResults('next');
+      if (e.key === 'ArrowLeft') navigateResults('prev');
+      if (e.key === 'Escape') setSelectedArtwork(null);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedArtwork, navigateResults]);
 
   const logInteraction = (type: 'view_artwork' | 'filter_tags', data: any) => {
     if (!firestore || !visitorId) return;
@@ -109,7 +130,7 @@ export default function CuratorPage() {
           </h1>
           <div className="space-y-6 py-4">
             <p className="text-black text-3xl font-bold leading-relaxed max-w-3xl mx-auto">
-              Selecteer de thema&apos;s die u aanspreken en presenteer uw eigen collectie.
+              Selecteer de thema&apos;s die u aanspreken.
             </p>
           </div>
         </div>
@@ -194,7 +215,7 @@ export default function CuratorPage() {
               </div>
             ) : showResults ? (
               <div className="py-32 text-center">
-                <p className="text-3xl font-black italic text-black uppercase tracking-tight">Geen werken gevonden met deze combinatie.</p>
+                <p className="text-3xl font-black italic text-black uppercase tracking-tight">Geen werken gevonden.</p>
               </div>
             ) : null}
           </div>
@@ -203,7 +224,7 @@ export default function CuratorPage() {
 
       <Dialog open={!!selectedArtwork} onOpenChange={() => setSelectedArtwork(null)}>
         <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background border-none rounded-none overflow-hidden outline-none">
-          <div className="relative h-[80vh] w-full flex items-center justify-center overflow-hidden bg-black/5">
+          <div className="relative h-[80vh] w-full flex items-center justify-center overflow-hidden bg-black/5 group">
             {selectedArtwork && (
               <img 
                 src={selectedArtwork.imageUrl} 
@@ -215,22 +236,30 @@ export default function CuratorPage() {
                 }}
               />
             )}
-            <DialogClose className="absolute top-10 right-10 z-50 p-6 bg-white/80 backdrop-blur-md rounded-full hover:bg-white transition-all shadow-2xl border-2 border-black">
-              <X className="w-8 h-8 text-black" />
+            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-8 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+              <button onClick={(e) => { e.stopPropagation(); navigateResults('prev'); }} className="p-5 rounded-full bg-white/20 backdrop-blur-md pointer-events-auto hover:bg-white/40 transition-all shadow-xl">
+                <ChevronLeft className="w-10 h-10 text-black" />
+              </button>
+              <button onClick={(e) => { e.stopPropagation(); navigateResults('next'); }} className="p-5 rounded-full bg-white/20 backdrop-blur-md pointer-events-auto hover:bg-white/40 transition-all shadow-xl">
+                <ChevronRight className="w-10 h-10 text-black" />
+              </button>
+            </div>
+            <DialogClose className="absolute top-10 right-10 z-50 p-4 bg-white/80 backdrop-blur-md rounded-full hover:bg-white transition-all shadow-2xl border-2 border-black">
+              <X className="w-6 h-6 text-black" />
             </DialogClose>
           </div>
 
           <div className="h-[20vh] w-full bg-white py-8 px-12 border-t-2 border-black shadow-2xl flex flex-col items-center justify-center overflow-y-auto">
-            <div className="max-w-6xl mx-auto flex flex-col items-center text-center gap-6">
-              <DialogTitle className="font-headline text-3xl md:text-5xl font-light text-black tracking-tighter leading-tight uppercase">
+            <div className="max-w-6xl mx-auto flex flex-col items-center text-center gap-4">
+              <DialogTitle className="font-headline text-xl md:text-2xl font-light text-black tracking-tight leading-tight uppercase">
                 {selectedArtwork?.title}
               </DialogTitle>
               
-              <div className="text-[14px] md:text-[16px] uppercase font-black tracking-[0.3em] text-black flex flex-wrap gap-x-12 gap-y-4 justify-center items-center">
+              <div className="text-[10px] md:text-[11px] uppercase font-black tracking-[0.3em] text-black flex flex-wrap gap-x-8 gap-y-2 justify-center items-center opacity-60">
                 <span>{selectedArtwork?.series}</span>
-                <span className="hidden md:inline w-1.5 h-1.5 rounded-full bg-black" />
+                <span className="hidden md:inline w-1 h-1 rounded-full bg-black" />
                 <span>{selectedArtwork?.year}</span>
-                <span className="hidden md:inline w-1.5 h-1.5 rounded-full bg-black" />
+                <span className="hidden md:inline w-1 h-1 rounded-full bg-black" />
                 <span>{selectedArtwork?.medium}</span>
               </div>
             </div>

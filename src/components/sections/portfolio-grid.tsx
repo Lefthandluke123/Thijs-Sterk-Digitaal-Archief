@@ -1,11 +1,12 @@
+
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where, limit, orderBy } from 'firebase/firestore';
 import { Dialog, DialogContent, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Maximize2, Loader2, X, Star } from 'lucide-react';
+import { Maximize2, Loader2, X, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export function PortfolioGrid() {
   const [selectedArtwork, setSelectedArtwork] = useState<any | null>(null);
@@ -37,6 +38,26 @@ export function PortfolioGrid() {
     return latestArtworks || [];
   }, [featuredArtworks, latestArtworks]);
 
+  const navigateDisplay = useCallback((direction: 'next' | 'prev') => {
+    if (!selectedArtwork || !displayArtworks.length) return;
+    const currentIndex = displayArtworks.findIndex(art => art.id === selectedArtwork.id);
+    let nextIndex = direction === 'next' 
+      ? (currentIndex + 1) % displayArtworks.length 
+      : (currentIndex - 1 + displayArtworks.length) % displayArtworks.length;
+    setSelectedArtwork(displayArtworks[nextIndex]);
+  }, [selectedArtwork, displayArtworks]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!selectedArtwork) return;
+      if (e.key === 'ArrowRight') navigateDisplay('next');
+      if (e.key === 'ArrowLeft') navigateDisplay('prev');
+      if (e.key === 'Escape') setSelectedArtwork(null);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedArtwork, navigateDisplay]);
+
   const loading = loadingFeatured && loadingLatest;
 
   return (
@@ -47,7 +68,7 @@ export function PortfolioGrid() {
             <h2 className="font-headline text-5xl md:text-6xl font-light mb-6 tracking-tighter">
               {featuredArtworks && featuredArtworks.length > 0 ? 'Meester Selectie' : 'Recente Werken'}
             </h2>
-            <p className="text-muted-foreground text-xl font-light leading-relaxed">Een collectie geselecteerde verkenningen van textuur, licht en de essentie van het landschap.</p>
+            <p className="text-muted-foreground text-xl font-light leading-relaxed">Een collectie geselecteerde verkenningen van de essentie.</p>
           </div>
           <div className="flex gap-10 text-[11px] font-black tracking-[0.3em] uppercase">
             <a href="/gallery" className="text-muted-foreground hover:text-foreground transition-all pb-1 border-b border-transparent hover:border-accent">Bekijk alle werken</a>
@@ -85,15 +106,14 @@ export function PortfolioGrid() {
           </div>
         ) : (
           <div className="text-center py-32 border border-dashed border-border rounded-3xl opacity-40">
-            <p className="text-lg font-light italic">Nog geen kunstwerken toegevoegd aan de collectie.</p>
+            <p className="text-lg font-light italic">Nog geen kunstwerken toegevoegd.</p>
           </div>
         )}
       </div>
 
       <Dialog open={!!selectedArtwork} onOpenChange={() => setSelectedArtwork(null)}>
         <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background/98 backdrop-blur-3xl border-none rounded-none overflow-hidden">
-          {/* Top 80% view */}
-          <div className="relative h-[80vh] w-full bg-black/5 flex items-center justify-center overflow-hidden">
+          <div className="relative h-[80vh] w-full bg-black/5 flex items-center justify-center overflow-hidden group">
             {selectedArtwork && (
               <img
                 src={selectedArtwork.imageUrl}
@@ -105,22 +125,29 @@ export function PortfolioGrid() {
                 }}
               />
             )}
+            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-8 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+              <button onClick={(e) => { e.stopPropagation(); navigateDisplay('prev'); }} className="p-5 rounded-full bg-background/20 backdrop-blur-md pointer-events-auto hover:bg-background/40 transition-all shadow-xl">
+                <ChevronLeft className="w-10 h-10" />
+              </button>
+              <button onClick={(e) => { e.stopPropagation(); navigateDisplay('next'); }} className="p-5 rounded-full bg-background/20 backdrop-blur-md pointer-events-auto hover:bg-background/40 transition-all shadow-xl">
+                <ChevronRight className="w-10 h-10" />
+              </button>
+            </div>
             <DialogClose className="absolute top-10 right-10 z-50 p-4 bg-background/10 backdrop-blur-sm rounded-full hover:bg-background/20 transition-all shadow-xl">
               <X className="w-8 h-8 opacity-40" />
             </DialogClose>
           </div>
           
-          {/* Bottom 20% info */}
           <div className="h-[20vh] w-full bg-background/95 backdrop-blur-md py-8 px-12 border-t border-border/10 shadow-2xl flex flex-col items-center justify-center overflow-y-auto">
-            <div className="max-w-6xl mx-auto flex flex-col items-center text-center gap-6">
-              <DialogTitle className="font-headline text-3xl md:text-5xl font-light text-foreground tracking-tighter uppercase leading-tight">
+            <div className="max-w-6xl mx-auto flex flex-col items-center text-center gap-4">
+              <DialogTitle className="font-headline text-xl md:text-2xl font-light text-foreground tracking-tight uppercase leading-tight">
                 {selectedArtwork?.title}
               </DialogTitle>
-              <div className="text-[14px] md:text-[16px] uppercase font-black tracking-[0.4em] text-accent flex flex-wrap gap-x-12 gap-y-4 justify-center items-center opacity-80">
+              <div className="text-[10px] md:text-[11px] uppercase font-black tracking-[0.3em] text-accent flex flex-wrap gap-x-8 gap-y-2 justify-center items-center opacity-60">
                 <span>{selectedArtwork?.series}</span>
-                <span className="hidden md:inline w-1.5 h-1.5 rounded-full bg-accent/40" />
+                <span className="hidden md:inline w-1 h-1 rounded-full bg-accent/30" />
                 <span>{selectedArtwork?.year}</span>
-                <span className="hidden md:inline w-1.5 h-1.5 rounded-full bg-accent/40" />
+                <span className="hidden md:inline w-1 h-1 rounded-full bg-accent/30" />
                 <span>{selectedArtwork?.medium}</span>
               </div>
             </div>
