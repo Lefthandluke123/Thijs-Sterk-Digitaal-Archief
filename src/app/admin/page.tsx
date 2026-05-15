@@ -45,7 +45,7 @@ const STANDARD_TAGS = [
   "Bloemen", "Dieren", "Water", "Portretten", "Atmosferisch", "Licht", "Polder", "Kust"
 ];
 
-// Precision button with robust auto-repeat
+// Precision button with robust auto-repeat for both click and hold
 function RepeatButton({ onClick, children, className, disabled }: { onClick: () => void, children: React.ReactNode, className?: string, disabled?: boolean }) {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -59,7 +59,7 @@ function RepeatButton({ onClick, children, className, disabled }: { onClick: () 
     if (disabled) return;
     onClick();
     timerRef.current = setTimeout(() => {
-      intervalRef.current = setInterval(onClick, 60);
+      intervalRef.current = setInterval(onClick, 50);
     }, 400);
   }, [onClick, disabled]);
 
@@ -67,7 +67,7 @@ function RepeatButton({ onClick, children, className, disabled }: { onClick: () 
     <Button
       variant="outline"
       size="icon"
-      className={cn("select-none", className)}
+      className={cn("select-none transition-all active:scale-95", className)}
       disabled={disabled}
       onMouseDown={start}
       onMouseUp={stop}
@@ -195,7 +195,16 @@ export default function AdminPage() {
       const items = Array.isArray(artworksArray) ? artworksArray : [artworksArray];
       for (const item of items) {
         const { id, createdAt, ...rest } = item;
-        await addDoc(collection(firestore, 'artworks'), { ...rest, createdAt: serverTimestamp() });
+        await addDoc(collection(firestore, 'artworks'), { 
+          ...rest, 
+          createdAt: serverTimestamp(),
+          cropTop: rest.cropTop || 0,
+          cropBottom: rest.cropBottom || 0,
+          cropLeft: rest.cropLeft || 0,
+          cropRight: rest.cropRight || 0,
+          brightness: rest.brightness || 1,
+          tags: rest.tags || []
+        });
       }
       toast({ title: "Import voltooid" });
       setBulkJson('');
@@ -212,7 +221,7 @@ export default function AdminPage() {
     updateDoc(artRef, { [field]: value })
       .catch(async () => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: artRef.path, operation: 'update' })))
       .finally(() => {
-        setTimeout(() => setIsSaving(false), 300);
+        setTimeout(() => setIsSaving(false), 200);
       });
   };
 
@@ -223,6 +232,12 @@ export default function AdminPage() {
       ? currentTags.filter((t: string) => t !== tag) 
       : [...currentTags, tag];
     updateArtworkField(editingArtwork.id, 'tags', newTags);
+  };
+
+  const handleDeleteArtwork = (artId: string) => {
+    if (!firestore || !confirm("Definitief verwijderen?")) return;
+    deleteDoc(doc(firestore, 'artworks', artId));
+    setEditingId(null);
   };
 
   return (
@@ -307,10 +322,10 @@ export default function AdminPage() {
           <TabsContent value="bulk">
             <Card className="p-8 rounded-3xl max-w-4xl mx-auto space-y-6">
               <Label className="text-[8px] font-black text-black uppercase tracking-widest">JSON Data</Label>
-              <Textarea value={bulkJson} onChange={(e) => setBulkJson(e.target.value)} className="min-h-[400px] font-mono text-[10px] rounded-2xl bg-black/5" />
+              <Textarea value={bulkJson} onChange={(e) => setBulkJson(e.target.value)} placeholder='[{"title": "Werk", "series": "Reeks", "imageUrl": "..."}]' className="min-h-[400px] font-mono text-[10px] rounded-2xl bg-black/5" />
               <div className="grid grid-cols-2 gap-4">
                 <Button onClick={() => jsonFileInputRef.current?.click()} variant="outline" className="h-14 rounded-xl text-[10px] font-bold uppercase tracking-widest">Bestand Kiezen</Button>
-                <Button onClick={handleBulkUpload} disabled={loading || !bulkJson} className="h-14 rounded-xl font-bold uppercase tracking-widest">Importeer</Button>
+                <Button onClick={handleBulkUpload} disabled={loading || !bulkJson} className="h-14 rounded-xl font-bold uppercase tracking-widest">Importeer naar Cloud</Button>
               </div>
             </Card>
           </TabsContent>
@@ -330,10 +345,10 @@ export default function AdminPage() {
       </main>
 
       <Dialog open={!!editingId} onOpenChange={() => setEditingId(null)}>
-        <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background border-none rounded-none overflow-hidden">
+        <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background border-none rounded-none overflow-hidden outline-none">
           <DialogTitle className="sr-only">Master Editor (75/25)</DialogTitle>
           
-          {/* Top 75% - Museale Preview */}
+          {/* Top 75% - Beeld Preview */}
           <div className="relative h-[75vh] w-full flex items-center justify-center overflow-hidden bg-[#f3f3f3] group">
             {editingArtwork && (
               <img 
@@ -346,27 +361,27 @@ export default function AdminPage() {
               />
             )}
             <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-12 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
-              <button onClick={() => navigateEditing('prev')} className="p-4 rounded-full bg-black/5 pointer-events-auto hover:bg-black/10"><ChevronLeft className="w-8 h-8 text-black" /></button>
-              <button onClick={() => navigateEditing('next')} className="p-4 rounded-full bg-black/5 pointer-events-auto hover:bg-black/10"><ChevronRight className="w-8 h-8 text-black" /></button>
+              <button onClick={() => navigateEditing('prev')} className="p-4 rounded-full bg-black/5 pointer-events-auto hover:bg-black/10 transition-colors"><ChevronLeft className="w-8 h-8 text-black" /></button>
+              <button onClick={() => navigateEditing('next')} className="p-4 rounded-full bg-black/5 pointer-events-auto hover:bg-black/10 transition-colors"><ChevronRight className="w-8 h-8 text-black" /></button>
             </div>
-            <div className="absolute top-4 right-4 flex gap-4 items-center">
-              <Button variant="ghost" size="icon" onClick={() => editingArtwork && handleDeleteArtwork(editingArtwork.id)} className="h-8 w-8 rounded-full text-red-600 hover:bg-red-50"><Trash2 className="w-4 h-4" /></Button>
-              <DialogClose className="h-6 w-6 flex items-center justify-center bg-black/10 rounded-full hover:bg-black/20"><X className="w-3 h-3 text-black" /></DialogClose>
+            <div className="absolute top-4 right-4 flex gap-3 items-center">
+              <Button variant="ghost" size="icon" onClick={() => editingArtwork && handleDeleteArtwork(editingArtwork.id)} className="h-6 w-6 rounded-full text-red-600 hover:bg-red-50"><Trash2 className="w-3 h-3" /></Button>
+              <DialogClose className="h-6 w-6 flex items-center justify-center bg-black/10 rounded-full hover:bg-black/20 transition-colors"><X className="w-3 h-3 text-black" /></DialogClose>
             </div>
           </div>
 
           {/* Bottom 25% - Parameterbalk */}
-          <div className="h-[25vh] w-full bg-background border-t border-black/10 px-8 py-6 flex flex-col justify-between overflow-y-auto no-scrollbar">
-            <div className="flex items-start gap-12 w-full h-full">
+          <div className="h-[25vh] w-full bg-background border-t border-black/10 px-8 py-6 flex flex-col justify-between">
+            <div className="flex items-start gap-12 w-full h-full overflow-x-auto no-scrollbar">
               
               {/* Identiteit & Status (Small) */}
-              <div className="flex flex-col gap-3 min-w-[160px] border-r border-black/5 pr-8">
+              <div className="flex flex-col gap-3 min-w-[160px] border-r border-black/5 pr-8 h-full">
                 <div className="space-y-1">
                   <Label className="text-[8px] font-black text-black uppercase tracking-widest">Titel</Label>
                   <Input 
                     defaultValue={editingArtwork?.title || ''} 
                     onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'title', e.target.value)} 
-                    className="h-7 text-[8px] font-black text-black uppercase border-none bg-black/5 rounded-sm p-1.5"
+                    className="h-7 text-[8px] font-black text-black uppercase border-none bg-black/5 rounded-sm p-1.5 focus-visible:ring-0"
                   />
                 </div>
                 <div className="flex items-center justify-between bg-black/5 p-1.5 rounded-sm">
@@ -377,13 +392,14 @@ export default function AdminPage() {
                     className="scale-50 h-4"
                   />
                 </div>
-                <div className="flex items-center justify-center pt-1">
+                <div className="flex items-center gap-2 mt-auto">
                   {isSaving ? <Loader2 className="w-3 h-3 animate-spin text-black/20" /> : <CheckCircle2 className="w-3 h-3 text-green-500/30" />}
+                  <span className="text-[8px] font-black text-black/20 uppercase tracking-widest">{isSaving ? 'Slaat op...' : 'Opgeslagen'}</span>
                 </div>
               </div>
 
               {/* Crop Controls (Monumentaal) */}
-              <div className="flex items-center gap-10">
+              <div className="flex items-center gap-10 border-r border-black/5 pr-12">
                 {['Top', 'Bottom', 'Left', 'Right'].map(side => {
                   const field = `crop${side}`;
                   const currentVal = (editingArtwork as any)?.[field] || 0;
@@ -423,7 +439,7 @@ export default function AdminPage() {
               </div>
 
               {/* Thema's (Royale Ruimte) */}
-              <div className="flex flex-col gap-4 border-l border-black/5 pl-12 flex-1 min-w-[300px]">
+              <div className="flex flex-col gap-4 border-r border-black/5 pr-12 flex-1 min-w-[300px]">
                 <span className="text-[8px] font-black text-black uppercase tracking-widest">Thema's & Tags</span>
                 <div className="flex flex-wrap gap-2 max-h-[16vh] overflow-y-auto pr-4 no-scrollbar">
                   {STANDARD_TAGS.map(tag => (
@@ -443,8 +459,8 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              {/* Licht/Donker (Nu Prominent) */}
-              <div className="flex flex-col items-center gap-5 border-l border-black/5 pl-12 min-w-[180px]">
+              {/* Licht/Donker */}
+              <div className="flex flex-col items-center gap-5 min-w-[180px]">
                 <div className="flex items-center gap-2">
                   <Sun className="w-3 h-3 text-black/40" />
                   <span className="text-[8px] font-black text-black uppercase tracking-widest">Licht {(editingArtwork?.brightness || 1).toFixed(2)}</span>
@@ -464,10 +480,4 @@ export default function AdminPage() {
       </Dialog>
     </div>
   );
-
-  function handleDeleteArtwork(artId: string) {
-    if (!firestore || !confirm("Definitief verwijderen?")) return;
-    deleteDoc(doc(firestore, 'artworks', artId));
-    setEditingId(null);
-  }
 }
