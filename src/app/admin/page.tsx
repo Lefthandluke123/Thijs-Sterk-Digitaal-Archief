@@ -73,6 +73,10 @@ function RepeatButton({ onStep, children, className, disabled }: { onStep: () =>
     }, 400);
   }, [disabled]);
 
+  useEffect(() => {
+    return () => stop();
+  }, [stop]);
+
   return (
     <Button
       variant="outline"
@@ -494,7 +498,7 @@ export default function AdminPage() {
                           "px-2 py-1 rounded-sm text-[8px] font-black uppercase tracking-widest border transition-all",
                           editingArtwork?.tags?.includes(tag)
                             ? "bg-black text-white border-black"
-                            : "bg-transparent text-black/40 border-black/10 hover:border-black/30"
+                            : "bg-transparent text-black border-black/20 hover:border-black/50"
                         )}
                       >
                         {tag}
@@ -536,4 +540,3 @@ export default function AdminPage() {
     </div>
   );
 }
-
