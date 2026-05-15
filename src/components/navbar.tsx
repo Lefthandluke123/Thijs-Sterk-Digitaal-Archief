@@ -32,18 +32,29 @@ export function Navbar() {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/60 backdrop-blur-sm border-b border-border/30">
       <div className="container mx-auto px-6 h-14 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-3 group">
-          <div className="relative w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white overflow-hidden transition-transform group-hover:scale-105">
-            {settings?.logoUrl ? (
-              <Image src={settings.logoUrl} alt="Logo" fill className="object-contain p-1" />
-            ) : (
-              <span className="font-headline font-bold text-base">T</span>
-            )}
-          </div>
-          <div className="flex flex-col">
-            <span className="font-headline font-bold tracking-tight text-lg leading-none">Thijs Sterk</span>
-            <span className="text-[9px] uppercase tracking-[0.2em] text-accent font-medium opacity-80">Beeldend Kunstenaar</span>
-          </div>
+        <Link href="/" className="flex items-center gap-4 group">
+          {settings?.logoUrl ? (
+            <div className="relative h-10 w-auto flex items-center">
+              <img 
+                src={settings.logoUrl} 
+                alt="Logo" 
+                className="h-full w-auto object-contain transition-transform group-hover:scale-105" 
+              />
+              <div className="flex flex-col ml-3">
+                <span className="text-[9px] uppercase tracking-[0.2em] text-accent font-black opacity-80 leading-none">Beeldend Kunstenaar</span>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <div className="relative w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white overflow-hidden transition-transform group-hover:scale-105">
+                <span className="font-headline font-bold text-base">T</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="font-headline font-bold tracking-tight text-lg leading-none">Thijs Sterk</span>
+                <span className="text-[9px] uppercase tracking-[0.2em] text-accent font-medium opacity-80">Beeldend Kunstenaar</span>
+              </div>
+            </div>
+          )}
         </Link>
         
         <div className="flex items-center gap-1 sm:gap-2">
