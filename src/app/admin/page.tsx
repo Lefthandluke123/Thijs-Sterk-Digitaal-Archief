@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
@@ -25,7 +26,6 @@ import {
   Download,
   CloudUpload,
   Sun,
-  Home,
   Tag
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -153,19 +153,24 @@ export default function AdminPage() {
     setIsUploading(true);
     setUploadProgress(0);
     const totalFiles = files.length;
+    let completedCount = 0;
 
-    for (let i = 0; i < totalFiles; i++) {
-      const file = files[i];
-      if (!/\.(jpe?g|png|webp|avif)$/i.test(file.name)) continue;
+    // We process files in parallel to ensure multiple uploads work as expected
+    const uploadPromises = Array.from(files).map(async (file) => {
+      if (!/\.(jpe?g|png|webp|avif)$/i.test(file.name)) {
+        completedCount++;
+        return;
+      }
 
       const fileNameOnly = file.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
-      setUploadStatus(`Uploaden: ${file.name} (${i + 1}/${totalFiles})`);
       const storageRef = ref(storage, `artworks/${Date.now()}_${Math.random().toString(36).substring(7)}_${file.name}`);
 
       try {
         const snapshot = await uploadBytes(storageRef, file);
         const downloadUrl = await getDownloadURL(snapshot.ref);
-        await addDoc(collection(firestore, 'artworks'), { 
+        
+        // No await here for faster batch processing
+        addDoc(collection(firestore, 'artworks'), { 
           title: fileNameOnly, 
           series: "Nieuwe Uploads", 
           imageUrl: downloadUrl, 
@@ -182,14 +187,24 @@ export default function AdminPage() {
           featured: false, 
           createdAt: serverTimestamp() 
         });
-        setUploadProgress(((i + 1) / totalFiles) * 100);
+
+        completedCount++;
+        setUploadProgress((completedCount / totalFiles) * 100);
+        setUploadStatus(`Verwerkt: ${completedCount}/${totalFiles}`);
       } catch (error) {
+        console.error(error);
         toast({ variant: "destructive", title: "Fout", description: `Kon ${file.name} niet uploaden.` });
+        completedCount++;
       }
-    }
+    });
+
+    await Promise.all(uploadPromises);
+    
     setIsUploading(false);
     setUploadStatus('');
     toast({ title: "Upload voltooid" });
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (uploadDirInputRef.current) uploadDirInputRef.current.value = '';
     setActiveTab('archive');
   };
 
@@ -237,7 +252,7 @@ export default function AdminPage() {
 
       <header className="h-16 border-b border-border bg-background/95 backdrop-blur-sm sticky top-14 z-40 px-8 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <img src="/logo.png" className="h-8 w-auto mr-2" />
+          <img src="/logo.png" className="h-12 w-auto mr-2" />
           <h1 className="font-headline text-xl font-light">Atelier <span className="italic">Beheer</span></h1>
         </div>
         <div className="flex items-center gap-4">
@@ -379,8 +394,8 @@ export default function AdminPage() {
                 </div>
                 <div className="flex items-center justify-between bg-black/5 p-1.5 rounded-sm">
                   <div className="flex items-center gap-1.5">
-                    <Home className="w-2.5 h-2.5 text-black/60" />
-                    <span className="text-[8px] font-black text-black uppercase tracking-widest">Home</span>
+                    <CheckCircle2 className="w-2.5 h-2.5 text-black/60" />
+                    <span className="text-[8px] font-black text-black uppercase tracking-widest">Op Home</span>
                   </div>
                   <Switch 
                     checked={editingArtwork?.featured || false} 
@@ -395,7 +410,7 @@ export default function AdminPage() {
               </div>
 
               <div className="flex flex-col flex-1 h-full min-w-0 border-r border-black/5 pr-8 overflow-hidden">
-                <div className="flex items-center justify-between gap-4 h-[55%] border-b border-black/5 pb-2">
+                <div className="flex items-center justify-between gap-4 h-[50%] border-b border-black/5 pb-2">
                   {['Top', 'Bottom', 'Left', 'Right'].map(side => {
                     const field = `crop${side}`;
                     const currentVal = (editingArtwork as any)?.[field] || 0;
@@ -410,16 +425,16 @@ export default function AdminPage() {
                               const newVal = Math.max(0, val - 0.1);
                               updateArtworkField(editingArtwork.id, field, newVal);
                             }}
-                            className="h-12 w-12 border-black/10 hover:bg-black/5 rounded-lg"
+                            className="h-10 w-10 border-black/10 hover:bg-black/5 rounded-lg"
                           >
-                            <Minus className="h-5 w-5 text-black" />
+                            <Minus className="h-4 w-4 text-black" />
                           </RepeatButton>
                           <Slider 
                             value={[currentVal]} 
                             max={50} 
                             step={0.1} 
                             onValueChange={([val]) => editingArtwork && updateArtworkField(editingArtwork.id, field, val)} 
-                            className="w-16 md:w-24"
+                            className="w-16 md:w-20"
                           />
                           <RepeatButton 
                             onStep={() => {
@@ -428,9 +443,9 @@ export default function AdminPage() {
                               const newVal = Math.min(50, val + 0.1);
                               updateArtworkField(editingArtwork.id, field, newVal);
                             }}
-                            className="h-12 w-12 border-black/10 hover:bg-black/5 rounded-lg"
+                            className="h-10 w-10 border-black/10 hover:bg-black/5 rounded-lg"
                           >
-                            <Plus className="h-5 w-5 text-black" />
+                            <Plus className="h-4 w-4 text-black" />
                           </RepeatButton>
                         </div>
                       </div>
@@ -438,7 +453,7 @@ export default function AdminPage() {
                   })}
                 </div>
 
-                <div className="h-[45%] pt-2 flex flex-col gap-2 overflow-hidden">
+                <div className="h-[50%] pt-2 flex flex-col gap-2 overflow-hidden">
                   <div className="flex items-center justify-between">
                     <span className="text-[8px] font-black text-black uppercase tracking-widest">Thema's (klik om te toggelen/verwijderen)</span>
                     <div className="flex items-center gap-2">

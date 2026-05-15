@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -110,9 +111,6 @@ export default function CuratorPage() {
           <div className="space-y-6 py-4">
             <p className="text-black text-3xl font-bold leading-relaxed max-w-3xl mx-auto">
               Selecteer de thema&apos;s die u aanspreken en presenteer uw eigen collectie.
-            </p>
-            <p className="text-black text-[12px] uppercase tracking-[0.2em] font-black">
-              U kunt meerdere thema&apos;s combineren voor een specifiekere selectie.
             </p>
           </div>
         </div>
