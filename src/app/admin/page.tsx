@@ -47,10 +47,15 @@ const STANDARD_TAGS = [
   "Bloemen", "Dieren", "Water", "Portretten", "Atmosferisch", "Licht", "Polder", "Kust"
 ];
 
-// Robuuste RepeatButton voor vlijmscherpe 0.1% precisie
-function RepeatButton({ onClick, children, className, disabled }: { onClick: () => void, children: React.ReactNode, className?: string, disabled?: boolean }) {
+// Robuuste RepeatButton voor vlijmscherpe 0.1% precisie zonder stale closures
+function RepeatButton({ onStep, children, className, disabled }: { onStep: () => void, children: React.ReactNode, className?: string, disabled?: boolean }) {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const onStepRef = useRef(onStep);
+
+  useEffect(() => {
+    onStepRef.current = onStep;
+  }, [onStep]);
 
   const stop = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -60,11 +65,13 @@ function RepeatButton({ onClick, children, className, disabled }: { onClick: () 
   const start = useCallback((e: React.MouseEvent | React.TouchEvent) => {
     if (disabled) return;
     e.preventDefault();
-    onClick();
+    onStepRef.current(); // Eerste stap
     timerRef.current = setTimeout(() => {
-      intervalRef.current = setInterval(onClick, 80);
+      intervalRef.current = setInterval(() => {
+        onStepRef.current();
+      }, 60);
     }, 400);
-  }, [onClick, disabled]);
+  }, [disabled]);
 
   return (
     <Button
@@ -227,7 +234,7 @@ export default function AdminPage() {
     updateDoc(artRef, { [field]: value })
       .catch(async () => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: artRef.path, operation: 'update' })))
       .finally(() => {
-        setTimeout(() => setIsSaving(false), 300);
+        setTimeout(() => setIsSaving(false), 200);
       });
   };
 
@@ -429,9 +436,11 @@ export default function AdminPage() {
                         <span className="text-[8px] font-black text-black uppercase tracking-widest">{side} {currentVal.toFixed(1)}%</span>
                         <div className="flex items-center gap-2">
                           <RepeatButton 
-                            onClick={() => {
-                              const newVal = Math.max(0, currentVal - 0.1);
-                              editingArtwork && updateArtworkField(editingArtwork.id, field, newVal);
+                            onStep={() => {
+                              if (!editingArtwork) return;
+                              const val = (editingArtwork as any)[field] || 0;
+                              const newVal = Math.max(0, val - 0.1);
+                              updateArtworkField(editingArtwork.id, field, newVal);
                             }}
                             className="h-12 w-12 border-black/10 hover:bg-black/5 rounded-lg"
                           >
@@ -445,9 +454,11 @@ export default function AdminPage() {
                             className="w-16 md:w-24"
                           />
                           <RepeatButton 
-                            onClick={() => {
-                              const newVal = Math.min(50, currentVal + 0.1);
-                              editingArtwork && updateArtworkField(editingArtwork.id, field, newVal);
+                            onStep={() => {
+                              if (!editingArtwork) return;
+                              const val = (editingArtwork as any)[field] || 0;
+                              const newVal = Math.min(50, val + 0.1);
+                              updateArtworkField(editingArtwork.id, field, newVal);
                             }}
                             className="h-12 w-12 border-black/10 hover:bg-black/5 rounded-lg"
                           >
@@ -525,3 +536,4 @@ export default function AdminPage() {
     </div>
   );
 }
+
