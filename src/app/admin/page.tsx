@@ -27,7 +27,8 @@ import {
   Download,
   CloudUpload,
   Image as ImageIcon,
-  Sun
+  Sun,
+  Home
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -59,7 +60,7 @@ function RepeatButton({ onClick, children, className, disabled }: { onClick: () 
     if (disabled) return;
     onClick();
     timerRef.current = setTimeout(() => {
-      intervalRef.current = setInterval(onClick, 50);
+      intervalRef.current = setInterval(onClick, 60);
     }, 400);
   }, [onClick, disabled]);
 
@@ -69,12 +70,11 @@ function RepeatButton({ onClick, children, className, disabled }: { onClick: () 
       size="icon"
       className={cn("select-none transition-all active:scale-95", className)}
       disabled={disabled}
-      onMouseDown={start}
+      onMouseDown={(e) => { e.preventDefault(); start(); }}
       onMouseUp={stop}
       onMouseLeave={stop}
       onTouchStart={(e) => { e.preventDefault(); start(); }}
       onTouchEnd={stop}
-      onClick={(e) => { e.preventDefault(); }} 
     >
       {children}
     </Button>
@@ -195,6 +195,10 @@ export default function AdminPage() {
       const items = Array.isArray(artworksArray) ? artworksArray : [artworksArray];
       for (const item of items) {
         const { id, createdAt, ...rest } = item;
+        // Check if already exists by imageUrl
+        const exists = artworks?.some(a => a.imageUrl === rest.imageUrl);
+        if (exists) continue;
+
         await addDoc(collection(firestore, 'artworks'), { 
           ...rest, 
           createdAt: serverTimestamp(),
@@ -371,11 +375,11 @@ export default function AdminPage() {
           </div>
 
           {/* Bottom 25% - Parameterbalk */}
-          <div className="h-[25vh] w-full bg-background border-t border-black/10 px-8 py-6 flex flex-col justify-between">
-            <div className="flex items-start gap-12 w-full h-full overflow-x-auto no-scrollbar">
+          <div className="h-[25vh] w-full bg-background border-t border-black/10 px-8 py-6">
+            <div className="flex items-start gap-12 w-full h-full overflow-hidden">
               
               {/* Identiteit & Status (Small) */}
-              <div className="flex flex-col gap-3 min-w-[160px] border-r border-black/5 pr-8 h-full">
+              <div className="flex flex-col gap-4 min-w-[140px] border-r border-black/5 pr-8 h-full">
                 <div className="space-y-1">
                   <Label className="text-[8px] font-black text-black uppercase tracking-widest">Titel</Label>
                   <Input 
@@ -385,82 +389,87 @@ export default function AdminPage() {
                   />
                 </div>
                 <div className="flex items-center justify-between bg-black/5 p-1.5 rounded-sm">
-                  <span className="text-[8px] font-black text-black uppercase tracking-widest">Home</span>
+                  <div className="flex items-center gap-1.5">
+                    <Home className="w-2 h-2 text-black/40" />
+                    <span className="text-[8px] font-black text-black uppercase tracking-widest">Home</span>
+                  </div>
                   <Switch 
                     checked={editingArtwork?.featured || false} 
                     onCheckedChange={(val) => editingArtwork && updateArtworkField(editingArtwork.id, 'featured', val)}
-                    className="scale-50 h-4"
+                    className="scale-50 h-3"
                   />
                 </div>
                 <div className="flex items-center gap-2 mt-auto">
                   {isSaving ? <Loader2 className="w-3 h-3 animate-spin text-black/20" /> : <CheckCircle2 className="w-3 h-3 text-green-500/30" />}
-                  <span className="text-[8px] font-black text-black/20 uppercase tracking-widest">{isSaving ? 'Slaat op...' : 'Opgeslagen'}</span>
+                  <span className="text-[8px] font-black text-black/20 uppercase tracking-widest">{isSaving ? 'Saving' : 'Opgeslagen'}</span>
                 </div>
               </div>
 
-              {/* Crop Controls (Monumentaal) */}
-              <div className="flex items-center gap-10 border-r border-black/5 pr-12">
-                {['Top', 'Bottom', 'Left', 'Right'].map(side => {
-                  const field = `crop${side}`;
-                  const currentVal = (editingArtwork as any)?.[field] || 0;
-                  return (
-                    <div key={side} className="flex flex-col items-center gap-3">
-                      <span className="text-[8px] font-black text-black uppercase tracking-widest">{side} {currentVal.toFixed(1)}%</span>
-                      <div className="flex items-center gap-4">
-                        <RepeatButton 
-                          onClick={() => {
-                            const newVal = Math.max(0, currentVal - 0.1);
-                            editingArtwork && updateArtworkField(editingArtwork.id, field, newVal);
-                          }}
-                          className="h-12 w-12 border-black/10 hover:bg-black/5 rounded-lg"
-                        >
-                          <Minus className="h-5 w-5 text-black" />
-                        </RepeatButton>
-                        <Slider 
-                          value={[currentVal]} 
-                          max={50} 
-                          step={0.1} 
-                          onValueChange={([val]) => editingArtwork && updateArtworkField(editingArtwork.id, field, val)} 
-                          className="w-24"
-                        />
-                        <RepeatButton 
-                          onClick={() => {
-                            const newVal = Math.min(50, currentVal + 0.1);
-                            editingArtwork && updateArtworkField(editingArtwork.id, field, newVal);
-                          }}
-                          className="h-12 w-12 border-black/10 hover:bg-black/5 rounded-lg"
-                        >
-                          <Plus className="h-5 w-5 text-black" />
-                        </RepeatButton>
+              {/* Crop & Thema's Stack (Large Area) */}
+              <div className="flex flex-col flex-1 h-full min-w-0 border-r border-black/5 pr-8 overflow-hidden">
+                {/* Crops Top */}
+                <div className="flex items-center gap-10 h-1/2">
+                  {['Top', 'Bottom', 'Left', 'Right'].map(side => {
+                    const field = `crop${side}`;
+                    const currentVal = (editingArtwork as any)?.[field] || 0;
+                    return (
+                      <div key={side} className="flex flex-col items-center gap-1">
+                        <span className="text-[8px] font-black text-black uppercase tracking-widest mb-1">{side} {currentVal.toFixed(1)}%</span>
+                        <div className="flex items-center gap-3">
+                          <RepeatButton 
+                            onClick={() => {
+                              const newVal = Math.max(0, currentVal - 0.1);
+                              editingArtwork && updateArtworkField(editingArtwork.id, field, newVal);
+                            }}
+                            className="h-12 w-12 border-black/10 hover:bg-black/5 rounded-lg"
+                          >
+                            <Minus className="h-5 w-5 text-black" />
+                          </RepeatButton>
+                          <Slider 
+                            value={[currentVal]} 
+                            max={50} 
+                            step={0.1} 
+                            onValueChange={([val]) => editingArtwork && updateArtworkField(editingArtwork.id, field, val)} 
+                            className="w-20"
+                          />
+                          <RepeatButton 
+                            onClick={() => {
+                              const newVal = Math.min(50, currentVal + 0.1);
+                              editingArtwork && updateArtworkField(editingArtwork.id, field, newVal);
+                            }}
+                            className="h-12 w-12 border-black/10 hover:bg-black/5 rounded-lg"
+                          >
+                            <Plus className="h-5 w-5 text-black" />
+                          </RepeatButton>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
 
-              {/* Thema's (Royale Ruimte) */}
-              <div className="flex flex-col gap-4 border-r border-black/5 pr-12 flex-1 min-w-[300px]">
-                <span className="text-[8px] font-black text-black uppercase tracking-widest">Thema's & Tags</span>
-                <div className="flex flex-wrap gap-2 max-h-[16vh] overflow-y-auto pr-4 no-scrollbar">
-                  {STANDARD_TAGS.map(tag => (
-                    <button
-                      key={tag}
-                      onClick={() => toggleTag(tag)}
-                      className={cn(
-                        "px-3 py-1.5 rounded-sm text-[8px] font-black uppercase tracking-widest border transition-all",
-                        editingArtwork?.tags?.includes(tag)
-                          ? "bg-black text-white border-black"
-                          : "bg-transparent text-black/40 border-black/10 hover:border-black/30"
-                      )}
-                    >
-                      {tag}
-                    </button>
-                  ))}
+                {/* Thema's Bottom */}
+                <div className="h-1/2 mt-2 pt-2 border-t border-black/5">
+                  <div className="flex flex-wrap gap-1.5 overflow-y-auto h-full pr-4 no-scrollbar pb-2">
+                    {STANDARD_TAGS.map(tag => (
+                      <button
+                        key={tag}
+                        onClick={() => toggleTag(tag)}
+                        className={cn(
+                          "px-3 py-1.5 rounded-sm text-[8px] font-black uppercase tracking-widest border transition-all h-fit",
+                          editingArtwork?.tags?.includes(tag)
+                            ? "bg-black text-white border-black"
+                            : "bg-transparent text-black/40 border-black/10 hover:border-black/30"
+                        )}
+                      >
+                        {tag}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
-              {/* Licht/Donker */}
-              <div className="flex flex-col items-center gap-5 min-w-[180px]">
+              {/* Licht/Donker (Right) */}
+              <div className="flex flex-col items-center justify-center gap-5 min-w-[160px] h-full">
                 <div className="flex items-center gap-2">
                   <Sun className="w-3 h-3 text-black/40" />
                   <span className="text-[8px] font-black text-black uppercase tracking-widest">Licht {(editingArtwork?.brightness || 1).toFixed(2)}</span>
@@ -470,8 +479,9 @@ export default function AdminPage() {
                   max={2} 
                   step={0.01} 
                   onValueChange={([val]) => editingArtwork && updateArtworkField(editingArtwork.id, 'brightness', val)} 
-                  className="w-36"
+                  className="w-32"
                 />
+                <div className="mt-4 opacity-10 font-black text-[8px] uppercase tracking-[0.5em]">Gamma Controls</div>
               </div>
 
             </div>
