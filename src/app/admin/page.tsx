@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
@@ -44,24 +45,23 @@ const STANDARD_TAGS = [
   "Bloemen", "Dieren", "Water", "Portretten", "Atmosferisch", "Licht", "Polder", "Kust"
 ];
 
-// Precision button with auto-repeat for both click and hold
+// Precision button with robust auto-repeat
 function RepeatButton({ onClick, children, className, disabled }: { onClick: () => void, children: React.ReactNode, className?: string, disabled?: boolean }) {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-
-  const start = useCallback(() => {
-    onClick();
-    timerRef.current = setTimeout(() => {
-      intervalRef.current = setInterval(() => {
-        onClick();
-      }, 60);
-    }, 400);
-  }, [onClick]);
 
   const stop = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
     if (intervalRef.current) clearInterval(intervalRef.current);
   }, []);
+
+  const start = useCallback(() => {
+    if (disabled) return;
+    onClick();
+    timerRef.current = setTimeout(() => {
+      intervalRef.current = setInterval(onClick, 60);
+    }, 400);
+  }, [onClick, disabled]);
 
   return (
     <Button
@@ -72,7 +72,7 @@ function RepeatButton({ onClick, children, className, disabled }: { onClick: () 
       onMouseDown={start}
       onMouseUp={stop}
       onMouseLeave={stop}
-      onTouchStart={start}
+      onTouchStart={(e) => { e.preventDefault(); start(); }}
       onTouchEnd={stop}
       onClick={(e) => { e.preventDefault(); }} 
     >
