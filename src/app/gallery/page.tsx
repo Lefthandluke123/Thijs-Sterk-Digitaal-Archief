@@ -67,12 +67,12 @@ function GalleryContent() {
 
   return (
     <main className="min-h-screen bg-background pt-14">
-      <div className="w-full bg-secondary/5 border-b border-border/10 py-16 md:py-24">
+      <div className="w-full bg-secondary/5 border-b border-border/10 py-12 md:py-16">
         <div className="container mx-auto px-6 max-w-7xl">
-          <h1 className="font-headline text-3xl md:text-5xl font-light text-foreground text-center tracking-tighter">
+          <h1 className="font-headline text-xl md:text-3xl font-light text-foreground text-center tracking-tighter">
             <span className="italic">{activeSeries || "Laden..."}</span>
           </h1>
-          <p className="text-center text-accent mt-6 uppercase tracking-[0.5em] text-[10px] font-black opacity-80">
+          <p className="text-center text-accent mt-4 uppercase tracking-[0.5em] text-[9px] font-black opacity-80">
             Zaal &bull; {activeSeries || "..."}
           </p>
         </div>
@@ -83,7 +83,7 @@ function GalleryContent() {
           <div className="flex flex-col items-center justify-center py-32"><Loader2 className="w-8 h-8 animate-spin text-accent/40" /></div>
         ) : (
           <>
-            <div className="bg-background/80 backdrop-blur-md sticky top-14 z-30 border-b border-border/10 py-8 mb-16">
+            <div className="bg-background/80 backdrop-blur-md sticky top-14 z-30 border-b border-border/10 py-6 mb-12">
               <div className="flex flex-col md:flex-row items-center justify-center gap-10">
                 <div className="flex gap-10 overflow-x-auto no-scrollbar w-full md:w-auto pb-2 justify-center">
                   {seriesNames.map((name) => (
@@ -91,7 +91,7 @@ function GalleryContent() {
                       key={name}
                       onClick={() => setActiveSeries(name)}
                       className={cn(
-                        "text-[10px] font-black uppercase tracking-[0.3em] transition-all whitespace-nowrap pb-2 border-b-2",
+                        "text-[9px] font-black uppercase tracking-[0.3em] transition-all whitespace-nowrap pb-2 border-b-2",
                         activeSeries === name ? "border-accent text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"
                       )}
                     >
@@ -102,7 +102,7 @@ function GalleryContent() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-12">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-10">
               {filteredArtworks.map((item) => (
                 <div key={item.id} className="group relative cursor-pointer" onClick={() => setSelectedArtwork(item)}>
                   <div className="relative aspect-[4/5] overflow-hidden rounded-sm bg-muted/20 shadow-md">
@@ -116,10 +116,10 @@ function GalleryContent() {
                       }}
                     />
                     <div className="absolute inset-0 bg-background/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <Maximize2 className="text-white w-8 h-8 drop-shadow-2xl" />
+                      <Maximize2 className="text-white w-6 h-6 drop-shadow-2xl" />
                     </div>
                   </div>
-                  <div className="mt-6 text-center">
+                  <div className="mt-4 text-center">
                     <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground group-hover:text-foreground transition-colors truncate">{item.title}</h3>
                   </div>
                 </div>
@@ -145,21 +145,21 @@ function GalleryContent() {
               />
             )}
             <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-8 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-              <button onClick={(e) => { e.stopPropagation(); navigateGallery('prev'); }} className="p-5 rounded-full bg-background/20 backdrop-blur-md pointer-events-auto hover:bg-background/40 transition-all shadow-xl">
-                <ChevronLeft className="w-10 h-10" />
+              <button onClick={(e) => { e.stopPropagation(); navigateGallery('prev'); }} className="p-4 rounded-full bg-background/20 backdrop-blur-md pointer-events-auto hover:bg-background/40 transition-all shadow-xl">
+                <ChevronLeft className="w-8 h-8" />
               </button>
-              <button onClick={(e) => { e.stopPropagation(); navigateGallery('next'); }} className="p-5 rounded-full bg-background/20 backdrop-blur-md pointer-events-auto hover:bg-background/40 transition-all shadow-xl">
-                <ChevronRight className="w-10 h-10" />
+              <button onClick={(e) => { e.stopPropagation(); navigateGallery('next'); }} className="p-4 rounded-full bg-background/20 backdrop-blur-md pointer-events-auto hover:bg-background/40 transition-all shadow-xl">
+                <ChevronRight className="w-8 h-8" />
               </button>
             </div>
-            <DialogClose className="absolute top-10 right-10 z-50 p-4 bg-background/10 backdrop-blur-sm rounded-full hover:bg-background/20 transition-all shadow-xl">
-              <X className="w-8 h-8 opacity-40" />
+            <DialogClose className="absolute top-8 right-8 z-50 p-3 bg-background/10 backdrop-blur-sm rounded-full hover:bg-background/20 transition-all shadow-xl">
+              <X className="w-6 h-6 opacity-40" />
             </DialogClose>
           </div>
 
           <div className="h-[15vh] w-full bg-background/95 backdrop-blur-md py-4 px-12 border-t border-border/10 shadow-2xl flex flex-col items-center justify-center overflow-y-auto">
             <div className="max-w-6xl mx-auto flex flex-col items-center text-center gap-1">
-              <h2 className="font-headline text-[14px] md:text-[18px] font-light text-foreground tracking-tight leading-tight uppercase">
+              <h2 className="font-headline text-[14px] md:text-[16px] font-light text-foreground tracking-tight leading-tight uppercase">
                 {selectedArtwork?.title}
               </h2>
               <div className="text-[9px] md:text-[11px] uppercase font-black tracking-[0.3em] text-accent flex flex-wrap gap-x-8 gap-y-2 justify-center items-center opacity-90">

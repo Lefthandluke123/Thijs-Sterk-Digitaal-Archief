@@ -89,18 +89,18 @@ export default function CuratorPage() {
 
   return (
     <main className="min-h-screen bg-background pt-14">
-      <div className="w-full bg-accent/10 border-b border-black/10 py-16 md:py-24">
-        <div className="container mx-auto px-6 max-w-5xl text-center space-y-8">
-          <span className="text-[12px] font-black uppercase tracking-[0.3em] text-black/40 mb-2 block">Uw Persoonlijke Ruimte</span>
-          <h1 className="font-headline text-3xl md:text-5xl font-light text-black tracking-tighter leading-tight">
+      <div className="w-full bg-accent/10 border-b border-black/10 py-16 md:py-20">
+        <div className="container mx-auto px-6 max-w-5xl text-center space-y-4">
+          <span className="text-[10px] font-black uppercase tracking-[0.3em] text-black/40 block">Uw Persoonlijke Ruimte</span>
+          <h1 className="font-headline text-xl md:text-3xl font-light text-black tracking-tighter leading-tight">
             Uw Eigen <span className="italic">Zaal</span>
           </h1>
         </div>
       </div>
 
       <div className="container mx-auto max-w-7xl px-6 py-16 pb-48">
-        <div className="flex flex-col items-center space-y-20">
-          <div className="flex flex-wrap justify-center gap-4 max-w-5xl">
+        <div className="flex flex-col items-center space-y-16">
+          <div className="flex flex-wrap justify-center gap-3 max-w-5xl">
             {allAvailableTags.map(tag => {
               const isActive = activeTags.includes(tag);
               return (
@@ -108,7 +108,7 @@ export default function CuratorPage() {
                   key={tag}
                   onClick={() => toggleTag(tag)}
                   className={cn(
-                    "px-8 py-4 rounded-full text-[13px] font-black uppercase tracking-widest transition-all border-2 border-black",
+                    "px-6 py-3 rounded-full text-[11px] font-black uppercase tracking-widest transition-all border-2 border-black",
                     isActive ? "bg-black text-white" : "bg-white text-black hover:bg-black/5"
                   )}
                 >
@@ -118,23 +118,23 @@ export default function CuratorPage() {
             })}
           </div>
 
-          <div className="flex gap-6">
-            <Button onClick={() => setActiveTags([])} variant="outline" className="rounded-full h-16 px-10 text-[11px] font-black uppercase tracking-widest border-2 border-black"><Eraser className="w-4 h-4 mr-3" /> Wis</Button>
-            <Button onClick={() => { setShowResults(true); logInteraction('filter_tags', { tags: activeTags }); }} disabled={activeTags.length === 0} className="rounded-full h-16 px-16 bg-black text-white text-[11px] font-black uppercase tracking-widest border-2 border-black disabled:opacity-20"><Play className="w-4 h-4 mr-3" /> Presenteer</Button>
+          <div className="flex gap-4">
+            <Button onClick={() => setActiveTags([])} variant="outline" className="rounded-full h-12 px-8 text-[10px] font-black uppercase tracking-widest border-2 border-black"><Eraser className="w-3.5 h-3.5 mr-2" /> Wis</Button>
+            <Button onClick={() => { setShowResults(true); logInteraction('filter_tags', { tags: activeTags }); }} disabled={activeTags.length === 0} className="rounded-full h-12 px-12 bg-black text-white text-[10px] font-black uppercase tracking-widest border-2 border-black disabled:opacity-20"><Play className="w-3.5 h-3.5 mr-2" /> Presenteer</Button>
           </div>
         </div>
 
         {showResults && (
-          <div className="mt-32 pt-24 border-t-2 border-black">
+          <div className="mt-24 pt-16 border-t-2 border-black">
             {loading ? <div className="flex justify-center py-20"><Loader2 className="animate-spin" /></div> : filteredArtworks.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-12">
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-10">
                 {filteredArtworks.map(item => (
                   <div key={item.id} className="group cursor-pointer" onClick={() => setSelectedArtwork(item)}>
                     <div className="relative aspect-[4/5] overflow-hidden rounded-sm bg-muted/20 shadow-xl">
                       <img src={item.imageUrl} className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-[1.05]" style={{ clipPath: `inset(${item.cropTop || 0}% ${item.cropRight || 0}% ${item.cropBottom || 0}% ${item.cropLeft || 0}%)`, filter: `brightness(${item.brightness || 1})` }} />
-                      <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"><Maximize2 className="text-white w-8 h-8" /></div>
+                      <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"><Maximize2 className="text-white w-6 h-6" /></div>
                     </div>
-                    <div className="mt-6 text-center"><h3 className="text-[10px] font-black uppercase tracking-[0.2em]">{item.title}</h3></div>
+                    <div className="mt-4 text-center"><h3 className="text-[10px] font-black uppercase tracking-[0.2em]">{item.title}</h3></div>
                   </div>
                 ))}
               </div>
@@ -157,7 +157,7 @@ export default function CuratorPage() {
             <DialogClose className="absolute top-8 right-8 z-50 p-3 bg-white/80 rounded-full border-2 border-black hover:bg-white"><X className="w-5 h-5" /></DialogClose>
           </div>
           <div className="h-[15vh] w-full bg-white py-4 px-12 border-t-2 border-black flex flex-col items-center justify-center overflow-y-auto">
-            <h2 className="font-headline text-[14px] md:text-[18px] font-light uppercase tracking-tight">{selectedArtwork?.title}</h2>
+            <h2 className="font-headline text-[14px] md:text-[16px] font-light uppercase tracking-tight">{selectedArtwork?.title}</h2>
             <div className="text-[9px] md:text-[11px] uppercase font-black tracking-[0.3em] flex gap-8 opacity-90 mt-1">
               <span>{selectedArtwork?.series}</span>
               <span className="w-1 h-1 rounded-full bg-black self-center" />

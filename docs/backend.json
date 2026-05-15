@@ -3,7 +3,7 @@
   "entities": {
     "Artwork": {
       "title": "Artwork",
-      "description": "Een kunstwerk in het portfolio van de artiest.",
+      "description": "Een kunstwerk in het portfolio van de artiest. Openbaar leesbaar voor alle bezoekers.",
       "type": "object",
       "properties": {
         "title": {
@@ -79,7 +79,7 @@
     },
     "Interaction": {
       "title": "Interaction",
-      "description": "Een registratie van een bezoekersactie met persistent ID.",
+      "description": "Een registratie van een bezoekersactie met persistent ID. Schrijfbaar door bezoekers, leesbaar door admin.",
       "type": "object",
       "properties": {
         "visitorId": {
@@ -113,7 +113,7 @@
     },
     "Settings": {
       "title": "Settings",
-      "description": "Algemene website instellingen.",
+      "description": "Algemene website instellingen. Openbaar leesbaar.",
       "type": "object",
       "properties": {
         "logoUrl": {
@@ -135,15 +135,15 @@
   "firestore": {
     "/artworks/{artworkId}": {
       "schema": "Artwork",
-      "description": "Collectie van alle kunstwerken"
+      "description": "Collectie van alle kunstwerken (Publieke Leesrechten)"
     },
     "/interactions/{interactionId}": {
       "schema": "Interaction",
-      "description": "Log van bezoekersinteracties voor analyse"
+      "description": "Log van bezoekersinteracties voor analyse (Publieke Schrijfrechten)"
     },
     "/settings/site": {
       "schema": "Settings",
-      "description": "Website configuratie"
+      "description": "Website configuratie (Publieke Leesrechten)"
     }
   }
 }
