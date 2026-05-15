@@ -28,11 +28,11 @@ import {
   Tag,
   FileJson,
   Layers,
-  Filter,
-  CheckSquare,
-  Square,
   MoveHorizontal,
-  Archive
+  Archive,
+  Square,
+  CheckSquare,
+  Copy
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -321,7 +321,7 @@ export default function AdminPage() {
     toast({ title: "Upload Voltooid" });
   };
 
-  const exportAsBasisJson = () => {
+  const prepareBasisJson = () => {
     if (!artworks) return;
     const exportData = {
       placeholderImages: artworks.map(({ id, createdAt, ...rest }) => ({
@@ -329,10 +329,9 @@ export default function AdminPage() {
         ...rest
       }))
     };
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = "placeholder-images.json"; a.click();
-    toast({ title: "JSON Geëxporteerd" });
+    setBulkJson(JSON.stringify(exportData, null, 2));
+    setActiveTab('bulk');
+    toast({ title: "Basis JSON gegenereerd", description: "Kopieer de tekst uit het Bulk-veld en stuur deze naar mij." });
   };
 
   const STANDARD_TAGS = [
@@ -354,7 +353,7 @@ export default function AdminPage() {
           <h1 className="font-headline text-lg font-light">Atelier <span className="italic">Beheer</span></h1>
         </div>
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" onClick={exportAsBasisJson} className="text-[9px] uppercase tracking-widest font-bold">
+          <Button variant="ghost" size="sm" onClick={prepareBasisJson} className="text-[9px] uppercase tracking-widest font-bold">
             <Layers className="w-3 h-3 mr-2" /> Exporteer Basis JSON
           </Button>
           <Link href="/" className="text-[9px] uppercase tracking-widest font-bold text-muted-foreground hover:text-foreground border-l border-border pl-4 flex items-center gap-2">
@@ -369,7 +368,7 @@ export default function AdminPage() {
             <TabsList className="bg-muted/50 p-1 rounded-full w-fit">
               <TabsTrigger value="archive" className="rounded-full px-6 text-[9px] uppercase font-bold tracking-widest">Archief ({artworks?.length || 0})</TabsTrigger>
               <TabsTrigger value="upload" className="rounded-full px-6 text-[9px] uppercase font-bold tracking-widest">Cloud Upload</TabsTrigger>
-              <TabsTrigger value="bulk" className="rounded-full px-6 text-[9px] uppercase font-bold tracking-widest">Bulk Import</TabsTrigger>
+              <TabsTrigger value="bulk" className="rounded-full px-6 text-[9px] uppercase font-bold tracking-widest">Bulk Import/Export</TabsTrigger>
             </TabsList>
             <div className="relative w-full md:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -513,8 +512,14 @@ export default function AdminPage() {
           <TabsContent value="bulk">
             <Card className="p-8 rounded-3xl max-w-4xl mx-auto space-y-6">
               <div className="flex items-center justify-between">
-                <Label className="text-[9px] font-black text-black uppercase tracking-widest">JSON Data / Basis Config</Label>
+                <Label className="text-[9px] font-black text-black uppercase tracking-widest">JSON Data (Kopieer dit en stuur het naar mij voor permanente opslag)</Label>
                 <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => {
+                    navigator.clipboard.writeText(bulkJson);
+                    toast({ title: "Gekopieerd!" });
+                  }} className="text-[9px] uppercase tracking-widest font-bold">
+                    <Copy className="w-3 h-3 mr-2" /> Kopieer tekst
+                  </Button>
                   <input type="file" ref={jsonFileInputRef} style={{ display: 'none' }} accept=".json" onChange={(e) => {
                     const file = e.target.files?.[0];
                     if (!file) return;

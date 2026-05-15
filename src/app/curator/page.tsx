@@ -161,8 +161,8 @@ export default function CuratorPage() {
             </div>
             <DialogClose className="absolute top-8 right-8 z-50 p-2.5 bg-white/10 backdrop-blur-sm rounded-full border border-black/20 hover:bg-white/20 transition-all"><X className="w-5 h-5 opacity-40" /></DialogClose>
           </div>
-          <div className="h-[25vh] w-full bg-white py-8 px-12 border-t border-black/5 flex flex-col items-center justify-center overflow-y-auto text-center">
-            <h2 className="text-[10px] md:text-[11px] font-black tracking-[0.4em] uppercase text-black/40 mb-4">{selectedArtwork?.title}</h2>
+          <div className="h-[25vh] w-full bg-background/95 backdrop-blur-md py-8 px-12 border-t border-black/5 flex flex-col items-center justify-center overflow-y-auto text-center">
+            <h2 className="text-[10px] md:text-[11px] font-black tracking-[0.4em] uppercase text-foreground/40 mb-4">{selectedArtwork?.title}</h2>
             <div className="text-[12px] md:text-[14px] uppercase font-black tracking-[0.5em] flex flex-wrap gap-x-12 gap-y-4 justify-center items-center opacity-100 text-accent">
               <span className="bg-accent/10 px-6 py-1.5 rounded-sm">Zaal: {selectedArtwork?.series}</span>
               <span className="w-2 h-2 rounded-full bg-accent/30 self-center hidden md:inline" />
