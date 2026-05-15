@@ -135,11 +135,11 @@
   "firestore": {
     "/artworks/{artworkId}": {
       "schema": "Artwork",
-      "description": "Collectie van alle kunstwerken (Publieke Leesrechten)"
+      "description": "Collectie van alle kunstwerken (Publieke Leesrechten geactiveerd)"
     },
     "/interactions/{interactionId}": {
       "schema": "Interaction",
-      "description": "Log van bezoekersinteracties voor analyse (Publieke Schrijfrechten)"
+      "description": "Log van bezoekersinteracties (Publieke Schrijfrechten)"
     },
     "/settings/site": {
       "schema": "Settings",

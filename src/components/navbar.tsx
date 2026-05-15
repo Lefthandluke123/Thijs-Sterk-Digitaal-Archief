@@ -24,28 +24,25 @@ export function Navbar() {
   if (!mounted) return null;
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/60 backdrop-blur-sm border-b border-border/30">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/60 backdrop-blur-sm border-b border-border/10">
       <div className="container mx-auto px-6 h-14 flex items-center justify-between">
         <Link href="/" className="flex items-center group h-14">
           <img 
             src="/logo.png" 
-            alt="Thijs Sterk" 
-            className="h-10 w-auto object-contain transition-transform group-hover:scale-105" 
+            alt="Logo" 
+            className="h-10 w-auto object-contain" 
             onError={(e) => {
-              (e.target as HTMLImageElement).style.display = 'none';
-              const span = (e.target as HTMLImageElement).parentElement?.querySelector('.fallback-text');
-              if (span) (span as HTMLElement).style.display = 'block';
+              (e.target as HTMLImageElement).src = '/logo.png';
             }}
           />
-          <span className="fallback-text hidden font-headline font-bold tracking-tight text-xl leading-none">Thijs Sterk</span>
         </Link>
         
-        <div className="flex items-center gap-1 sm:gap-2">
+        <div className="flex items-center gap-1 sm:gap-1.5">
           <Link 
             href="/"
             className={cn(
-              "px-2 sm:px-4 py-1.5 rounded-full text-[9px] sm:text-[10px] font-semibold tracking-widest uppercase transition-all duration-300",
-              pathname === "/" ? "bg-accent/90 text-accent-foreground shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+              "px-3 py-1.5 rounded-full text-[9px] font-bold tracking-widest uppercase transition-all duration-300",
+              pathname === "/" ? "bg-accent/90 text-accent-foreground" : "text-muted-foreground hover:text-foreground"
             )}
           >
             Home
@@ -55,11 +52,11 @@ export function Navbar() {
             <DropdownMenuTrigger asChild>
               <button
                 className={cn(
-                  "px-2 sm:px-4 py-1.5 rounded-full text-[9px] sm:text-[10px] font-semibold tracking-widest uppercase transition-all duration-300 flex items-center gap-1 outline-none",
-                  pathname.includes('/gallery') ? "bg-accent/90 text-accent-foreground shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                  "px-3 py-1.5 rounded-full text-[9px] font-bold tracking-widest uppercase transition-all duration-300 flex items-center gap-1 outline-none",
+                  pathname.includes('/gallery') ? "bg-accent/90 text-accent-foreground" : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                Zalen <ChevronDown className="w-3 h-3 opacity-50" />
+                Zalen <ChevronDown className="w-2.5 h-2.5 opacity-50" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="bg-background/98 backdrop-blur-xl border-border/40 rounded-2xl min-w-[200px] p-2 shadow-2xl">
@@ -78,24 +75,24 @@ export function Navbar() {
           <Link 
             href="/curator"
             className={cn(
-              "px-2 sm:px-4 py-1.5 rounded-full text-[9px] sm:text-[10px] font-semibold tracking-widest uppercase transition-all duration-300",
-              pathname === "/curator" ? "bg-accent/90 text-accent-foreground shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+              "px-3 py-1.5 rounded-full text-[9px] font-bold tracking-widest uppercase transition-all duration-300",
+              pathname === "/curator" ? "bg-accent/90 text-accent-foreground" : "text-muted-foreground hover:text-foreground"
             )}
           >
-            Uw Eigen Zaal
+            Uw Zaal
           </Link>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
                 className={cn(
-                  "px-2 sm:px-4 py-1.5 rounded-full text-[9px] sm:text-[10px] font-semibold tracking-widest uppercase transition-all duration-300 flex items-center gap-1 outline-none",
+                  "px-3 py-1.5 rounded-full text-[9px] font-bold tracking-widest uppercase transition-all duration-300 flex items-center gap-1 outline-none",
                   pathname.includes('hanneke') || pathname.includes('beatrijs') || pathname.includes('peter-bes')
                     ? "bg-secondary/80 text-foreground" 
-                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                    : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                Over Thijs <ChevronDown className="w-3 h-3 opacity-50" />
+                Over <ChevronDown className="w-2.5 h-2.5 opacity-50" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="bg-background/98 backdrop-blur-xl border-border/40 rounded-2xl min-w-[180px] p-2 shadow-2xl">
@@ -117,8 +114,8 @@ export function Navbar() {
           <Link 
             href="/#contact"
             className={cn(
-              "px-2 sm:px-4 py-1.5 rounded-full text-[9px] sm:text-[10px] font-semibold tracking-widest uppercase transition-all duration-300",
-              pathname.includes('contact') ? "bg-accent/90 text-accent-foreground shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+              "px-3 py-1.5 rounded-full text-[9px] font-bold tracking-widest uppercase transition-all duration-300",
+              pathname.includes('contact') ? "bg-accent/90 text-accent-foreground" : "text-muted-foreground hover:text-foreground"
             )}
           >
             Contact

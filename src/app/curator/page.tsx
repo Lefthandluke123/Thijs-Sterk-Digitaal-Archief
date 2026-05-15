@@ -89,18 +89,18 @@ export default function CuratorPage() {
 
   return (
     <main className="min-h-screen bg-background pt-14">
-      <div className="w-full bg-accent/10 border-b border-black/10 py-16 md:py-20">
-        <div className="container mx-auto px-6 max-w-5xl text-center space-y-4">
-          <span className="text-[10px] font-black uppercase tracking-[0.3em] text-black/40 block">Uw Persoonlijke Ruimte</span>
-          <h1 className="font-headline text-xl md:text-3xl font-light text-black tracking-tighter leading-tight">
+      <div className="w-full bg-accent/5 border-b border-black/5 py-12 md:py-16">
+        <div className="container mx-auto px-6 max-w-5xl text-center space-y-2">
+          <span className="text-[8px] font-black uppercase tracking-[0.3em] text-black/30 block">Uw Persoonlijke Ruimte</span>
+          <h1 className="font-headline text-lg md:text-xl font-light text-black tracking-tight leading-tight">
             Uw Eigen <span className="italic">Zaal</span>
           </h1>
         </div>
       </div>
 
-      <div className="container mx-auto max-w-7xl px-6 py-16 pb-48">
-        <div className="flex flex-col items-center space-y-16">
-          <div className="flex flex-wrap justify-center gap-3 max-w-5xl">
+      <div className="container mx-auto max-w-7xl px-6 py-12 pb-48">
+        <div className="flex flex-col items-center space-y-12">
+          <div className="flex flex-wrap justify-center gap-2.5 max-w-4xl">
             {allAvailableTags.map(tag => {
               const isActive = activeTags.includes(tag);
               return (
@@ -108,7 +108,7 @@ export default function CuratorPage() {
                   key={tag}
                   onClick={() => toggleTag(tag)}
                   className={cn(
-                    "px-6 py-3 rounded-full text-[11px] font-black uppercase tracking-widest transition-all border-2 border-black",
+                    "px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all border-2 border-black",
                     isActive ? "bg-black text-white" : "bg-white text-black hover:bg-black/5"
                   )}
                 >
@@ -119,26 +119,26 @@ export default function CuratorPage() {
           </div>
 
           <div className="flex gap-4">
-            <Button onClick={() => setActiveTags([])} variant="outline" className="rounded-full h-12 px-8 text-[10px] font-black uppercase tracking-widest border-2 border-black"><Eraser className="w-3.5 h-3.5 mr-2" /> Wis</Button>
-            <Button onClick={() => { setShowResults(true); logInteraction('filter_tags', { tags: activeTags }); }} disabled={activeTags.length === 0} className="rounded-full h-12 px-12 bg-black text-white text-[10px] font-black uppercase tracking-widest border-2 border-black disabled:opacity-20"><Play className="w-3.5 h-3.5 mr-2" /> Presenteer</Button>
+            <Button onClick={() => setActiveTags([])} variant="outline" className="rounded-full h-10 px-6 text-[9px] font-black uppercase tracking-widest border-2 border-black"><Eraser className="w-3 h-3 mr-2" /> Wis</Button>
+            <Button onClick={() => { setShowResults(true); logInteraction('filter_tags', { tags: activeTags }); }} disabled={activeTags.length === 0} className="rounded-full h-10 px-10 bg-black text-white text-[9px] font-black uppercase tracking-widest border-2 border-black disabled:opacity-20"><Play className="w-3 h-3 mr-2" /> Presenteer</Button>
           </div>
         </div>
 
         {showResults && (
-          <div className="mt-24 pt-16 border-t-2 border-black">
-            {loading ? <div className="flex justify-center py-20"><Loader2 className="animate-spin" /></div> : filteredArtworks.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-10">
+          <div className="mt-20 pt-12 border-t border-black/10">
+            {loading ? <div className="flex justify-center py-20"><Loader2 className="animate-spin opacity-30" /></div> : filteredArtworks.length > 0 ? (
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
                 {filteredArtworks.map(item => (
                   <div key={item.id} className="group cursor-pointer" onClick={() => setSelectedArtwork(item)}>
-                    <div className="relative aspect-[4/5] overflow-hidden rounded-sm bg-muted/20 shadow-xl">
+                    <div className="relative aspect-[4/5] overflow-hidden rounded-sm bg-muted/10 shadow-lg">
                       <img src={item.imageUrl} className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-[1.05]" style={{ clipPath: `inset(${item.cropTop || 0}% ${item.cropRight || 0}% ${item.cropBottom || 0}% ${item.cropLeft || 0}%)`, filter: `brightness(${item.brightness || 1})` }} />
-                      <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"><Maximize2 className="text-white w-6 h-6" /></div>
+                      <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"><Maximize2 className="text-white w-5 h-5" /></div>
                     </div>
-                    <div className="mt-4 text-center"><h3 className="text-[10px] font-black uppercase tracking-[0.2em]">{item.title}</h3></div>
+                    <div className="mt-4 text-center"><h3 className="text-[9px] font-black uppercase tracking-[0.2em] opacity-60 group-hover:opacity-100">{item.title}</h3></div>
                   </div>
                 ))}
               </div>
-            ) : <div className="py-20 text-center uppercase tracking-widest opacity-40">Geen werken gevonden.</div>}
+            ) : <div className="py-20 text-center uppercase tracking-widest opacity-30 text-[10px] font-bold">Geen werken gevonden.</div>}
           </div>
         )}
       </div>
@@ -154,15 +154,15 @@ export default function CuratorPage() {
               <button onClick={() => navigateResults('prev')} className="p-4 rounded-full bg-white/20 backdrop-blur-md pointer-events-auto hover:bg-white/40"><ChevronLeft className="w-8 h-8 text-black" /></button>
               <button onClick={() => navigateResults('next')} className="p-4 rounded-full bg-white/20 backdrop-blur-md pointer-events-auto hover:bg-white/40"><ChevronRight className="w-8 h-8 text-black" /></button>
             </div>
-            <DialogClose className="absolute top-8 right-8 z-50 p-3 bg-white/80 rounded-full border-2 border-black hover:bg-white"><X className="w-5 h-5" /></DialogClose>
+            <DialogClose className="absolute top-8 right-8 z-50 p-2.5 bg-white/10 backdrop-blur-sm rounded-full border border-black/20 hover:bg-white/20 transition-all"><X className="w-5 h-5 opacity-40" /></DialogClose>
           </div>
-          <div className="h-[15vh] w-full bg-white py-4 px-12 border-t-2 border-black flex flex-col items-center justify-center overflow-y-auto">
-            <h2 className="font-headline text-[14px] md:text-[16px] font-light uppercase tracking-tight">{selectedArtwork?.title}</h2>
-            <div className="text-[9px] md:text-[11px] uppercase font-black tracking-[0.3em] flex gap-8 opacity-90 mt-1">
+          <div className="h-[15vh] w-full bg-white py-4 px-12 border-t border-black/5 flex flex-col items-center justify-center overflow-y-auto">
+            <h2 className="font-headline text-[13px] md:text-[15px] font-light uppercase tracking-tight text-black/80">{selectedArtwork?.title}</h2>
+            <div className="text-[8px] md:text-[10px] uppercase font-black tracking-[0.3em] flex gap-8 opacity-70 mt-1.5 text-accent">
               <span>{selectedArtwork?.series}</span>
-              <span className="w-1 h-1 rounded-full bg-black self-center" />
+              <span className="w-1 h-1 rounded-full bg-accent/30 self-center" />
               <span>{selectedArtwork?.year}</span>
-              <span className="w-1 h-1 rounded-full bg-black self-center" />
+              <span className="w-1 h-1 rounded-full bg-accent/30 self-center" />
               <span>{selectedArtwork?.medium}</span>
             </div>
           </div>
