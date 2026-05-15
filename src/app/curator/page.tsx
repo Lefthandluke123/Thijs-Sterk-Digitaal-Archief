@@ -42,10 +42,8 @@ export default function CuratorPage() {
   const { data: dbArtworks, loading } = useCollection(artworksQuery);
 
   const artworks = useMemo(() => {
-    if (!dbArtworks || dbArtworks.length === 0) {
-      return PlaceHolderImages.map(img => ({ ...img, createdAt: new Date() }));
-    }
-    return dbArtworks;
+    const fromDb = dbArtworks || [];
+    return [...fromDb, ...PlaceHolderImages];
   }, [dbArtworks]);
 
   const allAvailableTags = useMemo(() => {
@@ -100,7 +98,7 @@ export default function CuratorPage() {
       <div className="w-full bg-accent/5 border-b border-black/5 py-12 md:py-16">
         <div className="container mx-auto px-6 max-w-5xl text-center space-y-2">
           <span className="text-[8px] font-black uppercase tracking-[0.3em] text-black/30 block">Uw Persoonlijke Ruimte</span>
-          <h1 className="font-headline text-lg md:text-xl font-light text-black tracking-tight leading-tight">
+          <h1 className="font-headline text-lg font-light text-black tracking-tight leading-tight">
             Uw Eigen <span className="italic">Zaal</span>
           </h1>
         </div>
@@ -165,8 +163,8 @@ export default function CuratorPage() {
             <DialogClose className="absolute top-8 right-8 z-50 p-2.5 bg-white/10 backdrop-blur-sm rounded-full border border-black/20 hover:bg-white/20 transition-all"><X className="w-5 h-5 opacity-40" /></DialogClose>
           </div>
           <div className="h-[15vh] w-full bg-white py-4 px-12 border-t border-black/5 flex flex-col items-center justify-center overflow-y-auto">
-            <h2 className="font-headline text-[13px] md:text-[15px] font-light uppercase tracking-tight text-black/80">{selectedArtwork?.title}</h2>
-            <div className="text-[8px] md:text-[10px] uppercase font-black tracking-[0.3em] flex gap-8 opacity-70 mt-1.5 text-accent">
+            <h2 className="font-headline text-[12px] md:text-[14px] font-light uppercase tracking-tight text-black/80">{selectedArtwork?.title}</h2>
+            <div className="text-[8px] md:text-[10px] uppercase font-black tracking-[0.3em] flex gap-8 opacity-100 mt-1.5 text-accent">
               <span>{selectedArtwork?.series}</span>
               <span className="w-1 h-1 rounded-full bg-accent/30 self-center" />
               <span>{selectedArtwork?.year}</span>

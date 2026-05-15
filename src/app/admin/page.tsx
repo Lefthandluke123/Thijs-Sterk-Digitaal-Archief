@@ -27,7 +27,9 @@ import {
   CloudUpload,
   Sun,
   Tag,
-  FileJson
+  FileJson,
+  Database,
+  Layers
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -262,6 +264,20 @@ export default function AdminPage() {
     reader.readAsText(file);
   };
 
+  const exportAsBasisJson = () => {
+    if (!artworks) return;
+    const exportData = {
+      placeholderImages: artworks.map(({ id, createdAt, ...rest }) => ({
+        id: id.substring(0, 8),
+        ...rest
+      }))
+    };
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = "placeholder-images.json"; a.click();
+    toast({ title: "Basis JSON Gegenereerd", description: "Vervang src/app/lib/placeholder-images.json met dit bestand." });
+  };
+
   return (
     <div className="min-h-screen bg-background flex flex-col pt-14">
       <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={(e) => handleBatchProcess(e.target.files)} accept="image/*" multiple />
@@ -275,13 +291,12 @@ export default function AdminPage() {
           <h1 className="font-headline text-xl font-light">Atelier <span className="italic">Beheer</span></h1>
         </div>
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" onClick={() => {
-            const exportData = artworks?.map(({ id, createdAt, ...rest }) => rest);
-            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a'); a.href = url; a.download = "thijs-sterk-archive.json"; a.click();
-          }} className="text-[10px] uppercase tracking-widest font-bold"><Download className="w-3 h-3 mr-2" /> Export</Button>
-          <Link href="/" className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground hover:text-foreground border-l border-border pl-4 flex items-center gap-2"><ArrowLeft className="w-3 h-3" /> Website</Link>
+          <Button variant="ghost" size="sm" onClick={exportAsBasisJson} className="text-[10px] uppercase tracking-widest font-bold">
+            <Layers className="w-3 h-3 mr-2" /> Maak Basis JSON
+          </Button>
+          <Link href="/" className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground hover:text-foreground border-l border-border pl-4 flex items-center gap-2">
+            <ArrowLeft className="w-3 h-3" /> Website
+          </Link>
         </div>
       </header>
 
@@ -311,7 +326,7 @@ export default function AdminPage() {
                   </Card>
                 ))}
               </div>
-            ) : <div className="py-32 text-center opacity-40">Geen werken in de cloud.</div>}
+            ) : <div className="py-32 text-center opacity-40 uppercase tracking-[0.2em] text-[10px] font-bold">Geen werken in de cloud.</div>}
           </TabsContent>
 
           <TabsContent value="upload">
@@ -333,7 +348,7 @@ export default function AdminPage() {
           <TabsContent value="bulk">
             <Card className="p-8 rounded-3xl max-w-4xl mx-auto space-y-6">
               <div className="flex items-center justify-between">
-                <Label className="text-[8px] font-black text-black uppercase tracking-widest">JSON Data</Label>
+                <Label className="text-[8px] font-black text-black uppercase tracking-widest">JSON Data / Basis Config</Label>
                 <div className="flex gap-2">
                   <input type="file" ref={jsonFileInputRef} style={{ display: 'none' }} accept=".json" onChange={handleJsonFileImport} />
                   <Button variant="outline" size="sm" onClick={() => jsonFileInputRef.current?.click()} className="text-[10px] uppercase tracking-widest font-bold">
@@ -347,13 +362,15 @@ export default function AdminPage() {
                 setLoading(true);
                 try {
                   const items = JSON.parse(bulkJson);
-                  (Array.isArray(items) ? items : [items]).forEach(item => {
+                  const dataToImport = Array.isArray(items) ? items : (items.placeholderImages || [items]);
+                  dataToImport.forEach(item => {
                     const { id, createdAt, ...rest } = item;
                     addDoc(collection(firestore, 'artworks'), { ...rest, createdAt: serverTimestamp() });
                   });
                   setBulkJson('');
                   setActiveTab('archive');
-                } catch (e) { toast({ variant: "destructive", title: "Fout", description: "Ongeldige JSON." }); }
+                  toast({ title: "Import Succesvol", description: "De data is toegevoegd aan het cloud-archief." });
+                } catch (e) { toast({ variant: "destructive", title: "Fout", description: "Ongeldige JSON structuur." }); }
                 finally { setLoading(false); }
               }} disabled={loading || !bulkJson} className="h-14 rounded-xl font-bold uppercase tracking-widest w-full">Importeer naar Cloud</Button>
             </Card>

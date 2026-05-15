@@ -11,7 +11,7 @@ export function Hero() {
   const heroImage = PlaceHolderImages.find(img => img.id === 'basis-1' || img.id === 'hero-image');
 
   return (
-    <section className="relative min-h-[60vh] flex flex-col items-center justify-center pt-24 px-4 overflow-hidden">
+    <section className="relative min-h-[50vh] flex flex-col items-center justify-center pt-24 px-4 overflow-hidden">
       <div className="absolute inset-0 z-0 opacity-10 pointer-events-none">
         <div className="absolute top-1/4 -left-20 w-96 h-96 bg-accent rounded-full blur-[120px]" />
         <div className="absolute bottom-1/4 -right-20 w-96 h-96 bg-primary rounded-full blur-[120px]" />
@@ -24,12 +24,12 @@ export function Hero() {
           </span>
         </div>
         
-        <h1 className="font-headline text-lg md:text-xl lg:text-2xl font-light tracking-tight text-foreground mb-8 max-w-2xl mx-auto leading-tight animate-fade-in-up delay-100">
+        <h1 className="font-headline text-lg md:text-xl font-light tracking-tight text-foreground mb-6 max-w-2xl mx-auto leading-tight animate-fade-in-up delay-100">
           Thijs Sterk: Schilder van <span className="italic">Licht, Ruimte en Water</span>
         </h1>
         
-        <p className="text-muted-foreground text-[9px] md:text-[10px] max-w-lg mx-auto mb-10 leading-relaxed animate-fade-in-up delay-200 font-light opacity-60 uppercase tracking-[0.1em]">
-          Een verkenning van de atmosfeer van de Lage Landen. Van de vroege realistische landschappen tot de verstilde vergezichten van de geest.
+        <p className="text-muted-foreground text-[9px] md:text-[10px] max-w-lg mx-auto mb-8 leading-relaxed animate-fade-in-up delay-200 font-light opacity-60 uppercase tracking-[0.1em]">
+          Verken de atmosfeer van de Lage Landen. Van de vroege realistische landschappen tot de verstilde vergezichten van de geest.
         </p>
         
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up delay-300">
@@ -45,7 +45,7 @@ export function Hero() {
         </div>
       </div>
 
-      <div className="container mx-auto mt-16 z-10 px-4 animate-fade-in-up delay-500 max-w-4xl">
+      <div className="container mx-auto mt-12 z-10 px-4 animate-fade-in-up delay-500 max-w-4xl">
         <div className="relative aspect-[21/9] w-full rounded-2xl overflow-hidden shadow-xl border border-border/10">
           {heroImage && (
             <Image
