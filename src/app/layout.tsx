@@ -1,8 +1,10 @@
+
 import type { Metadata } from 'next';
 import './globals.css';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/sections/footer';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
+import { CookieConsent } from '@/components/cookie-consent';
 
 export const metadata: Metadata = {
   title: 'Thijs Sterk (1913-1982) | Schilder van Licht, Ruimte en Water',
@@ -27,6 +29,7 @@ export default function RootLayout({
         <FirebaseClientProvider>
           <Navbar />
           {children}
+          <CookieConsent />
           <Footer />
         </FirebaseClientProvider>
       </body>
