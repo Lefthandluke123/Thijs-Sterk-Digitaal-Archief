@@ -1,13 +1,16 @@
 
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
+import { Dialog, DialogContent, DialogTitle, DialogClose } from '@/components/ui/dialog';
+import { X, ChevronLeft, ChevronRight, Maximize2 } from 'lucide-react';
 
 export function ArtistBio() {
+  const [selectedArtworkId, setSelectedArtworkId] = useState<string | null>(null);
   const firestore = useFirestore();
   const portrait = PlaceHolderImages.find(img => img.id === 'artist-portrait');
 
@@ -17,8 +20,34 @@ export function ArtistBio() {
   }, [firestore]);
   const { data: siteSettings } = useDoc(siteSettingsRef);
 
-  const bioText = siteSettings?.homeBio || `Thijs Sterk (1913-1982) wijdde zijn leven aan het doorgronden van de atmosferische kwaliteiten van de Lage Landen. Geboren in een tijd van grote verandering, vond hij zijn rust in de uitgestrekte waterpartijen en het immer veranderende licht boven het polderlandschap.\n\nZijn vroege werk kenmercht zich door een meesterlijke beheersing van de figuratieve traditie, maar gedurende zijn carrière bewoog hij zich steeds verder naar de kern. Hij liet de details varen om de ruimte en de emotie van de plek te vangen in brede, textuurrijke streken.\n\n"Licht is niet iets dat op een object valt," schreef hij in 1954 in zijn dagboek, "het is de ruimte die tussen mij en de wereld ademt." Vandaag de dag wordt zijn oeuvre beschouwd als een cruciale schakel in de overgang naar de naoorlogse abstractie in de Nederlandse schilderkunst.`;
+  const linkedArtworkRef = useMemoFirebase(() => {
+    if (!firestore || !selectedArtworkId) return null;
+    return doc(firestore, 'artworks', selectedArtworkId);
+  }, [firestore, selectedArtworkId]);
+  const { data: selectedArtwork } = useDoc(linkedArtworkRef);
+
+  const bioText = siteSettings?.homeBio || `Thijs Sterk (1913-1982) wijdde zijn leven aan het doorgronden van de atmosferische kwaliteiten van de Lage Landen.\n\n"Licht is niet iets dat op een object valt," schreef hij in 1954 in zijn dagboek, "het is de ruimte die tussen mij en de wereld ademt."`;
   const bioImageUrl = siteSettings?.homeBioImageUrl || (portrait ? portrait.imageUrl : 'https://picsum.photos/seed/thijs/800/1000');
+
+  const renderTextWithLinks = (text: string) => {
+    const parts = text.split(/(\[\[.*?\]\])/g);
+    return parts.map((part, i) => {
+      const match = part.match(/\[\[(.*?)\|(.*?)\]\]/);
+      if (match) {
+        const [_, id, label] = match;
+        return (
+          <button
+            key={i}
+            onClick={() => setSelectedArtworkId(id)}
+            className="text-accent hover:underline font-bold inline-block decoration-accent/30 underline-offset-4"
+          >
+            {label}
+          </button>
+        );
+      }
+      return part;
+    });
+  };
 
   return (
     <section className="py-24 bg-secondary/30 px-4" id="about">
@@ -44,7 +73,7 @@ export function ArtistBio() {
             <h2 className="font-headline text-4xl md:text-5xl font-light mb-8 leading-tight">Een leven gewijd aan de <span className="italic">Essentie</span></h2>
             
             <div className="space-y-6 text-lg text-muted-foreground leading-relaxed font-light whitespace-pre-line">
-              {bioText}
+              {renderTextWithLinks(bioText)}
             </div>
             
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-8 mt-12 pt-12 border-t border-border">
@@ -64,6 +93,37 @@ export function ArtistBio() {
           </div>
         </div>
       </div>
+
+      <Dialog open={!!selectedArtworkId} onOpenChange={() => setSelectedArtworkId(null)}>
+        <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background border-none rounded-none overflow-hidden outline-none">
+          <DialogTitle className="sr-only">Viewer (75/25)</DialogTitle>
+          <div className="relative h-[75vh] w-full flex items-center justify-center overflow-hidden bg-black/5 group">
+            {selectedArtwork && (
+              <img 
+                src={selectedArtwork.imageUrl} 
+                className="max-w-full max-h-[90%] object-contain p-4 md:p-16 shadow-2xl transition-all" 
+                style={{ 
+                  clipPath: `inset(${selectedArtwork.cropTop || 0}% ${selectedArtwork.cropRight || 0}% ${selectedArtwork.cropBottom || 0}% ${selectedArtwork.cropLeft || 0}%)`, 
+                  filter: `brightness(${selectedArtwork.brightness || 1})` 
+                }} 
+              />
+            )}
+            <DialogClose className="absolute top-8 right-8 z-50 p-3 bg-background/10 backdrop-blur-sm rounded-full hover:bg-background/20 transition-all">
+              <X className="w-6 h-6 opacity-40" />
+            </DialogClose>
+          </div>
+          <div className="h-[25vh] w-full bg-background/95 backdrop-blur-md py-8 px-12 border-t border-border/10 flex flex-col items-center justify-center overflow-y-auto text-center">
+            <h2 className="text-[10px] md:text-[11px] font-black tracking-[0.4em] uppercase text-foreground/40 mb-4">{selectedArtwork?.title}</h2>
+            <div className="text-[12px] md:text-[14px] uppercase font-black tracking-[0.5em] text-accent flex flex-wrap gap-x-12 gap-y-4 justify-center items-center">
+              <span className="bg-accent/10 px-6 py-1.5 rounded-sm">Zaal: {selectedArtwork?.series}</span>
+              <span className="w-2 h-2 rounded-full bg-accent/30 self-center hidden md:inline" />
+              <span>{selectedArtwork?.year}</span>
+              <span className="w-2 h-2 rounded-full bg-accent/30 self-center hidden md:inline" />
+              <span>{selectedArtwork?.medium}</span>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }
