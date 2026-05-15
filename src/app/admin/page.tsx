@@ -104,15 +104,11 @@ export default function AdminPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadDirInputRef = useRef<HTMLInputElement>(null);
   const jsonFileInputRef = useRef<HTMLInputElement>(null);
-  const logoInputRef = useRef<HTMLInputElement>(null);
   
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState('');
   const [isSaving, setIsSaving] = useState(false);
-
-  const settingsRef = useMemo(() => firestore ? doc(firestore, 'settings', 'site') : null, [firestore]);
-  const { data: settings } = useDoc(settingsRef);
 
   const artworksQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -267,21 +263,10 @@ export default function AdminPage() {
       <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={(e) => handleBatchProcess(e.target.files)} accept="image/*" multiple />
       <input type="file" ref={uploadDirInputRef} style={{ display: 'none' }} onChange={(e) => handleBatchProcess(e.target.files)} {...({ webkitdirectory: "", directory: "" } as any)} />
       <input type="file" ref={jsonFileInputRef} style={{ display: 'none' }} onChange={(e) => { const reader = new FileReader(); reader.onload = (ev) => setBulkJson(ev.target?.result as string); reader.readAsText(e.target.files![0]); }} accept=".json" />
-      <input type="file" ref={logoInputRef} style={{ display: 'none' }} onChange={async (e) => {
-        const file = e.target.files?.[0];
-        if (!file || !storage || !firestore) return;
-        setLoading(true);
-        const storageRef = ref(storage, `site/logo_${Date.now()}_${file.name}`);
-        const snapshot = await uploadBytes(storageRef, file);
-        const url = await getDownloadURL(snapshot.ref);
-        await setDoc(doc(firestore, 'settings', 'site'), { logoUrl: url }, { merge: true });
-        toast({ title: "Logo opgeslagen" });
-        setLoading(false);
-      }} accept="image/*" />
 
       <header className="h-16 border-b border-border bg-background/95 backdrop-blur-sm sticky top-14 z-40 px-8 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          {settings?.logoUrl ? <img src={settings.logoUrl} className="h-6 w-auto mr-2" /> : <Cloud className="w-5 h-5 text-accent" />}
+          <img src="/logo.png" className="h-8 w-auto mr-2" />
           <h1 className="font-headline text-xl font-light">Atelier <span className="italic">Beheer</span></h1>
         </div>
         <div className="flex items-center gap-4">
@@ -357,9 +342,12 @@ export default function AdminPage() {
               <h3 className="font-headline text-2xl font-light">Instellingen</h3>
               <div className="flex items-center gap-6 p-6 border rounded-2xl bg-muted/10">
                 <div className="w-24 h-24 bg-white rounded-xl border flex items-center justify-center overflow-hidden">
-                  {settings?.logoUrl ? <img src={settings.logoUrl} className="max-w-full max-h-full object-contain" /> : <ImageIcon className="opacity-20" />}
+                  <img src="/logo.png" className="max-w-full max-h-full object-contain" onError={(e) => (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150?text=Geen+Logo'} />
                 </div>
-                <Button onClick={() => logoInputRef.current?.click()} className="rounded-full px-6 text-[10px] font-bold uppercase tracking-widest">Logo Uploaden</Button>
+                <div className="space-y-2">
+                  <p className="text-[10px] uppercase font-bold tracking-widest">Huidig Logo</p>
+                  <p className="text-[8px] text-muted-foreground uppercase">Het logo wordt altijd geladen vanuit <code className="bg-muted px-1">/public/logo.png</code>.</p>
+                </div>
               </div>
             </Card>
           </TabsContent>
