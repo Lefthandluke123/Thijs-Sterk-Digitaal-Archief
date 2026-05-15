@@ -45,16 +45,13 @@ export default function CuratorPage() {
     artworks?.forEach(art => {
       art.tags?.forEach((tag: string) => dbTags.add(tag));
     });
-    
     const combined = new Set([...STANDARD_TAGS, ...Array.from(dbTags)]);
     return Array.from(combined).sort();
   }, [artworks]);
 
   const filteredArtworks = useMemo(() => {
     if (!artworks || activeTags.length === 0) return [];
-    return artworks.filter(art => {
-      return activeTags.every(tag => art.tags?.includes(tag));
-    });
+    return artworks.filter(art => activeTags.every(tag => art.tags?.includes(tag)));
   }, [artworks, activeTags]);
 
   const navigateResults = useCallback((direction: 'next' | 'prev') => {
@@ -79,147 +76,71 @@ export default function CuratorPage() {
 
   const logInteraction = (type: 'view_artwork' | 'filter_tags', data: any) => {
     if (!firestore || !visitorId) return;
-    const logData = {
-      visitorId,
-      type,
-      ...data,
-      timestamp: serverTimestamp()
-    };
-    addDoc(collection(firestore, 'interactions'), logData)
-      .catch(async () => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'interactions', operation: 'create', requestResourceData: logData }));
-      });
+    const logData = { visitorId, type, ...data, timestamp: serverTimestamp() };
+    addDoc(collection(firestore, 'interactions'), logData).catch(async () => {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'interactions', operation: 'create', requestResourceData: logData }));
+    });
   };
 
   const toggleTag = (tag: string) => {
-    const newTags = activeTags.includes(tag) 
-      ? activeTags.filter(t => t !== tag) 
-      : [...activeTags, tag];
-    
-    setActiveTags(newTags);
+    setActiveTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
     setShowResults(false);
-  };
-
-  const handlePresent = () => {
-    if (activeTags.length > 0) {
-      setShowResults(true);
-      logInteraction('filter_tags', { tags: activeTags });
-    }
-  };
-
-  const handleReset = () => {
-    setActiveTags([]);
-    setShowResults(false);
-  };
-
-  const handleArtworkClick = (artwork: any) => {
-    setSelectedArtwork(artwork);
-    logInteraction('view_artwork', { 
-      artworkId: artwork.id, 
-      artworkTitle: artwork.title 
-    });
   };
 
   return (
     <main className="min-h-screen bg-background pt-14">
-      <div className="w-full bg-accent/20 border-b-2 border-black py-20 md:py-28">
+      <div className="w-full bg-accent/10 border-b border-black/10 py-16 md:py-24">
         <div className="container mx-auto px-6 max-w-5xl text-center space-y-8">
-          <span className="text-[14px] font-black uppercase tracking-[0.3em] text-black mb-2 block">Uw Persoonlijke Ruimte</span>
-          <h1 className="font-headline text-6xl md:text-9xl font-light text-black tracking-tighter">
+          <span className="text-[12px] font-black uppercase tracking-[0.3em] text-black/40 mb-2 block">Uw Persoonlijke Ruimte</span>
+          <h1 className="font-headline text-5xl md:text-7xl font-light text-black tracking-tighter leading-tight">
             Uw Eigen <span className="italic">Zaal</span>
           </h1>
-          <div className="space-y-6 py-4">
-            <p className="text-black text-3xl font-bold leading-relaxed max-w-3xl mx-auto">
-              Selecteer de thema&apos;s die u aanspreken.
-            </p>
-          </div>
         </div>
       </div>
 
       <div className="container mx-auto max-w-7xl px-6 py-16 pb-48">
-        <div className="space-y-32">
-          <div className="flex flex-col items-center space-y-20">
-            <div className="flex flex-wrap justify-center gap-4 md:gap-5 max-w-6xl">
-              {allAvailableTags.map(tag => {
-                const isPresentInDb = artworks?.some(art => art.tags?.includes(tag));
-                const isActive = activeTags.includes(tag);
-                
-                return (
-                  <button
-                    key={tag}
-                    onClick={() => toggleTag(tag)}
-                    className={cn(
-                      "px-10 py-5 rounded-full text-[16px] font-black uppercase tracking-wider transition-all border-2 border-black shadow-xl",
-                      isActive 
-                        ? "bg-black text-white scale-105 shadow-2xl ring-4 ring-black/10" 
-                        : "bg-white text-black hover:bg-black hover:text-white",
-                      !isPresentInDb && "opacity-20 grayscale pointer-events-none border-dashed"
-                    )}
-                  >
-                    {tag}
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="flex flex-col sm:flex-row items-center gap-10">
-              <Button 
-                onClick={handleReset} 
-                variant="ghost" 
-                size="lg"
-                className="rounded-full h-20 px-12 text-[12px] uppercase font-black tracking-[0.3em] text-black border-2 border-black hover:bg-black hover:text-white transition-all shadow-lg"
-              >
-                <Eraser className="w-5 h-5 mr-4" /> Wis Selectie
-              </Button>
-              
-              <Button 
-                onClick={handlePresent}
-                disabled={activeTags.length === 0}
-                size="lg"
-                className="rounded-full h-20 px-24 bg-black hover:bg-black/90 text-white font-black uppercase tracking-[0.3em] text-[16px] shadow-2xl transition-all active:scale-95 group disabled:opacity-20 border-2 border-black"
-              >
-                <Play className="w-6 h-6 mr-4 fill-white group-hover:scale-110 transition-transform" /> Presenteer Zaal
-              </Button>
-            </div>
+        <div className="flex flex-col items-center space-y-20">
+          <div className="flex flex-wrap justify-center gap-4 max-w-5xl">
+            {allAvailableTags.map(tag => {
+              const isActive = activeTags.includes(tag);
+              return (
+                <button
+                  key={tag}
+                  onClick={() => toggleTag(tag)}
+                  className={cn(
+                    "px-8 py-4 rounded-full text-[13px] font-black uppercase tracking-widest transition-all border-2 border-black",
+                    isActive ? "bg-black text-white" : "bg-white text-black hover:bg-black/5"
+                  )}
+                >
+                  {tag}
+                </button>
+              );
+            })}
           </div>
 
-          <div className={cn("pt-32 border-t-2 border-black transition-all duration-1000", showResults ? "opacity-100 translate-y-0" : "opacity-0 translate-y-20 pointer-events-none")}>
-            {loading ? (
-              <div className="flex flex-col items-center justify-center py-20">
-                <Loader2 className="w-10 h-10 animate-spin text-black" />
-              </div>
-            ) : filteredArtworks.length > 0 && showResults ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-16">
-                {filteredArtworks.map((item) => (
-                  <div key={item.id} className="group relative cursor-pointer" onClick={() => handleArtworkClick(item)}>
-                    <div className="relative aspect-[4/5] overflow-hidden rounded-sm bg-muted/20 shadow-2xl transition-shadow hover:shadow-inner border border-black/5">
-                      <img 
-                        src={item.imageUrl} 
-                        alt={item.title} 
-                        className="w-full h-full object-cover transition-all duration-1000 ease-out group-hover:scale-[1.08]" 
-                        style={{
-                          clipPath: `inset(${item.cropTop || 0}% ${item.cropRight || 0}% ${item.cropBottom || 0}% ${item.cropLeft || 0}%)`,
-                          filter: `brightness(${item.brightness || 1})`
-                        }}
-                      />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
-                        <Maximize2 className="text-white w-10 h-10 drop-shadow-2xl scale-75 group-hover:scale-100 transition-transform duration-500" />
-                      </div>
+          <div className="flex gap-6">
+            <Button onClick={() => setActiveTags([])} variant="outline" className="rounded-full h-16 px-10 text-[11px] font-black uppercase tracking-widest border-2 border-black"><Eraser className="w-4 h-4 mr-3" /> Wis</Button>
+            <Button onClick={() => { setShowResults(true); logInteraction('filter_tags', { tags: activeTags }); }} disabled={activeTags.length === 0} className="rounded-full h-16 px-16 bg-black text-white text-[11px] font-black uppercase tracking-widest border-2 border-black disabled:opacity-20"><Play className="w-4 h-4 mr-3" /> Presenteer</Button>
+          </div>
+        </div>
+
+        {showResults && (
+          <div className="mt-32 pt-24 border-t-2 border-black">
+            {loading ? <div className="flex justify-center py-20"><Loader2 className="animate-spin" /></div> : filteredArtworks.length > 0 ? (
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-12">
+                {filteredArtworks.map(item => (
+                  <div key={item.id} className="group cursor-pointer" onClick={() => setSelectedArtwork(item)}>
+                    <div className="relative aspect-[4/5] overflow-hidden rounded-sm bg-muted/20 shadow-xl">
+                      <img src={item.imageUrl} className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-[1.05]" style={{ clipPath: `inset(${item.cropTop || 0}% ${item.cropRight || 0}% ${item.cropBottom || 0}% ${item.cropLeft || 0}%)`, filter: `brightness(${item.brightness || 1})` }} />
+                      <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"><Maximize2 className="text-white w-8 h-8" /></div>
                     </div>
-                    <div className="mt-8 text-center space-y-2">
-                      <h3 className="text-[14px] font-black uppercase tracking-[0.2em] text-black group-hover:underline transition-all">{item.title}</h3>
-                      <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-black/60">{item.year}</p>
-                    </div>
+                    <div className="mt-6 text-center"><h3 className="text-[10px] font-black uppercase tracking-[0.2em]">{item.title}</h3></div>
                   </div>
                 ))}
               </div>
-            ) : showResults ? (
-              <div className="py-32 text-center">
-                <p className="text-3xl font-black italic text-black uppercase tracking-tight">Geen werken gevonden.</p>
-              </div>
-            ) : null}
+            ) : <div className="py-20 text-center uppercase tracking-widest opacity-40">Geen werken gevonden.</div>}
           </div>
-        </div>
+        )}
       </div>
 
       <Dialog open={!!selectedArtwork} onOpenChange={() => setSelectedArtwork(null)}>
@@ -227,41 +148,22 @@ export default function CuratorPage() {
           <DialogTitle className="sr-only">Viewer (85/15)</DialogTitle>
           <div className="relative h-[85vh] w-full flex items-center justify-center overflow-hidden bg-black/5 group">
             {selectedArtwork && (
-              <img 
-                src={selectedArtwork.imageUrl} 
-                alt={selectedArtwork.title} 
-                className="max-w-full max-h-[90%] object-contain p-4 md:p-16 shadow-2xl transition-all duration-700" 
-                style={{
-                  clipPath: `inset(${selectedArtwork.cropTop || 0}% ${selectedArtwork.cropRight || 0}% ${selectedArtwork.cropBottom || 0}% ${selectedArtwork.cropLeft || 0}%)`,
-                  filter: `brightness(${selectedArtwork.brightness || 1})`
-                }}
-              />
+              <img src={selectedArtwork.imageUrl} className="max-w-full max-h-[90%] object-contain p-4 md:p-16 shadow-2xl transition-all" style={{ clipPath: `inset(${selectedArtwork.cropTop || 0}% ${selectedArtwork.cropRight || 0}% ${selectedArtwork.cropBottom || 0}% ${selectedArtwork.cropLeft || 0}%)`, filter: `brightness(${selectedArtwork.brightness || 1})` }} />
             )}
-            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-8 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-              <button onClick={(e) => { e.stopPropagation(); navigateResults('prev'); }} className="p-5 rounded-full bg-white/20 backdrop-blur-md pointer-events-auto hover:bg-white/40 transition-all shadow-xl">
-                <ChevronLeft className="w-10 h-10 text-black" />
-              </button>
-              <button onClick={(e) => { e.stopPropagation(); navigateResults('next'); }} className="p-5 rounded-full bg-white/20 backdrop-blur-md pointer-events-auto hover:bg-white/40 transition-all shadow-xl">
-                <ChevronRight className="w-10 h-10 text-black" />
-              </button>
+            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-8 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity">
+              <button onClick={() => navigateResults('prev')} className="p-4 rounded-full bg-white/20 backdrop-blur-md pointer-events-auto hover:bg-white/40"><ChevronLeft className="w-8 h-8 text-black" /></button>
+              <button onClick={() => navigateResults('next')} className="p-4 rounded-full bg-white/20 backdrop-blur-md pointer-events-auto hover:bg-white/40"><ChevronRight className="w-8 h-8 text-black" /></button>
             </div>
-            <DialogClose className="absolute top-10 right-10 z-50 p-4 bg-white/80 backdrop-blur-md rounded-full hover:bg-white transition-all shadow-2xl border-2 border-black">
-              <X className="w-6 h-6 text-black" />
-            </DialogClose>
+            <DialogClose className="absolute top-8 right-8 z-50 p-3 bg-white/80 rounded-full border-2 border-black hover:bg-white"><X className="w-5 h-5" /></DialogClose>
           </div>
-
-          <div className="h-[15vh] w-full bg-white py-4 px-12 border-t-2 border-black shadow-2xl flex flex-col items-center justify-center overflow-y-auto">
-            <div className="max-w-6xl mx-auto flex flex-col items-center text-center gap-1">
-              <h2 className="font-headline text-lg md:text-2xl font-light text-black tracking-tight leading-tight uppercase">
-                {selectedArtwork?.title}
-              </h2>
-              <div className="text-[11px] md:text-[12px] uppercase font-black tracking-[0.3em] text-black flex flex-wrap gap-x-8 gap-y-2 justify-center items-center opacity-100">
-                <span>{selectedArtwork?.series}</span>
-                <span className="hidden md:inline w-1 h-1 rounded-full bg-black" />
-                <span>{selectedArtwork?.year}</span>
-                <span className="hidden md:inline w-1 h-1 rounded-full bg-black" />
-                <span>{selectedArtwork?.medium}</span>
-              </div>
+          <div className="h-[15vh] w-full bg-white py-4 px-12 border-t-2 border-black flex flex-col items-center justify-center overflow-y-auto">
+            <h2 className="font-headline text-lg md:text-xl font-light uppercase tracking-tight">{selectedArtwork?.title}</h2>
+            <div className="text-[9px] md:text-[11px] uppercase font-black tracking-[0.3em] flex gap-8 opacity-90 mt-1">
+              <span>{selectedArtwork?.series}</span>
+              <span className="w-1 h-1 rounded-full bg-black self-center" />
+              <span>{selectedArtwork?.year}</span>
+              <span className="w-1 h-1 rounded-full bg-black self-center" />
+              <span>{selectedArtwork?.medium}</span>
             </div>
           </div>
         </DialogContent>

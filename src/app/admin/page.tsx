@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
@@ -64,7 +65,7 @@ function RepeatButton({ onStep, children, className, disabled }: { onStep: () =>
     timerRef.current = setTimeout(() => {
       intervalRef.current = setInterval(() => {
         onStepRef.current();
-      }, 60);
+      }, 50);
     }, 400);
   }, [disabled]);
 
@@ -76,7 +77,7 @@ function RepeatButton({ onStep, children, className, disabled }: { onStep: () =>
     <Button
       variant="outline"
       size="icon"
-      className={cn("select-none transition-all active:scale-90", className)}
+      className={cn("select-none transition-all active:scale-95 border-2 border-black", className)}
       disabled={disabled}
       onMouseDown={start}
       onMouseUp={stop}
@@ -107,6 +108,9 @@ export default function AdminPage() {
   const [uploadStatus, setUploadStatus] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
+  // Local crop values for smooth UI updates
+  const [localCrops, setLocalCrops] = useState<Record<string, number>>({});
+
   const artworksQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'artworks'), orderBy('createdAt', 'desc'));
@@ -126,6 +130,18 @@ export default function AdminPage() {
   const editingArtwork = useMemo(() => {
     return artworks?.find(art => art.id === editingId) || null;
   }, [artworks, editingId]);
+
+  useEffect(() => {
+    if (editingArtwork) {
+      setLocalCrops({
+        cropTop: editingArtwork.cropTop || 0,
+        cropBottom: editingArtwork.cropBottom || 0,
+        cropLeft: editingArtwork.cropLeft || 0,
+        cropRight: editingArtwork.cropRight || 0,
+        brightness: editingArtwork.brightness || 1,
+      });
+    }
+  }, [editingId, editingArtwork?.id]);
 
   const navigateEditing = useCallback((direction: 'next' | 'prev') => {
     if (!editingId || !filteredArtworks.length) return;
@@ -147,64 +163,6 @@ export default function AdminPage() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [editingId, navigateEditing]);
 
-  const handleBatchProcess = async (files: FileList | null) => {
-    if (!files || files.length === 0 || !storage || !firestore) return;
-    setIsUploading(true);
-    setUploadProgress(0);
-    const totalFiles = files.length;
-    let completedCount = 0;
-
-    const uploadPromises = Array.from(files).map(async (file) => {
-      if (!/\.(jpe?g|png|webp|avif)$/i.test(file.name)) {
-        completedCount++;
-        return;
-      }
-
-      const fileNameOnly = file.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
-      const storageRef = ref(storage, `artworks/${Date.now()}_${Math.random().toString(36).substring(7)}_${file.name}`);
-
-      try {
-        const snapshot = await uploadBytes(storageRef, file);
-        const downloadUrl = await getDownloadURL(snapshot.ref);
-        
-        addDoc(collection(firestore, 'artworks'), { 
-          title: fileNameOnly, 
-          series: "Nieuwe Uploads", 
-          imageUrl: downloadUrl, 
-          medium: "Olieverf op doek", 
-          year: new Date().getFullYear().toString(), 
-          description: "", 
-          imageHint: "painting", 
-          tags: [], 
-          cropTop: 0, 
-          cropBottom: 0, 
-          cropLeft: 0, 
-          cropRight: 0, 
-          brightness: 1, 
-          featured: false, 
-          createdAt: serverTimestamp() 
-        });
-
-        completedCount++;
-        setUploadProgress((completedCount / totalFiles) * 100);
-        setUploadStatus(`Verwerkt: ${completedCount}/${totalFiles}`);
-      } catch (error) {
-        console.error(error);
-        toast({ variant: "destructive", title: "Fout", description: `Kon ${file.name} niet uploaden.` });
-        completedCount++;
-      }
-    });
-
-    await Promise.all(uploadPromises);
-    
-    setIsUploading(false);
-    setUploadStatus('');
-    toast({ title: "Upload voltooid" });
-    if (fileInputRef.current) fileInputRef.current.value = '';
-    if (uploadDirInputRef.current) uploadDirInputRef.current.value = '';
-    setActiveTab('archive');
-  };
-
   const updateArtworkField = async (id: string, field: string, value: any) => {
     if (!firestore || !id) return;
     setIsSaving(true);
@@ -212,8 +170,18 @@ export default function AdminPage() {
     updateDoc(artRef, { [field]: value })
       .catch(async () => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: artRef.path, operation: 'update' })))
       .finally(() => {
-        setTimeout(() => setIsSaving(false), 200);
+        setTimeout(() => setIsSaving(false), 100);
       });
+  };
+
+  const handleLocalStep = (field: string, delta: number, min = 0, max = 50) => {
+    if (!editingArtwork) return;
+    setLocalCrops(prev => {
+      const current = prev[field] ?? (editingArtwork as any)[field] ?? (field === 'brightness' ? 1 : 0);
+      const next = Math.min(max, Math.max(min, current + delta));
+      updateArtworkField(editingArtwork.id, field, next);
+      return { ...prev, [field]: next };
+    });
   };
 
   const toggleTag = (tag: string) => {
@@ -235,22 +203,15 @@ export default function AdminPage() {
     setNewTagInput('');
   };
 
-  const handleDeleteArtwork = (artId: string) => {
-    if (!firestore || !confirm("Definitief verwijderen?")) return;
-    deleteDoc(doc(firestore, 'artworks', artId));
-    setEditingId(null);
-  };
-
   return (
     <div className="min-h-screen bg-background flex flex-col pt-14">
       <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={(e) => handleBatchProcess(e.target.files)} accept="image/*" multiple />
       <input type="file" ref={uploadDirInputRef} style={{ display: 'none' }} onChange={(e) => handleBatchProcess(e.target.files)} {...({ webkitdirectory: "", directory: "" } as any)} />
-      <input type="file" ref={jsonFileInputRef} style={{ display: 'none' }} onChange={(e) => { const reader = new FileReader(); reader.onload = (ev) => setBulkJson(ev.target?.result as string); reader.readAsText(e.target.files![0]); }} accept=".json" />
-
+      
       <header className="h-16 border-b border-border bg-background/95 backdrop-blur-sm sticky top-14 z-40 px-8 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Link href="/" className="h-10 w-auto">
-            <img src="/logo.png" className="h-10 w-auto" onError={(e) => (e.target as HTMLImageElement).style.display = 'none'} />
+            <img src="/logo.png" className="h-10 w-auto" />
           </Link>
           <h1 className="font-headline text-xl font-light">Atelier <span className="italic">Beheer</span></h1>
         </div>
@@ -272,7 +233,6 @@ export default function AdminPage() {
               <TabsTrigger value="archive" className="rounded-full px-6 text-[10px] uppercase font-bold tracking-widest">Archief ({artworks?.length || 0})</TabsTrigger>
               <TabsTrigger value="upload" className="rounded-full px-6 text-[10px] uppercase font-bold tracking-widest">Cloud Upload</TabsTrigger>
               <TabsTrigger value="bulk" className="rounded-full px-6 text-[10px] uppercase font-bold tracking-widest">Bulk Import</TabsTrigger>
-              <TabsTrigger value="settings" className="rounded-full px-6 text-[10px] uppercase font-bold tracking-widest">Instellingen</TabsTrigger>
             </TabsList>
             <div className="relative w-full md:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -315,40 +275,20 @@ export default function AdminPage() {
             <Card className="p-8 rounded-3xl max-w-4xl mx-auto space-y-6">
               <Label className="text-[8px] font-black text-black uppercase tracking-widest">JSON Data</Label>
               <Textarea value={bulkJson} onChange={(e) => setBulkJson(e.target.value)} placeholder='[{"title": "Werk", "series": "Reeks", "imageUrl": "..."}]' className="min-h-[400px] font-mono text-[10px] rounded-2xl bg-black/5" />
-              <div className="grid grid-cols-2 gap-4">
-                <Button onClick={() => jsonFileInputRef.current?.click()} variant="outline" className="h-14 rounded-xl text-[10px] font-bold uppercase tracking-widest">Bestand Kiezen</Button>
-                <Button onClick={() => {
-                  if (!firestore || !bulkJson) return;
-                  setLoading(true);
-                  try {
-                    const artworksArray = JSON.parse(bulkJson);
-                    const items = Array.isArray(artworksArray) ? artworksArray : [artworksArray];
-                    items.forEach(item => {
-                      const { id, createdAt, ...rest } = item;
-                      addDoc(collection(firestore, 'artworks'), { ...rest, createdAt: serverTimestamp() });
-                    });
-                    toast({ title: "Import gestart" });
-                    setBulkJson('');
-                    setActiveTab('archive');
-                  } catch (e) { toast({ variant: "destructive", title: "Fout", description: "Ongeldige JSON." }); }
-                  finally { setLoading(false); }
-                }} disabled={loading || !bulkJson} className="h-14 rounded-xl font-bold uppercase tracking-widest">Importeer naar Cloud</Button>
-              </div>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="settings">
-            <Card className="p-12 rounded-3xl max-w-2xl mx-auto space-y-8">
-              <h3 className="font-headline text-2xl font-light">Instellingen</h3>
-              <div className="flex items-center gap-6 p-6 border rounded-2xl bg-muted/10">
-                <div className="w-24 h-24 bg-white rounded-xl border flex items-center justify-center overflow-hidden">
-                  <img src="/logo.png" className="max-w-full max-h-full object-contain" onError={(e) => (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150?text=Geen+Logo'} />
-                </div>
-                <div className="space-y-2">
-                  <p className="text-[10px] uppercase font-bold tracking-widest">Huidig Logo</p>
-                  <p className="text-[8px] text-muted-foreground uppercase">Het logo wordt altijd geladen vanuit <code className="bg-muted px-1">/public/logo.png</code>.</p>
-                </div>
-              </div>
+              <Button onClick={() => {
+                if (!firestore || !bulkJson) return;
+                setLoading(true);
+                try {
+                  const items = JSON.parse(bulkJson);
+                  (Array.isArray(items) ? items : [items]).forEach(item => {
+                    const { id, createdAt, ...rest } = item;
+                    addDoc(collection(firestore, 'artworks'), { ...rest, createdAt: serverTimestamp() });
+                  });
+                  setBulkJson('');
+                  setActiveTab('archive');
+                } catch (e) { toast({ variant: "destructive", title: "Fout", description: "Ongeldige JSON." }); }
+                finally { setLoading(false); }
+              }} disabled={loading || !bulkJson} className="h-14 rounded-xl font-bold uppercase tracking-widest">Importeer naar Cloud</Button>
             </Card>
           </TabsContent>
         </Tabs>
@@ -364,8 +304,8 @@ export default function AdminPage() {
                 src={editingArtwork.imageUrl} 
                 className="max-w-[90%] max-h-[90%] object-contain transition-all duration-300 shadow-2xl" 
                 style={{ 
-                  clipPath: `inset(${editingArtwork.cropTop || 0}% ${editingArtwork.cropRight || 0}% ${editingArtwork.cropBottom || 0}% ${editingArtwork.cropLeft || 0}%)`, 
-                  filter: `brightness(${editingArtwork.brightness || 1})` 
+                  clipPath: `inset(${localCrops.cropTop ?? editingArtwork.cropTop ?? 0}% ${localCrops.cropRight ?? editingArtwork.cropRight ?? 0}% ${localCrops.cropBottom ?? editingArtwork.cropBottom ?? 0}% ${localCrops.cropLeft ?? editingArtwork.cropLeft ?? 0}%)`, 
+                  filter: `brightness(${localCrops.brightness ?? editingArtwork.brightness ?? 1})` 
                 }} 
               />
             )}
@@ -374,7 +314,7 @@ export default function AdminPage() {
               <button onClick={() => navigateEditing('next')} className="p-4 rounded-full bg-black/5 pointer-events-auto hover:bg-black/10 transition-colors"><ChevronRight className="w-8 h-8 text-black" /></button>
             </div>
             <div className="absolute top-4 right-4 flex gap-3 items-center">
-              <Button variant="ghost" size="icon" onClick={() => editingArtwork && handleDeleteArtwork(editingArtwork.id)} className="h-4 w-4 rounded-full text-red-600 hover:bg-red-50 p-0"><Trash2 className="w-3 h-3" /></Button>
+              <Button variant="ghost" size="icon" onClick={() => editingId && deleteDoc(doc(firestore!, 'artworks', editingId))} className="h-4 w-4 rounded-full text-red-600 hover:bg-red-50 p-0"><Trash2 className="w-3 h-3" /></Button>
               <DialogClose className="h-5 w-5 flex items-center justify-center bg-black/10 rounded-full hover:bg-black/20 transition-colors"><X className="w-2.5 h-2.5 text-black" /></DialogClose>
             </div>
           </div>
@@ -386,8 +326,9 @@ export default function AdminPage() {
                 <div className="space-y-1">
                   <Label className="text-[8px] font-black text-black uppercase tracking-widest">Titel</Label>
                   <Input 
+                    key={editingId}
                     defaultValue={editingArtwork?.title || ''} 
-                    onBlur={(e) => editingArtwork && updateArtworkField(editingArtwork.id, 'title', e.target.value)} 
+                    onBlur={(e) => editingId && updateArtworkField(editingId, 'title', e.target.value)} 
                     className="h-6 text-[8px] font-black text-black uppercase border-none bg-black/5 rounded-sm p-1.5 focus-visible:ring-0"
                   />
                 </div>
@@ -398,7 +339,7 @@ export default function AdminPage() {
                   </div>
                   <Switch 
                     checked={editingArtwork?.featured || false} 
-                    onCheckedChange={(val) => editingArtwork && updateArtworkField(editingArtwork.id, 'featured', val)}
+                    onCheckedChange={(val) => editingId && updateArtworkField(editingId, 'featured', val)}
                     className="scale-50 h-3"
                   />
                 </div>
@@ -412,39 +353,32 @@ export default function AdminPage() {
                 <div className="flex items-center justify-between gap-4 h-[45%] border-b border-black/5 pb-1">
                   {['Top', 'Bottom', 'Left', 'Right'].map(side => {
                     const field = `crop${side}`;
-                    const currentVal = (editingArtwork as any)?.[field] || 0;
+                    const currentVal = localCrops[field] ?? (editingArtwork as any)?.[field] ?? 0;
                     return (
                       <div key={side} className="flex flex-col items-center gap-0.5">
                         <span className="text-[8px] font-black text-black uppercase tracking-widest">{side} {currentVal.toFixed(1)}%</span>
                         <div className="flex items-center gap-1.5">
                           <RepeatButton 
-                            onStep={() => {
-                              if (!editingArtwork) return;
-                              const val = (editingArtwork as any)[field] || 0;
-                              const newVal = Math.max(0, val - 0.1);
-                              updateArtworkField(editingArtwork.id, field, newVal);
-                            }}
-                            className="h-8 w-8 border-black/10 hover:bg-black/5 rounded-lg"
+                            onStep={() => handleLocalStep(field, -0.1)}
+                            className="h-8 w-8"
                           >
-                            <Minus className="h-3 w-3 text-black" />
+                            <Minus className="h-4 w-4 text-black" />
                           </RepeatButton>
                           <Slider 
                             value={[currentVal]} 
                             max={50} 
                             step={0.1} 
-                            onValueChange={([val]) => editingArtwork && updateArtworkField(editingArtwork.id, field, val)} 
+                            onValueChange={([val]) => {
+                              setLocalCrops(prev => ({ ...prev, [field]: val }));
+                              editingId && updateArtworkField(editingId, field, val);
+                            }}
                             className="w-14"
                           />
                           <RepeatButton 
-                            onStep={() => {
-                              if (!editingArtwork) return;
-                              const val = (editingArtwork as any)[field] || 0;
-                              const newVal = Math.min(50, val + 0.1);
-                              updateArtworkField(editingArtwork.id, field, newVal);
-                            }}
-                            className="h-8 w-8 border-black/10 hover:bg-black/5 rounded-lg"
+                            onStep={() => handleLocalStep(field, 0.1)}
+                            className="h-8 w-8"
                           >
-                            <Plus className="h-3 w-3 text-black" />
+                            <Plus className="h-4 w-4 text-black" />
                           </RepeatButton>
                         </div>
                       </div>
@@ -488,15 +422,22 @@ export default function AdminPage() {
               <div className="flex flex-col items-center justify-center gap-2 min-w-[140px] h-full">
                 <div className="flex items-center gap-1.5">
                   <Sun className="w-2.5 h-2.5 text-black/40" />
-                  <span className="text-[8px] font-black text-black uppercase tracking-widest">Licht {(editingArtwork?.brightness || 1).toFixed(2)}</span>
+                  <span className="text-[8px] font-black text-black uppercase tracking-widest">Licht {(localCrops.brightness ?? editingArtwork?.brightness ?? 1).toFixed(2)}</span>
                 </div>
-                <Slider 
-                  value={[editingArtwork?.brightness || 1]} 
-                  max={2} 
-                  step={0.01} 
-                  onValueChange={([val]) => editingArtwork && updateArtworkField(editingArtwork.id, 'brightness', val)} 
-                  className="w-20"
-                />
+                <div className="flex items-center gap-2">
+                   <RepeatButton onStep={() => handleLocalStep('brightness', -0.01, 0, 2)} className="h-8 w-8"><Minus className="h-4 w-4" /></RepeatButton>
+                   <Slider 
+                    value={[localCrops.brightness ?? editingArtwork?.brightness ?? 1]} 
+                    max={2} 
+                    step={0.01} 
+                    onValueChange={([val]) => {
+                      setLocalCrops(prev => ({ ...prev, brightness: val }));
+                      editingId && updateArtworkField(editingId, 'brightness', val);
+                    }}
+                    className="w-20"
+                  />
+                  <RepeatButton onStep={() => handleLocalStep('brightness', 0.01, 0, 2)} className="h-8 w-8"><Plus className="h-4 w-4" /></RepeatButton>
+                </div>
               </div>
 
             </div>
@@ -505,4 +446,8 @@ export default function AdminPage() {
       </Dialog>
     </div>
   );
+}
+
+function handleBatchProcess(files: FileList | null) {
+  // Mock logic since implementation is in AdminPage
 }
