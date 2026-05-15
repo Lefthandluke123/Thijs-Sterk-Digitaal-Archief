@@ -26,7 +26,8 @@ import {
   Download,
   CloudUpload,
   Sun,
-  Tag
+  Tag,
+  FileJson
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -101,6 +102,7 @@ export default function AdminPage() {
   const [newTagInput, setNewTagInput] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadDirInputRef = useRef<HTMLInputElement>(null);
+  const jsonFileInputRef = useRef<HTMLInputElement>(null);
   
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
@@ -207,39 +209,57 @@ export default function AdminPage() {
     const totalFiles = files.length;
     let processed = 0;
 
-    const filesArray = Array.from(files);
+    const filesArray = Array.from(files).filter(f => f.type.startsWith('image/'));
     
-    for (const file of filesArray) {
-      if (file.type.startsWith('image/')) {
-        setUploadStatus(`Uploading ${file.name}...`);
-        try {
-          const storageRef = ref(storage, `artworks/${Date.now()}_${file.name}`);
-          const snapshot = await uploadBytes(storageRef, file);
-          const downloadUrl = await getDownloadURL(snapshot.ref);
+    const uploadPromises = filesArray.map(async (file) => {
+      try {
+        const storageRef = ref(storage, `artworks/${Date.now()}_${file.name}`);
+        const snapshot = await uploadBytes(storageRef, file);
+        const downloadUrl = await getDownloadURL(snapshot.ref);
 
-          await addDoc(collection(firestore, 'artworks'), {
-            title: file.name.split('.')[0],
-            series: "Nieuw",
-            year: new Date().getFullYear().toString(),
-            medium: "Onbekend",
-            imageUrl: downloadUrl,
-            tags: [],
-            featured: false,
-            createdAt: serverTimestamp(),
-            cropTop: 0, cropBottom: 0, cropLeft: 0, cropRight: 0, brightness: 1
-          });
-        } catch (e) {
-          console.error(`Error uploading ${file.name}:`, e);
-        }
+        await addDoc(collection(firestore, 'artworks'), {
+          title: file.name.split('.')[0],
+          series: "Nieuw",
+          year: new Date().getFullYear().toString(),
+          medium: "Onbekend",
+          imageUrl: downloadUrl,
+          tags: [],
+          featured: false,
+          createdAt: serverTimestamp(),
+          cropTop: 0, cropBottom: 0, cropLeft: 0, cropRight: 0, brightness: 1
+        });
+      } catch (e) {
+        console.error(`Error uploading ${file.name}:`, e);
+      } finally {
+        processed++;
+        setUploadProgress((processed / totalFiles) * 100);
+        setUploadStatus(`Verwerkt: ${processed}/${totalFiles}`);
       }
-      processed++;
-      setUploadProgress((processed / totalFiles) * 100);
-    }
+    });
+
+    await Promise.all(uploadPromises);
 
     setIsUploading(false);
     setUploadStatus('Klaar!');
     toast({ title: "Upload Voltooid", description: `${processed} bestanden verwerkt.` });
     setActiveTab('archive');
+  };
+
+  const handleJsonFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const json = event.target?.result as string;
+        setBulkJson(json);
+        toast({ title: "JSON Geladen", description: "Controleer de data in het tekstveld hieronder." });
+      } catch (err) {
+        toast({ variant: "destructive", title: "Fout", description: "Kon bestand niet lezen." });
+      }
+    };
+    reader.readAsText(file);
   };
 
   return (
@@ -312,7 +332,15 @@ export default function AdminPage() {
 
           <TabsContent value="bulk">
             <Card className="p-8 rounded-3xl max-w-4xl mx-auto space-y-6">
-              <Label className="text-[8px] font-black text-black uppercase tracking-widest">JSON Data</Label>
+              <div className="flex items-center justify-between">
+                <Label className="text-[8px] font-black text-black uppercase tracking-widest">JSON Data</Label>
+                <div className="flex gap-2">
+                  <input type="file" ref={jsonFileInputRef} style={{ display: 'none' }} accept=".json" onChange={handleJsonFileImport} />
+                  <Button variant="outline" size="sm" onClick={() => jsonFileInputRef.current?.click()} className="text-[10px] uppercase tracking-widest font-bold">
+                    <FileJson className="w-3 h-3 mr-2" /> Kies JSON Bestand
+                  </Button>
+                </div>
+              </div>
               <Textarea value={bulkJson} onChange={(e) => setBulkJson(e.target.value)} placeholder='[{"title": "Werk", "series": "Reeks", "imageUrl": "..."}]' className="min-h-[400px] font-mono text-[10px] rounded-2xl bg-black/5" />
               <Button onClick={() => {
                 if (!firestore || !bulkJson) return;
@@ -327,7 +355,7 @@ export default function AdminPage() {
                   setActiveTab('archive');
                 } catch (e) { toast({ variant: "destructive", title: "Fout", description: "Ongeldige JSON." }); }
                 finally { setLoading(false); }
-              }} disabled={loading || !bulkJson} className="h-14 rounded-xl font-bold uppercase tracking-widest">Importeer naar Cloud</Button>
+              }} disabled={loading || !bulkJson} className="h-14 rounded-xl font-bold uppercase tracking-widest w-full">Importeer naar Cloud</Button>
             </Card>
           </TabsContent>
         </Tabs>
