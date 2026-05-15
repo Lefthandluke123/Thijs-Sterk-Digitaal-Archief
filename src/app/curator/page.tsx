@@ -97,8 +97,7 @@ export default function CuratorPage() {
     <main className="min-h-screen bg-background pt-14">
       <div className="w-full bg-accent/5 border-b border-black/5 py-12 md:py-16">
         <div className="container mx-auto px-6 max-w-5xl text-center space-y-2">
-          <span className="text-[8px] font-black uppercase tracking-[0.3em] text-black/30 block">Uw Persoonlijke Ruimte</span>
-          <h1 className="font-headline text-[16px] md:text-[18px] font-light text-black tracking-tight leading-tight uppercase">
+          <h1 className="font-headline text-[14px] md:text-[16px] font-light text-black tracking-tight leading-tight uppercase">
             Uw Eigen <span className="italic">Zaal</span>
           </h1>
         </div>
@@ -163,12 +162,12 @@ export default function CuratorPage() {
             <DialogClose className="absolute top-8 right-8 z-50 p-2.5 bg-white/10 backdrop-blur-sm rounded-full border border-black/20 hover:bg-white/20 transition-all"><X className="w-5 h-5 opacity-40" /></DialogClose>
           </div>
           <div className="h-[25vh] w-full bg-white py-8 px-12 border-t border-black/5 flex flex-col items-center justify-center overflow-y-auto text-center">
-            <h2 className="font-headline text-[12px] md:text-[14px] font-light uppercase tracking-tight text-black/60 mb-4">{selectedArtwork?.title}</h2>
-            <div className="text-[11px] md:text-[13px] uppercase font-black tracking-[0.4em] flex flex-wrap gap-x-10 gap-y-3 justify-center items-center opacity-100 text-accent">
-              <span className="bg-accent/10 px-4 py-1 rounded-sm">Zaal: {selectedArtwork?.series}</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-accent/30 self-center hidden md:inline" />
+            <h2 className="text-[10px] md:text-[11px] font-black tracking-[0.4em] uppercase text-black/40 mb-4">{selectedArtwork?.title}</h2>
+            <div className="text-[12px] md:text-[14px] uppercase font-black tracking-[0.5em] flex flex-wrap gap-x-12 gap-y-4 justify-center items-center opacity-100 text-accent">
+              <span className="bg-accent/10 px-6 py-1.5 rounded-sm">Zaal: {selectedArtwork?.series}</span>
+              <span className="w-2 h-2 rounded-full bg-accent/30 self-center hidden md:inline" />
               <span>{selectedArtwork?.year}</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-accent/30 self-center hidden md:inline" />
+              <span className="w-2 h-2 rounded-full bg-accent/30 self-center hidden md:inline" />
               <span>{selectedArtwork?.medium}</span>
             </div>
           </div>

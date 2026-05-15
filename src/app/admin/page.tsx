@@ -23,13 +23,12 @@ import {
   ChevronRight,
   Search,
   CheckCircle2,
-  Download,
   CloudUpload,
   Sun,
   Tag,
   FileJson,
-  Database,
-  Layers
+  Layers,
+  Filter
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -101,6 +100,7 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState('archive');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [filterSeries, setFilterSeries] = useState<string | null>(null);
   const [newTagInput, setNewTagInput] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadDirInputRef = useRef<HTMLInputElement>(null);
@@ -120,14 +120,21 @@ export default function AdminPage() {
 
   const { data: artworks, loading: isCollectionLoading } = useCollection(artworksQuery);
 
+  const allSeries = useMemo(() => {
+    if (!artworks) return [];
+    return Array.from(new Set(artworks.map(a => a.series || "Onbekend"))).sort();
+  }, [artworks]);
+
   const filteredArtworks = useMemo(() => {
     if (!artworks) return [];
-    return artworks.filter(art => 
-      (art.title?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
-      (art.series?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
-      art.tags?.some((t: string) => t.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
-  }, [artworks, searchQuery]);
+    return artworks.filter(art => {
+      const matchesSearch = (art.title?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
+                          (art.series?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
+                          art.tags?.some((t: string) => t.toLowerCase().includes(searchQuery.toLowerCase()));
+      const matchesFilter = !filterSeries || art.series === filterSeries;
+      return matchesSearch && matchesFilter;
+    });
+  }, [artworks, searchQuery, filterSeries]);
 
   const editingArtwork = useMemo(() => {
     return artworks?.find(art => art.id === editingId) || null;
@@ -153,17 +160,6 @@ export default function AdminPage() {
       : (currentIndex - 1 + filteredArtworks.length) % filteredArtworks.length;
     setEditingId(filteredArtworks[nextIndex].id);
   }, [editingId, filteredArtworks]);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!editingId) return;
-      if (e.key === 'ArrowRight') navigateEditing('next');
-      if (e.key === 'ArrowLeft') navigateEditing('prev');
-      if (e.key === 'Escape') setEditingId(null);
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [editingId, navigateEditing]);
 
   const updateArtworkField = async (id: string, field: string, value: any) => {
     if (!firestore || !id) return;
@@ -205,62 +201,35 @@ export default function AdminPage() {
 
   const handleBatchProcess = async (files: FileList | null) => {
     if (!files || !firestore || !storage) return;
-    
     setIsUploading(true);
     setUploadProgress(0);
     const filesArray = Array.from(files).filter(f => f.type.startsWith('image/'));
     const totalFiles = filesArray.length;
     let processed = 0;
 
-    const uploadPromises = filesArray.map(async (file) => {
+    for (const file of filesArray) {
       try {
         const storageRef = ref(storage, `artworks/${Date.now()}_${file.name}`);
         const snapshot = await uploadBytes(storageRef, file);
         const downloadUrl = await getDownloadURL(snapshot.ref);
-
         await addDoc(collection(firestore, 'artworks'), {
           title: file.name.split('.')[0],
           series: "Nieuw",
           year: new Date().getFullYear().toString(),
-          medium: "Onbekend",
+          medium: "Olieverf",
           imageUrl: downloadUrl,
           tags: [],
           featured: false,
           createdAt: serverTimestamp(),
           cropTop: 0, cropBottom: 0, cropLeft: 0, cropRight: 0, brightness: 1
         });
-      } catch (e) {
-        console.error(`Error uploading ${file.name}:`, e);
-      } finally {
-        processed++;
-        setUploadProgress((processed / totalFiles) * 100);
-        setUploadStatus(`Verwerkt: ${processed}/${totalFiles}`);
-      }
-    });
-
-    await Promise.all(uploadPromises);
-
+      } catch (e) { console.error(e); }
+      processed++;
+      setUploadProgress((processed / totalFiles) * 100);
+      setUploadStatus(`Verwerkt: ${processed}/${totalFiles}`);
+    }
     setIsUploading(false);
-    setUploadStatus('Klaar!');
-    toast({ title: "Upload Voltooid", description: `${processed} bestanden verwerkt.` });
-    setActiveTab('archive');
-  };
-
-  const handleJsonFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const json = event.target?.result as string;
-        setBulkJson(json);
-        toast({ title: "JSON Geladen", description: "Controleer de data in het tekstveld hieronder." });
-      } catch (err) {
-        toast({ variant: "destructive", title: "Fout", description: "Kon bestand niet lezen." });
-      }
-    };
-    reader.readAsText(file);
+    toast({ title: "Upload Voltooid" });
   };
 
   const exportAsBasisJson = () => {
@@ -273,11 +242,8 @@ export default function AdminPage() {
     };
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); 
-    a.href = url; 
-    a.download = "placeholder-images.json"; 
-    a.click();
-    toast({ title: "Basis JSON Gegenereerd", description: "Vervang src/app/lib/placeholder-images.json met dit bestand voor een permanente collectie." });
+    const a = document.createElement('a'); a.href = url; a.download = "placeholder-images.json"; a.click();
+    toast({ title: "JSON Geëxporteerd" });
   };
 
   return (
@@ -312,11 +278,33 @@ export default function AdminPage() {
             </TabsList>
             <div className="relative w-full md:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input placeholder="Zoek..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10 rounded-full h-10 text-xs bg-muted/30 border-none" />
+              <Input placeholder="Zoek op titel of thema..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10 rounded-full h-10 text-xs bg-muted/30 border-none" />
             </div>
           </div>
 
-          <TabsContent value="archive">
+          <TabsContent value="archive" className="space-y-6">
+            <div className="flex items-center gap-4 overflow-x-auto pb-2 no-scrollbar border-b border-black/5">
+              <Button 
+                variant={filterSeries === null ? "default" : "outline"} 
+                size="sm" 
+                onClick={() => setFilterSeries(null)}
+                className="rounded-full text-[9px] uppercase tracking-widest font-bold h-7"
+              >
+                Alles
+              </Button>
+              {allSeries.map(s => (
+                <Button 
+                  key={s}
+                  variant={filterSeries === s ? "default" : "outline"} 
+                  size="sm" 
+                  onClick={() => setFilterSeries(s)}
+                  className="rounded-full text-[9px] uppercase tracking-widest font-bold h-7 whitespace-nowrap"
+                >
+                  {s}
+                </Button>
+              ))}
+            </div>
+
             {isCollectionLoading ? <div className="flex justify-center py-20"><Loader2 className="animate-spin opacity-20" /></div> : artworks && artworks.length > 0 ? (
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
                 {filteredArtworks.map((art: any) => (
@@ -324,11 +312,14 @@ export default function AdminPage() {
                     <div className="relative aspect-square bg-muted/20">
                       <img src={art.imageUrl} className="w-full h-full object-cover" style={{ clipPath: `inset(${art.cropTop || 0}% ${art.cropRight || 0}% ${art.cropBottom || 0}% ${art.cropLeft || 0}%)`, filter: `brightness(${art.brightness || 1})` }} />
                     </div>
-                    <CardContent className="p-2 text-center"><h4 className="text-[9px] font-black text-black uppercase tracking-widest truncate">{art.title}</h4></CardContent>
+                    <CardContent className="p-2 text-center">
+                      <h4 className="text-[9px] font-black text-black uppercase tracking-widest truncate">{art.title}</h4>
+                      <p className="text-[7px] uppercase tracking-widest opacity-40 mt-1 truncate">{art.series}</p>
+                    </CardContent>
                   </Card>
                 ))}
               </div>
-            ) : <div className="py-32 text-center opacity-40 uppercase tracking-[0.2em] text-[9px] font-bold">Geen werken in de cloud.</div>}
+            ) : <div className="py-32 text-center opacity-40 uppercase tracking-[0.2em] text-[9px] font-bold">Geen werken gevonden.</div>}
           </TabsContent>
 
           <TabsContent value="upload">
@@ -352,7 +343,13 @@ export default function AdminPage() {
               <div className="flex items-center justify-between">
                 <Label className="text-[9px] font-black text-black uppercase tracking-widest">JSON Data / Basis Config</Label>
                 <div className="flex gap-2">
-                  <input type="file" ref={jsonFileInputRef} style={{ display: 'none' }} accept=".json" onChange={handleJsonFileImport} />
+                  <input type="file" ref={jsonFileInputRef} style={{ display: 'none' }} accept=".json" onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (ev) => setBulkJson(ev.target?.result as string);
+                    reader.readAsText(file);
+                  }} />
                   <Button variant="outline" size="sm" onClick={() => jsonFileInputRef.current?.click()} className="text-[9px] uppercase tracking-widest font-bold">
                     <FileJson className="w-3 h-3 mr-2" /> Kies JSON Bestand
                   </Button>
@@ -369,10 +366,8 @@ export default function AdminPage() {
                     const { id, createdAt, ...rest } = item;
                     addDoc(collection(firestore, 'artworks'), { ...rest, createdAt: serverTimestamp() });
                   });
-                  setBulkJson('');
-                  setActiveTab('archive');
-                  toast({ title: "Import Succesvol", description: "De data is toegevoegd aan het cloud-archief." });
-                } catch (e) { toast({ variant: "destructive", title: "Fout", description: "Ongeldige JSON structuur." }); }
+                  setBulkJson(''); setActiveTab('archive'); toast({ title: "Import Succesvol" });
+                } catch (e) { toast({ variant: "destructive", title: "Fout" }); }
                 finally { setLoading(false); }
               }} disabled={loading || !bulkJson} className="h-14 rounded-xl font-bold uppercase tracking-widest w-full">Importeer naar Cloud</Button>
             </Card>

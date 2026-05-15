@@ -73,12 +73,9 @@ function GalleryContent() {
     <main className="min-h-screen bg-background pt-14">
       <div className="w-full bg-secondary/5 border-b border-border/10 py-12 md:py-16">
         <div className="container mx-auto px-6 max-w-7xl">
-          <h1 className="font-headline text-[16px] md:text-[18px] font-light text-foreground text-center tracking-tighter uppercase">
+          <h1 className="font-headline text-[14px] md:text-[16px] font-light text-foreground text-center tracking-tight uppercase">
             <span className="italic">{activeSeries || "Laden..."}</span>
           </h1>
-          <p className="text-center text-accent mt-4 uppercase tracking-[0.5em] text-[8px] font-black opacity-80">
-            Zaal &bull; {activeSeries || "..."}
-          </p>
         </div>
       </div>
 
@@ -163,14 +160,14 @@ function GalleryContent() {
 
           <div className="h-[25vh] w-full bg-background/95 backdrop-blur-md py-8 px-12 border-t border-border/10 shadow-2xl flex flex-col items-center justify-center overflow-y-auto">
             <div className="max-w-6xl mx-auto flex flex-col items-center text-center gap-4">
-              <h2 className="font-headline text-[12px] md:text-[14px] font-light text-foreground/60 tracking-tight leading-tight uppercase">
+              <h2 className="text-[10px] md:text-[11px] font-black tracking-[0.4em] uppercase text-foreground/40 leading-tight">
                 {selectedArtwork?.title}
               </h2>
-              <div className="text-[11px] md:text-[13px] uppercase font-black tracking-[0.4em] text-accent flex flex-wrap gap-x-10 gap-y-3 justify-center items-center opacity-100">
-                <span className="bg-accent/10 px-4 py-1 rounded-sm">Zaal: {selectedArtwork?.series}</span>
-                <span className="hidden md:inline w-1.5 h-1.5 rounded-full bg-accent/40" />
+              <div className="text-[12px] md:text-[14px] uppercase font-black tracking-[0.5em] text-accent flex flex-wrap gap-x-12 gap-y-4 justify-center items-center">
+                <span className="bg-accent/10 px-6 py-1.5 rounded-sm">Zaal: {selectedArtwork?.series}</span>
+                <span className="hidden md:inline w-2 h-2 rounded-full bg-accent/40" />
                 <span>{selectedArtwork?.year}</span>
-                <span className="hidden md:inline w-1.5 h-1.5 rounded-full bg-accent/40" />
+                <span className="hidden md:inline w-2 h-2 rounded-full bg-accent/40" />
                 <span>{selectedArtwork?.medium}</span>
               </div>
             </div>
