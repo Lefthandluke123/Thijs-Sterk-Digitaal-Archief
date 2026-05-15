@@ -28,7 +28,8 @@ import {
   CloudUpload,
   Image as ImageIcon,
   Sun,
-  Home
+  Home,
+  Tag
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -46,7 +47,7 @@ const STANDARD_TAGS = [
   "Bloemen", "Dieren", "Water", "Portretten", "Atmosferisch", "Licht", "Polder", "Kust"
 ];
 
-// Precision button with robust auto-repeat for both click and hold
+// Robuuste RepeatButton voor vlijmscherpe 0.1% precisie
 function RepeatButton({ onClick, children, className, disabled }: { onClick: () => void, children: React.ReactNode, className?: string, disabled?: boolean }) {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -56,11 +57,12 @@ function RepeatButton({ onClick, children, className, disabled }: { onClick: () 
     if (intervalRef.current) clearInterval(intervalRef.current);
   }, []);
 
-  const start = useCallback(() => {
+  const start = useCallback((e: React.MouseEvent | React.TouchEvent) => {
     if (disabled) return;
+    e.preventDefault();
     onClick();
     timerRef.current = setTimeout(() => {
-      intervalRef.current = setInterval(onClick, 60);
+      intervalRef.current = setInterval(onClick, 80);
     }, 400);
   }, [onClick, disabled]);
 
@@ -68,12 +70,12 @@ function RepeatButton({ onClick, children, className, disabled }: { onClick: () 
     <Button
       variant="outline"
       size="icon"
-      className={cn("select-none transition-all active:scale-95", className)}
+      className={cn("select-none transition-all active:scale-90", className)}
       disabled={disabled}
-      onMouseDown={(e) => { e.preventDefault(); start(); }}
+      onMouseDown={start}
       onMouseUp={stop}
       onMouseLeave={stop}
-      onTouchStart={(e) => { e.preventDefault(); start(); }}
+      onTouchStart={start}
       onTouchEnd={stop}
     >
       {children}
@@ -89,6 +91,7 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState('archive');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [newTagInput, setNewTagInput] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadDirInputRef = useRef<HTMLInputElement>(null);
   const jsonFileInputRef = useRef<HTMLInputElement>(null);
@@ -224,7 +227,7 @@ export default function AdminPage() {
     updateDoc(artRef, { [field]: value })
       .catch(async () => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: artRef.path, operation: 'update' })))
       .finally(() => {
-        setTimeout(() => setIsSaving(false), 200);
+        setTimeout(() => setIsSaving(false), 300);
       });
   };
 
@@ -235,6 +238,16 @@ export default function AdminPage() {
       ? currentTags.filter((t: string) => t !== tag) 
       : [...currentTags, tag];
     updateArtworkField(editingArtwork.id, 'tags', newTags);
+  };
+
+  const addCustomTag = () => {
+    if (!editingArtwork || !newTagInput.trim()) return;
+    const tag = newTagInput.trim();
+    const currentTags = editingArtwork.tags || [];
+    if (!currentTags.includes(tag)) {
+      updateArtworkField(editingArtwork.id, 'tags', [...currentTags, tag]);
+    }
+    setNewTagInput('');
   };
 
   const handleDeleteArtwork = (artId: string) => {
@@ -368,8 +381,8 @@ export default function AdminPage() {
               <button onClick={() => navigateEditing('next')} className="p-4 rounded-full bg-black/5 pointer-events-auto hover:bg-black/10 transition-colors"><ChevronRight className="w-8 h-8 text-black" /></button>
             </div>
             <div className="absolute top-4 right-4 flex gap-3 items-center">
-              <Button variant="ghost" size="icon" onClick={() => editingArtwork && handleDeleteArtwork(editingArtwork.id)} className="h-6 w-6 rounded-full text-red-600 hover:bg-red-50"><Trash2 className="w-3 h-3" /></Button>
-              <DialogClose className="h-6 w-6 flex items-center justify-center bg-black/10 rounded-full hover:bg-black/20 transition-colors"><X className="w-3 h-3 text-black" /></DialogClose>
+              <Button variant="ghost" size="icon" onClick={() => editingArtwork && handleDeleteArtwork(editingArtwork.id)} className="h-4 w-4 rounded-full text-red-600 hover:bg-red-50 p-0"><Trash2 className="w-3 h-3" /></Button>
+              <DialogClose className="h-5 w-5 flex items-center justify-center bg-black/10 rounded-full hover:bg-black/20 transition-colors"><X className="w-2.5 h-2.5 text-black" /></DialogClose>
             </div>
           </div>
 
@@ -407,14 +420,14 @@ export default function AdminPage() {
               {/* Crop & Thema's Stack */}
               <div className="flex flex-col flex-1 h-full min-w-0 border-r border-black/5 pr-8 overflow-hidden">
                 {/* Crops Top */}
-                <div className="flex items-center gap-10 h-1/2">
+                <div className="flex items-center justify-between gap-4 h-1/2 border-b border-black/5 pb-2">
                   {['Top', 'Bottom', 'Left', 'Right'].map(side => {
                     const field = `crop${side}`;
                     const currentVal = (editingArtwork as any)?.[field] || 0;
                     return (
                       <div key={side} className="flex flex-col items-center gap-1">
-                        <span className="text-[8px] font-black text-black uppercase tracking-widest mb-1">{side} {currentVal.toFixed(1)}%</span>
-                        <div className="flex items-center gap-3">
+                        <span className="text-[8px] font-black text-black uppercase tracking-widest">{side} {currentVal.toFixed(1)}%</span>
+                        <div className="flex items-center gap-2">
                           <RepeatButton 
                             onClick={() => {
                               const newVal = Math.max(0, currentVal - 0.1);
@@ -429,7 +442,7 @@ export default function AdminPage() {
                             max={50} 
                             step={0.1} 
                             onValueChange={([val]) => editingArtwork && updateArtworkField(editingArtwork.id, field, val)} 
-                            className="w-20"
+                            className="w-16 md:w-24"
                           />
                           <RepeatButton 
                             onClick={() => {
@@ -447,18 +460,40 @@ export default function AdminPage() {
                 </div>
 
                 {/* Thema's Bottom */}
-                <div className="h-1/2 mt-2 pt-2 border-t border-black/5">
-                  <div className="flex flex-wrap gap-1.5 overflow-y-auto h-full pr-4 no-scrollbar pb-2">
+                <div className="h-1/2 pt-2 flex flex-col gap-2 overflow-hidden">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[8px] font-black text-black uppercase tracking-widest">Thema's</span>
+                    <div className="flex items-center gap-2">
+                      <Input 
+                        value={newTagInput}
+                        onChange={(e) => setNewTagInput(e.target.value)}
+                        placeholder="Nieuw..."
+                        className="h-5 text-[8px] font-black text-black uppercase border-none bg-black/5 rounded-sm p-1 w-24 focus-visible:ring-0"
+                        onKeyDown={(e) => e.key === 'Enter' && addCustomTag()}
+                      />
+                      <Button onClick={addCustomTag} variant="ghost" className="h-5 w-5 p-0 bg-black/5 hover:bg-black/10"><Tag className="w-2.5 h-2.5" /></Button>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-1 overflow-y-auto pr-4 no-scrollbar pb-2">
                     {STANDARD_TAGS.map(tag => (
                       <button
                         key={tag}
                         onClick={() => toggleTag(tag)}
                         className={cn(
-                          "px-3 py-1.5 rounded-sm text-[8px] font-black uppercase tracking-widest border transition-all h-fit",
+                          "px-2 py-1 rounded-sm text-[8px] font-black uppercase tracking-widest border transition-all",
                           editingArtwork?.tags?.includes(tag)
                             ? "bg-black text-white border-black"
                             : "bg-transparent text-black/40 border-black/10 hover:border-black/30"
                         )}
+                      >
+                        {tag}
+                      </button>
+                    ))}
+                    {editingArtwork?.tags?.filter((t: string) => !STANDARD_TAGS.includes(t)).map((tag: string) => (
+                      <button
+                        key={tag}
+                        onClick={() => toggleTag(tag)}
+                        className="px-2 py-1 rounded-sm text-[8px] font-black uppercase tracking-widest border bg-accent text-white border-accent"
                       >
                         {tag}
                       </button>
@@ -468,7 +503,7 @@ export default function AdminPage() {
               </div>
 
               {/* Licht/Donker */}
-              <div className="flex flex-col items-center justify-center gap-5 min-w-[160px] h-full">
+              <div className="flex flex-col items-center justify-center gap-4 min-w-[140px] h-full">
                 <div className="flex items-center gap-2">
                   <Sun className="w-3 h-3 text-black/40" />
                   <span className="text-[8px] font-black text-black uppercase tracking-widest">Licht {(editingArtwork?.brightness || 1).toFixed(2)}</span>
@@ -478,9 +513,9 @@ export default function AdminPage() {
                   max={2} 
                   step={0.01} 
                   onValueChange={([val]) => editingArtwork && updateArtworkField(editingArtwork.id, 'brightness', val)} 
-                  className="w-32"
+                  className="w-24"
                 />
-                <div className="mt-4 opacity-10 font-black text-[8px] uppercase tracking-[0.5em]">Gamma Controls</div>
+                <div className="mt-2 opacity-10 font-black text-[8px] uppercase tracking-[0.5em]">Gamma Controls</div>
               </div>
 
             </div>
