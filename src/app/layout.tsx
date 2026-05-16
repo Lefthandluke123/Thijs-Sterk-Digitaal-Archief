@@ -1,10 +1,11 @@
-
 import type { Metadata } from 'next';
 import './globals.css';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/sections/footer';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { CookieConsent } from '@/components/cookie-consent';
+import { Suspense } from 'react';
+import { Loader2 } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'Thijs Sterk (1913-1982) | Schilder van Licht, Ruimte en Water',
@@ -27,7 +28,9 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased selection:bg-accent/20 selection:text-accent">
         <FirebaseClientProvider>
-          <Navbar />
+          <Suspense fallback={<div className="h-14 border-b border-border/10 bg-background/60 backdrop-blur-sm flex items-center justify-center"><Loader2 className="w-4 h-4 animate-spin opacity-20" /></div>}>
+            <Navbar />
+          </Suspense>
           {children}
           <CookieConsent />
           <Footer />
