@@ -1,3 +1,4 @@
+
 import type { Metadata } from 'next';
 import './globals.css';
 import { Navbar } from '@/components/navbar';
@@ -28,9 +29,7 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased selection:bg-accent/20 selection:text-accent">
         <FirebaseClientProvider>
-          <Suspense fallback={<div className="h-14 border-b border-border/10 bg-background/60 backdrop-blur-sm flex items-center justify-center"><Loader2 className="w-4 h-4 animate-spin opacity-20" /></div>}>
-            <Navbar />
-          </Suspense>
+          <Navbar />
           {children}
           <CookieConsent />
           <Footer />

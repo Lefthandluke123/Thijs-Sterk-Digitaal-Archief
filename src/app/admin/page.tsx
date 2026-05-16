@@ -34,8 +34,7 @@ import {
   CheckSquare,
   Copy,
   Type,
-  ImageIcon,
-  GripVertical
+  ImageIcon
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -213,23 +212,6 @@ export default function AdminPage() {
       .finally(() => setIsSaving(false));
   };
 
-  const addBioImage = (personField: string) => {
-    const currentImages = siteSettings?.[personField] || [];
-    updateSettingsField(personField, [...currentImages, '']);
-  };
-
-  const removeBioImage = (personField: string, index: number) => {
-    const currentImages = [...(siteSettings?.[personField] || [])];
-    currentImages.splice(index, 1);
-    updateSettingsField(personField, currentImages);
-  };
-
-  const updateBioImage = (personField: string, index: number, value: string) => {
-    const currentImages = [...(siteSettings?.[personField] || [])];
-    currentImages[index] = value;
-    updateSettingsField(personField, currentImages);
-  };
-
   const handleBulkMove = async () => {
     if (!firestore || selectedIds.length === 0 || !bulkMoveSeries.trim()) return;
     setIsSaving(true);
@@ -378,7 +360,7 @@ export default function AdminPage() {
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <Label className="text-[9px] font-black uppercase tracking-widest opacity-40">Afbeeldingen Galerij</Label>
-        <Button variant="outline" size="sm" onClick={() => addBioImage(personField)} className="h-6 rounded-full text-[8px] font-black">
+        <Button variant="outline" size="sm" onClick={() => updateSettingsField(personField, [...images, ''])} className="h-6 rounded-full text-[8px] font-black">
           <Plus className="w-3 h-3 mr-1" /> Voeg foto toe
         </Button>
       </div>
@@ -387,11 +369,19 @@ export default function AdminPage() {
           <div key={idx} className="flex gap-2">
             <Input 
               value={url} 
-              onChange={(e) => updateBioImage(personField, idx, e.target.value)}
+              onChange={(e) => {
+                const newImages = [...images];
+                newImages[idx] = e.target.value;
+                updateSettingsField(personField, newImages);
+              }}
               placeholder="Plak hier de gekopieerde URL..."
               className="bg-black/5 border-none h-8 text-[10px]"
             />
-            <Button variant="ghost" size="icon" onClick={() => removeBioImage(personField, idx)} className="h-8 w-8 text-red-500 hover:bg-red-50">
+            <Button variant="ghost" size="icon" onClick={() => {
+              const newImages = [...images];
+              newImages.splice(idx, 1);
+              updateSettingsField(personField, newImages);
+            }} className="h-8 w-8 text-red-500 hover:bg-red-50">
               <X className="w-3 h-3" />
             </Button>
           </div>

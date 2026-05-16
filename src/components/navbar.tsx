@@ -1,6 +1,7 @@
+
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -12,12 +13,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, Sparkles } from 'lucide-react';
+import { ChevronDown, Sparkles, Loader2 } from 'lucide-react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
-export function Navbar() {
+function NavbarContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const currentSeries = searchParams.get('series');
@@ -35,7 +36,6 @@ export function Navbar() {
     const fromDb = dbArtworks?.map(art => art.series) || [];
     const fromPlaceholders = PlaceHolderImages.map(art => art.series);
     const combined = Array.from(new Set([...fromDb, ...fromPlaceholders].filter(Boolean)));
-    // We filteren Monumentaal en Glas in lood uit de algemene lijst omdat ze eigen knoppen hebben
     return (combined as string[]).filter(s => s !== "Monumentaal" && s !== "Glas in lood").sort();
   }, [dbArtworks]);
 
@@ -61,14 +61,7 @@ export function Navbar() {
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/60 backdrop-blur-sm border-b border-border/10">
       <div className="container mx-auto px-6 h-14 flex items-center justify-between">
         <Link href="/" className="flex items-center group h-14">
-          <img 
-            src="/logo.png" 
-            alt="Logo" 
-            className="h-10 w-auto object-contain" 
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = '/logo.png';
-            }}
-          />
+          <img src="/logo.png" alt="Logo" className="h-10 w-auto object-contain" />
         </Link>
         
         <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto no-scrollbar max-w-[80%]">
@@ -92,17 +85,13 @@ export function Navbar() {
               {seriesNames.length > 0 ? (
                 seriesNames.map((name) => (
                   <DropdownMenuItem key={name} asChild className="text-[9px] uppercase font-bold tracking-[0.15em] focus:bg-accent focus:text-accent-foreground rounded-xl cursor-pointer p-3 mb-1">
-                    <Link href={`/gallery?series=${encodeURIComponent(name)}`} className="flex items-center justify-between w-full">
-                      {name}
-                    </Link>
+                    <Link href={`/gallery?series=${encodeURIComponent(name)}`}>{name}</Link>
                   </DropdownMenuItem>
                 ))
               ) : (
                 <div className="p-4 text-center text-[8px] uppercase opacity-20">Geen actieve zalen</div>
               )}
-              
               <DropdownMenuSeparator className="bg-border/20 my-2" />
-              
               <DropdownMenuItem asChild className="text-[9px] uppercase font-bold tracking-[0.15em] focus:bg-black focus:text-white rounded-xl cursor-pointer p-3">
                 <Link href="/curator" className="flex items-center gap-2">
                   <Sparkles className="w-3 h-3 text-accent" /> Uw Zaal
@@ -111,19 +100,8 @@ export function Navbar() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <NavLink 
-            href="/gallery?series=Monumentaal" 
-            active={pathname === "/gallery" && currentSeries === "Monumentaal"}
-          >
-            Monumentaal
-          </NavLink>
-
-          <NavLink 
-            href="/gallery?series=Glas in lood" 
-            active={pathname === "/gallery" && currentSeries === "Glas in lood"}
-          >
-            Glas in lood
-          </NavLink>
+          <NavLink href="/gallery?series=Monumentaal" active={pathname === "/gallery" && currentSeries === "Monumentaal"}>Monumentaal</NavLink>
+          <NavLink href="/gallery?series=Glas in lood" active={pathname === "/gallery" && currentSeries === "Glas in lood"}>Glas in lood</NavLink>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -154,17 +132,17 @@ export function Navbar() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Link 
-            href="/#contact"
-            className={cn(
-              "px-3 py-1.5 rounded-full text-[9px] font-bold tracking-widest uppercase transition-all duration-300",
-              pathname.includes('contact') ? "bg-accent/90 text-accent-foreground" : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            Contact
-          </Link>
+          <NavLink href="/#contact" active={false}>Contact</NavLink>
         </div>
       </div>
     </nav>
+  );
+}
+
+export function Navbar() {
+  return (
+    <Suspense fallback={<div className="h-14 border-b border-border/10 bg-background/60 backdrop-blur-sm flex items-center justify-center"><Loader2 className="w-4 h-4 animate-spin opacity-20" /></div>}>
+      <NavbarContent />
+    </Suspense>
   );
 }
