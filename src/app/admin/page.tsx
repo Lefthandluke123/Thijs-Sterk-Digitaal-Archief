@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
@@ -34,7 +33,8 @@ import {
   CheckSquare,
   Copy,
   Type,
-  ImageIcon
+  ImageIcon,
+  Upload
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -127,6 +127,7 @@ export default function AdminPage() {
 
   const [localCrops, setLocalCrops] = useState<Record<string, number>>({});
 
+  // STABLE QUERY: Fully isolated from UI states like selectedIds
   const artworksQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'artworks'), orderBy('createdAt', 'desc'));
@@ -313,29 +314,82 @@ export default function AdminPage() {
     const totalFiles = filesArray.length;
     let processed = 0;
 
-    for (const file of filesArray) {
-      try {
-        const storageRef = ref(storage, `artworks/${Date.now()}_${file.name}`);
-        const snapshot = await uploadBytes(storageRef, file);
-        const downloadUrl = await getDownloadURL(snapshot.ref);
-        await addDoc(collection(firestore, 'artworks'), {
-          title: file.name.split('.')[0],
-          series: filterSeries || "Geen zaal",
-          year: new Date().getFullYear().toString(),
-          medium: "Olieverf",
-          imageUrl: downloadUrl,
-          tags: [],
-          featured: false,
-          createdAt: serverTimestamp(),
-          cropTop: 0, cropBottom: 0, cropLeft: 0, cropRight: 0, brightness: 1
-        });
-      } catch (e) { console.error(e); }
-      processed++;
-      setUploadProgress((processed / totalFiles) * 100);
-      setUploadStatus(`Verwerkt: ${processed}/${totalFiles}`);
+    try {
+      for (const file of filesArray) {
+        try {
+          const timestamp = Date.now();
+          const safeName = file.name.replace(/[^a-z0-9.]/gi, '_');
+          const storageRef = ref(storage, `artworks/${timestamp}_${safeName}`);
+          
+          // Timeout protection for individual file
+          const uploadPromise = uploadBytes(storageRef, file);
+          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 60000));
+          
+          const snapshot = await Promise.race([uploadPromise, timeoutPromise]) as any;
+          const downloadUrl = await getDownloadURL(snapshot.ref);
+          
+          await addDoc(collection(firestore, 'artworks'), {
+            title: file.name.split('.')[0],
+            series: filterSeries || "Nieuwe Uploads",
+            year: new Date().getFullYear().toString(),
+            medium: "Olieverf",
+            imageUrl: downloadUrl,
+            tags: [],
+            featured: false,
+            createdAt: serverTimestamp(),
+            cropTop: 0, cropBottom: 0, cropLeft: 0, cropRight: 0, brightness: 1
+          });
+        } catch (e) { 
+          console.error(`Fout bij uploaden van ${file.name}:`, e);
+          toast({ variant: "destructive", title: "Upload fout", description: `Kon ${file.name} niet uploaden.` });
+        }
+        processed++;
+        setUploadProgress((processed / totalFiles) * 100);
+        setUploadStatus(`Verwerkt: ${processed}/${totalFiles}`);
+      }
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
+      setUploadStatus('');
+      toast({ title: "Upload Proces Klaar" });
     }
-    setIsUploading(false);
-    toast({ title: "Upload Voltooid" });
+  };
+
+  const handleImportJson = async () => {
+    if (!firestore || !bulkJson) return;
+    setLoading(true);
+    try {
+      const items = JSON.parse(bulkJson);
+      const dataToImport = Array.isArray(items) ? items : (items.placeholderImages || [items]);
+      
+      const batch = writeBatch(firestore);
+      dataToImport.forEach(item => {
+        const { id, createdAt, ...rest } = item;
+        // Sanitize data: ensure tags is an array and numbers are numbers
+        const sanitizedItem = {
+          ...rest,
+          tags: Array.isArray(rest.tags) ? rest.tags : [],
+          cropTop: Number(rest.cropTop) || 0,
+          cropBottom: Number(rest.cropBottom) || 0,
+          cropLeft: Number(rest.cropLeft) || 0,
+          cropRight: Number(rest.cropRight) || 0,
+          brightness: Number(rest.brightness) || 1,
+          createdAt: serverTimestamp()
+        };
+        const newDocRef = doc(collection(firestore, 'artworks'));
+        batch.set(newDocRef, sanitizedItem);
+      });
+      
+      await batch.commit();
+      setBulkJson('');
+      setActiveTab('archive');
+      toast({ title: "Import Succesvol", description: `${dataToImport.length} werken geïmporteerd.` });
+    } catch (e) { 
+      console.error(e);
+      toast({ variant: "destructive", title: "Import Fout", description: "Controleer of de JSON-indeling correct is." }); 
+    } finally {
+      setLoading(false);
+    }
   };
 
   const prepareBasisJson = () => {
@@ -348,12 +402,12 @@ export default function AdminPage() {
     };
     setBulkJson(JSON.stringify(exportData, null, 2));
     setActiveTab('bulk');
-    toast({ title: "Basis JSON gegenereerd", description: "Kopieer de tekst uit het Bulk-veld en stuur deze naar mij." });
+    toast({ title: "Basis JSON gegenereerd", description: "Kopieer de tekst uit het Bulk-veld." });
   };
 
   const copyImageUrl = (url: string) => {
     navigator.clipboard.writeText(url);
-    toast({ title: "URL Gekopieerd", description: "Plak deze URL nu in het 'Pagina Teksten' beheer bij de juiste persoon." });
+    toast({ title: "URL Gekopieerd" });
   };
 
   const BioImageManager = ({ personField, images }: { personField: string, images: string[] }) => (
@@ -374,7 +428,7 @@ export default function AdminPage() {
                 newImages[idx] = e.target.value;
                 updateSettingsField(personField, newImages);
               }}
-              placeholder="Plak hier de gekopieerde URL..."
+              placeholder="Plak hier de URL..."
               className="bg-black/5 border-none h-8 text-[10px]"
             />
             <Button variant="ghost" size="icon" onClick={() => {
@@ -422,7 +476,7 @@ export default function AdminPage() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <TabsList className="bg-muted/50 p-1 rounded-full w-fit flex flex-wrap justify-center h-auto">
-              <TabsTrigger value="archive" className="rounded-full px-6 text-[9px] uppercase font-bold tracking-widest">Archief ({artworks?.length || 0})</TabsTrigger>
+              <TabsTrigger value="archive" className="rounded-full px-6 text-[9px] uppercase font-bold tracking-widest">Archief (Depot)</TabsTrigger>
               <TabsTrigger value="upload" className="rounded-full px-6 text-[9px] uppercase font-bold tracking-widest">Cloud Upload</TabsTrigger>
               <TabsTrigger value="texts" className="rounded-full px-6 text-[9px] uppercase font-bold tracking-widest">Pagina Teksten</TabsTrigger>
               <TabsTrigger value="bulk" className="rounded-full px-6 text-[9px] uppercase font-bold tracking-widest">Bulk Import/Export</TabsTrigger>
@@ -434,14 +488,14 @@ export default function AdminPage() {
           </div>
 
           <TabsContent value="archive" className="space-y-6">
-            <div className="flex flex-wrap items-center gap-4 overflow-x-auto pb-2 no-scrollbar border-b border-black/5">
+            <div className="flex flex-wrap items-center gap-2 pb-2 no-scrollbar border-b border-black/5">
               <Button 
                 variant={filterSeries === null ? "default" : "outline"} 
                 size="sm" 
                 onClick={() => setFilterSeries(null)}
                 className="rounded-full text-[9px] uppercase tracking-widest font-bold h-7"
               >
-                Alles
+                Alles ({artworks?.length || 0})
               </Button>
               {allSeries.map(s => (
                 <Button 
@@ -451,33 +505,43 @@ export default function AdminPage() {
                   onClick={() => setFilterSeries(s)}
                   className="rounded-full text-[9px] uppercase tracking-widest font-bold h-7 whitespace-nowrap"
                 >
-                  {s}
+                  {s} ({artworks?.filter(a => a.series === s).length || 0})
                 </Button>
               ))}
             </div>
 
             <div className="flex justify-between items-center h-12">
-               {filterSeries && filterSeries !== "Geen zaal" && (
-                 <AlertDialog>
-                   <AlertDialogTrigger asChild>
-                     <Button variant="ghost" size="sm" className="text-accent hover:text-accent/80 hover:bg-accent/5 text-[9px] uppercase font-black tracking-widest">
-                       <Archive className="w-3 h-3 mr-2" /> Zaal "{filterSeries}" sluiten (terug naar archief)
-                     </Button>
-                   </AlertDialogTrigger>
-                   <AlertDialogContent>
-                     <AlertDialogHeader>
-                       <AlertDialogTitle>Zaal sluiten?</AlertDialogTitle>
-                       <AlertDialogDescription>
-                         Dit zal alle {filteredArtworks.length} schilderijen in de zaal "{filterSeries}" verplaatsen naar "Geen zaal". De schilderijen blijven bewaard in uw archief.
-                       </AlertDialogDescription>
-                     </AlertDialogHeader>
-                     <AlertDialogFooter>
-                       <AlertDialogCancel>Annuleren</AlertDialogCancel>
-                       <AlertDialogAction onClick={handleCloseCurrentSeries} className="bg-accent">Zaal Sluiten</AlertDialogAction>
-                     </AlertDialogFooter>
-                   </AlertDialogContent>
-                 </AlertDialog>
-               )}
+               <div className="flex items-center gap-4">
+                 <Button 
+                   onClick={() => fileInputRef.current?.click()} 
+                   variant="outline" 
+                   size="sm" 
+                   className="rounded-full text-[9px] uppercase font-black tracking-widest border-accent text-accent hover:bg-accent hover:text-white"
+                 >
+                   <Upload className="w-3 h-3 mr-2" /> Schilderij Importeren
+                 </Button>
+                 {filterSeries && filterSeries !== "Geen zaal" && (
+                   <AlertDialog>
+                     <AlertDialogTrigger asChild>
+                       <Button variant="ghost" size="sm" className="text-accent hover:text-accent/80 hover:bg-accent/5 text-[9px] uppercase font-black tracking-widest">
+                         <Archive className="w-3 h-3 mr-2" /> Zaal "{filterSeries}" sluiten (Depot)
+                       </Button>
+                     </AlertDialogTrigger>
+                     <AlertDialogContent>
+                       <AlertDialogHeader>
+                         <AlertDialogTitle>Zaal sluiten?</AlertDialogTitle>
+                         <AlertDialogDescription>
+                           Dit verplaatst {filteredArtworks.length} werken naar "Geen zaal".
+                         </AlertDialogDescription>
+                       </AlertDialogHeader>
+                       <AlertDialogFooter>
+                         <AlertDialogCancel>Annuleren</AlertDialogCancel>
+                         <AlertDialogAction onClick={handleCloseCurrentSeries} className="bg-accent">Sluiten</AlertDialogAction>
+                       </AlertDialogFooter>
+                     </AlertDialogContent>
+                   </AlertDialog>
+                 )}
+               </div>
             </div>
 
             {selectedIds.length > 0 && (
@@ -492,7 +556,7 @@ export default function AdminPage() {
                       className="h-8 text-[10px] font-black uppercase border-accent/30 bg-white w-48"
                     />
                     <Button onClick={handleBulkMove} disabled={isSaving || !bulkMoveSeries} size="sm" className="h-8 rounded-full text-[9px] font-black uppercase tracking-widest bg-accent">
-                      <MoveHorizontal className="w-3 h-3 mr-2" /> Verplaats naar Zaal
+                      Verplaats Nu
                     </Button>
                   </div>
                 </div>
@@ -500,17 +564,16 @@ export default function AdminPage() {
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                        <Button variant="outline" size="sm" className="h-8 rounded-full text-[9px] font-black uppercase tracking-widest text-red-500 border-red-200">
-                         <Trash2 className="w-3 h-3 mr-2" /> Selectie Verwijderen
+                         <Trash2 className="w-3 h-3 mr-2" /> Verwijderen
                        </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Selectie verwijderen?</AlertDialogTitle>
-                        <AlertDialogDescription>Weet u zeker dat u deze {selectedIds.length} schilderijen wilt verwijderen?</AlertDialogDescription>
+                        <AlertDialogTitle>Zeker weten?</AlertDialogTitle>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel>Annuleren</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleBulkDelete} className="bg-red-500">Verwijderen</AlertDialogAction>
+                        <AlertDialogCancel>Nee</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleBulkDelete} className="bg-red-500">Ja, Verwijder</AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
@@ -542,7 +605,7 @@ export default function AdminPage() {
                       <button 
                         onClick={(e) => { e.stopPropagation(); copyImageUrl(art.imageUrl); }}
                         className="absolute bottom-2 right-2 p-1.5 bg-black/60 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/80"
-                        title="Kopieer URL voor Biografie"
+                        title="Kopieer URL"
                       >
                         <Copy className="w-3 h-3" />
                       </button>
@@ -554,7 +617,7 @@ export default function AdminPage() {
                   </Card>
                 ))}
               </div>
-            ) : <div className="py-32 text-center opacity-40 uppercase tracking-[0.2em] text-[9px] font-bold">Geen werken gevonden.</div>}
+            ) : <div className="py-32 text-center opacity-40 uppercase tracking-[0.2em] text-[9px] font-bold">Geen werken in Depot.</div>}
           </TabsContent>
 
           <TabsContent value="upload">
@@ -577,18 +640,10 @@ export default function AdminPage() {
             <Card className="p-8 rounded-3xl max-w-4xl mx-auto space-y-8">
               <div className="flex items-center gap-3 border-b border-black/5 pb-4">
                 <Type className="w-5 h-5 text-accent" />
-                <h2 className="text-[12px] font-black uppercase tracking-[0.2em]">Pagina Teksten & Foto's Beheren</h2>
-              </div>
-
-              <div className="bg-accent/5 p-4 rounded-xl border border-accent/20 flex gap-4 items-center">
-                <ImageIcon className="w-8 h-8 text-accent shrink-0" />
-                <p className="text-[10px] font-bold uppercase tracking-widest text-accent/80 leading-relaxed">
-                  Tip: Voeg meerdere URL's toe om een galerij te vormen. De positie wordt bepaald door de volgorde.
-                </p>
+                <h2 className="text-[12px] font-black uppercase tracking-[0.2em]">Pagina Teksten</h2>
               </div>
               
               <div className="grid gap-12">
-                {/* Home Bio Section */}
                 <div className="space-y-4 border-l-2 border-accent/10 pl-6">
                   <Label className="text-[11px] font-black uppercase tracking-[0.2em] text-accent block mb-2">Homepagina - Thijs Sterk</Label>
                   <div className="grid gap-4">
@@ -597,7 +652,7 @@ export default function AdminPage() {
                       <Input 
                         defaultValue={siteSettings?.homeBioImageUrl || ''} 
                         onBlur={(e) => updateSettingsField('homeBioImageUrl', e.target.value)}
-                        placeholder="Plak hier de gekopieerde URL van een schilderij..."
+                        placeholder="Plak URL..."
                         className="bg-black/5 border-none h-10 text-xs"
                       />
                     </div>
@@ -612,58 +667,46 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                {/* Hanneke Section */}
                 <div className="space-y-4 border-l-2 border-accent/10 pl-6">
-                  <Label className="text-[11px] font-black uppercase tracking-[0.2em] text-accent block mb-2">Hanneke Sterk Pagina</Label>
+                  <Label className="text-[11px] font-black uppercase tracking-[0.2em] text-accent block mb-2">Hanneke Sterk</Label>
                   <div className="grid gap-4">
                     <BioImageManager personField="hannekeBioImages" images={siteSettings?.hannekeBioImages || []} />
-                    <div className="space-y-2">
-                      <Label className="text-[9px] font-black uppercase tracking-widest opacity-40">Tekst</Label>
-                      <Textarea 
-                        defaultValue={siteSettings?.hannekeBio || ''} 
-                        onBlur={(e) => updateSettingsField('hannekeBio', e.target.value)}
-                        className="min-h-[100px] bg-black/5 border-none rounded-xl p-4 text-sm"
-                      />
-                    </div>
+                    <Textarea 
+                      defaultValue={siteSettings?.hannekeBio || ''} 
+                      onBlur={(e) => updateSettingsField('hannekeBio', e.target.value)}
+                      className="min-h-[100px] bg-black/5 border-none rounded-xl p-4 text-sm"
+                    />
                   </div>
                 </div>
 
-                {/* Beatrijs Section */}
                 <div className="space-y-4 border-l-2 border-accent/10 pl-6">
-                  <Label className="text-[11px] font-black uppercase tracking-[0.2em] text-accent block mb-2">Beatrijs Sterk Pagina</Label>
+                  <Label className="text-[11px] font-black uppercase tracking-[0.2em] text-accent block mb-2">Beatrijs Sterk</Label>
                   <div className="grid gap-4">
                     <BioImageManager personField="beatrijsBioImages" images={siteSettings?.beatrijsBioImages || []} />
-                    <div className="space-y-2">
-                      <Label className="text-[9px] font-black uppercase tracking-widest opacity-40">Tekst</Label>
-                      <Textarea 
-                        defaultValue={siteSettings?.beatrijsBio || ''} 
-                        onBlur={(e) => updateSettingsField('beatrijsBio', e.target.value)}
-                        className="min-h-[100px] bg-black/5 border-none rounded-xl p-4 text-sm"
-                      />
-                    </div>
+                    <Textarea 
+                      defaultValue={siteSettings?.beatrijsBio || ''} 
+                      onBlur={(e) => updateSettingsField('beatrijsBio', e.target.value)}
+                      className="min-h-[100px] bg-black/5 border-none rounded-xl p-4 text-sm"
+                    />
                   </div>
                 </div>
 
-                {/* Peter Bes Section */}
                 <div className="space-y-4 border-l-2 border-accent/10 pl-6">
-                  <Label className="text-[11px] font-black uppercase tracking-[0.2em] text-accent block mb-2">Peter Bes Pagina</Label>
+                  <Label className="text-[11px] font-black uppercase tracking-[0.2em] text-accent block mb-2">Peter Bes</Label>
                   <div className="grid gap-4">
                     <BioImageManager personField="peterBesBioImages" images={siteSettings?.peterBesBioImages || []} />
-                    <div className="space-y-2">
-                      <Label className="text-[9px] font-black uppercase tracking-widest opacity-40">Tekst</Label>
-                      <Textarea 
-                        defaultValue={siteSettings?.peterBesBio || ''} 
-                        onBlur={(e) => updateSettingsField('peterBesBio', e.target.value)}
-                        className="min-h-[100px] bg-black/5 border-none rounded-xl p-4 text-sm"
-                      />
-                    </div>
+                    <Textarea 
+                      defaultValue={siteSettings?.peterBesBio || ''} 
+                      onBlur={(e) => updateSettingsField('peterBesBio', e.target.value)}
+                      className="min-h-[100px] bg-black/5 border-none rounded-xl p-4 text-sm"
+                    />
                   </div>
                 </div>
               </div>
 
               <div className="pt-8 flex items-center gap-2 border-t border-black/5">
                 {isSaving ? <Loader2 className="w-3 h-3 animate-spin text-accent" /> : <CheckCircle2 className="w-3 h-3 text-green-500" />}
-                <span className="text-[9px] font-black uppercase tracking-widest opacity-40">{isSaving ? 'Opslaan...' : 'Alle teksten en afbeeldingen opgeslagen'}</span>
+                <span className="text-[9px] font-black uppercase tracking-widest opacity-40">{isSaving ? 'Opslaan...' : 'Opgeslagen'}</span>
               </div>
             </Card>
           </TabsContent>
@@ -671,14 +714,8 @@ export default function AdminPage() {
           <TabsContent value="bulk">
             <Card className="p-8 rounded-3xl max-w-4xl mx-auto space-y-6">
               <div className="flex items-center justify-between">
-                <Label className="text-[9px] font-black text-black uppercase tracking-widest">JSON Data (Kopieer dit en stuur het naar mij voor permanente opslag)</Label>
+                <Label className="text-[9px] font-black text-black uppercase tracking-widest">JSON Data Import</Label>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => {
-                    navigator.clipboard.writeText(bulkJson);
-                    toast({ title: "Gekopieerd!" });
-                  }} className="text-[9px] uppercase tracking-widest font-bold">
-                    <Copy className="w-3 h-3 mr-2" /> Kopieer tekst
-                  </Button>
                   <input type="file" ref={jsonFileInputRef} style={{ display: 'none' }} accept=".json" onChange={(e) => {
                     const file = e.target.files?.[0];
                     if (!file) return;
@@ -687,25 +724,15 @@ export default function AdminPage() {
                     reader.readAsText(file);
                   }} />
                   <Button variant="outline" size="sm" onClick={() => jsonFileInputRef.current?.click()} className="text-[9px] uppercase tracking-widest font-bold">
-                    <FileJson className="w-3 h-3 mr-2" /> Kies JSON Bestand
+                    <FileJson className="w-3 h-3 mr-2" /> Kies Bestand
                   </Button>
                 </div>
               </div>
-              <Textarea value={bulkJson} onChange={(e) => setBulkJson(e.target.value)} placeholder='[{"title": "Werk", "series": "Reeks", "imageUrl": "..."}]' className="min-h-[400px] font-mono text-[10px] rounded-2xl bg-black/5" />
-              <Button onClick={() => {
-                if (!firestore || !bulkJson) return;
-                setLoading(true);
-                try {
-                  const items = JSON.parse(bulkJson);
-                  const dataToImport = Array.isArray(items) ? items : (items.placeholderImages || [items]);
-                  dataToImport.forEach(item => {
-                    const { id, createdAt, ...rest } = item;
-                    addDoc(collection(firestore, 'artworks'), { ...rest, createdAt: serverTimestamp() });
-                  });
-                  setBulkJson(''); setActiveTab('archive'); toast({ title: "Import Succesvol" });
-                } catch (e) { toast({ variant: "destructive", title: "Fout" }); }
-                finally { setLoading(false); }
-              }} disabled={loading || !bulkJson} className="h-14 rounded-xl font-bold uppercase tracking-widest w-full">Importeer naar Cloud</Button>
+              <Textarea value={bulkJson} onChange={(e) => setBulkJson(e.target.value)} placeholder='[{"title": "Werk", "imageUrl": "..."}]' className="min-h-[400px] font-mono text-[10px] rounded-2xl bg-black/5" />
+              <Button onClick={handleImportJson} disabled={loading || !bulkJson} className="h-14 rounded-xl font-bold uppercase tracking-widest w-full">
+                {loading ? <Loader2 className="animate-spin mr-2" /> : <Upload className="mr-2" />}
+                Importeer naar Cloud
+              </Button>
             </Card>
           </TabsContent>
         </Tabs>
@@ -713,7 +740,7 @@ export default function AdminPage() {
 
       <Dialog open={!!editingId} onOpenChange={() => setEditingId(null)}>
         <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background border-none rounded-none overflow-hidden outline-none">
-          <DialogTitle className="sr-only">Master Editor (75/25)</DialogTitle>
+          <DialogTitle className="sr-only">Master Editor</DialogTitle>
           
           <div className="relative h-[75vh] w-full flex items-center justify-center overflow-hidden bg-[#f3f3f3] group">
             {editingArtwork && (
@@ -759,23 +786,16 @@ export default function AdminPage() {
                   />
                 </div>
                 <div className="flex items-center justify-between bg-black/5 p-2 rounded-sm">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-3 h-3 text-black/60" />
-                    <span className="text-[10px] font-black text-black uppercase tracking-widest">Home</span>
-                  </div>
+                  <span className="text-[10px] font-black text-black uppercase tracking-widest">Home Selectie</span>
                   <Switch 
                     checked={editingArtwork?.featured || false} 
                     onCheckedChange={(val) => editingId && updateArtworkField(editingId, 'featured', val)}
                   />
                 </div>
-                <div className="flex items-center gap-2 mt-2">
-                  {isSaving ? <Loader2 className="w-3 h-3 animate-spin text-black/20" /> : <CheckCircle2 className="w-3 h-3 text-green-500/30" />}
-                  <span className="text-[10px] font-black text-black/20 uppercase tracking-widest">{isSaving ? 'Saving' : 'Opgeslagen'}</span>
-                </div>
               </div>
 
               <div className="flex flex-col flex-1 min-w-0 border-r border-black/5 pr-8">
-                <div className="flex items-center justify-between gap-6 pb-6 border-b border-black/5">
+                <div className="flex items-center justify-between gap-6 pb-4 border-b border-black/5">
                   {['Top', 'Bottom', 'Left', 'Right'].map(side => {
                     const fieldName = `crop${side}`;
                     const currentVal = localCrops[fieldName] ?? (editingArtwork as any)?.[fieldName] ?? 0;
@@ -783,58 +803,31 @@ export default function AdminPage() {
                       <div key={side} className="flex flex-col items-center gap-2">
                         <span className="text-[10px] font-black text-black uppercase tracking-widest">{side} {currentVal.toFixed(1)}%</span>
                         <div className="flex items-center gap-2">
-                          <RepeatButton 
-                            onStep={() => handleLocalStep(fieldName, -0.1)}
-                            className="h-10 w-10"
-                          >
-                            <Minus className="h-5 w-5 text-black" />
-                          </RepeatButton>
+                          <RepeatButton onStep={() => handleLocalStep(fieldName, -0.1)} className="h-8 w-8"><Minus className="h-4 w-4" /></RepeatButton>
                           <Slider 
-                            value={[currentVal]} 
-                            max={50} 
-                            step={0.1} 
+                            value={[currentVal]} max={50} step={0.1} 
                             onValueChange={([val]) => {
                               setLocalCrops(prev => ({ ...prev, [fieldName]: val }));
                               editingId && updateArtworkField(editingId, fieldName, val);
                             }}
-                            className="w-24"
+                            className="w-20"
                           />
-                          <RepeatButton 
-                            onStep={() => handleLocalStep(fieldName, 0.1)}
-                            className="h-10 w-10"
-                          >
-                            <Plus className="h-5 w-5 text-black" />
-                          </RepeatButton>
+                          <RepeatButton onStep={() => handleLocalStep(fieldName, 0.1)} className="h-8 w-8"><Plus className="h-4 w-4" /></RepeatButton>
                         </div>
                       </div>
                     );
                   })}
                 </div>
 
-                <div className="pt-4 flex flex-col gap-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-black text-black uppercase tracking-widest">Thema's</span>
-                    <div className="flex items-center gap-3">
-                      <Input 
-                        value={newTagInput}
-                        onChange={(e) => setNewTagInput(e.target.value)}
-                        placeholder="Nieuw..."
-                        className="h-7 text-[10px] font-black text-black uppercase border-none bg-black/5 rounded-sm p-2 w-32 focus-visible:ring-0"
-                        onKeyDown={(e) => e.key === 'Enter' && addCustomTag()}
-                      />
-                      <Button onClick={addCustomTag} variant="ghost" className="h-7 w-7 p-0 bg-black/5 hover:bg-black/10"><Tag className="w-3 h-3" /></Button>
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-2 pr-4 pb-4">
+                <div className="pt-4">
+                  <div className="flex flex-wrap gap-2">
                     {STANDARD_TAGS.map(tag => (
                       <button
                         key={tag}
                         onClick={() => toggleTag(tag)}
                         className={cn(
-                          "px-3 py-1.5 rounded-sm text-[10px] font-black uppercase tracking-widest border transition-all",
-                          editingArtwork?.tags?.includes(tag)
-                            ? "bg-black text-white border-black"
-                            : "bg-white text-black border-black/20 hover:border-black/50"
+                          "px-3 py-1 rounded-sm text-[9px] font-black uppercase tracking-widest border transition-all",
+                          editingArtwork?.tags?.includes(tag) ? "bg-black text-white" : "bg-white text-black border-black/20"
                         )}
                       >
                         {tag}
@@ -844,24 +837,22 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <div className="flex flex-col items-center justify-center gap-6 min-w-[180px]">
+              <div className="flex flex-col items-center justify-center gap-4 min-w-[180px]">
                 <div className="flex items-center gap-2">
-                  <Sun className="w-4 h-4 text-black/40" />
+                  <Sun className="w-3 h-3 text-black/40" />
                   <span className="text-[10px] font-black text-black uppercase tracking-widest">Licht {(localCrops.brightness ?? editingArtwork?.brightness ?? 1).toFixed(2)}</span>
                 </div>
-                <div className="flex items-center gap-4">
-                   <RepeatButton onStep={() => handleLocalStep('brightness', -0.01, 0, 2)} className="h-10 w-10"><Minus className="h-5 w-5" /></RepeatButton>
+                <div className="flex items-center gap-3">
+                   <RepeatButton onStep={() => handleLocalStep('brightness', -0.01, 0, 2)} className="h-8 w-8"><Minus className="h-4 w-4" /></RepeatButton>
                    <Slider 
-                    value={[localCrops.brightness ?? editingArtwork?.brightness ?? 1]} 
-                    max={2} 
-                    step={0.01} 
+                    value={[localCrops.brightness ?? editingArtwork?.brightness ?? 1]} max={2} step={0.01} 
                     onValueChange={([val]) => {
                       setLocalCrops(prev => ({ ...prev, brightness: val }));
                       editingId && updateArtworkField(editingId, 'brightness', val);
                     }}
-                    className="w-28"
+                    className="w-24"
                   />
-                  <RepeatButton onStep={() => handleLocalStep('brightness', 0.01, 0, 2)} className="h-10 w-10"><Plus className="h-5 w-5" /></RepeatButton>
+                  <RepeatButton onStep={() => handleLocalStep('brightness', 0.01, 0, 2)} className="h-8 w-8"><Plus className="h-4 w-4" /></RepeatButton>
                 </div>
               </div>
 
