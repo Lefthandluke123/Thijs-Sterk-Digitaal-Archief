@@ -15,9 +15,9 @@ export function useCollection<T = DocumentData>(collectionQuery: Query<T> | null
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   
-  // Track current query path to prevent unnecessary re-loading states
-  const lastQueryPath = useRef<string | null>(null);
-  const queryPath = (collectionQuery as any)?._query?.path?.toString() || null;
+  const lastQueryRef = useRef<string | null>(null);
+  // Brittle but effective way to detect structural query changes for loading state
+  const queryIdentifier = (collectionQuery as any)?._query?.path?.toString() || null;
 
   useEffect(() => {
     if (!collectionQuery) {
@@ -25,19 +25,11 @@ export function useCollection<T = DocumentData>(collectionQuery: Query<T> | null
       return;
     }
 
-    // Only set loading to true if the query path has actually changed
-    if (queryPath !== lastQueryPath.current) {
+    // Only trigger loading state if the query is fundamentally different
+    if (queryIdentifier !== lastQueryRef.current) {
       setLoading(true);
-      lastQueryPath.current = queryPath;
+      lastQueryRef.current = queryIdentifier;
     }
-
-    // Timeout guard: never hang indefinitely
-    const timeoutId = setTimeout(() => {
-      if (loading) {
-        setLoading(false);
-        setError(new Error('Firestore request timed out'));
-      }
-    }, 15000);
 
     const unsubscribe = onSnapshot(
       collectionQuery,
@@ -48,12 +40,10 @@ export function useCollection<T = DocumentData>(collectionQuery: Query<T> | null
         }));
         setData(items);
         setLoading(false);
-        clearTimeout(timeoutId);
       },
       async (serverError) => {
-        clearTimeout(timeoutId);
         const permissionError = new FirestorePermissionError({
-          path: queryPath || 'unknown',
+          path: queryIdentifier || 'unknown',
           operation: 'list',
         });
         errorEmitter.emit('permission-error', permissionError);
@@ -62,11 +52,8 @@ export function useCollection<T = DocumentData>(collectionQuery: Query<T> | null
       }
     );
 
-    return () => {
-      unsubscribe();
-      clearTimeout(timeoutId);
-    };
-  }, [collectionQuery, queryPath]);
+    return () => unsubscribe();
+  }, [collectionQuery, queryIdentifier]);
 
   return { data, loading, error };
 }
