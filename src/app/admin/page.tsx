@@ -34,7 +34,9 @@ import {
   Copy,
   Type,
   ImageIcon,
-  Upload
+  Upload,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -113,6 +115,7 @@ export default function AdminPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterSeries, setFilterSeries] = useState<string | null>(null);
   const [newTagInput, setNewTagInput] = useState('');
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadDirInputRef = useRef<HTMLInputElement>(null);
   const jsonFileInputRef = useRef<HTMLInputElement>(null);
@@ -127,7 +130,7 @@ export default function AdminPage() {
 
   const [localCrops, setLocalCrops] = useState<Record<string, number>>({});
 
-  // STABLE QUERY: Fully isolated from UI states like selectedIds
+  // STABLE QUERY: Fully isolated from UI states
   const artworksQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'artworks'), orderBy('createdAt', 'desc'));
@@ -254,26 +257,6 @@ export default function AdminPage() {
     }
   };
 
-  const handleCloseCurrentSeries = async () => {
-    if (!firestore || !filterSeries || filteredArtworks.length === 0) return;
-    setIsSaving(true);
-    const batch = writeBatch(firestore);
-    filteredArtworks.forEach(art => {
-      const artRef = doc(firestore, 'artworks', art.id);
-      batch.update(artRef, { series: "Geen zaal" });
-    });
-    
-    try {
-      await batch.commit();
-      toast({ title: "Zaal gesloten", description: `Alle ${filteredArtworks.length} werken uit ${filterSeries} zijn teruggezet naar het archief.` });
-      setFilterSeries(null);
-    } catch (e) {
-      toast({ variant: "destructive", title: "Fout bij het sluiten van de zaal" });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
   const toggleSelect = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
@@ -296,16 +279,6 @@ export default function AdminPage() {
     updateArtworkField(editingArtwork.id, 'tags', newTags);
   };
 
-  const addCustomTag = () => {
-    if (!editingArtwork || !newTagInput.trim()) return;
-    const tag = newTagInput.trim();
-    const currentTags = editingArtwork.tags || [];
-    if (!currentTags.includes(tag)) {
-      updateArtworkField(editingArtwork.id, 'tags', [...currentTags, tag]);
-    }
-    setNewTagInput('');
-  };
-
   const handleBatchProcess = async (files: FileList | null) => {
     if (!files || !firestore || !storage) return;
     setIsUploading(true);
@@ -321,9 +294,8 @@ export default function AdminPage() {
           const safeName = file.name.replace(/[^a-z0-9.]/gi, '_');
           const storageRef = ref(storage, `artworks/${timestamp}_${safeName}`);
           
-          // Timeout protection for individual file
           const uploadPromise = uploadBytes(storageRef, file);
-          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 60000));
+          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 45000));
           
           const snapshot = await Promise.race([uploadPromise, timeoutPromise]) as any;
           const downloadUrl = await getDownloadURL(snapshot.ref);
@@ -351,6 +323,8 @@ export default function AdminPage() {
       setIsUploading(false);
       setUploadProgress(0);
       setUploadStatus('');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      if (uploadDirInputRef.current) uploadDirInputRef.current.value = '';
       toast({ title: "Upload Proces Klaar" });
     }
   };
@@ -365,7 +339,6 @@ export default function AdminPage() {
       const batch = writeBatch(firestore);
       dataToImport.forEach(item => {
         const { id, createdAt, ...rest } = item;
-        // Sanitize data: ensure tags is an array and numbers are numbers
         const sanitizedItem = {
           ...rest,
           tags: Array.isArray(rest.tags) ? rest.tags : [],
@@ -409,40 +382,6 @@ export default function AdminPage() {
     navigator.clipboard.writeText(url);
     toast({ title: "URL Gekopieerd" });
   };
-
-  const BioImageManager = ({ personField, images }: { personField: string, images: string[] }) => (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <Label className="text-[9px] font-black uppercase tracking-widest opacity-40">Afbeeldingen Galerij</Label>
-        <Button variant="outline" size="sm" onClick={() => updateSettingsField(personField, [...images, ''])} className="h-6 rounded-full text-[8px] font-black">
-          <Plus className="w-3 h-3 mr-1" /> Voeg foto toe
-        </Button>
-      </div>
-      <div className="grid gap-2">
-        {images.map((url, idx) => (
-          <div key={idx} className="flex gap-2">
-            <Input 
-              value={url} 
-              onChange={(e) => {
-                const newImages = [...images];
-                newImages[idx] = e.target.value;
-                updateSettingsField(personField, newImages);
-              }}
-              placeholder="Plak hier de URL..."
-              className="bg-black/5 border-none h-8 text-[10px]"
-            />
-            <Button variant="ghost" size="icon" onClick={() => {
-              const newImages = [...images];
-              newImages.splice(idx, 1);
-              updateSettingsField(personField, newImages);
-            }} className="h-8 w-8 text-red-500 hover:bg-red-50">
-              <X className="w-3 h-3" />
-            </Button>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
 
   const STANDARD_TAGS = [
     "Groet", "Schoorl", "Hargen", "Amsterdam", "Frankrijk", 
@@ -516,30 +455,21 @@ export default function AdminPage() {
                    onClick={() => fileInputRef.current?.click()} 
                    variant="outline" 
                    size="sm" 
+                   disabled={isUploading}
                    className="rounded-full text-[9px] uppercase font-black tracking-widest border-accent text-accent hover:bg-accent hover:text-white"
                  >
-                   <Upload className="w-3 h-3 mr-2" /> Schilderij Importeren
+                   {isUploading ? <Loader2 className="w-3 h-3 mr-2 animate-spin" /> : <Upload className="w-3 h-3 mr-2" />}
+                   Schilderij Importeren
                  </Button>
                  {filterSeries && filterSeries !== "Geen zaal" && (
-                   <AlertDialog>
-                     <AlertDialogTrigger asChild>
-                       <Button variant="ghost" size="sm" className="text-accent hover:text-accent/80 hover:bg-accent/5 text-[9px] uppercase font-black tracking-widest">
-                         <Archive className="w-3 h-3 mr-2" /> Zaal "{filterSeries}" sluiten (Depot)
-                       </Button>
-                     </AlertDialogTrigger>
-                     <AlertDialogContent>
-                       <AlertDialogHeader>
-                         <AlertDialogTitle>Zaal sluiten?</AlertDialogTitle>
-                         <AlertDialogDescription>
-                           Dit verplaatst {filteredArtworks.length} werken naar "Geen zaal".
-                         </AlertDialogDescription>
-                       </AlertDialogHeader>
-                       <AlertDialogFooter>
-                         <AlertDialogCancel>Annuleren</AlertDialogCancel>
-                         <AlertDialogAction onClick={handleCloseCurrentSeries} className="bg-accent">Sluiten</AlertDialogAction>
-                       </AlertDialogFooter>
-                     </AlertDialogContent>
-                   </AlertDialog>
+                   <Button variant="ghost" size="sm" onClick={() => {
+                     if (!firestore || !filterSeries) return;
+                     const batch = writeBatch(firestore);
+                     filteredArtworks.forEach(art => batch.update(doc(firestore, 'artworks', art.id), { series: "Geen zaal" }));
+                     batch.commit().then(() => toast({ title: "Zaal gesloten", description: "Werken zijn teruggezet naar depot." }));
+                   }} className="text-accent hover:text-accent/80 hover:bg-accent/5 text-[9px] uppercase font-black tracking-widest">
+                     <Archive className="w-3 h-3 mr-2" /> Zaal "{filterSeries}" sluiten
+                   </Button>
                  )}
                </div>
             </div>
@@ -561,22 +491,9 @@ export default function AdminPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                       <Button variant="outline" size="sm" className="h-8 rounded-full text-[9px] font-black uppercase tracking-widest text-red-500 border-red-200">
-                         <Trash2 className="w-3 h-3 mr-2" /> Verwijderen
-                       </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Zeker weten?</AlertDialogTitle>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Nee</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleBulkDelete} className="bg-red-500">Ja, Verwijder</AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                  <Button variant="outline" size="sm" onClick={handleBulkDelete} className="h-8 rounded-full text-[9px] font-black uppercase tracking-widest text-red-500 border-red-200">
+                    <Trash2 className="w-3 h-3 mr-2" /> Verwijderen
+                  </Button>
                   <Button variant="ghost" size="sm" onClick={() => setSelectedIds([])} className="text-[9px] font-black uppercase tracking-widest">Annuleren</Button>
                 </div>
               </div>
@@ -602,13 +519,6 @@ export default function AdminPage() {
                     </button>
                     <div className="relative aspect-square bg-muted/20">
                       <img src={art.imageUrl} className="w-full h-full object-cover" style={{ clipPath: `inset(${art.cropTop || 0}% ${art.cropRight || 0}% ${art.cropBottom || 0}% ${art.cropLeft || 0}%)`, filter: `brightness(${art.brightness || 1})` }} />
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); copyImageUrl(art.imageUrl); }}
-                        className="absolute bottom-2 right-2 p-1.5 bg-black/60 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/80"
-                        title="Kopieer URL"
-                      >
-                        <Copy className="w-3 h-3" />
-                      </button>
                     </div>
                     <CardContent className="p-2 text-center">
                       <h4 className="text-[9px] font-black text-black uppercase tracking-widest truncate">{art.title}</h4>
@@ -664,42 +574,6 @@ export default function AdminPage() {
                         className="min-h-[120px] bg-black/5 border-none rounded-xl p-4 text-sm"
                       />
                     </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4 border-l-2 border-accent/10 pl-6">
-                  <Label className="text-[11px] font-black uppercase tracking-[0.2em] text-accent block mb-2">Hanneke Sterk</Label>
-                  <div className="grid gap-4">
-                    <BioImageManager personField="hannekeBioImages" images={siteSettings?.hannekeBioImages || []} />
-                    <Textarea 
-                      defaultValue={siteSettings?.hannekeBio || ''} 
-                      onBlur={(e) => updateSettingsField('hannekeBio', e.target.value)}
-                      className="min-h-[100px] bg-black/5 border-none rounded-xl p-4 text-sm"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-4 border-l-2 border-accent/10 pl-6">
-                  <Label className="text-[11px] font-black uppercase tracking-[0.2em] text-accent block mb-2">Beatrijs Sterk</Label>
-                  <div className="grid gap-4">
-                    <BioImageManager personField="beatrijsBioImages" images={siteSettings?.beatrijsBioImages || []} />
-                    <Textarea 
-                      defaultValue={siteSettings?.beatrijsBio || ''} 
-                      onBlur={(e) => updateSettingsField('beatrijsBio', e.target.value)}
-                      className="min-h-[100px] bg-black/5 border-none rounded-xl p-4 text-sm"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-4 border-l-2 border-accent/10 pl-6">
-                  <Label className="text-[11px] font-black uppercase tracking-[0.2em] text-accent block mb-2">Peter Bes</Label>
-                  <div className="grid gap-4">
-                    <BioImageManager personField="peterBesBioImages" images={siteSettings?.peterBesBioImages || []} />
-                    <Textarea 
-                      defaultValue={siteSettings?.peterBesBio || ''} 
-                      onBlur={(e) => updateSettingsField('peterBesBio', e.target.value)}
-                      className="min-h-[100px] bg-black/5 border-none rounded-xl p-4 text-sm"
-                    />
                   </div>
                 </div>
               </div>
@@ -758,7 +632,11 @@ export default function AdminPage() {
               <button onClick={() => navigateEditing('next')} className="p-4 rounded-full bg-black/5 pointer-events-auto hover:bg-black/10 transition-colors"><ChevronRight className="w-8 h-8 text-black" /></button>
             </div>
             <div className="absolute top-4 right-4 flex gap-3 items-center">
-              <Button variant="ghost" size="icon" onClick={() => editingId && deleteDoc(doc(firestore!, 'artworks', editingId))} className="h-4 w-4 rounded-full text-red-600 hover:bg-red-50 p-0"><Trash2 className="w-3 h-3" /></Button>
+              <Button variant="ghost" size="icon" onClick={() => {
+                if (!editingId || !firestore) return;
+                deleteDoc(doc(firestore, 'artworks', editingId));
+                setEditingId(null);
+              }} className="h-4 w-4 rounded-full text-red-600 hover:bg-red-50 p-0"><Trash2 className="w-3 h-3" /></Button>
               <DialogClose className="h-5 w-5 flex items-center justify-center bg-black/10 rounded-full hover:bg-black/20 transition-colors"><X className="w-2.5 h-2.5 text-black" /></DialogClose>
             </div>
           </div>

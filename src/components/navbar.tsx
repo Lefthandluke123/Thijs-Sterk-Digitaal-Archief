@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, Sparkles, Loader2 } from 'lucide-react';
+import { ChevronDown, Loader2 } from 'lucide-react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
 
@@ -33,7 +33,7 @@ function NavbarContent() {
   const seriesNames = useMemo(() => {
     if (!dbArtworks) return [];
     const combined = Array.from(new Set(dbArtworks.map(art => art.series).filter(Boolean)));
-    return (combined as string[]).filter(s => s !== "Monumentaal" && s !== "Glas in lood").sort();
+    return (combined as string[]).filter(s => s !== "Monumentaal" && s !== "Glas in lood" && s !== "Nieuwe Uploads" && s !== "Geen zaal").sort();
   }, [dbArtworks]);
 
   useEffect(() => {
