@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
@@ -36,7 +37,8 @@ import {
   Layers,
   Eye,
   EyeOff,
-  Tag as TagIcon
+  Tag as TagIcon,
+  Monitor
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -157,7 +159,8 @@ export default function AdminPage() {
 
   const filteredArtworks = useMemo(() => {
     return artworks.filter(art => {
-      const matchesSearch = (art.title?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
+      const displayTitle = art.displayTitle || art.title || "";
+      const matchesSearch = displayTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           (art.series?.toLowerCase() || "").includes(searchQuery.toLowerCase());
       const matchesFilter = !filterSeries || (art.series || "Geen zaal") === filterSeries;
       return matchesSearch && matchesFilter;
@@ -205,7 +208,10 @@ export default function AdminPage() {
     if (!firestore || !id) return;
     const artRef = doc(firestore, 'artworks', id);
     updateDoc(artRef, { [field]: value })
-      .catch(async () => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: artRef.path, operation: 'update' })));
+      .catch(async () => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: artRef.path, operation: 'update' }));
+        toast({ variant: "destructive", title: "Opslaan mislukt", description: "Controleer uw verbinding." });
+      });
   };
 
   const handleAddCustomTag = (e: React.FormEvent) => {
@@ -237,7 +243,6 @@ export default function AdminPage() {
     if (!firestore || selectedIds.length === 0 || !bulkMoveSeries.trim()) return;
     setIsSaving(true);
     const batch = writeBatch(firestore);
-    const totalToMove = selectedIds.length;
     
     selectedIds.forEach(id => {
       batch.update(doc(firestore, 'artworks', id), { series: bulkMoveSeries.trim() });
@@ -245,15 +250,16 @@ export default function AdminPage() {
     
     batch.commit()
       .then(() => {
-        toast({ title: "Verplaatst", description: `${totalToMove} werken verplaatst.` });
+        const total = selectedIds.length;
         setSelectedIds([]);
         setBulkMoveSeries('');
+        toast({ title: "Verplaatst", description: `${total} werken verplaatst naar ${bulkMoveSeries}.` });
         
         setTimeout(() => {
-          if (!window.confirm("Verplaatsing voltooid en selectie vrijgegeven. Wilt u nog meer werken verplaatsen?")) {
-            // Geen verdere actie nodig
+          if (window.confirm("Verplaatsing voltooid. Wilt u nog meer werken verplaatsen?")) {
+            // Gebruiker kan doorgaan met selecteren
           }
-        }, 150);
+        }, 100);
       })
       .finally(() => setIsSaving(false));
   };
@@ -277,51 +283,48 @@ export default function AdminPage() {
     setUploadProgress(0);
     const filesArray = Array.from(files).filter(f => f.type.startsWith('image/'));
     const totalFiles = filesArray.length;
-    let processed = 0;
+    let processedCount = 0;
 
-    try {
-      for (const file of filesArray) {
-        try {
-          const timestamp = Date.now();
-          const randomId = Math.random().toString(36).substring(2, 8);
-          const safeName = file.name.replace(/[^a-z0-9.]/gi, '_');
-          const storageRef = ref(storage, `artworks/${timestamp}_${randomId}_${safeName}`);
-          
-          setUploadStatus(`Uploaden: ${file.name}... (${processed + 1}/${totalFiles})`);
-
-          const uploadPromise = uploadBytes(storageRef, file);
-          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 60000));
-          
-          const snapshot: any = await Promise.race([uploadPromise, timeoutPromise]);
-          const downloadUrl = await getDownloadURL(snapshot.ref);
-          
-          const docData = {
-            title: file.name.split('.')[0] || "Naamloos",
-            series: "Nieuwe Uploads",
-            year: new Date().getFullYear().toString(),
-            medium: "Olieverf",
-            imageUrl: downloadUrl,
-            tags: [],
-            featured: false,
-            createdAt: serverTimestamp(),
-            cropTop: 0, cropBottom: 0, cropLeft: 0, cropRight: 0, brightness: 1
-          };
-          
-          await addDoc(collection(firestore, 'artworks'), docData);
-        } catch (e) { 
-          toast({ variant: "destructive", title: "Upload Fout", description: `Kon ${file.name} niet verwerken.` });
-        }
-        processed++;
-        setUploadProgress((processed / totalFiles) * 100);
+    for (const file of filesArray) {
+      try {
+        setUploadStatus(`Verwerken: ${file.name} (${processedCount + 1}/${totalFiles})`);
+        
+        const timestamp = Date.now();
+        const randomId = Math.random().toString(36).substring(2, 8);
+        const safeName = file.name.replace(/[^a-z0-9.]/gi, '_');
+        const storageRef = ref(storage, `artworks/${timestamp}_${randomId}_${safeName}`);
+        
+        const snapshot = await uploadBytes(storageRef, file);
+        const downloadUrl = await getDownloadURL(snapshot.ref);
+        
+        const docData = {
+          title: file.name.split('.')[0] || "Naamloos",
+          displayTitle: "", 
+          series: "Nieuwe Uploads",
+          year: new Date().getFullYear().toString(),
+          medium: "Olieverf",
+          imageUrl: downloadUrl,
+          tags: [],
+          featured: false,
+          createdAt: serverTimestamp(),
+          cropTop: 0, cropBottom: 0, cropLeft: 0, cropRight: 0, brightness: 1
+        };
+        
+        await addDoc(collection(firestore, 'artworks'), docData);
+        processedCount++;
+        setUploadProgress((processedCount / totalFiles) * 100);
+      } catch (e) {
+        console.error(e);
+        toast({ variant: "destructive", title: "Upload Fout", description: `Kon ${file.name} niet uploaden.` });
       }
-    } finally {
-      setIsUploading(false);
-      setUploadProgress(0);
-      setUploadStatus('');
-      if (fileInputRef.current) fileInputRef.current.value = '';
-      if (uploadDirInputRef.current) uploadDirInputRef.current.value = '';
-      toast({ title: "Klaar", description: "Import naar Depot voltooid." });
     }
+
+    setIsUploading(false);
+    setUploadStatus('');
+    setUploadProgress(0);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (uploadDirInputRef.current) uploadDirInputRef.current.value = '';
+    toast({ title: "Klaar", description: "Alle bestanden zijn succesvol aan het Depot toegevoegd." });
   };
 
   const handleImportJson = () => {
@@ -337,8 +340,6 @@ export default function AdminPage() {
         settingsToImport = imported.settings;
       } else if (Array.isArray(imported)) {
         dataToImport = imported;
-      } else if (imported.placeholderImages) {
-        dataToImport = imported.placeholderImages;
       } else {
         dataToImport = [imported];
       }
@@ -392,7 +393,7 @@ export default function AdminPage() {
 
     if (isMaster) {
       exportData = {
-        version: "2.1",
+        version: "2.2",
         exportedAt: new Date().toISOString(),
         artworks: artworks,
         settings: siteSettings || {}
@@ -434,6 +435,22 @@ export default function AdminPage() {
         </Link>
       </header>
 
+      {/* Globale Statusbalk voor Uploads */}
+      {isUploading && (
+        <div className="fixed top-[112px] left-0 right-0 z-[100] bg-accent text-accent-foreground px-8 py-3 shadow-2xl animate-in slide-in-from-top duration-500 border-b border-black/10">
+          <div className="max-w-7xl mx-auto flex flex-col gap-2">
+            <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-[0.2em]">
+              <div className="flex items-center gap-3">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                <span>{uploadStatus}</span>
+              </div>
+              <span className="tabular-nums">{Math.round(uploadProgress)}%</span>
+            </div>
+            <Progress value={uploadProgress} className="h-1.5 bg-white/20" />
+          </div>
+        </div>
+      )}
+
       <main className="flex-1 p-8 max-w-7xl mx-auto w-full">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
@@ -461,7 +478,7 @@ export default function AdminPage() {
                     <Button variant={filterSeries === s.name ? "default" : "outline"} size="sm" onClick={() => setFilterSeries(s.name)} className={cn("rounded-l-full rounded-r-none text-[9px] uppercase tracking-widest font-bold h-7 whitespace-nowrap pr-2", isHidden && "opacity-40 grayscale")}>
                       {s.name} ({s.count})
                     </Button>
-                    <button onClick={() => toggleSeriesVisibility(s.name)} className={cn("h-7 px-2 rounded-r-full border-2 border-l-0 transition-colors flex items-center justify-center bg-background", isHidden ? "text-red-500 border-red-200 hover:bg-red-50" : "text-green-600 border-black hover:bg-black/5")}>
+                    <button onClick={() => toggleSeriesVisibility(s.name)} title="Zaal verbergen/tonen op website" className={cn("h-7 px-2 rounded-r-full border-2 border-l-0 transition-colors flex items-center justify-center bg-background", isHidden ? "text-red-500 border-red-200 hover:bg-red-50" : "text-green-600 border-black hover:bg-black/5")}>
                       {isHidden ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
                     </button>
                   </div>
@@ -477,15 +494,15 @@ export default function AdminPage() {
             </div>
 
             {selectedIds.length > 0 && (
-              <div className="bg-accent/10 border border-accent/20 p-4 rounded-2xl flex flex-wrap items-center justify-between gap-4">
+              <div className="bg-accent/10 border border-accent/20 p-4 rounded-2xl flex flex-wrap items-center justify-between gap-4 animate-in slide-in-from-left duration-300">
                 <div className="flex items-center gap-4">
                   <span className="text-[11px] font-black uppercase tracking-widest text-accent">{selectedIds.length} geselecteerd</span>
-                  <Input placeholder="Verplaats naar zaal..." value={bulkMoveSeries} onChange={(e) => setBulkMoveSeries(e.target.value)} className="h-8 text-[11px] font-black uppercase w-48" />
-                  <Button onClick={handleBulkMove} disabled={isSaving || !bulkMoveSeries} size="sm" className="h-8 rounded-full text-[11px] font-black uppercase tracking-widest bg-accent">
-                    {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : "Verplaats Nu"}
+                  <Input placeholder="Nieuwe zaalnaam..." value={bulkMoveSeries} onChange={(e) => setBulkMoveSeries(e.target.value)} className="h-8 text-[11px] font-black uppercase w-48 bg-background border-accent/20" />
+                  <Button onClick={handleBulkMove} disabled={isSaving || !bulkMoveSeries} size="sm" className="h-8 rounded-full text-[11px] font-black uppercase tracking-widest bg-accent hover:bg-accent/90">
+                    {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : "Nu Verplaatsen"}
                   </Button>
                 </div>
-                <Button variant="outline" size="sm" onClick={() => { if(confirm('Verwijderen?')) { const b = writeBatch(firestore!); selectedIds.forEach(id => b.delete(doc(firestore!, 'artworks', id))); b.commit(); setSelectedIds([]); } }} className="h-8 rounded-full text-[11px] font-black uppercase tracking-widest text-red-500">Verwijder</Button>
+                <Button variant="outline" size="sm" onClick={() => { if(confirm('Wilt u deze selectie definitief verwijderen?')) { const b = writeBatch(firestore!); selectedIds.forEach(id => b.delete(doc(firestore!, 'artworks', id))); b.commit(); setSelectedIds([]); toast({title: "Verwijderd"}); } }} className="h-8 rounded-full text-[11px] font-black uppercase tracking-widest text-red-500 hover:bg-red-50">Verwijder Selectie</Button>
               </div>
             )}
 
@@ -500,7 +517,7 @@ export default function AdminPage() {
                       <img src={art.imageUrl} className="w-full h-full object-cover" style={{ clipPath: `inset(${art.cropTop || 0}% ${art.cropRight || 0}% ${art.cropBottom || 0}% ${art.cropLeft || 0}%)`, filter: `brightness(${art.brightness || 1})` }} alt={art.title} />
                     </div>
                     <CardContent className="p-2 text-center">
-                      <h4 className="text-[9px] font-black text-black uppercase tracking-widest truncate">{art.title}</h4>
+                      <h4 className="text-[9px] font-black text-black uppercase tracking-widest truncate">{art.displayTitle || art.title}</h4>
                       <p className="text-[7px] uppercase tracking-widest opacity-40 mt-1 truncate">{art.series}</p>
                     </CardContent>
                   </Card>
@@ -520,12 +537,6 @@ export default function AdminPage() {
                   <Button onClick={() => fileInputRef.current?.click()} disabled={isUploading} className="h-24 rounded-2xl font-black uppercase tracking-widest text-[11px]"><Plus className="w-4 h-4 mr-2" />Bestanden</Button>
                   <Button onClick={() => uploadDirInputRef.current?.click()} disabled={isUploading} variant="secondary" className="h-24 rounded-2xl font-black uppercase tracking-widest text-[11px]"><FolderOpen className="w-4 h-4 mr-2" />Volledige Map</Button>
                 </div>
-                {isUploading && (
-                  <div className="w-full space-y-4">
-                    <Progress value={uploadProgress} className="h-1 bg-black/10" />
-                    <p className="text-[9px] font-black text-black uppercase text-center">{uploadStatus}</p>
-                  </div>
-                )}
               </Card>
           </TabsContent>
 
@@ -635,7 +646,7 @@ export default function AdminPage() {
               <button onClick={() => navigateEditing('next')} className="p-4 rounded-full bg-black/5 pointer-events-auto hover:bg-black/10"><ChevronRight className="w-8 h-8 text-black" /></button>
             </div>
             <div className="absolute top-4 right-4 flex gap-3 items-center">
-              <Button variant="ghost" size="icon" onClick={() => { if (!editingId || !firestore) return; if(confirm('Verwijderen?')) { deleteDoc(doc(firestore, 'artworks', editingId)); setEditingId(null); } }} className="h-4 w-4 rounded-full text-red-600"><Trash2 className="w-3 h-3" /></Button>
+              <Button variant="ghost" size="icon" onClick={() => { if (!editingId || !firestore) return; if(confirm('Verwijderen?')) { deleteDoc(doc(firestore, 'artworks', editingId)); setEditingId(null); toast({title: "Verwijderd"}); } }} className="h-4 w-4 rounded-full text-red-600"><Trash2 className="w-3 h-3" /></Button>
               <DialogClose className="h-5 w-5 flex items-center justify-center bg-black/10 rounded-full hover:bg-black/20"><X className="w-2.5 h-2.5 text-black" /></DialogClose>
             </div>
           </div>
@@ -644,12 +655,16 @@ export default function AdminPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-12 w-full h-full">
               <div className="flex flex-col gap-4 border-r border-black/5 pr-8">
                 <div className="space-y-1">
-                  <Label className="text-[10px] font-black uppercase tracking-widest">Titel</Label>
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-accent flex items-center gap-2"><Monitor className="w-3 h-3" /> Schermtitel (Zichtbaar op site)</Label>
+                  <Input key={`${editingId}-displayTitle`} defaultValue={editingArtwork?.displayTitle || ''} onBlur={(e) => editingId && updateArtworkField(editingId, 'displayTitle', e.target.value)} placeholder="Titel voor publiek..." className="h-8 text-[11px] font-black uppercase border-none bg-accent/5 rounded-sm p-2" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[10px] font-black uppercase tracking-widest opacity-40">Interne Titel (Bestandsnaam)</Label>
                   <Input key={`${editingId}-title`} defaultValue={editingArtwork?.title || ''} onBlur={(e) => editingId && updateArtworkField(editingId, 'title', e.target.value)} className="h-8 text-[11px] font-black uppercase border-none bg-black/5 rounded-sm p-2" />
                 </div>
                 <div className="space-y-1">
                   <Label className="text-[10px] font-black uppercase tracking-widest text-accent">Zaal (Serie)</Label>
-                  <Input key={`${editingId}-series`} defaultValue={editingArtwork?.series || ''} onBlur={(e) => editingId && updateArtworkField(editingId, 'series', e.target.value)} className="h-8 text-[11px) font-black uppercase border-none bg-accent/5 rounded-sm p-2" />
+                  <Input key={`${editingId}-series`} defaultValue={editingArtwork?.series || ''} onBlur={(e) => editingId && updateArtworkField(editingId, 'series', e.target.value)} className="h-8 text-[11px] font-black uppercase border-none bg-accent/5 rounded-sm p-2" />
                 </div>
                 <div className="flex items-center justify-between pt-2">
                   <div className="flex items-center gap-2">

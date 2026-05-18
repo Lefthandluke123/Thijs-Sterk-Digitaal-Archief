@@ -48,8 +48,6 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
   };
 
   const handleToggleFullScreen = (e: React.MouseEvent) => {
-    // Voorkom toggle als we in loep-modus zijn (om verwarring te voorkomen)
-    // of als we over de UI elementen klikken
     if (showMagnifier) return;
     setIsFullScreen(!isFullScreen);
   };
@@ -72,7 +70,7 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
             <img 
               ref={imgRef}
               src={artwork.imageUrl} 
-              alt={artwork.title} 
+              alt={artwork.displayTitle || artwork.title} 
               className="max-w-full max-h-[90%] object-contain p-4 md:p-16 shadow-2xl transition-all duration-700 pointer-events-none" 
               style={{ 
                 clipPath: `inset(${artwork.cropTop || 0}% ${artwork.cropRight || 0}% ${artwork.cropBottom || 0}% ${artwork.cropLeft || 0}%)`, 
@@ -81,7 +79,6 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
             />
           )}
 
-          {/* De Loep (Magnifier) - Alleen tonen als we niet over de knoppen bewegen */}
           {showMagnifier && artwork && !isOverUI && (
             <div 
               className="fixed pointer-events-none border-4 border-white shadow-[0_0_50px_rgba(0,0,0,0.3)] rounded-full z-[100] overflow-hidden bg-background"
@@ -98,7 +95,6 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
             />
           )}
 
-          {/* Navigatie Pijlen */}
           <div 
             className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-8 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity"
             onMouseEnter={() => setIsOverUI(true)}
@@ -122,7 +118,6 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
             )}
           </div>
 
-          {/* Top Controls (Loep instellingen & Sluiten) */}
           <div 
             className="absolute top-8 right-8 z-[110] flex items-center gap-4"
             onMouseEnter={() => setIsOverUI(true)}
@@ -166,13 +161,12 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
           </div>
         </div>
 
-        {/* Informatie Balk (verdwijnt in Zen-modus) */}
         <div className={cn(
           "w-full bg-background/95 backdrop-blur-md py-8 px-12 border-t border-border/10 flex flex-col items-center justify-center overflow-y-auto text-center transition-all duration-500",
           isFullScreen ? "h-0 opacity-0 pointer-events-none py-0 px-0" : "h-[25vh] opacity-100"
         )}>
           <div className="max-w-4xl mx-auto">
-            <h2 className="text-[10px] md:text-[11px] font-black tracking-[0.4em] uppercase text-foreground/40 mb-4">{artwork?.title}</h2>
+            <h2 className="text-[10px] md:text-[11px] font-black tracking-[0.4em] uppercase text-foreground/40 mb-4">{artwork?.displayTitle || artwork?.title}</h2>
             <div className="text-[12px] md:text-[14px] uppercase font-black tracking-[0.5em] text-accent flex flex-wrap gap-x-12 gap-y-4 justify-center items-center">
               <span className="bg-accent/10 px-6 py-1.5 rounded-sm">Zaal: {artwork?.series}</span>
               <span className="w-2 h-2 rounded-full bg-accent/30 self-center hidden md:inline" />

@@ -88,7 +88,7 @@ export function PortfolioGrid() {
                       clipPath: `inset(${art.cropTop || 0}% ${art.cropRight || 0}% ${art.cropBottom || 0}% ${art.cropLeft || 0}%)`, 
                       filter: `brightness(${art.brightness || 1})` 
                     }} 
-                    alt={art.title}
+                    alt={art.displayTitle || art.title}
                   />
                   {art.featured && <Star className="absolute top-4 left-4 w-4 h-4 text-accent fill-accent opacity-0 group-hover:opacity-100 transition-opacity" />}
                   <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
@@ -96,7 +96,7 @@ export function PortfolioGrid() {
                   </div>
                 </div>
                 <div className="mt-4 text-center">
-                  <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground group-hover:text-foreground transition-colors truncate">{art.title}</h3>
+                  <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground group-hover:text-foreground transition-colors truncate">{art.displayTitle || art.title}</h3>
                 </div>
               </div>
             ))}

@@ -8,7 +8,11 @@
       "properties": {
         "title": {
           "type": "string",
-          "description": "De titel van het schilderij"
+          "description": "De interne titel of bestandsnaam van het schilderij"
+        },
+        "displayTitle": {
+          "type": "string",
+          "description": "De titel die aan het publiek wordt getoond in de zalen"
         },
         "series": {
           "type": "string",

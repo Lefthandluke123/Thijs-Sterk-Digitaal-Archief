@@ -134,7 +134,7 @@ function GalleryContent() {
                   <div className="relative aspect-[4/5] overflow-hidden rounded-sm bg-muted/20 shadow-md">
                     <img 
                       src={item.imageUrl} 
-                      alt={item.title} 
+                      alt={item.displayTitle || item.title} 
                       className="w-full h-full object-cover transition-all duration-1000 ease-out group-hover:scale-[1.05]"
                       style={{
                         clipPath: `inset(${item.cropTop || 0}% ${item.cropRight || 0}% ${item.cropBottom || 0}% ${item.cropLeft || 0}%)`,
@@ -146,7 +146,7 @@ function GalleryContent() {
                     </div>
                   </div>
                   <div className="mt-4 text-center">
-                    <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground group-hover:text-foreground transition-colors truncate">{item.title}</h3>
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground group-hover:text-foreground transition-colors truncate">{item.displayTitle || item.title}</h3>
                   </div>
                 </div>
               ))}

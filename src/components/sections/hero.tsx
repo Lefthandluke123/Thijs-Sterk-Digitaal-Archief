@@ -59,11 +59,11 @@ export function Hero() {
       <div className="container mx-auto mt-12 z-10 px-4 animate-fade-in-up delay-500 max-w-4xl">
         <div 
           className="relative aspect-[21/9] w-full rounded-2xl overflow-hidden shadow-xl border border-border/10 cursor-pointer group"
-          onClick={() => setSelectedArtwork(artwork || { imageUrl: heroImage, title: "Maannacht", series: "Hoofdcollectie", year: "1954", medium: "Olieverf op doek" })}
+          onClick={() => setSelectedArtwork(artwork || { imageUrl: heroImage, title: "Maannacht", displayTitle: "Maannacht", series: "Hoofdcollectie", year: "1954", medium: "Olieverf op doek" })}
         >
           <Image
             src={heroImage}
-            alt={artwork?.title || "Representatief werk van Thijs Sterk"}
+            alt={artwork?.displayTitle || artwork?.title || "Representatief werk van Thijs Sterk"}
             fill
             className="object-cover transition-transform duration-1000 group-hover:scale-[1.02]"
             priority

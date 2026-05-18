@@ -144,7 +144,7 @@ export default function CuratorPage() {
                       <img src={item.imageUrl} className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-[1.05]" style={{ clipPath: `inset(${item.cropTop || 0}% ${item.cropRight || 0}% ${item.cropBottom || 0}% ${item.cropLeft || 0}%)`, filter: `brightness(${item.brightness || 1})` }} />
                       <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"><Maximize2 className="text-white w-5 h-5" /></div>
                     </div>
-                    <div className="mt-4 text-center"><h3 className="text-[9px] font-black uppercase tracking-[0.2em] opacity-60 group-hover:opacity-100">{item.title}</h3></div>
+                    <div className="mt-4 text-center"><h3 className="text-[9px] font-black uppercase tracking-[0.2em] opacity-60 group-hover:opacity-100">{item.displayTitle || item.title}</h3></div>
                   </div>
                 ))}
               </div>
