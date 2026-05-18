@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, useDoc, useStorage } from '@/firebase';
 import { collection, doc, serverTimestamp, deleteDoc, addDoc, query, orderBy, updateDoc, writeBatch, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Button } from '@/components/ui/button';
@@ -88,6 +88,7 @@ function RepeatButton({ onStep, children, className, disabled }: { onStep: () =>
 
 export default function AdminPage() {
   const firestore = useFirestore();
+  const storage = useStorage();
   const [bulkJson, setBulkJson] = useState('');
   const [activeTab, setActiveTab] = useState('archive');
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -120,7 +121,7 @@ export default function AdminPage() {
     const seen = new Set();
     return rawArtworks.filter(art => {
       const url = art.imageUrl;
-      if (seen.has(url)) return false;
+      if (!url || seen.has(url)) return false;
       seen.add(url);
       return true;
     });
@@ -211,13 +212,12 @@ export default function AdminPage() {
     });
     
     batch.commit()
-      .then(() => toast({ title: "Verplaatst", description: `${selectedIds.length} werken verplaatst.` }))
-      .catch(() => toast({ variant: "destructive", title: "Fout", description: "Kon niet verplaatsen." }))
-      .finally(() => {
+      .then(() => {
+        toast({ title: "Verplaatst", description: `${selectedIds.length} werken verplaatst.` });
         setSelectedIds([]);
         setBulkMoveSeries('');
-        setIsSaving(false);
-      });
+      })
+      .finally(() => setIsSaving(false));
   };
 
   const toggleSelect = (e: React.MouseEvent, id: string) => {
@@ -234,7 +234,6 @@ export default function AdminPage() {
   };
 
   const handleBatchProcess = async (files: FileList | null) => {
-    const storage = (window as any).storageInstance; 
     if (!files || !firestore || !storage) return;
     setIsUploading(true);
     setUploadProgress(0);
@@ -251,6 +250,15 @@ export default function AdminPage() {
           
           setUploadStatus(`Uploaden: ${file.name}... (${processed + 1}/${totalFiles})`);
           
+          // Detecteer serie uit mapstructuur (voor webkitdirectory)
+          const relativePath = (file as any).webkitRelativePath || "";
+          const pathParts = relativePath.split('/');
+          let detectedSeries = filterSeries || "Nieuwe Uploads";
+          if (pathParts.length > 1) {
+            // Gebruik de direct bovenliggende mapnaam als serie
+            detectedSeries = pathParts[pathParts.length - 2];
+          }
+
           const uploadPromise = uploadBytes(storageRef, file);
           const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 30000));
           
@@ -259,7 +267,7 @@ export default function AdminPage() {
           
           const docData = {
             title: file.name.split('.')[0] || "Naamloos",
-            series: filterSeries || "Nieuwe Uploads",
+            series: detectedSeries,
             year: new Date().getFullYear().toString(),
             medium: "Olieverf",
             imageUrl: downloadUrl,
@@ -310,11 +318,11 @@ export default function AdminPage() {
       });
       
       batch.commit()
-        .then(() => toast({ title: "Import Succesvol", description: `${dataToImport.length} werken geïmporteerd.` }))
-        .finally(() => {
+        .then(() => {
+          toast({ title: "Import Succesvol", description: `${dataToImport.length} werken geïmporteerd.` });
           setBulkJson('');
-          setIsSaving(false);
-        });
+        })
+        .finally(() => setIsSaving(false));
     } catch (e) { 
       toast({ variant: "destructive", title: "Import Fout", description: "Check JSON." }); 
       setIsSaving(false);
