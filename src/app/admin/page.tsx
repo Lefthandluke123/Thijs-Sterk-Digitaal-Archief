@@ -36,7 +36,8 @@ import {
   ShieldCheck,
   Layers,
   Eye,
-  EyeOff
+  EyeOff,
+  Tag as TagIcon
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -93,6 +94,8 @@ function RepeatButton({ onStep, children, className, disabled }: { onStep: () =>
   );
 }
 
+const STANDARD_TAGS = ["Groet", "Schoorl", "Hargen", "Amsterdam", "Frankrijk", "Griekenland", "Olieverf", "Aquarel", "Monumentaal", "Glas in lood", "Bloemen", "Dieren", "Water", "Portretten"];
+
 export default function AdminPage() {
   const firestore = useFirestore();
   const storage = useStorage();
@@ -101,6 +104,7 @@ export default function AdminPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterSeries, setFilterSeries] = useState<string | null>(null);
+  const [newTagInput, setNewTagInput] = useState('');
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadDirInputRef = useRef<HTMLInputElement>(null);
@@ -174,6 +178,7 @@ export default function AdminPage() {
         cropRight: editingArtwork.cropRight || 0,
         brightness: editingArtwork.brightness || 1,
       });
+      setNewTagInput('');
     }
   }, [editingId, editingArtwork?.id]);
 
@@ -202,6 +207,16 @@ export default function AdminPage() {
     const artRef = doc(firestore, 'artworks', id);
     updateDoc(artRef, { [field]: value })
       .catch(async () => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: artRef.path, operation: 'update' })));
+  };
+
+  const handleAddCustomTag = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingArtwork || !newTagInput.trim()) return;
+    const currentTags = editingArtwork.tags || [];
+    if (!currentTags.includes(newTagInput.trim())) {
+      updateArtworkField(editingArtwork.id, 'tags', [...currentTags, newTagInput.trim()]);
+    }
+    setNewTagInput('');
   };
 
   const updateSettingsField = (field: string, value: any) => {
@@ -320,13 +335,11 @@ export default function AdminPage() {
         dataToImport = [imported];
       }
       
-      // Herstel settings eerst indien aanwezig
       if (settingsToImport) {
         const settingsRef = doc(firestore, 'settings', 'site');
         setDoc(settingsRef, settingsToImport, { merge: true }).catch(async () => {});
       }
 
-      // Verwerk artworks in brokjes van 400 om Firebase limieten te voorkomen
       const chunkSize = 400;
       for (let i = 0; i < dataToImport.length; i += chunkSize) {
         const chunk = dataToImport.slice(i, i + chunkSize);
@@ -336,7 +349,7 @@ export default function AdminPage() {
           const { id, createdAt, ...rest } = item;
           const sanitizedItem = {
             ...rest,
-            series: rest.series || "Nieuwe Uploads", // Garandeer dat zaal altijd mee komt
+            series: rest.series || "Nieuwe Uploads",
             tags: Array.isArray(rest.tags) ? rest.tags : [],
             cropTop: Number(rest.cropTop) || 0,
             cropBottom: Number(rest.cropBottom) || 0,
@@ -397,8 +410,6 @@ export default function AdminPage() {
       description: isMaster ? "Volledig Depot inclusief zalen en instellingen opgeslagen." : "Alleen de lijst met schilderijen is opgeslagen."
     });
   };
-
-  const STANDARD_TAGS = ["Groet", "Schoorl", "Hargen", "Amsterdam", "Frankrijk", "Griekenland", "Olieverf", "Aquarel", "Monumentaal", "Glas in lood", "Bloemen", "Dieren", "Water", "Portretten"];
 
   return (
     <div className="min-h-screen bg-background flex flex-col pt-14">
@@ -599,7 +610,7 @@ export default function AdminPage() {
       <Dialog open={!!editingId} onOpenChange={() => setEditingId(null)}>
         <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background border-none rounded-none outline-none">
           <DialogTitle className="sr-only">Master Editor</DialogTitle>
-          <div className="relative h-[75vh] w-full flex items-center justify-center bg-[#f3f3f3] group">
+          <div className="relative h-[65vh] w-full flex items-center justify-center bg-[#f3f3f3] group">
             {editingArtwork && (
               <img 
                 src={editingArtwork.imageUrl} 
@@ -621,9 +632,9 @@ export default function AdminPage() {
             </div>
           </div>
 
-          <div className="h-[25vh] w-full bg-background border-t border-black/10 px-8 py-4 overflow-y-auto">
-            <div className="flex items-start gap-12 w-full">
-              <div className="flex flex-col gap-4 min-w-[200px] border-r border-black/5 pr-8">
+          <div className="h-[35vh] w-full bg-background border-t border-black/10 px-8 py-4 overflow-y-auto">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-12 w-full h-full">
+              <div className="flex flex-col gap-4 border-r border-black/5 pr-8">
                 <div className="space-y-1">
                   <Label className="text-[10px] font-black uppercase tracking-widest">Titel</Label>
                   <Input key={`${editingId}-title`} defaultValue={editingArtwork?.title || ''} onBlur={(e) => editingId && updateArtworkField(editingId, 'title', e.target.value)} className="h-8 text-[11px] font-black uppercase border-none bg-black/5 rounded-sm p-2" />
@@ -632,45 +643,91 @@ export default function AdminPage() {
                   <Label className="text-[10px] font-black uppercase tracking-widest text-accent">Zaal (Serie)</Label>
                   <Input key={`${editingId}-series`} defaultValue={editingArtwork?.series || ''} onBlur={(e) => editingId && updateArtworkField(editingId, 'series', e.target.value)} className="h-8 text-[11px] font-black uppercase border-none bg-accent/5 rounded-sm p-2" />
                 </div>
+                <div className="flex items-center justify-between pt-2">
+                  <div className="flex items-center gap-2">
+                    <Sun className="w-3 h-3 text-black/40" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">Licht {(localCrops.brightness ?? 1).toFixed(2)}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <RepeatButton onStep={() => handleLocalStep('brightness', -0.01, 0, 2)} className="h-6 w-6"><Minus className="h-3 w-3" /></RepeatButton>
+                    <RepeatButton onStep={() => handleLocalStep('brightness', 0.01, 0, 2)} className="h-6 w-6"><Plus className="h-3 w-3" /></RepeatButton>
+                  </div>
+                </div>
+                <Slider value={[localCrops.brightness ?? 1]} max={2} step={0.01} onValueChange={([val]) => { setLocalCrops(prev => ({ ...prev, brightness: val })); updateArtworkField(editingId!, 'brightness', val); }} className="w-full" />
               </div>
 
-              <div className="flex flex-col flex-1 min-w-0 border-r border-black/5 pr-8">
-                <div className="flex items-center justify-between gap-6 pb-4 border-b border-black/5">
+              <div className="flex flex-col gap-4 border-r border-black/5 pr-8">
+                <Label className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                  <TagIcon className="w-3 h-3" /> Tags & Kenmerken
+                </Label>
+                
+                <div className="flex flex-wrap gap-1.5 mb-2 max-h-20 overflow-y-auto">
+                  {(editingArtwork?.tags || []).map((tag: string) => (
+                    <span key={tag} className="inline-flex items-center gap-1 px-2 py-0.5 bg-black text-white text-[9px] font-black uppercase rounded-sm group">
+                      {tag}
+                      <button onClick={() => {
+                        const newTags = (editingArtwork?.tags || []).filter((t: string) => t !== tag);
+                        updateArtworkField(editingId!, 'tags', newTags);
+                      }} className="hover:text-red-400 transition-colors">
+                        <X className="w-2.5 h-2.5" />
+                      </button>
+                    </span>
+                  ))}
+                  {(editingArtwork?.tags || []).length === 0 && <span className="text-[9px] uppercase opacity-30 font-bold">Geen tags...</span>}
+                </div>
+
+                <form onSubmit={handleAddCustomTag} className="flex gap-2 mb-4">
+                  <Input 
+                    value={newTagInput} 
+                    onChange={(e) => setNewTagInput(e.target.value)} 
+                    placeholder="Nieuwe Tag..." 
+                    className="h-7 text-[10px] uppercase font-black tracking-widest bg-black/5 border-none rounded-sm"
+                  />
+                  <Button type="submit" size="sm" className="h-7 px-3 text-[9px] font-black uppercase">Voeg Toe</Button>
+                </form>
+
+                <div className="grid grid-cols-3 gap-1 overflow-y-auto">
+                  {STANDARD_TAGS.map(tag => {
+                    const isActive = (editingArtwork?.tags || []).includes(tag);
+                    return (
+                      <button 
+                        key={tag} 
+                        onClick={() => {
+                          const currentTags = editingArtwork?.tags || [];
+                          const newTags = isActive ? currentTags.filter((t: string) => t !== tag) : [...currentTags, tag];
+                          updateArtworkField(editingId!, 'tags', newTags);
+                        }} 
+                        className={cn(
+                          "px-1 py-1 rounded-sm text-[8px] font-black uppercase tracking-tight border transition-all text-center", 
+                          isActive ? "bg-black text-white border-black" : "bg-white text-black border-black/10 hover:border-black/30"
+                        )}
+                      >
+                        {tag}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-6">
+                <Label className="text-[10px] font-black uppercase tracking-widest">Uitsnede (Cropping)</Label>
+                <div className="grid grid-cols-2 gap-x-8 gap-y-4">
                   {['Top', 'Bottom', 'Left', 'Right'].map(side => {
                     const fieldName = `crop${side}`;
                     const currentVal = localCrops[fieldName] ?? 0;
                     return (
-                      <div key={side} className="flex flex-col items-center gap-2">
-                        <span className="text-[10px] font-black uppercase tracking-widest">{side} {currentVal.toFixed(1)}%</span>
+                      <div key={side} className="flex flex-col gap-2">
+                        <div className="flex justify-between items-center">
+                          <span className="text-[9px] font-black uppercase">{side}</span>
+                          <span className="text-[9px] font-mono opacity-50">{currentVal.toFixed(1)}%</span>
+                        </div>
                         <div className="flex items-center gap-2">
-                          <RepeatButton onStep={() => handleLocalStep(fieldName, -0.1)} className="h-8 w-8"><Minus className="h-4 w-4" /></RepeatButton>
-                          <Slider value={[currentVal]} max={50} step={0.1} onValueChange={([val]) => { setLocalCrops(prev => ({ ...prev, [fieldName]: val })); updateArtworkField(editingId!, fieldName, val); }} className="w-20" />
-                          <RepeatButton onStep={() => handleLocalStep(fieldName, 0.1)} className="h-8 w-8"><Plus className="h-4 w-4" /></RepeatButton>
+                          <RepeatButton onStep={() => handleLocalStep(fieldName, -0.1)} className="h-6 w-6"><Minus className="h-3 w-3" /></RepeatButton>
+                          <RepeatButton onStep={() => handleLocalStep(fieldName, 0.1)} className="h-6 w-6"><Plus className="h-3 w-3" /></RepeatButton>
                         </div>
                       </div>
                     );
                   })}
-                </div>
-                <div className="pt-4 flex flex-wrap gap-2">
-                  {STANDARD_TAGS.map(tag => (
-                    <button key={tag} onClick={() => {
-                      const currentTags = editingArtwork?.tags || [];
-                      const newTags = currentTags.includes(tag) ? currentTags.filter((t: string) => t !== tag) : [...currentTags, tag];
-                      updateArtworkField(editingArtwork!.id, 'tags', newTags);
-                    }} className={cn("px-3 py-1 rounded-sm text-[9px] font-black uppercase tracking-widest border transition-all", editingArtwork?.tags?.includes(tag) ? "bg-black text-white" : "bg-white text-black border-black/20")}>{tag}</button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex flex-col items-center justify-center gap-4 min-w-[180px]">
-                <div className="flex items-center gap-2">
-                  <Sun className="w-3 h-3 text-black/40" />
-                  <span className="text-[10px] font-black uppercase tracking-widest">Licht {(localCrops.brightness ?? 1).toFixed(2)}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                   <RepeatButton onStep={() => handleLocalStep('brightness', -0.01, 0, 2)} className="h-8 w-8"><Minus className="h-4 w-4" /></RepeatButton>
-                   <Slider value={[localCrops.brightness ?? 1]} max={2} step={0.01} onValueChange={([val]) => { setLocalCrops(prev => ({ ...prev, brightness: val })); updateArtworkField(editingId!, 'brightness', val); }} className="w-24" />
-                  <RepeatButton onStep={() => handleLocalStep('brightness', 0.01, 0, 2)} className="h-8 w-8"><Plus className="h-4 w-4" /></RepeatButton>
                 </div>
               </div>
             </div>
