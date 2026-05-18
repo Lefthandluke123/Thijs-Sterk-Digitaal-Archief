@@ -30,7 +30,9 @@ import {
   FileJson,
   Type,
   Upload,
-  Download
+  Download,
+  Database,
+  ShieldCheck
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -249,7 +251,7 @@ export default function AdminPage() {
           const storageRef = ref(storage, `artworks/${timestamp}_${safeName}`);
           
           setUploadStatus(`Uploaden: ${file.name}... (${processed + 1}/${totalFiles})`);
-          let detectedSeries = filterSeries || "Nieuwe Uploads";
+          let detectedSeries = "Nieuwe Uploads";
 
           const uploadPromise = uploadBytes(storageRef, file);
           const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 30000));
@@ -290,8 +292,21 @@ export default function AdminPage() {
     if (!firestore || !bulkJson) return;
     setIsSaving(true);
     try {
-      const items = JSON.parse(bulkJson);
-      const dataToImport = Array.isArray(items) ? items : (items.placeholderImages || [items]);
+      const imported = JSON.parse(bulkJson);
+      let dataToImport: any[] = [];
+      let settingsToImport: any = null;
+
+      // Detect Master Backup vs Legacy Array
+      if (imported.artworks && Array.isArray(imported.artworks)) {
+        dataToImport = imported.artworks;
+        settingsToImport = imported.settings;
+      } else if (Array.isArray(imported)) {
+        dataToImport = imported;
+      } else if (imported.placeholderImages) {
+        dataToImport = imported.placeholderImages;
+      } else {
+        dataToImport = [imported];
+      }
       
       const batch = writeBatch(firestore);
       dataToImport.forEach(item => {
@@ -309,14 +324,19 @@ export default function AdminPage() {
         batch.set(doc(collection(firestore, 'artworks')), sanitizedItem);
       });
       
+      // Update settings if present in master backup
+      if (settingsToImport) {
+        setDoc(doc(firestore, 'settings', 'site'), settingsToImport, { merge: true });
+      }
+
       batch.commit()
         .then(() => {
-          toast({ title: "Import Succesvol", description: `${dataToImport.length} werken geïmporteerd.` });
+          toast({ title: "Import Succesvol", description: `${dataToImport.length} werken en instellingen hersteld.` });
           setBulkJson('');
         })
         .finally(() => setIsSaving(false));
     } catch (e) { 
-      toast({ variant: "destructive", title: "Import Fout", description: "Check JSON." }); 
+      toast({ variant: "destructive", title: "Import Fout", description: "Controleer of de JSON data correct is." }); 
       setIsSaving(false);
     }
   };
@@ -326,17 +346,25 @@ export default function AdminPage() {
       toast({ title: "Leeg Depot", description: "Niets te exporteren." });
       return;
     }
-    const dataStr = JSON.stringify(artworks, null, 2);
+
+    const masterBackup = {
+      version: "2.0",
+      exportedAt: new Date().toISOString(),
+      artworks: artworks,
+      settings: siteSettings || {}
+    };
+
+    const dataStr = JSON.stringify(masterBackup, null, 2);
     const blob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `thijs-sterk-depot-backup-${new Date().toISOString().split('T')[0]}.json`;
+    link.download = `thijs-sterk-master-backup-${new Date().toISOString().split('T')[0]}.json`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    toast({ title: "Backup Geslaagd", description: "Depot opgeslagen op uw computer." });
+    toast({ title: "Master Backup Geslaagd", description: "Volledig Depot inclusief zalen en instellingen opgeslagen." });
   };
 
   const STANDARD_TAGS = ["Groet", "Schoorl", "Hargen", "Amsterdam", "Frankrijk", "Griekenland", "Olieverf", "Aquarel", "Monumentaal", "Glas in lood", "Bloemen", "Dieren", "Water", "Portretten"];
@@ -365,7 +393,7 @@ export default function AdminPage() {
               </TabsTrigger>
               <TabsTrigger value="upload" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Importeer Map</TabsTrigger>
               <TabsTrigger value="texts" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Pagina Teksten</TabsTrigger>
-              <TabsTrigger value="bulk" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Bulk JSON</TabsTrigger>
+              <TabsTrigger value="bulk" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Master Backup</TabsTrigger>
             </TabsList>
             <div className="relative w-full md:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -428,7 +456,7 @@ export default function AdminPage() {
                 <CloudUpload className="w-12 h-12 text-accent" />
                 <div className="space-y-2">
                   <h3 className="text-[12px] font-black uppercase tracking-widest">Bulk Import naar Depot</h3>
-                  <p className="text-[10px] uppercase opacity-40 leading-relaxed">Alle afbeeldingen in de geselecteerde map (inclusief submappen) worden direct naar het centrale Depot geüpload.</p>
+                  <p className="text-[10px] uppercase opacity-40 leading-relaxed">Alle afbeeldingen in de geselecteerde map worden direct naar het centrale Depot geüpload onder "Nieuwe Uploads".</p>
                 </div>
                 <div className="grid grid-cols-2 gap-4 w-full">
                   <Button onClick={() => fileInputRef.current?.click()} disabled={isUploading} className="h-24 rounded-2xl font-black uppercase tracking-widest text-[11px]"><Plus className="w-4 h-4 mr-2" />Bestanden</Button>
@@ -449,27 +477,50 @@ export default function AdminPage() {
                 <Type className="w-5 h-5 text-accent" />
                 <h2 className="text-[12px] font-black uppercase tracking-[0.2em]">Pagina Teksten</h2>
               </div>
-              <div className="grid gap-6">
-                 <Label className="text-[11px] font-black uppercase text-accent">Homepagina - Thijs Sterk</Label>
-                 <Input defaultValue={siteSettings?.homeBioImageUrl || ''} onBlur={(e) => updateSettingsField('homeBioImageUrl', e.target.value)} placeholder="Hoofdafbeelding URL..." className="bg-black/5 border-none h-10 text-xs" />
-                 <Textarea defaultValue={siteSettings?.homeBio || ''} onBlur={(e) => updateSettingsField('homeBio', e.target.value)} className="min-h-[120px] bg-black/5 border-none rounded-xl p-4 text-sm" placeholder="Biografie..." />
+              
+              <div className="grid gap-8">
+                 <div className="space-y-4">
+                    <Label className="text-[11px] font-black uppercase text-accent border-b border-accent/20 pb-1 block">Homepagina - Thijs Sterk</Label>
+                    <Input defaultValue={siteSettings?.homeBioImageUrl || ''} onBlur={(e) => updateSettingsField('homeBioImageUrl', e.target.value)} placeholder="Hoofdafbeelding URL..." className="bg-black/5 border-none h-10 text-xs" />
+                    <Textarea defaultValue={siteSettings?.homeBio || ''} onBlur={(e) => updateSettingsField('homeBio', e.target.value)} className="min-h-[120px] bg-black/5 border-none rounded-xl p-4 text-sm" placeholder="Biografie..." />
+                 </div>
+
+                 <div className="grid md:grid-cols-2 gap-8">
+                    <div className="space-y-4">
+                        <Label className="text-[10px] font-black uppercase opacity-60">Hanneke Sterk (Bio)</Label>
+                        <Textarea defaultValue={siteSettings?.hannekeBio || ''} onBlur={(e) => updateSettingsField('hannekeBio', e.target.value)} className="min-h-[100px] bg-black/5 border-none text-xs" placeholder="Hanneke bio..." />
+                    </div>
+                    <div className="space-y-4">
+                        <Label className="text-[10px] font-black uppercase opacity-60">Beatrijs Sterk (Bio)</Label>
+                        <Textarea defaultValue={siteSettings?.beatrijsBio || ''} onBlur={(e) => updateSettingsField('beatrijsBio', e.target.value)} className="min-h-[100px] bg-black/5 border-none text-xs" placeholder="Beatrijs bio..." />
+                    </div>
+                 </div>
+
+                 <div className="space-y-4">
+                    <Label className="text-[10px] font-black uppercase opacity-60">Peter Bes (Bio)</Label>
+                    <Textarea defaultValue={siteSettings?.peterBesBio || ''} onBlur={(e) => updateSettingsField('peterBesBio', e.target.value)} className="min-h-[100px] bg-black/5 border-none text-xs" placeholder="Peter Bes bio..." />
+                 </div>
               </div>
             </Card>
           </TabsContent>
 
           <TabsContent value="bulk">
             <Card className="p-8 rounded-3xl max-w-4xl mx-auto space-y-6">
-              <div className="flex items-center justify-between border-b border-black/5 pb-4">
-                <div className="flex items-center gap-3">
-                  <FileJson className="w-5 h-5 text-accent" />
-                  <h2 className="text-[12px] font-black uppercase tracking-widest">Backup & Bulk Import</h2>
+              <div className="flex flex-col items-center justify-center p-12 bg-accent/5 rounded-2xl border-2 border-dashed border-accent/20 text-center space-y-6">
+                <ShieldCheck className="w-16 h-16 text-accent" />
+                <div className="space-y-2">
+                  <h2 className="text-[14px] font-black uppercase tracking-widest">Master Backup & Herstel</h2>
+                  <p className="text-[10px] uppercase opacity-40 max-w-md mx-auto leading-relaxed">
+                    Een Master Backup bevat alles: alle schilderijen uit het Depot, hun zalen, tags, uitsnedes en alle teksten van de biografieën.
+                  </p>
                 </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={handleExportBackup} className="text-[11px] uppercase tracking-widest font-black border-accent text-accent">
-                    <Download className="w-3 h-3 mr-2" /> Backup Depot
+                
+                <div className="flex flex-wrap gap-4 justify-center">
+                  <Button onClick={handleExportBackup} className="h-14 px-8 rounded-xl font-black uppercase tracking-widest text-[11px] bg-accent hover:bg-accent/90">
+                    <Download className="w-4 h-4 mr-2" /> Download Master Backup
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => jsonFileInputRef.current?.click()} className="text-[11px] uppercase tracking-widest font-black">
-                    Kies Bestand
+                  <Button variant="outline" onClick={() => jsonFileInputRef.current?.click()} className="h-14 px-8 rounded-xl font-black uppercase tracking-widest text-[11px] border-accent text-accent">
+                    <Upload className="w-4 h-4 mr-2" /> Kies Backup Bestand
                   </Button>
                 </div>
               </div>
@@ -482,15 +533,19 @@ export default function AdminPage() {
                 reader.readAsText(file);
               }} />
               
-              <div className="space-y-4">
-                <Label className="text-[10px] font-black uppercase tracking-widest opacity-40">JSON Data (Import)</Label>
-                <Textarea value={bulkJson} onChange={(e) => setBulkJson(e.target.value)} placeholder='[{"title": "Werk", "imageUrl": "..."}]' className="min-h-[300px] font-mono text-[10px] bg-black/5 border-none rounded-xl" />
-              </div>
-
-              <Button onClick={handleImportJson} disabled={isSaving || !bulkJson} className="h-14 rounded-xl font-black uppercase tracking-widest w-full">
-                {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Upload className="w-4 h-4 mr-2" />}
-                Importeer naar Cloud
-              </Button>
+              {bulkJson && (
+                <div className="space-y-4 animate-in fade-in slide-in-from-top-4">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-[10px] font-black uppercase tracking-widest opacity-40">JSON Preview (Geselecteerd voor Import)</Label>
+                    <Button variant="ghost" size="sm" onClick={() => setBulkJson('')} className="text-[9px] uppercase font-bold text-red-500">Annuleren</Button>
+                  </div>
+                  <Textarea value={bulkJson} readOnly className="min-h-[200px] font-mono text-[10px] bg-black/5 border-none rounded-xl" />
+                  <Button onClick={handleImportJson} disabled={isSaving} className="h-14 rounded-xl font-black uppercase tracking-widest w-full">
+                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ShieldCheck className="w-4 h-4 mr-2" />}
+                    Start Herstel naar Cloud
+                  </Button>
+                </div>
+              )}
             </Card>
           </TabsContent>
         </Tabs>
