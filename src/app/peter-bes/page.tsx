@@ -7,11 +7,13 @@ import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogTitle, DialogClose } from '@/components/ui/dialog';
-import { X } from 'lucide-react';
+import { X, Maximize2 } from 'lucide-react';
 
 export default function PeterBesPage() {
   const [selectedArtworkId, setSelectedArtworkId] = useState<string | null>(null);
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
   const firestore = useFirestore();
+
   const siteSettingsRef = useMemoFirebase(() => {
     if (!firestore) return null;
     return doc(firestore, 'settings', 'site');
@@ -57,10 +59,14 @@ export default function PeterBesPage() {
             {images.length > 0 ? (
               <div className={cn("grid gap-6", images.length === 2 ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-1")}>
                 {images.map((url: string, idx: number) => (
-                  <div key={idx} className={cn(
-                    "relative overflow-hidden rounded-2xl shadow-2xl bg-secondary/20 transition-all duration-700 hover:scale-[1.02]",
-                    idx === 0 ? "aspect-[3/4]" : "aspect-square"
-                  )}>
+                  <div 
+                    key={idx} 
+                    className={cn(
+                      "relative overflow-hidden rounded-2xl shadow-2xl bg-secondary/20 transition-all duration-700 hover:scale-[1.02] cursor-pointer group",
+                      idx === 0 ? "aspect-[3/4]" : "aspect-square"
+                    )}
+                    onClick={() => setPreviewImageUrl(url)}
+                  >
                     <Image 
                       src={url} 
                       alt={`Peter Bes - Foto ${idx + 1}`} 
@@ -68,6 +74,9 @@ export default function PeterBesPage() {
                       className="object-cover" 
                       data-ai-hint="portrait artist man"
                     />
+                    <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <Maximize2 className="text-white w-8 h-8 drop-shadow-2xl" />
+                    </div>
                     <div className="absolute bottom-4 right-4 z-10 opacity-20 text-[8px] uppercase tracking-widest text-white font-bold bg-black/40 px-2 py-1 rounded-sm">
                       &copy; Peter Bes
                     </div>
@@ -75,14 +84,20 @@ export default function PeterBesPage() {
                 ))}
               </div>
             ) : (
-              <div className="relative aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl bg-secondary/20">
+              <div 
+                className="relative aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl bg-secondary/20 cursor-pointer group"
+                onClick={() => setPreviewImageUrl("https://picsum.photos/seed/peterbes/800/1000")}
+              >
                 <Image 
                   src="https://picsum.photos/seed/peterbes/800/1000" 
                   alt="Peter Bes Default" 
                   fill 
-                  className="object-cover" 
+                  className="object-cover transition-transform duration-1000 group-hover:scale-[1.02]" 
                   data-ai-hint="portrait artist man"
                 />
+                <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <Maximize2 className="text-white w-8 h-8 drop-shadow-2xl" />
+                </div>
               </div>
             )}
           </div>
@@ -111,21 +126,38 @@ export default function PeterBesPage() {
         </div>
       </div>
 
+      {/* Viewer voor Portretten */}
+      <Dialog open={!!previewImageUrl} onOpenChange={() => setPreviewImageUrl(null)}>
+        <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background border-none rounded-none overflow-hidden outline-none">
+          <DialogTitle className="sr-only">Portrait Viewer</DialogTitle>
+          <div className="relative h-[100vh] w-full flex items-center justify-center overflow-hidden bg-black/5">
+            {previewImageUrl && (
+              <img src={previewImageUrl} className="max-w-[90%] max-h-[90%] object-contain shadow-2xl" alt="Peter Bes Portrait" />
+            )}
+            <DialogClose className="absolute top-8 right-8 z-50 p-3 bg-background/10 backdrop-blur-sm rounded-full hover:bg-background/20 transition-all shadow-xl">
+              <X className="w-6 h-6 opacity-40" />
+            </DialogClose>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Viewer voor Gelinkte Kunstwerken */}
       <Dialog open={!!selectedArtworkId} onOpenChange={() => setSelectedArtworkId(null)}>
         <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background border-none rounded-none overflow-hidden outline-none">
-          <DialogTitle className="sr-only">Viewer (75/25)</DialogTitle>
+          <DialogTitle className="sr-only">Artwork Viewer</DialogTitle>
           <div className="relative h-[75vh] w-full flex items-center justify-center overflow-hidden bg-black/5 group">
             {selectedArtwork && (
               <img 
                 src={selectedArtwork.imageUrl} 
-                className="max-w-full max-h-[90%] object-contain p-4 md:p-16 shadow-2xl transition-all" 
+                className="max-w-full max-h-[90%] object-contain p-4 md:p-16 shadow-2xl transition-all duration-700" 
                 style={{ 
                   clipPath: `inset(${selectedArtwork.cropTop || 0}% ${selectedArtwork.cropRight || 0}% ${selectedArtwork.cropBottom || 0}% ${selectedArtwork.cropLeft || 0}%)`, 
                   filter: `brightness(${selectedArtwork.brightness || 1})` 
                 }} 
+                alt={selectedArtwork.title}
               />
             )}
-            <DialogClose className="absolute top-8 right-8 z-50 p-3 bg-background/10 backdrop-blur-sm rounded-full hover:bg-background/20 transition-all">
+            <DialogClose className="absolute top-8 right-8 z-50 p-3 bg-background/10 backdrop-blur-sm rounded-full hover:bg-background/20 transition-all shadow-xl">
               <X className="w-6 h-6 opacity-40" />
             </DialogClose>
           </div>

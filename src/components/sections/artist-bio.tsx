@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -5,10 +6,11 @@ import Image from 'next/image';
 import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { Dialog, DialogContent, DialogTitle, DialogClose } from '@/components/ui/dialog';
-import { X } from 'lucide-react';
+import { X, Maximize2 } from 'lucide-react';
 
 export function ArtistBio() {
   const [selectedArtworkId, setSelectedArtworkId] = useState<string | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const firestore = useFirestore();
 
   const siteSettingsRef = useMemoFirebase(() => {
@@ -53,14 +55,20 @@ export function ArtistBio() {
           <div className="lg:col-span-5 order-2 lg:order-1">
             <div className="relative">
               <div className="absolute -top-6 -left-6 w-24 h-24 border-t-2 border-l-2 border-accent" />
-              <div className="relative aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl bg-muted/20">
+              <div 
+                className="relative aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl bg-muted/20 cursor-pointer group"
+                onClick={() => setIsPreviewOpen(true)}
+              >
                 <Image
                   src={bioImageUrl}
                   alt="Portret van Thijs Sterk"
                   fill
-                  className="object-cover"
+                  className="object-cover transition-transform duration-1000 group-hover:scale-[1.02]"
                   data-ai-hint="vintage artist portrait"
                 />
+                <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <Maximize2 className="text-white w-8 h-8 drop-shadow-2xl" />
+                </div>
               </div>
             </div>
           </div>
@@ -91,21 +99,40 @@ export function ArtistBio() {
         </div>
       </div>
 
+      {/* Viewer voor Biografie Portret */}
+      <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+        <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background border-none rounded-none overflow-hidden outline-none">
+          <DialogTitle className="sr-only">Portret Viewer</DialogTitle>
+          <div className="relative h-[100vh] w-full flex items-center justify-center overflow-hidden bg-black/5">
+            <img 
+              src={bioImageUrl} 
+              className="max-w-[90%] max-h-[90%] object-contain shadow-2xl" 
+              alt="Thijs Sterk Portret"
+            />
+            <DialogClose className="absolute top-8 right-8 z-50 p-3 bg-background/10 backdrop-blur-sm rounded-full hover:bg-background/20 transition-all shadow-xl">
+              <X className="w-6 h-6 opacity-40" />
+            </DialogClose>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Viewer voor gelinkte kunstwerken in tekst */}
       <Dialog open={!!selectedArtworkId} onOpenChange={() => setSelectedArtworkId(null)}>
         <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background border-none rounded-none overflow-hidden outline-none">
-          <DialogTitle className="sr-only">Viewer (75/25)</DialogTitle>
+          <DialogTitle className="sr-only">Artwork Viewer</DialogTitle>
           <div className="relative h-[75vh] w-full flex items-center justify-center overflow-hidden bg-black/5 group">
             {selectedArtwork && (
               <img 
                 src={selectedArtwork.imageUrl} 
-                className="max-w-full max-h-[90%] object-contain p-4 md:p-16 shadow-2xl transition-all" 
+                className="max-w-full max-h-[90%] object-contain p-4 md:p-16 shadow-2xl transition-all duration-700" 
                 style={{ 
                   clipPath: `inset(${selectedArtwork.cropTop || 0}% ${selectedArtwork.cropRight || 0}% ${selectedArtwork.cropBottom || 0}% ${selectedArtwork.cropLeft || 0}%)`, 
                   filter: `brightness(${selectedArtwork.brightness || 1})` 
                 }} 
+                alt={selectedArtwork.title}
               />
             )}
-            <DialogClose className="absolute top-8 right-8 z-50 p-3 bg-background/10 backdrop-blur-sm rounded-full hover:bg-background/20 transition-all">
+            <DialogClose className="absolute top-8 right-8 z-50 p-3 bg-background/10 backdrop-blur-sm rounded-full hover:bg-background/20 transition-all shadow-xl">
               <X className="w-6 h-6 opacity-40" />
             </DialogClose>
           </div>

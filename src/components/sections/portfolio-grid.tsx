@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -81,11 +82,23 @@ export function PortfolioGrid() {
             {displayArtworks.map(art => (
               <div key={art.id} className="group relative cursor-pointer" onClick={() => setSelectedArtwork(art)}>
                 <div className="relative aspect-square overflow-hidden rounded-sm bg-muted/30 transition-all duration-700 group-hover:shadow-2xl">
-                  <img src={art.imageUrl} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-[1.05]" style={{ clipPath: `inset(${art.cropTop || 0}% ${art.cropRight || 0}% ${art.cropBottom || 0}% ${art.cropLeft || 0}%)`, filter: `brightness(${art.brightness || 1})` }} />
+                  <img 
+                    src={art.imageUrl} 
+                    className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-[1.05]" 
+                    style={{ 
+                      clipPath: `inset(${art.cropTop || 0}% ${art.cropRight || 0}% ${art.cropBottom || 0}% ${art.cropLeft || 0}%)`, 
+                      filter: `brightness(${art.brightness || 1})` 
+                    }} 
+                    alt={art.title}
+                  />
                   {art.featured && <Star className="absolute top-4 left-4 w-4 h-4 text-accent fill-accent opacity-0 group-hover:opacity-100 transition-opacity" />}
-                  <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"><Maximize2 className="text-white w-6 h-6" /></div>
+                  <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                    <Maximize2 className="text-white w-6 h-6" />
+                  </div>
                 </div>
-                <div className="mt-4 text-center"><h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground group-hover:text-foreground transition-colors truncate">{art.title}</h3></div>
+                <div className="mt-4 text-center">
+                  <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground group-hover:text-foreground transition-colors truncate">{art.title}</h3>
+                </div>
               </div>
             ))}
           </div>
@@ -99,13 +112,27 @@ export function PortfolioGrid() {
           <DialogTitle className="sr-only">Viewer (75/25)</DialogTitle>
           <div className="relative h-[75vh] w-full bg-black/5 flex items-center justify-center overflow-hidden group">
             {selectedArtwork && (
-              <img src={selectedArtwork.imageUrl} className="max-w-full max-h-[90%] object-contain p-4 md:p-16 shadow-2xl transition-all" style={{ clipPath: `inset(${selectedArtwork.cropTop || 0}% ${selectedArtwork.cropRight || 0}% ${selectedArtwork.cropBottom || 0}% ${selectedArtwork.cropLeft || 0}%)`, filter: `brightness(${selectedArtwork.brightness || 1})` }} />
+              <img 
+                src={selectedArtwork.imageUrl} 
+                className="max-w-full max-h-[90%] object-contain p-4 md:p-16 shadow-2xl transition-all duration-700" 
+                style={{ 
+                  clipPath: `inset(${selectedArtwork.cropTop || 0}% ${selectedArtwork.cropRight || 0}% ${selectedArtwork.cropBottom || 0}% ${selectedArtwork.cropLeft || 0}%)`, 
+                  filter: `brightness(${selectedArtwork.brightness || 1})` 
+                }} 
+                alt={selectedArtwork.title}
+              />
             )}
             <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-8 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity">
-              <button onClick={() => navigateDisplay('prev')} className="p-4 rounded-full bg-background/20 backdrop-blur-md pointer-events-auto hover:bg-background/40"><ChevronLeft className="w-8 h-8" /></button>
-              <button onClick={() => navigateDisplay('next')} className="p-4 rounded-full bg-background/20 backdrop-blur-md pointer-events-auto hover:bg-background/40"><ChevronRight className="w-8 h-8" /></button>
+              <button onClick={() => navigateDisplay('prev')} className="p-4 rounded-full bg-background/20 backdrop-blur-md pointer-events-auto hover:bg-background/40 transition-all shadow-xl">
+                <ChevronLeft className="w-8 h-8" />
+              </button>
+              <button onClick={() => navigateDisplay('next')} className="p-4 rounded-full bg-background/20 backdrop-blur-md pointer-events-auto hover:bg-background/40 transition-all shadow-xl">
+                <ChevronRight className="w-8 h-8" />
+              </button>
             </div>
-            <DialogClose className="absolute top-8 right-8 z-50 p-3 bg-background/10 backdrop-blur-sm rounded-full hover:bg-background/20"><X className="w-6 h-6 opacity-40" /></DialogClose>
+            <DialogClose className="absolute top-8 right-8 z-50 p-3 bg-background/10 backdrop-blur-sm rounded-full hover:bg-background/20 transition-all shadow-xl">
+              <X className="w-6 h-6 opacity-40" />
+            </DialogClose>
           </div>
           <div className="h-[25vh] w-full bg-background/95 backdrop-blur-md py-8 px-12 border-t border-border/10 flex flex-col items-center justify-center overflow-y-auto text-center">
             <h2 className="text-[10px] md:text-[11px] font-black tracking-[0.4em] uppercase text-foreground/40 mb-4">{selectedArtwork?.title}</h2>
