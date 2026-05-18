@@ -1,9 +1,10 @@
+
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
+import { collection, query, orderBy, doc } from 'firebase/firestore';
 import { Dialog, DialogContent, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { Maximize2, Loader2, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -23,6 +24,14 @@ function GalleryContent() {
 
   const { data: dbArtworks, loading } = useCollection(artworksQuery);
 
+  const siteSettingsRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, 'settings', 'site');
+  }, [firestore]);
+  const { data: siteSettings } = useDoc(siteSettingsRef);
+
+  const hiddenSeries = useMemo(() => siteSettings?.hiddenSeries || [], [siteSettings]);
+
   // Deduplicatie op basis van imageUrl: Toon alleen unieke database-werken
   const artworks = useMemo(() => {
     if (!dbArtworks) return [];
@@ -39,26 +48,32 @@ function GalleryContent() {
     const counts: Record<string, number> = {};
     artworks.forEach(art => {
       const name = art.series || "Geen zaal";
-      counts[name] = (counts[name] || 0) + 1;
+      if (!hiddenSeries.includes(name)) {
+        counts[name] = (counts[name] || 0) + 1;
+      }
     });
     return Object.entries(counts)
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => a.name.localeCompare(b.name));
-  }, [artworks]);
+  }, [artworks, hiddenSeries]);
 
   useEffect(() => {
     const s = searchParams.get('series');
     if (s) {
-      setActiveSeries(s);
+      if (hiddenSeries.includes(s)) {
+        setActiveSeries(seriesWithCounts.length > 0 ? seriesWithCounts[0].name : null);
+      } else {
+        setActiveSeries(s);
+      }
     } else if (seriesWithCounts.length > 0 && !activeSeries) {
       setActiveSeries(seriesWithCounts[0].name);
     }
-  }, [searchParams, seriesWithCounts, activeSeries]);
+  }, [searchParams, seriesWithCounts, activeSeries, hiddenSeries]);
 
   const filteredArtworks = useMemo(() => {
-    if (!activeSeries) return [];
+    if (!activeSeries || hiddenSeries.includes(activeSeries)) return [];
     return artworks.filter(art => (art.series || "Geen zaal") === activeSeries);
-  }, [artworks, activeSeries]);
+  }, [artworks, activeSeries, hiddenSeries]);
 
   const navigateGallery = useCallback((direction: 'next' | 'prev') => {
     if (!selectedArtwork || !filteredArtworks.length) return;

@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
@@ -33,7 +34,9 @@ import {
   Download,
   Database,
   ShieldCheck,
-  Layers
+  Layers,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -136,6 +139,8 @@ export default function AdminPage() {
   }, [firestore]);
   const { data: siteSettings } = useDoc(siteSettingsRef);
 
+  const hiddenSeries = useMemo(() => siteSettings?.hiddenSeries || [], [siteSettings]);
+
   const seriesWithCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     artworks.forEach(art => {
@@ -204,6 +209,14 @@ export default function AdminPage() {
     const settingsRef = doc(firestore, 'settings', 'site');
     setDoc(settingsRef, { [field]: value }, { merge: true })
       .catch(async () => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: settingsRef.path, operation: 'update' })));
+  };
+
+  const toggleSeriesVisibility = (name: string) => {
+    const current = siteSettings?.hiddenSeries || [];
+    const updated = current.includes(name) 
+      ? current.filter((s: string) => s !== name) 
+      : [...current, name];
+    updateSettingsField('hiddenSeries', updated);
   };
 
   const handleBulkMove = () => {
@@ -297,7 +310,6 @@ export default function AdminPage() {
       let dataToImport: any[] = [];
       let settingsToImport: any = null;
 
-      // Detect Master Backup vs Legacy Array vs Bare Depot
       if (imported.artworks && Array.isArray(imported.artworks)) {
         dataToImport = imported.artworks;
         settingsToImport = imported.settings;
@@ -325,7 +337,6 @@ export default function AdminPage() {
         batch.set(doc(collection(firestore, 'artworks')), sanitizedItem);
       });
       
-      // Update settings if present in master backup
       if (settingsToImport) {
         setDoc(doc(firestore, 'settings', 'site'), settingsToImport, { merge: true });
       }
@@ -417,11 +428,19 @@ export default function AdminPage() {
           <TabsContent value="archive" className="space-y-6">
             <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-black/5">
               <Button variant={filterSeries === null ? "default" : "outline"} size="sm" onClick={() => setFilterSeries(null)} className="rounded-full text-[9px] uppercase tracking-widest font-bold h-7">Alles ({artworks.length})</Button>
-              {seriesWithCounts.map(s => (
-                <Button key={s.name} variant={filterSeries === s.name ? "default" : "outline"} size="sm" onClick={() => setFilterSeries(s.name)} className="rounded-full text-[9px] uppercase tracking-widest font-bold h-7 whitespace-nowrap">
-                  {s.name} ({s.count})
-                </Button>
-              ))}
+              {seriesWithCounts.map(s => {
+                const isHidden = hiddenSeries.includes(s.name);
+                return (
+                  <div key={s.name} className="flex items-center gap-1 group">
+                    <Button variant={filterSeries === s.name ? "default" : "outline"} size="sm" onClick={() => setFilterSeries(s.name)} className={cn("rounded-l-full rounded-r-none text-[9px] uppercase tracking-widest font-bold h-7 whitespace-nowrap pr-2", isHidden && "opacity-40 grayscale")}>
+                      {s.name} ({s.count})
+                    </Button>
+                    <button onClick={() => toggleSeriesVisibility(s.name)} className={cn("h-7 px-2 rounded-r-full border-2 border-l-0 transition-colors flex items-center justify-center bg-background", isHidden ? "text-red-500 border-red-200 hover:bg-red-50" : "text-green-600 border-black hover:bg-black/5")}>
+                      {isHidden ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                    </button>
+                  </div>
+                );
+              })}
             </div>
 
             <div className="flex justify-between items-center h-12">

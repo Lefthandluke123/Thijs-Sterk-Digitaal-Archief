@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useMemo, Suspense } from 'react';
@@ -12,8 +13,8 @@ import {
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { ChevronDown, Loader2 } from 'lucide-react';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
+import { useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
+import { collection, query, doc } from 'firebase/firestore';
 
 function NavbarContent() {
   const pathname = usePathname();
@@ -29,11 +30,18 @@ function NavbarContent() {
 
   const { data: dbArtworks } = useCollection(artworksQuery);
 
+  const siteSettingsRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, 'settings', 'site');
+  }, [firestore]);
+  const { data: siteSettings } = useDoc(siteSettingsRef);
+
+  const hiddenSeries = useMemo(() => siteSettings?.hiddenSeries || [], [siteSettings]);
+
   // Deduplicatie en tellers op basis van unieke database-werken
   const seriesWithCounts = useMemo(() => {
     if (!dbArtworks) return [];
     
-    // Eerst dedupliceren op imageUrl
     const seen = new Set();
     const uniqueArtworks = dbArtworks.filter(art => {
       const url = art.imageUrl;
@@ -54,11 +62,12 @@ function NavbarContent() {
         name !== "Monumentaal" && 
         name !== "Glas in lood" && 
         name !== "Nieuwe Uploads" && 
-        name !== "Geen zaal"
+        name !== "Geen zaal" &&
+        !hiddenSeries.includes(name)
       )
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => a.name.localeCompare(b.name));
-  }, [dbArtworks]);
+  }, [dbArtworks, hiddenSeries]);
 
   useEffect(() => {
     setMounted(true);
@@ -118,7 +127,10 @@ function NavbarContent() {
           </DropdownMenu>
 
           <NavLink href="/curator" active={pathname === "/curator"}>Uw Zaal</NavLink>
-          <NavLink href="/gallery?series=Monumentaal" active={pathname === "/gallery" && currentSeries === "Monumentaal"}>Monumentaal</NavLink>
+          
+          {!hiddenSeries.includes("Monumentaal") && (
+            <NavLink href="/gallery?series=Monumentaal" active={pathname === "/gallery" && currentSeries === "Monumentaal"}>Monumentaal</NavLink>
+          )}
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
