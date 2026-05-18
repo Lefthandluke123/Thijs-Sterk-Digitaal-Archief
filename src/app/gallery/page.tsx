@@ -5,8 +5,8 @@ import React, { useState, useMemo, useEffect, useCallback, Suspense } from 'reac
 import { useSearchParams } from 'next/navigation';
 import { useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, orderBy, doc } from 'firebase/firestore';
-import { Dialog, DialogContent, DialogTitle, DialogClose } from '@/components/ui/dialog';
-import { Maximize2, Loader2, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArtworkViewer } from '@/components/artwork-viewer';
+import { Maximize2, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 function GalleryContent() {
@@ -15,7 +15,6 @@ function GalleryContent() {
   
   const [selectedArtwork, setSelectedArtwork] = useState<any | null>(null);
   const [activeSeries, setActiveSeries] = useState<string | null>(initialSeriesFromUrl);
-  const [isFullScreen, setIsFullScreen] = useState(false);
   const firestore = useFirestore();
   
   const artworksQuery = useMemoFirebase(() => {
@@ -131,7 +130,7 @@ function GalleryContent() {
 
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-10">
               {filteredArtworks.map((item) => (
-                <div key={item.id} className="group relative cursor-pointer" onClick={() => { setSelectedArtwork(item); setIsFullScreen(false); }}>
+                <div key={item.id} className="group relative cursor-pointer" onClick={() => setSelectedArtwork(item)}>
                   <div className="relative aspect-[4/5] overflow-hidden rounded-sm bg-muted/20 shadow-md">
                     <img 
                       src={item.imageUrl} 
@@ -159,59 +158,12 @@ function GalleryContent() {
         )}
       </div>
 
-      <Dialog open={!!selectedArtwork} onOpenChange={(open) => { if (!open) setSelectedArtwork(null); }}>
-        <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background border-none rounded-none overflow-hidden outline-none">
-          <DialogTitle className="sr-only">Viewer</DialogTitle>
-          <div 
-            className={cn(
-              "relative w-full flex items-center justify-center overflow-hidden bg-black/5 group transition-all duration-500 cursor-pointer",
-              isFullScreen ? "h-[100vh]" : "h-[75vh]"
-            )}
-            onClick={() => setIsFullScreen(!isFullScreen)}
-          >
-            {selectedArtwork && (
-              <img 
-                src={selectedArtwork.imageUrl} 
-                alt={selectedArtwork.title} 
-                className="max-w-full max-h-[90%] object-contain p-4 md:p-16 shadow-2xl transition-all duration-700"
-                style={{
-                  clipPath: `inset(${selectedArtwork.cropTop || 0}% ${selectedArtwork.cropRight || 0}% ${selectedArtwork.cropBottom || 0}% ${selectedArtwork.cropLeft || 0}%)`,
-                  filter: `brightness(${selectedArtwork.brightness || 1})`
-                }}
-              />
-            )}
-            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-8 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-              <button onClick={(e) => { e.stopPropagation(); navigateGallery('prev'); }} className="p-4 rounded-full bg-background/20 backdrop-blur-md pointer-events-auto hover:bg-background/40 transition-all shadow-xl">
-                <ChevronLeft className="w-8 h-8" />
-              </button>
-              <button onClick={(e) => { e.stopPropagation(); navigateGallery('next'); }} className="p-4 rounded-full bg-background/20 backdrop-blur-md pointer-events-auto hover:bg-background/40 transition-all shadow-xl">
-                <ChevronRight className="w-8 h-8" />
-              </button>
-            </div>
-            <DialogClose className="absolute top-8 right-8 z-50 p-3 bg-background/10 backdrop-blur-sm rounded-full hover:bg-background/20 transition-all shadow-xl" onClick={(e) => e.stopPropagation()}>
-              <X className="w-6 h-6 opacity-40" />
-            </DialogClose>
-          </div>
-
-          <div className={cn(
-            "w-full bg-background/95 backdrop-blur-md py-8 px-12 border-t border-border/10 shadow-2xl flex flex-col items-center justify-center overflow-y-auto transition-all duration-500",
-            isFullScreen ? "h-0 opacity-0 pointer-events-none py-0 px-0" : "h-[25vh] opacity-100"
-          )}>
-            <div className="max-w-6xl mx-auto flex flex-col items-center text-center gap-4">
-              <h2 className="text-[10px] md:text-[11px] font-black tracking-[0.4em] uppercase text-foreground/40 leading-tight">
-                {selectedArtwork?.title}
-              </h2>
-              <div className="text-[12px] md:text-[14px] uppercase font-black tracking-[0.5em] text-accent flex flex-wrap gap-x-12 gap-y-4 justify-center items-center">
-                <span className="bg-accent/10 px-6 py-1.5 rounded-sm">Zaal: {selectedArtwork?.series}</span>
-                <span className="hidden md:inline w-2 h-2 rounded-full bg-accent/40" />
-                <span>{selectedArtwork?.year}</span>
-                <span className="hidden md:inline w-2 h-2 rounded-full bg-accent/40" />
-                <span>{selectedArtwork?.medium}</span>
-              </div>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <ArtworkViewer 
+        artwork={selectedArtwork} 
+        onClose={() => setSelectedArtwork(null)} 
+        onPrev={() => navigateGallery('prev')}
+        onNext={() => navigateGallery('next')}
+      />
     </main>
   );
 }
