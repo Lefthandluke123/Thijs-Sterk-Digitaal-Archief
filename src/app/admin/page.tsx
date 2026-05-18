@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
@@ -189,7 +188,7 @@ export default function AdminPage() {
       .catch(async () => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: settingsRef.path, operation: 'update' })));
   };
 
-  const handleBulkMove = async () => {
+  const handleBulkMove = () => {
     if (!firestore || selectedIds.length === 0 || !bulkMoveSeries.trim()) return;
     setIsSaving(true);
     const batch = writeBatch(firestore);
@@ -197,34 +196,33 @@ export default function AdminPage() {
       batch.update(doc(firestore, 'artworks', id), { series: bulkMoveSeries.trim() });
     });
     
-    try {
-      await batch.commit();
-      toast({ title: "Verplaatst", description: `${selectedIds.length} werken verplaatst naar ${bulkMoveSeries}` });
-      setSelectedIds([]);
-      setBulkMoveSeries('');
-    } catch (e) {
-      toast({ variant: "destructive", title: "Fout", description: "Kon de werken niet verplaatsen." });
-    } finally {
-      setIsSaving(false);
-    }
+    batch.commit()
+      .then(() => {
+        toast({ title: "Verplaatst", description: `${selectedIds.length} werken verplaatst naar ${bulkMoveSeries}` });
+      })
+      .catch(async () => {
+        toast({ variant: "destructive", title: "Fout", description: "Kon de werken niet verplaatsen." });
+      });
+
+    // Optimistische deblokkering
+    setSelectedIds([]);
+    setBulkMoveSeries('');
+    setIsSaving(false);
   };
 
-  const handleBulkDelete = async () => {
+  const handleBulkDelete = () => {
     if (!firestore || selectedIds.length === 0) return;
     if (!confirm(`Weet u zeker dat u ${selectedIds.length} werken wilt verwijderen?`)) return;
     setIsSaving(true);
     const batch = writeBatch(firestore);
     selectedIds.forEach(id => batch.delete(doc(firestore, 'artworks', id)));
     
-    try {
-      await batch.commit();
-      toast({ title: "Verwijderd", description: `${selectedIds.length} werken verwijderd` });
-      setSelectedIds([]);
-    } catch (e) {
-      toast({ variant: "destructive", title: "Fout", description: "Kon de werken niet verwijderen." });
-    } finally {
-      setIsSaving(false);
-    }
+    batch.commit()
+      .then(() => toast({ title: "Verwijderd", description: `${selectedIds.length} werken verwijderd` }))
+      .catch(() => toast({ variant: "destructive", title: "Fout", description: "Kon de werken niet verwijderen." }));
+
+    setSelectedIds([]);
+    setIsSaving(false);
   };
 
   const toggleSelect = (e: React.MouseEvent, id: string) => {
@@ -243,7 +241,7 @@ export default function AdminPage() {
   const uploadWithTimeout = async (storageRef: any, file: File, timeoutMs = 30000) => {
     return Promise.race([
       uploadBytes(storageRef, file),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout na 30 seconden')), timeoutMs))
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), timeoutMs))
     ]);
   };
 
@@ -278,13 +276,11 @@ export default function AdminPage() {
             cropTop: 0, cropBottom: 0, cropLeft: 0, cropRight: 0, brightness: 1
           };
           
-          addDoc(collection(firestore, 'artworks'), docData).catch(e => {
-            console.error("Firestore write failed", e);
-          });
+          addDoc(collection(firestore, 'artworks'), docData).catch(e => console.error("Firestore write failed", e));
 
         } catch (e: any) { 
           console.error(`Fout bij: ${file.name}`, e);
-          toast({ variant: "destructive", title: "Fout", description: `Kon ${file.name} niet verwerken: ${e.message}` });
+          toast({ variant: "destructive", title: "Upload Fout", description: `Kon ${file.name} niet verwerken.` });
         }
         processed++;
         setUploadProgress((processed / totalFiles) * 100);
@@ -299,7 +295,7 @@ export default function AdminPage() {
     }
   };
 
-  const handleImportJson = async () => {
+  const handleImportJson = () => {
     if (!firestore || !bulkJson) return;
     setIsSaving(true);
     try {
@@ -322,13 +318,14 @@ export default function AdminPage() {
         batch.set(doc(collection(firestore, 'artworks')), sanitizedItem);
       });
       
-      await batch.commit();
+      batch.commit()
+        .then(() => toast({ title: "Import Succesvol", description: `${dataToImport.length} werken geïmporteerd.` }))
+        .catch(() => toast({ variant: "destructive", title: "Import Fout", description: "Check de database-regels." }));
+      
       setBulkJson('');
-      setActiveTab('archive');
-      toast({ title: "Import Succesvol", description: `${dataToImport.length} werken geïmporteerd.` });
+      setIsSaving(false);
     } catch (e) { 
       toast({ variant: "destructive", title: "Import Fout", description: "Check de JSON structuur." }); 
-    } finally {
       setIsSaving(false);
     }
   };
@@ -403,7 +400,7 @@ export default function AdminPage() {
               </div>
             )}
 
-            {isCollectionLoading ? <div className="flex justify-center py-20"><Loader2 className="animate-spin opacity-20" /></div> : (
+            {isCollectionLoading && !artworks ? <div className="flex justify-center py-20"><Loader2 className="animate-spin opacity-20" /></div> : (
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
                 {filteredArtworks.map((art: any) => (
                   <Card key={art.id} className={cn("overflow-hidden group cursor-pointer transition-all relative border-2", selectedIds.includes(art.id) ? "border-accent bg-accent/5 ring-1 ring-accent" : "border-transparent")} onClick={() => setEditingId(art.id)}>
@@ -553,7 +550,7 @@ export default function AdminPage() {
                 </div>
                 <div className="flex items-center gap-3">
                    <RepeatButton onStep={() => handleLocalStep('brightness', -0.01, 0, 2)} className="h-8 w-8"><Minus className="h-4 w-4" /></RepeatButton>
-                   <Slider value={[localCrops.brightness ?? 1]} max={2} step={0.01} onValueChange={([val]) => { setLocalCrops(prev => ({ ...prev, brightness: val })); updateArtworkField(editingId!, fieldName, val); }} className="w-24" />
+                   <Slider value={[localCrops.brightness ?? 1]} max={2} step={0.01} onValueChange={([val]) => { setLocalCrops(prev => ({ ...prev, brightness: val })); updateArtworkField(editingId!, 'brightness', val); }} className="w-24" />
                   <RepeatButton onStep={() => handleLocalStep('brightness', 0.01, 0, 2)} className="h-8 w-8"><Plus className="h-4 w-4" /></RepeatButton>
                 </div>
               </div>
@@ -564,4 +561,3 @@ export default function AdminPage() {
     </div>
   );
 }
-

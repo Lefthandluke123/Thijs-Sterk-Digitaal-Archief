@@ -15,7 +15,7 @@ export function useCollection<T = DocumentData>(collectionQuery: Query<T> | null
   const [loading, setLoading] = useState(!!collectionQuery);
   const [error, setError] = useState<Error | null>(null);
   
-  const lastQueryRef = useRef<Query<T> | null>(null);
+  const lastQueryRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!collectionQuery) {
@@ -24,10 +24,11 @@ export function useCollection<T = DocumentData>(collectionQuery: Query<T> | null
       return;
     }
 
-    // Only set loading to true if it's a genuinely different query instance
-    if (collectionQuery !== lastQueryRef.current) {
-      setLoading(true);
-      lastQueryRef.current = collectionQuery;
+    // Gebruik de string-representatie van de query om onnodige re-renders te voorkomen
+    const queryKey = JSON.stringify((collectionQuery as any)._query || collectionQuery);
+    if (queryKey !== lastQueryRef.current) {
+      if (!data) setLoading(true); // Alleen loader bij eerste keer of echte verandering
+      lastQueryRef.current = queryKey;
     }
 
     const unsubscribe = onSnapshot(
