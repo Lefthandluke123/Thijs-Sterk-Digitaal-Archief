@@ -23,13 +23,13 @@ function GalleryContent() {
 
   const { data: dbArtworks, loading } = useCollection(artworksQuery);
 
-  // Deduplicatie op basis van imageUrl
+  // Deduplicatie op basis van imageUrl: Toon alleen unieke database-werken
   const artworks = useMemo(() => {
     if (!dbArtworks) return [];
     const seen = new Set();
     return dbArtworks.filter(art => {
       const url = art.imageUrl;
-      if (seen.has(url)) return false;
+      if (!url || seen.has(url)) return false;
       seen.add(url);
       return true;
     });

@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useMemo, Suspense } from 'react';
@@ -30,10 +29,21 @@ function NavbarContent() {
 
   const { data: dbArtworks } = useCollection(artworksQuery);
 
+  // Deduplicatie en tellers op basis van unieke database-werken
   const seriesWithCounts = useMemo(() => {
     if (!dbArtworks) return [];
+    
+    // Eerst dedupliceren op imageUrl
+    const seen = new Set();
+    const uniqueArtworks = dbArtworks.filter(art => {
+      const url = art.imageUrl;
+      if (!url || seen.has(url)) return false;
+      seen.add(url);
+      return true;
+    });
+
     const counts: Record<string, number> = {};
-    dbArtworks.forEach(art => {
+    uniqueArtworks.forEach(art => {
       if (art.series) {
         counts[art.series] = (counts[art.series] || 0) + 1;
       }

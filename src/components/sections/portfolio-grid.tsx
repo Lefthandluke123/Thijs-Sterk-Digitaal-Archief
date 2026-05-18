@@ -32,7 +32,7 @@ export function PortfolioGrid() {
     const seen = new Set();
     return raw.filter(art => {
       const url = art.imageUrl;
-      if (seen.has(url)) return false;
+      if (!url || seen.has(url)) return false;
       seen.add(url);
       return true;
     });

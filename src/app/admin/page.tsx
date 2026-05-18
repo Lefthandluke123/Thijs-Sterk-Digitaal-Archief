@@ -115,7 +115,7 @@ export default function AdminPage() {
 
   const { data: rawArtworks, loading: isCollectionLoading } = useCollection(artworksQuery);
 
-  // Deduplicatie op basis van imageUrl
+  // Deduplicatie op basis van imageUrl voor een zuiver Depot
   const artworks = useMemo(() => {
     if (!rawArtworks) return [];
     const seen = new Set();
@@ -250,14 +250,8 @@ export default function AdminPage() {
           
           setUploadStatus(`Uploaden: ${file.name}... (${processed + 1}/${totalFiles})`);
           
-          // Detecteer serie uit mapstructuur (voor webkitdirectory)
-          const relativePath = (file as any).webkitRelativePath || "";
-          const pathParts = relativePath.split('/');
+          // GEEN slimme mapherkenning: alle import gaat naar "Nieuwe Uploads" of geselecteerde zaal
           let detectedSeries = filterSeries || "Nieuwe Uploads";
-          if (pathParts.length > 1) {
-            // Gebruik de direct bovenliggende mapnaam als serie
-            detectedSeries = pathParts[pathParts.length - 2];
-          }
 
           const uploadPromise = uploadBytes(storageRef, file);
           const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 30000));
@@ -277,6 +271,7 @@ export default function AdminPage() {
             cropTop: 0, cropBottom: 0, cropLeft: 0, cropRight: 0, brightness: 1
           };
           
+          // Non-blocking addDoc
           addDoc(collection(firestore, 'artworks'), docData);
         } catch (e) { 
           toast({ variant: "destructive", title: "Upload Fout", description: `Kon ${file.name} niet verwerken.` });
@@ -290,7 +285,7 @@ export default function AdminPage() {
       setUploadStatus('');
       if (fileInputRef.current) fileInputRef.current.value = '';
       if (uploadDirInputRef.current) uploadDirInputRef.current.value = '';
-      toast({ title: "Klaar", description: "Verwerking voltooid." });
+      toast({ title: "Klaar", description: "Import naar Depot voltooid." });
     }
   };
 
@@ -338,7 +333,7 @@ export default function AdminPage() {
       
       <header className="h-16 border-b border-border bg-background/95 backdrop-blur-sm sticky top-14 z-40 px-8 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Link href="/" className="h-10 w-auto"><img src="/logo.png" className="h-10 w-auto" alt="Logo" /></Link>
+          <img src="/logo.png" className="h-10 w-auto" alt="Logo" />
           <h1 className="font-headline text-lg font-light">Atelier <span className="italic">Beheer</span></h1>
         </div>
         <Link href="/" className="text-[11px] uppercase tracking-widest font-black text-muted-foreground hover:text-foreground border-l border-border pl-4 flex items-center gap-2">
@@ -353,7 +348,7 @@ export default function AdminPage() {
               <TabsTrigger value="archive" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">
                 Archief (Depot) <span className="ml-2 opacity-40">[{artworks.length}]</span>
               </TabsTrigger>
-              <TabsTrigger value="upload" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Cloud Upload</TabsTrigger>
+              <TabsTrigger value="upload" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Importeer Map</TabsTrigger>
               <TabsTrigger value="texts" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Pagina Teksten</TabsTrigger>
               <TabsTrigger value="bulk" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Bulk JSON</TabsTrigger>
             </TabsList>
@@ -376,7 +371,7 @@ export default function AdminPage() {
             <div className="flex justify-between items-center h-12">
                <Button onClick={() => fileInputRef.current?.click()} variant="outline" size="sm" disabled={isUploading} className="rounded-full text-[11px] uppercase font-black tracking-widest border-accent text-accent">
                  {isUploading ? <Loader2 className="w-3 h-3 mr-2 animate-spin" /> : <Upload className="w-3 h-3 mr-2" />}
-                 Schilderij Importeren
+                 Bestand naar Depot
                </Button>
             </div>
 
@@ -384,7 +379,7 @@ export default function AdminPage() {
               <div className="bg-accent/10 border border-accent/20 p-4 rounded-2xl flex flex-wrap items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
                   <span className="text-[11px] font-black uppercase tracking-widest text-accent">{selectedIds.length} geselecteerd</span>
-                  <Input placeholder="Nieuwe zaal..." value={bulkMoveSeries} onChange={(e) => setBulkMoveSeries(e.target.value)} className="h-8 text-[11px] font-black uppercase w-48" />
+                  <Input placeholder="Verplaats naar zaal..." value={bulkMoveSeries} onChange={(e) => setBulkMoveSeries(e.target.value)} className="h-8 text-[11px] font-black uppercase w-48" />
                   <Button onClick={handleBulkMove} disabled={isSaving || !bulkMoveSeries} size="sm" className="h-8 rounded-full text-[11px] font-black uppercase tracking-widest bg-accent">
                     {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : "Verplaats Nu"}
                   </Button>
@@ -414,11 +409,15 @@ export default function AdminPage() {
           </TabsContent>
 
           <TabsContent value="upload">
-             <Card className="p-16 rounded-3xl border-dashed border-2 border-accent/20 bg-accent/5 flex flex-col items-center justify-center space-y-8 max-w-2xl mx-auto">
+             <Card className="p-16 rounded-3xl border-dashed border-2 border-accent/20 bg-accent/5 flex flex-col items-center justify-center space-y-8 max-w-2xl mx-auto text-center">
                 <CloudUpload className="w-12 h-12 text-accent" />
+                <div className="space-y-2">
+                  <h3 className="text-[12px] font-black uppercase tracking-widest">Bulk Import naar Depot</h3>
+                  <p className="text-[10px] uppercase opacity-40 leading-relaxed">Alle afbeeldingen in de geselecteerde map (inclusief submappen) worden direct naar het centrale Depot geüpload.</p>
+                </div>
                 <div className="grid grid-cols-2 gap-4 w-full">
                   <Button onClick={() => fileInputRef.current?.click()} disabled={isUploading} className="h-24 rounded-2xl font-black uppercase tracking-widest text-[11px]"><Plus className="w-4 h-4 mr-2" />Bestanden</Button>
-                  <Button onClick={() => uploadDirInputRef.current?.click()} disabled={isUploading} variant="secondary" className="h-24 rounded-2xl font-black uppercase tracking-widest text-[11px]"><FolderOpen className="w-4 h-4 mr-2" />Map</Button>
+                  <Button onClick={() => uploadDirInputRef.current?.click()} disabled={isUploading} variant="secondary" className="h-24 rounded-2xl font-black uppercase tracking-widest text-[11px]"><FolderOpen className="w-4 h-4 mr-2" />Volledige Map</Button>
                 </div>
                 {isUploading && (
                   <div className="w-full space-y-4">
