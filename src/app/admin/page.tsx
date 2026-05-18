@@ -200,14 +200,14 @@ export default function AdminPage() {
       .then(() => {
         toast({ title: "Verplaatst", description: `${selectedIds.length} werken verplaatst naar ${bulkMoveSeries}` });
       })
-      .catch(async () => {
+      .catch(() => {
         toast({ variant: "destructive", title: "Fout", description: "Kon de werken niet verplaatsen." });
+      })
+      .finally(() => {
+        setSelectedIds([]);
+        setBulkMoveSeries('');
+        setIsSaving(false);
       });
-
-    // Optimistische deblokkering
-    setSelectedIds([]);
-    setBulkMoveSeries('');
-    setIsSaving(false);
   };
 
   const handleBulkDelete = () => {
@@ -219,10 +219,11 @@ export default function AdminPage() {
     
     batch.commit()
       .then(() => toast({ title: "Verwijderd", description: `${selectedIds.length} werken verwijderd` }))
-      .catch(() => toast({ variant: "destructive", title: "Fout", description: "Kon de werken niet verwijderen." }));
-
-    setSelectedIds([]);
-    setIsSaving(false);
+      .catch(() => toast({ variant: "destructive", title: "Fout", description: "Kon de werken niet verwijderen." }))
+      .finally(() => {
+        setSelectedIds([]);
+        setIsSaving(false);
+      });
   };
 
   const toggleSelect = (e: React.MouseEvent, id: string) => {
@@ -260,7 +261,7 @@ export default function AdminPage() {
           const safeName = file.name.replace(/[^a-z0-9.]/gi, '_');
           const storageRef = ref(storage, `artworks/${timestamp}_${safeName}`);
           
-          setUploadStatus(`Uploaden: ${file.name}...`);
+          setUploadStatus(`Uploaden: ${file.name}... (${processed + 1}/${totalFiles})`);
           const snapshot: any = await uploadWithTimeout(storageRef, file);
           const downloadUrl = await getDownloadURL(snapshot.ref);
           
@@ -320,10 +321,11 @@ export default function AdminPage() {
       
       batch.commit()
         .then(() => toast({ title: "Import Succesvol", description: `${dataToImport.length} werken geïmporteerd.` }))
-        .catch(() => toast({ variant: "destructive", title: "Import Fout", description: "Check de database-regels." }));
-      
-      setBulkJson('');
-      setIsSaving(false);
+        .catch(() => toast({ variant: "destructive", title: "Import Fout", description: "Check de database-regels." }))
+        .finally(() => {
+          setBulkJson('');
+          setIsSaving(false);
+        });
     } catch (e) { 
       toast({ variant: "destructive", title: "Import Fout", description: "Check de JSON structuur." }); 
       setIsSaving(false);

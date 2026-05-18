@@ -15,7 +15,8 @@ export function useCollection<T = DocumentData>(collectionQuery: Query<T> | null
   const [loading, setLoading] = useState(!!collectionQuery);
   const [error, setError] = useState<Error | null>(null);
   
-  const lastQueryRef = useRef<string | null>(null);
+  // Gebruik een ref om het query-pad te tracken in plaats van de query-instantie zelf
+  const queryRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!collectionQuery) {
@@ -24,11 +25,12 @@ export function useCollection<T = DocumentData>(collectionQuery: Query<T> | null
       return;
     }
 
-    // Gebruik de string-representatie van de query om onnodige re-renders te voorkomen
-    const queryKey = JSON.stringify((collectionQuery as any)._query || collectionQuery);
-    if (queryKey !== lastQueryRef.current) {
-      if (!data) setLoading(true); // Alleen loader bij eerste keer of echte verandering
-      lastQueryRef.current = queryKey;
+    // Stabiliseer de query-check op basis van de interne query-structuur
+    const currentQueryKey = (collectionQuery as any)._query?.path?.toString() || 'unknown';
+    
+    if (currentQueryKey !== queryRef.current) {
+      if (!data) setLoading(true);
+      queryRef.current = currentQueryKey;
     }
 
     const unsubscribe = onSnapshot(

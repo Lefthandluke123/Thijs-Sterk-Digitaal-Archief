@@ -27,7 +27,7 @@ export const FirebaseProvider: React.FC<{
   storage: FirebaseStorage;
   children: React.ReactNode;
 }> = ({ firebaseApp, firestore, auth, storage, children }) => {
-  // Memoize the value to prevent unnecessary re-renders of all consumers
+  // Memoizeer de context-waarde om onnodige re-renders van consumenten te voorkomen
   const value = useMemo(() => ({ 
     firebaseApp, 
     firestore, 

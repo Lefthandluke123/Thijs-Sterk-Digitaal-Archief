@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useMemo, Suspense } from 'react';
@@ -33,7 +32,12 @@ function NavbarContent() {
   const seriesNames = useMemo(() => {
     if (!dbArtworks) return [];
     const combined = Array.from(new Set(dbArtworks.map(art => art.series).filter(Boolean)));
-    return (combined as string[]).filter(s => s !== "Monumentaal" && s !== "Glas in lood" && s !== "Nieuwe Uploads" && s !== "Geen zaal").sort();
+    return (combined as string[]).filter(s => 
+      s !== "Monumentaal" && 
+      s !== "Glas in lood" && 
+      s !== "Nieuwe Uploads" && 
+      s !== "Geen zaal"
+    ).sort();
   }, [dbArtworks]);
 
   useEffect(() => {
@@ -86,7 +90,7 @@ function NavbarContent() {
                   </DropdownMenuItem>
                 ))
               ) : (
-                <div className="p-4 text-center text-[9px] uppercase opacity-20">Laden...</div>
+                <div className="p-4 text-center text-[9px] uppercase opacity-20">Geen actieve zalen</div>
               )}
             </DropdownMenuContent>
           </DropdownMenu>
