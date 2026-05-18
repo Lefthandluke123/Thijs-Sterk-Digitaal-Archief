@@ -287,13 +287,14 @@ export default function AdminPage() {
 
     for (const file of filesArray) {
       try {
-        setUploadStatus(`Verwerken: ${file.name} (${processedCount + 1}/${totalFiles})`);
+        setUploadStatus(`Uploaden: ${file.name} (${processedCount + 1}/${totalFiles})`);
         
         const timestamp = Date.now();
         const randomId = Math.random().toString(36).substring(2, 8);
         const safeName = file.name.replace(/[^a-z0-9.]/gi, '_');
         const storageRef = ref(storage, `artworks/${timestamp}_${randomId}_${safeName}`);
         
+        // Wacht op Storage upload
         const snapshot = await uploadBytes(storageRef, file);
         const downloadUrl = await getDownloadURL(snapshot.ref);
         
@@ -310,7 +311,16 @@ export default function AdminPage() {
           cropTop: 0, cropBottom: 0, cropLeft: 0, cropRight: 0, brightness: 1
         };
         
-        await addDoc(collection(firestore, 'artworks'), docData);
+        // Start Firestore write (niet awaiten volgens richtlijn)
+        addDoc(collection(firestore, 'artworks'), docData)
+          .catch(async () => {
+             errorEmitter.emit('permission-error', new FirestorePermissionError({
+               path: 'artworks',
+               operation: 'create',
+               requestResourceData: docData
+             }));
+          });
+
         processedCount++;
         setUploadProgress((processedCount / totalFiles) * 100);
       } catch (e) {
@@ -324,7 +334,7 @@ export default function AdminPage() {
     setUploadProgress(0);
     if (fileInputRef.current) fileInputRef.current.value = '';
     if (uploadDirInputRef.current) uploadDirInputRef.current.value = '';
-    toast({ title: "Klaar", description: "Alle bestanden zijn succesvol aan het Depot toegevoegd." });
+    toast({ title: "Klaar", description: "Alle bestanden zijn toegevoegd aan de cloud." });
   };
 
   const handleImportJson = () => {
@@ -425,6 +435,22 @@ export default function AdminPage() {
       <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={(e) => handleBatchProcess(e.target.files)} accept="image/*" multiple />
       <input type="file" ref={uploadDirInputRef} style={{ display: 'none' }} onChange={(e) => handleBatchProcess(e.target.files)} {...({ webkitdirectory: "", directory: "" } as any)} />
       
+      {/* Globale Statusbalk voor Uploads - Nu op top-0 */}
+      {isUploading && (
+        <div className="fixed top-0 left-0 right-0 z-[100] bg-accent text-accent-foreground px-8 py-4 shadow-2xl animate-in slide-in-from-top duration-500 border-b border-black/10">
+          <div className="max-w-7xl mx-auto flex flex-col gap-3">
+            <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-[0.2em]">
+              <div className="flex items-center gap-3">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>{uploadStatus}</span>
+              </div>
+              <span className="tabular-nums">{Math.round(uploadProgress)}%</span>
+            </div>
+            <Progress value={uploadProgress} className="h-2 bg-white/20" />
+          </div>
+        </div>
+      )}
+
       <header className="h-16 border-b border-border bg-background/95 backdrop-blur-sm sticky top-14 z-40 px-8 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <img src="/logo.png" className="h-10 w-auto" alt="Logo" />
@@ -434,22 +460,6 @@ export default function AdminPage() {
           <ArrowLeft className="w-3 h-3" /> Website
         </Link>
       </header>
-
-      {/* Globale Statusbalk voor Uploads */}
-      {isUploading && (
-        <div className="fixed top-[112px] left-0 right-0 z-[100] bg-accent text-accent-foreground px-8 py-3 shadow-2xl animate-in slide-in-from-top duration-500 border-b border-black/10">
-          <div className="max-w-7xl mx-auto flex flex-col gap-2">
-            <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-[0.2em]">
-              <div className="flex items-center gap-3">
-                <Loader2 className="w-3 h-3 animate-spin" />
-                <span>{uploadStatus}</span>
-              </div>
-              <span className="tabular-nums">{Math.round(uploadProgress)}%</span>
-            </div>
-            <Progress value={uploadProgress} className="h-1.5 bg-white/20" />
-          </div>
-        </div>
-      )}
 
       <main className="flex-1 p-8 max-w-7xl mx-auto w-full">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
