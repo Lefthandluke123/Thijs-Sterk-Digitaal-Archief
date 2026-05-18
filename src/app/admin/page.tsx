@@ -29,7 +29,8 @@ import {
   CheckSquare,
   FileJson,
   Type,
-  Upload
+  Upload,
+  Download
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -115,7 +116,6 @@ export default function AdminPage() {
 
   const { data: rawArtworks, loading: isCollectionLoading } = useCollection(artworksQuery);
 
-  // Deduplicatie op basis van imageUrl voor een zuiver Depot
   const artworks = useMemo(() => {
     if (!rawArtworks) return [];
     const seen = new Set();
@@ -249,8 +249,6 @@ export default function AdminPage() {
           const storageRef = ref(storage, `artworks/${timestamp}_${safeName}`);
           
           setUploadStatus(`Uploaden: ${file.name}... (${processed + 1}/${totalFiles})`);
-          
-          // GEEN slimme mapherkenning: alle import gaat naar "Nieuwe Uploads" of geselecteerde zaal
           let detectedSeries = filterSeries || "Nieuwe Uploads";
 
           const uploadPromise = uploadBytes(storageRef, file);
@@ -271,7 +269,6 @@ export default function AdminPage() {
             cropTop: 0, cropBottom: 0, cropLeft: 0, cropRight: 0, brightness: 1
           };
           
-          // Non-blocking addDoc
           addDoc(collection(firestore, 'artworks'), docData);
         } catch (e) { 
           toast({ variant: "destructive", title: "Upload Fout", description: `Kon ${file.name} niet verwerken.` });
@@ -322,6 +319,24 @@ export default function AdminPage() {
       toast({ variant: "destructive", title: "Import Fout", description: "Check JSON." }); 
       setIsSaving(false);
     }
+  };
+
+  const handleExportBackup = () => {
+    if (!artworks || artworks.length === 0) {
+      toast({ title: "Leeg Depot", description: "Niets te exporteren." });
+      return;
+    }
+    const dataStr = JSON.stringify(artworks, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `thijs-sterk-depot-backup-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast({ title: "Backup Geslaagd", description: "Depot opgeslagen op uw computer." });
   };
 
   const STANDARD_TAGS = ["Groet", "Schoorl", "Hargen", "Amsterdam", "Frankrijk", "Griekenland", "Olieverf", "Aquarel", "Monumentaal", "Glas in lood", "Bloemen", "Dieren", "Water", "Portretten"];
@@ -444,10 +459,21 @@ export default function AdminPage() {
 
           <TabsContent value="bulk">
             <Card className="p-8 rounded-3xl max-w-4xl mx-auto space-y-6">
-              <div className="flex items-center justify-between">
-                <Label className="text-[11px] font-black text-black uppercase tracking-widest">JSON Data Import</Label>
-                <Button variant="outline" size="sm" onClick={() => jsonFileInputRef.current?.click()} className="text-[11px] uppercase tracking-widest font-black">Kies Bestand</Button>
+              <div className="flex items-center justify-between border-b border-black/5 pb-4">
+                <div className="flex items-center gap-3">
+                  <FileJson className="w-5 h-5 text-accent" />
+                  <h2 className="text-[12px] font-black uppercase tracking-widest">Backup & Bulk Import</h2>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={handleExportBackup} className="text-[11px] uppercase tracking-widest font-black border-accent text-accent">
+                    <Download className="w-3 h-3 mr-2" /> Backup Depot
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => jsonFileInputRef.current?.click()} className="text-[11px] uppercase tracking-widest font-black">
+                    Kies Bestand
+                  </Button>
+                </div>
               </div>
+              
               <input type="file" ref={jsonFileInputRef} style={{ display: 'none' }} accept=".json" onChange={(e) => {
                 const file = e.target.files?.[0];
                 if (!file) return;
@@ -455,8 +481,16 @@ export default function AdminPage() {
                 reader.onload = (ev) => setBulkJson(ev.target?.result as string);
                 reader.readAsText(file);
               }} />
-              <Textarea value={bulkJson} onChange={(e) => setBulkJson(e.target.value)} placeholder='[{"title": "Werk", "imageUrl": "..."}]' className="min-h-[300px] font-mono text-[10px] bg-black/5" />
-              <Button onClick={handleImportJson} disabled={isSaving || !bulkJson} className="h-14 rounded-xl font-black uppercase tracking-widest w-full">Importeer naar Cloud</Button>
+              
+              <div className="space-y-4">
+                <Label className="text-[10px] font-black uppercase tracking-widest opacity-40">JSON Data (Import)</Label>
+                <Textarea value={bulkJson} onChange={(e) => setBulkJson(e.target.value)} placeholder='[{"title": "Werk", "imageUrl": "..."}]' className="min-h-[300px] font-mono text-[10px] bg-black/5 border-none rounded-xl" />
+              </div>
+
+              <Button onClick={handleImportJson} disabled={isSaving || !bulkJson} className="h-14 rounded-xl font-black uppercase tracking-widest w-full">
+                {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Upload className="w-4 h-4 mr-2" />}
+                Importeer naar Cloud
+              </Button>
             </Card>
           </TabsContent>
         </Tabs>
