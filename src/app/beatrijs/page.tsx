@@ -6,13 +6,12 @@ import Image from 'next/image';
 import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
-import { Dialog, DialogContent, DialogTitle, DialogClose } from '@/components/ui/dialog';
-import { X, Maximize2 } from 'lucide-react';
+import { Maximize2 } from 'lucide-react';
+import { ArtworkViewer } from '@/components/artwork-viewer';
 
 export default function BeatrijsSterkPage() {
+  const [activeArtwork, setActiveArtwork] = useState<any | null>(null);
   const [selectedArtworkId, setSelectedArtworkId] = useState<string | null>(null);
-  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
-  const [isFullScreen, setIsFullScreen] = useState(false);
   const firestore = useFirestore();
 
   const siteSettingsRef = useMemoFirebase(() => {
@@ -25,12 +24,31 @@ export default function BeatrijsSterkPage() {
     if (!firestore || !selectedArtworkId) return null;
     return doc(firestore, 'artworks', selectedArtworkId);
   }, [firestore, selectedArtworkId]);
+  
   const { data: selectedArtwork } = useDoc(linkedArtworkRef);
+
+  // Zodra het gelinkte artwork geladen is, openen we de viewer
+  React.useEffect(() => {
+    if (selectedArtwork) {
+      setActiveArtwork(selectedArtwork);
+    }
+  }, [selectedArtwork]);
 
   const bioText = siteSettings?.beatrijsBio || `Beatrijs Sterk deelt als dochter de passie voor het landschap en de atmosferische rust die haar vaders werk zo typeert.`;
   
   const images = siteSettings?.beatrijsBioImages || [];
   const hasMultipleImages = images.length > 1;
+
+  const handlePortraitClick = (url: string, index: number) => {
+    setActiveArtwork({
+      imageUrl: url,
+      title: `Portret Beatrijs Sterk`,
+      series: "Archieffoto",
+      year: index === 0 ? "Hoofdfoto" : `Foto ${index + 1}`,
+      medium: "Fotografie",
+      id: `portrait-${index}`
+    });
+  };
 
   const renderTextWithLinks = (text: string) => {
     const parts = text.split(/(\[\[.*?\]\])/g);
@@ -41,7 +59,7 @@ export default function BeatrijsSterkPage() {
         return (
           <button
             key={i}
-            onClick={() => { setSelectedArtworkId(id); setIsFullScreen(false); }}
+            onClick={() => { setSelectedArtworkId(id); }}
             className="text-accent hover:underline font-bold inline-block decoration-accent/30 underline-offset-4"
           >
             {label}
@@ -66,7 +84,7 @@ export default function BeatrijsSterkPage() {
                       "relative overflow-hidden rounded-2xl shadow-2xl bg-secondary/20 transition-all duration-700 hover:scale-[1.02] cursor-pointer group",
                       idx === 0 ? "aspect-[3/4]" : "aspect-square"
                     )}
-                    onClick={() => setPreviewImageUrl(url)}
+                    onClick={() => handlePortraitClick(url, idx)}
                   >
                     <Image 
                       src={url} 
@@ -87,7 +105,7 @@ export default function BeatrijsSterkPage() {
             ) : (
               <div 
                 className="relative aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl bg-secondary/20 cursor-pointer group"
-                onClick={() => setPreviewImageUrl("https://picsum.photos/seed/beatrijs/800/1000")}
+                onClick={() => handlePortraitClick("https://picsum.photos/seed/beatrijs/800/1000", 0)}
               >
                 <Image 
                   src="https://picsum.photos/seed/beatrijs/800/1000" 
@@ -127,62 +145,10 @@ export default function BeatrijsSterkPage() {
         </div>
       </div>
 
-      {/* Viewer voor Portretten */}
-      <Dialog open={!!previewImageUrl} onOpenChange={() => setPreviewImageUrl(null)}>
-        <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background border-none rounded-none overflow-hidden outline-none">
-          <DialogTitle className="sr-only">Portrait Viewer</DialogTitle>
-          <div className="relative h-[100vh] w-full flex items-center justify-center overflow-hidden bg-black/5">
-            {previewImageUrl && (
-              <img src={previewImageUrl} className="max-w-[90%] max-h-[90%] object-contain shadow-2xl" alt="Beatrijs Sterk Portrait" />
-            )}
-            <DialogClose className="absolute top-8 right-8 z-50 p-3 bg-background/10 backdrop-blur-sm rounded-full hover:bg-background/20 transition-all shadow-xl">
-              <X className="w-6 h-6 opacity-40" />
-            </DialogClose>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Viewer voor Gelinkte Kunstwerken */}
-      <Dialog open={!!selectedArtworkId} onOpenChange={(open) => { if (!open) setSelectedArtworkId(null); }}>
-        <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background border-none rounded-none overflow-hidden outline-none">
-          <DialogTitle className="sr-only">Artwork Viewer</DialogTitle>
-          <div 
-            className={cn(
-              "relative w-full flex items-center justify-center overflow-hidden bg-black/5 group transition-all duration-500 cursor-pointer",
-              isFullScreen ? "h-[100vh]" : "h-[75vh]"
-            )}
-            onClick={() => setIsFullScreen(!isFullScreen)}
-          >
-            {selectedArtwork && (
-              <img 
-                src={selectedArtwork.imageUrl} 
-                className="max-w-full max-h-[90%] object-contain p-4 md:p-16 shadow-2xl transition-all duration-700" 
-                style={{ 
-                  clipPath: `inset(${selectedArtwork.cropTop || 0}% ${selectedArtwork.cropRight || 0}% ${selectedArtwork.cropBottom || 0}% ${selectedArtwork.cropLeft || 0}%)`, 
-                  filter: `brightness(${selectedArtwork.brightness || 1})` 
-                }} 
-                alt={selectedArtwork.title}
-              />
-            )}
-            <DialogClose className="absolute top-8 right-8 z-50 p-3 bg-background/10 backdrop-blur-sm rounded-full hover:bg-background/20 transition-all shadow-xl" onClick={(e) => e.stopPropagation()}>
-              <X className="w-6 h-6 opacity-40" />
-            </DialogClose>
-          </div>
-          <div className={cn(
-            "w-full bg-background/95 backdrop-blur-md py-8 px-12 border-t border-border/10 flex flex-col items-center justify-center overflow-y-auto text-center transition-all duration-500",
-            isFullScreen ? "h-0 opacity-0 pointer-events-none py-0 px-0" : "h-[25vh] opacity-100"
-          )}>
-            <h2 className="text-[10px] md:text-[11px] font-black tracking-[0.4em] uppercase text-foreground/40 mb-4">{selectedArtwork?.title}</h2>
-            <div className="text-[12px] md:text-[14px] uppercase font-black tracking-[0.5em] text-accent flex flex-wrap gap-x-12 gap-y-4 justify-center items-center">
-              <span className="bg-accent/10 px-6 py-1.5 rounded-sm">Zaal: {selectedArtwork?.series}</span>
-              <span className="w-2 h-2 rounded-full bg-accent/30 self-center hidden md:inline" />
-              <span>{selectedArtwork?.year}</span>
-              <span className="w-2 h-2 rounded-full bg-accent/30 self-center hidden md:inline" />
-              <span>{selectedArtwork?.medium}</span>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <ArtworkViewer 
+        artwork={activeArtwork} 
+        onClose={() => { setActiveArtwork(null); setSelectedArtworkId(null); }} 
+      />
     </main>
   );
 }
