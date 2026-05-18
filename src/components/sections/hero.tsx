@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useMemo, useState } from 'react';
@@ -7,9 +8,11 @@ import { ArrowDownRight, Maximize2, X } from 'lucide-react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where, limit } from 'firebase/firestore';
 import { Dialog, DialogContent, DialogTitle, DialogClose } from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
 
 export function Hero() {
   const [isViewerOpen, setIsViewerOpen] = useState(false);
+  const [isFullScreen, setIsFullScreen] = useState(false);
   const firestore = useFirestore();
   const featuredQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -58,7 +61,7 @@ export function Hero() {
       <div className="container mx-auto mt-12 z-10 px-4 animate-fade-in-up delay-500 max-w-4xl">
         <div 
           className="relative aspect-[21/9] w-full rounded-2xl overflow-hidden shadow-xl border border-border/10 cursor-pointer group"
-          onClick={() => setIsViewerOpen(true)}
+          onClick={() => { setIsViewerOpen(true); setIsFullScreen(false); }}
         >
           <Image
             src={heroImage}
@@ -75,10 +78,16 @@ export function Hero() {
         </div>
       </div>
 
-      <Dialog open={isViewerOpen} onOpenChange={setIsViewerOpen}>
+      <Dialog open={isViewerOpen} onOpenChange={(open) => { setIsViewerOpen(open); if (!open) setIsFullScreen(false); }}>
         <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background border-none rounded-none overflow-hidden outline-none">
           <DialogTitle className="sr-only">Hero Viewer</DialogTitle>
-          <div className="relative h-[75vh] w-full flex items-center justify-center overflow-hidden bg-black/5 group">
+          <div 
+            className={cn(
+              "relative w-full flex items-center justify-center overflow-hidden bg-black/5 group transition-all duration-500 cursor-pointer",
+              isFullScreen ? "h-[100vh]" : "h-[75vh]"
+            )}
+            onClick={() => setIsFullScreen(!isFullScreen)}
+          >
             {artwork ? (
               <img 
                 src={artwork.imageUrl} 
@@ -92,11 +101,14 @@ export function Hero() {
             ) : (
               <img src={heroImage} className="max-w-full max-h-[90%] object-contain p-4 md:p-16 shadow-2xl" />
             )}
-            <DialogClose className="absolute top-8 right-8 z-50 p-3 bg-background/10 backdrop-blur-sm rounded-full hover:bg-background/20 transition-all">
+            <DialogClose className="absolute top-8 right-8 z-50 p-3 bg-background/10 backdrop-blur-sm rounded-full hover:bg-background/20 transition-all" onClick={(e) => e.stopPropagation()}>
               <X className="w-6 h-6 opacity-40" />
             </DialogClose>
           </div>
-          <div className="h-[25vh] w-full bg-background/95 backdrop-blur-md py-8 px-12 border-t border-border/10 flex flex-col items-center justify-center overflow-y-auto text-center">
+          <div className={cn(
+            "w-full bg-background/95 backdrop-blur-md py-8 px-12 border-t border-border/10 flex flex-col items-center justify-center overflow-y-auto text-center transition-all duration-500",
+            isFullScreen ? "h-0 opacity-0 pointer-events-none py-0 px-0" : "h-[25vh] opacity-100"
+          )}>
             <h2 className="text-[10px] md:text-[11px] font-black tracking-[0.4em] uppercase text-foreground/40 mb-4">
               {artwork?.title || "Meesterwerk"}
             </h2>

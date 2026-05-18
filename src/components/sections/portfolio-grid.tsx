@@ -6,9 +6,11 @@ import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where, limit, orderBy } from 'firebase/firestore';
 import { Dialog, DialogContent, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { Maximize2, Loader2, X, Star, ChevronLeft, ChevronRight } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export function PortfolioGrid() {
   const [selectedArtwork, setSelectedArtwork] = useState<any | null>(null);
+  const [isFullScreen, setIsFullScreen] = useState(false);
   const firestore = useFirestore();
 
   const artworksQuery = useMemoFirebase(() => {
@@ -24,7 +26,6 @@ export function PortfolioGrid() {
   const { data: featuredArtworks, loading: loadingFeatured } = useCollection(artworksQuery);
   const { data: latestArtworks, loading: loadingLatest } = useCollection(latestQuery);
 
-  // Exclusief database-artikelen, deduplicatie op imageUrl
   const displayArtworks = useMemo(() => {
     const raw = featuredArtworks && featuredArtworks.length > 0 
       ? featuredArtworks 
@@ -80,7 +81,7 @@ export function PortfolioGrid() {
         ) : displayArtworks.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {displayArtworks.map(art => (
-              <div key={art.id} className="group relative cursor-pointer" onClick={() => setSelectedArtwork(art)}>
+              <div key={art.id} className="group relative cursor-pointer" onClick={() => { setSelectedArtwork(art); setIsFullScreen(false); }}>
                 <div className="relative aspect-square overflow-hidden rounded-sm bg-muted/30 transition-all duration-700 group-hover:shadow-2xl">
                   <img 
                     src={art.imageUrl} 
@@ -107,10 +108,16 @@ export function PortfolioGrid() {
         )}
       </div>
 
-      <Dialog open={!!selectedArtwork} onOpenChange={() => setSelectedArtwork(null)}>
+      <Dialog open={!!selectedArtwork} onOpenChange={(open) => { if (!open) setSelectedArtwork(null); }}>
         <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background border-none rounded-none overflow-hidden outline-none">
-          <DialogTitle className="sr-only">Viewer (75/25)</DialogTitle>
-          <div className="relative h-[75vh] w-full bg-black/5 flex items-center justify-center overflow-hidden group">
+          <DialogTitle className="sr-only">Viewer</DialogTitle>
+          <div 
+            className={cn(
+              "relative w-full bg-black/5 flex items-center justify-center overflow-hidden group transition-all duration-500 cursor-pointer",
+              isFullScreen ? "h-[100vh]" : "h-[75vh]"
+            )}
+            onClick={() => setIsFullScreen(!isFullScreen)}
+          >
             {selectedArtwork && (
               <img 
                 src={selectedArtwork.imageUrl} 
@@ -123,18 +130,21 @@ export function PortfolioGrid() {
               />
             )}
             <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-8 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity">
-              <button onClick={() => navigateDisplay('prev')} className="p-4 rounded-full bg-background/20 backdrop-blur-md pointer-events-auto hover:bg-background/40 transition-all shadow-xl">
+              <button onClick={(e) => { e.stopPropagation(); navigateDisplay('prev'); }} className="p-4 rounded-full bg-background/20 backdrop-blur-md pointer-events-auto hover:bg-background/40 transition-all shadow-xl">
                 <ChevronLeft className="w-8 h-8" />
               </button>
-              <button onClick={() => navigateDisplay('next')} className="p-4 rounded-full bg-background/20 backdrop-blur-md pointer-events-auto hover:bg-background/40 transition-all shadow-xl">
+              <button onClick={(e) => { e.stopPropagation(); navigateDisplay('next'); }} className="p-4 rounded-full bg-background/20 backdrop-blur-md pointer-events-auto hover:bg-background/40 transition-all shadow-xl">
                 <ChevronRight className="w-8 h-8" />
               </button>
             </div>
-            <DialogClose className="absolute top-8 right-8 z-50 p-3 bg-background/10 backdrop-blur-sm rounded-full hover:bg-background/20 transition-all shadow-xl">
+            <DialogClose className="absolute top-8 right-8 z-50 p-3 bg-background/10 backdrop-blur-sm rounded-full hover:bg-background/20 transition-all shadow-xl" onClick={(e) => e.stopPropagation()}>
               <X className="w-6 h-6 opacity-40" />
             </DialogClose>
           </div>
-          <div className="h-[25vh] w-full bg-background/95 backdrop-blur-md py-8 px-12 border-t border-border/10 flex flex-col items-center justify-center overflow-y-auto text-center">
+          <div className={cn(
+            "w-full bg-background/95 backdrop-blur-md py-8 px-12 border-t border-border/10 flex flex-col items-center justify-center overflow-y-auto text-center transition-all duration-500",
+            isFullScreen ? "h-0 opacity-0 pointer-events-none py-0 px-0" : "h-[25vh] opacity-100"
+          )}>
             <h2 className="text-[10px] md:text-[11px] font-black tracking-[0.4em] uppercase text-foreground/40 mb-4">{selectedArtwork?.title}</h2>
             <div className="text-[12px] md:text-[14px] uppercase font-black tracking-[0.5em] text-accent flex flex-wrap gap-x-12 gap-y-4 justify-center items-center opacity-100">
               <span className="bg-accent/10 px-6 py-1.5 rounded-sm">Zaal: {selectedArtwork?.series}</span>

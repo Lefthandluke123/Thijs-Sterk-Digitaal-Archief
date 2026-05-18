@@ -12,6 +12,7 @@ import { X, Maximize2 } from 'lucide-react';
 export default function PeterBesPage() {
   const [selectedArtworkId, setSelectedArtworkId] = useState<string | null>(null);
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+  const [isFullScreen, setIsFullScreen] = useState(false);
   const firestore = useFirestore();
 
   const siteSettingsRef = useMemoFirebase(() => {
@@ -40,7 +41,7 @@ export default function PeterBesPage() {
         return (
           <button
             key={i}
-            onClick={() => setSelectedArtworkId(id)}
+            onClick={() => { setSelectedArtworkId(id); setIsFullScreen(false); }}
             className="text-accent hover:underline font-bold inline-block decoration-accent/30 underline-offset-4"
           >
             {label}
@@ -142,10 +143,16 @@ export default function PeterBesPage() {
       </Dialog>
 
       {/* Viewer voor Gelinkte Kunstwerken */}
-      <Dialog open={!!selectedArtworkId} onOpenChange={() => setSelectedArtworkId(null)}>
+      <Dialog open={!!selectedArtworkId} onOpenChange={(open) => { if (!open) setSelectedArtworkId(null); }}>
         <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background border-none rounded-none overflow-hidden outline-none">
           <DialogTitle className="sr-only">Artwork Viewer</DialogTitle>
-          <div className="relative h-[75vh] w-full flex items-center justify-center overflow-hidden bg-black/5 group">
+          <div 
+            className={cn(
+              "relative w-full flex items-center justify-center overflow-hidden bg-black/5 group transition-all duration-500 cursor-pointer",
+              isFullScreen ? "h-[100vh]" : "h-[75vh]"
+            )}
+            onClick={() => setIsFullScreen(!isFullScreen)}
+          >
             {selectedArtwork && (
               <img 
                 src={selectedArtwork.imageUrl} 
@@ -157,11 +164,14 @@ export default function PeterBesPage() {
                 alt={selectedArtwork.title}
               />
             )}
-            <DialogClose className="absolute top-8 right-8 z-50 p-3 bg-background/10 backdrop-blur-sm rounded-full hover:bg-background/20 transition-all shadow-xl">
+            <DialogClose className="absolute top-8 right-8 z-50 p-3 bg-background/10 backdrop-blur-sm rounded-full hover:bg-background/20 transition-all shadow-xl" onClick={(e) => e.stopPropagation()}>
               <X className="w-6 h-6 opacity-40" />
             </DialogClose>
           </div>
-          <div className="h-[25vh] w-full bg-background/95 backdrop-blur-md py-8 px-12 border-t border-border/10 flex flex-col items-center justify-center overflow-y-auto text-center">
+          <div className={cn(
+            "w-full bg-background/95 backdrop-blur-md py-8 px-12 border-t border-border/10 flex flex-col items-center justify-center overflow-y-auto text-center transition-all duration-500",
+            isFullScreen ? "h-0 opacity-0 pointer-events-none py-0 px-0" : "h-[25vh] opacity-100"
+          )}>
             <h2 className="text-[10px] md:text-[11px] font-black tracking-[0.4em] uppercase text-foreground/40 mb-4">{selectedArtwork?.title}</h2>
             <div className="text-[12px] md:text-[14px] uppercase font-black tracking-[0.5em] text-accent flex flex-wrap gap-x-12 gap-y-4 justify-center items-center">
               <span className="bg-accent/10 px-6 py-1.5 rounded-sm">Zaal: {selectedArtwork?.series}</span>
