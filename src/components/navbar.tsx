@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useMemo, Suspense } from 'react';
@@ -29,15 +30,24 @@ function NavbarContent() {
 
   const { data: dbArtworks } = useCollection(artworksQuery);
 
-  const seriesNames = useMemo(() => {
+  const seriesWithCounts = useMemo(() => {
     if (!dbArtworks) return [];
-    const combined = Array.from(new Set(dbArtworks.map(art => art.series).filter(Boolean)));
-    return (combined as string[]).filter(s => 
-      s !== "Monumentaal" && 
-      s !== "Glas in lood" && 
-      s !== "Nieuwe Uploads" && 
-      s !== "Geen zaal"
-    ).sort();
+    const counts: Record<string, number> = {};
+    dbArtworks.forEach(art => {
+      if (art.series) {
+        counts[art.series] = (counts[art.series] || 0) + 1;
+      }
+    });
+    
+    return Object.entries(counts)
+      .filter(([name]) => 
+        name !== "Monumentaal" && 
+        name !== "Glas in lood" && 
+        name !== "Nieuwe Uploads" && 
+        name !== "Geen zaal"
+      )
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => a.name.localeCompare(b.name));
   }, [dbArtworks]);
 
   useEffect(() => {
@@ -83,10 +93,12 @@ function NavbarContent() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="bg-background/98 backdrop-blur-xl border-border/40 rounded-2xl min-w-[220px] p-2 shadow-2xl">
               <DropdownMenuLabel className="text-[9px] uppercase tracking-[0.2em] opacity-40 px-3 py-2">Collecties</DropdownMenuLabel>
-              {seriesNames.length > 0 ? (
-                seriesNames.map((name) => (
-                  <DropdownMenuItem key={name} asChild className="text-[10px] uppercase font-black tracking-[0.15em] focus:bg-accent focus:text-accent-foreground rounded-xl cursor-pointer p-3 mb-1">
-                    <Link href={`/gallery?series=${encodeURIComponent(name)}`}>{name}</Link>
+              {seriesWithCounts.length > 0 ? (
+                seriesWithCounts.map((s) => (
+                  <DropdownMenuItem key={s.name} asChild className="text-[10px] uppercase font-black tracking-[0.15em] focus:bg-accent focus:text-accent-foreground rounded-xl cursor-pointer p-3 mb-1">
+                    <Link href={`/gallery?series=${encodeURIComponent(s.name)}`}>
+                      {s.name} <span className="ml-auto opacity-30 text-[8px]">({s.count})</span>
+                    </Link>
                   </DropdownMenuItem>
                 ))
               ) : (

@@ -30,19 +30,25 @@ function GalleryContent() {
     return [...fromDb, ...PlaceHolderImages];
   }, [dbArtworks]);
 
-  const seriesNames = useMemo(() => {
-    const names = Array.from(new Set(artworks.map(art => art.series || "Geen zaal")));
-    return names.sort();
+  const seriesWithCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    artworks.forEach(art => {
+      const name = art.series || "Geen zaal";
+      counts[name] = (counts[name] || 0) + 1;
+    });
+    return Object.entries(counts)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => a.name.localeCompare(b.name));
   }, [artworks]);
 
   useEffect(() => {
     const s = searchParams.get('series');
     if (s) {
       setActiveSeries(s);
-    } else if (seriesNames.length > 0 && !activeSeries) {
-      setActiveSeries(seriesNames[0]);
+    } else if (seriesWithCounts.length > 0 && !activeSeries) {
+      setActiveSeries(seriesWithCounts[0].name);
     }
-  }, [searchParams, seriesNames, activeSeries]);
+  }, [searchParams, seriesWithCounts, activeSeries]);
 
   const filteredArtworks = useMemo(() => {
     if (!activeSeries) return [];
@@ -87,16 +93,16 @@ function GalleryContent() {
             <div className="bg-background/80 backdrop-blur-md sticky top-14 z-30 border-b border-border/10 py-6 mb-12">
               <div className="flex flex-col md:flex-row items-center justify-center gap-10">
                 <div className="flex gap-10 overflow-x-auto no-scrollbar w-full md:w-auto pb-2 justify-center">
-                  {seriesNames.map((name) => (
+                  {seriesWithCounts.map((s) => (
                     <button
-                      key={name}
-                      onClick={() => setActiveSeries(name)}
+                      key={s.name}
+                      onClick={() => setActiveSeries(s.name)}
                       className={cn(
-                        "text-[9px] font-black uppercase tracking-[0.3em] transition-all whitespace-nowrap pb-2 border-b-2",
-                        activeSeries === name ? "border-accent text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"
+                        "text-[9px] font-black uppercase tracking-[0.3em] transition-all whitespace-nowrap pb-2 border-b-2 flex items-center gap-2",
+                        activeSeries === s.name ? "border-accent text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"
                       )}
                     >
-                      {name}
+                      {s.name} <span className="opacity-30 text-[7px]">[{s.count}]</span>
                     </button>
                   ))}
                 </div>

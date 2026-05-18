@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
@@ -123,9 +124,16 @@ export default function AdminPage() {
   }, [firestore]);
   const { data: siteSettings } = useDoc(siteSettingsRef);
 
-  const allSeries = useMemo(() => {
+  const seriesWithCounts = useMemo(() => {
     if (!artworks) return [];
-    return Array.from(new Set(artworks.map(a => a.series || "Geen zaal"))).sort();
+    const counts: Record<string, number> = {};
+    artworks.forEach(art => {
+      const s = art.series || "Geen zaal";
+      counts[s] = (counts[s] || 0) + 1;
+    });
+    return Object.entries(counts)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => a.name.localeCompare(b.name));
   }, [artworks]);
 
   const filteredArtworks = useMemo(() => {
@@ -133,7 +141,7 @@ export default function AdminPage() {
     return artworks.filter(art => {
       const matchesSearch = (art.title?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
                           (art.series?.toLowerCase() || "").includes(searchQuery.toLowerCase());
-      const matchesFilter = !filterSeries || art.series === filterSeries;
+      const matchesFilter = !filterSeries || (art.series || "Geen zaal") === filterSeries;
       return matchesSearch && matchesFilter;
     });
   }, [artworks, searchQuery, filterSeries]);
@@ -353,7 +361,9 @@ export default function AdminPage() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <TabsList className="bg-muted/50 p-1 rounded-full w-fit flex flex-wrap justify-center h-auto">
-              <TabsTrigger value="archive" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Archief (Depot)</TabsTrigger>
+              <TabsTrigger value="archive" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">
+                Archief (Depot) <span className="ml-2 opacity-40">[{artworks?.length || 0}]</span>
+              </TabsTrigger>
               <TabsTrigger value="upload" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Cloud Upload</TabsTrigger>
               <TabsTrigger value="texts" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Pagina Teksten</TabsTrigger>
               <TabsTrigger value="bulk" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Bulk JSON</TabsTrigger>
@@ -367,8 +377,10 @@ export default function AdminPage() {
           <TabsContent value="archive" className="space-y-6">
             <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-black/5">
               <Button variant={filterSeries === null ? "default" : "outline"} size="sm" onClick={() => setFilterSeries(null)} className="rounded-full text-[9px] uppercase tracking-widest font-bold h-7">Alles ({artworks?.length || 0})</Button>
-              {allSeries.map(s => (
-                <Button key={s} variant={filterSeries === s ? "default" : "outline"} size="sm" onClick={() => setFilterSeries(s)} className="rounded-full text-[9px] uppercase tracking-widest font-bold h-7 whitespace-nowrap">{s}</Button>
+              {seriesWithCounts.map(s => (
+                <Button key={s.name} variant={filterSeries === s.name ? "default" : "outline"} size="sm" onClick={() => setFilterSeries(s.name)} className="rounded-full text-[9px] uppercase tracking-widest font-bold h-7 whitespace-nowrap">
+                  {s.name} ({s.count})
+                </Button>
               ))}
             </div>
 
