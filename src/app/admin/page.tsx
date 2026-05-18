@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
@@ -194,9 +193,9 @@ export default function AdminPage() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!editingId) return;
-      if (e.key 'ArrowRight') navigateEditing('next');
-      if (e.key 'ArrowLeft') navigateEditing('prev');
-      if (e.key 'Escape') setEditingId(null);
+      if (e.key === 'ArrowRight') navigateEditing('next');
+      if (e.key === 'ArrowLeft') navigateEditing('prev');
+      if (e.key === 'Escape') setEditingId(null);
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
