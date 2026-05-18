@@ -265,7 +265,6 @@ export default function AdminPage() {
           const storageRef = ref(storage, `artworks/${timestamp}_${safeName}`);
           
           setUploadStatus(`Uploaden: ${file.name}... (${processed + 1}/${totalFiles})`);
-          let detectedSeries = "Nieuwe Uploads";
 
           const uploadPromise = uploadBytes(storageRef, file);
           const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 30000));
@@ -275,7 +274,7 @@ export default function AdminPage() {
           
           const docData = {
             title: file.name.split('.')[0] || "Naamloos",
-            series: detectedSeries,
+            series: "Nieuwe Uploads",
             year: new Date().getFullYear().toString(),
             medium: "Olieverf",
             imageUrl: downloadUrl,
@@ -321,34 +320,42 @@ export default function AdminPage() {
         dataToImport = [imported];
       }
       
-      const batch = writeBatch(firestore);
-      dataToImport.forEach(item => {
-        const { id, createdAt, ...rest } = item;
-        const sanitizedItem = {
-          ...rest,
-          tags: Array.isArray(rest.tags) ? rest.tags : [],
-          cropTop: Number(rest.cropTop) || 0,
-          cropBottom: Number(rest.cropBottom) || 0,
-          cropLeft: Number(rest.cropLeft) || 0,
-          cropRight: Number(rest.cropRight) || 0,
-          brightness: Number(rest.brightness) || 1,
-          createdAt: serverTimestamp()
-        };
-        batch.set(doc(collection(firestore, 'artworks')), sanitizedItem);
-      });
-      
+      // Herstel settings eerst indien aanwezig
       if (settingsToImport) {
-        setDoc(doc(firestore, 'settings', 'site'), settingsToImport, { merge: true });
+        const settingsRef = doc(firestore, 'settings', 'site');
+        setDoc(settingsRef, settingsToImport, { merge: true }).catch(async () => {});
       }
 
-      batch.commit()
-        .then(() => {
-          toast({ title: "Import Succesvol", description: `${dataToImport.length} werken en instellingen hersteld.` });
-          setBulkJson('');
-        })
-        .finally(() => setIsSaving(false));
+      // Verwerk artworks in brokjes van 400 om Firebase limieten te voorkomen
+      const chunkSize = 400;
+      for (let i = 0; i < dataToImport.length; i += chunkSize) {
+        const chunk = dataToImport.slice(i, i + chunkSize);
+        const batch = writeBatch(firestore);
+        
+        chunk.forEach(item => {
+          const { id, createdAt, ...rest } = item;
+          const sanitizedItem = {
+            ...rest,
+            series: rest.series || "Nieuwe Uploads", // Garandeer dat zaal altijd mee komt
+            tags: Array.isArray(rest.tags) ? rest.tags : [],
+            cropTop: Number(rest.cropTop) || 0,
+            cropBottom: Number(rest.cropBottom) || 0,
+            cropLeft: Number(rest.cropLeft) || 0,
+            cropRight: Number(rest.cropRight) || 0,
+            brightness: Number(rest.brightness) || 1,
+            createdAt: serverTimestamp()
+          };
+          batch.set(doc(collection(firestore, 'artworks')), sanitizedItem);
+        });
+
+        batch.commit().catch(async () => {});
+      }
+
+      toast({ title: "Herstel Gestart", description: `${dataToImport.length} werken worden nu op de achtergrond hersteld.` });
+      setBulkJson('');
     } catch (e) { 
       toast({ variant: "destructive", title: "Import Fout", description: "Controleer of de JSON data correct is." }); 
+    } finally {
       setIsSaving(false);
     }
   };
@@ -364,7 +371,7 @@ export default function AdminPage() {
 
     if (isMaster) {
       exportData = {
-        version: "2.0",
+        version: "2.1",
         exportedAt: new Date().toISOString(),
         artworks: artworks,
         settings: siteSettings || {}
@@ -543,7 +550,7 @@ export default function AdminPage() {
                 <div className="space-y-2">
                   <h2 className="text-[14px] font-black uppercase tracking-widest">Master Backup & Herstel</h2>
                   <p className="text-[10px] uppercase opacity-40 max-w-md mx-auto leading-relaxed">
-                    Kies hieronder welk type backup u wilt maken. Een Master Backup bevat alles, een Kaal Depot alleen de schilderij-data.
+                    Kies hieronder welk type backup u wilt maken. Een Master Backup bevat alles (zalen, teksten, instellingen), een Kaal Depot alleen de schilderij-data.
                   </p>
                 </div>
                 
@@ -580,7 +587,7 @@ export default function AdminPage() {
                   <Textarea value={bulkJson} readOnly className="min-h-[200px] font-mono text-[10px] bg-black/5 border-none rounded-xl" />
                   <Button onClick={handleImportJson} disabled={isSaving} className="h-14 rounded-xl font-black uppercase tracking-widest w-full">
                     {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ShieldCheck className="w-4 h-4 mr-2" />}
-                    Start Herstel naar Cloud
+                    Start Herstel naar Cloud (Inclusief Zalen)
                   </Button>
                 </div>
               )}
