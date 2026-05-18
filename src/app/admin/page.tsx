@@ -237,15 +237,24 @@ export default function AdminPage() {
     if (!firestore || selectedIds.length === 0 || !bulkMoveSeries.trim()) return;
     setIsSaving(true);
     const batch = writeBatch(firestore);
+    const totalToMove = selectedIds.length;
+    
     selectedIds.forEach(id => {
       batch.update(doc(firestore, 'artworks', id), { series: bulkMoveSeries.trim() });
     });
     
     batch.commit()
       .then(() => {
-        toast({ title: "Verplaatst", description: `${selectedIds.length} werken verplaatst.` });
+        toast({ title: "Verplaatst", description: `${totalToMove} werken verplaatst.` });
         setSelectedIds([]);
         setBulkMoveSeries('');
+        
+        // Vraag de gebruiker of ze nog meer willen verplaatsen
+        setTimeout(() => {
+          if (!window.confirm("Verplaatsing voltooid. Wilt u nog meer werken verplaatsen?")) {
+            // Optioneel: actie bij 'Nee', momenteel blijft de gebruiker gewoon in het Depot
+          }
+        }, 150);
       })
       .finally(() => setIsSaving(false));
   };
