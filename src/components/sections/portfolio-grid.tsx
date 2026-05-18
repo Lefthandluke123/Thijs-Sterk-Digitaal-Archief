@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -6,7 +5,6 @@ import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where, limit, orderBy } from 'firebase/firestore';
 import { Dialog, DialogContent, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { Maximize2, Loader2, X, Star, ChevronLeft, ChevronRight } from 'lucide-react';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export function PortfolioGrid() {
   const [selectedArtwork, setSelectedArtwork] = useState<any | null>(null);
@@ -25,15 +23,19 @@ export function PortfolioGrid() {
   const { data: featuredArtworks, loading: loadingFeatured } = useCollection(artworksQuery);
   const { data: latestArtworks, loading: loadingLatest } = useCollection(latestQuery);
 
+  // Exclusief database-artikelen, deduplicatie op imageUrl
   const displayArtworks = useMemo(() => {
-    const dbArtworks = featuredArtworks && featuredArtworks.length > 0 
+    const raw = featuredArtworks && featuredArtworks.length > 0 
       ? featuredArtworks 
       : (latestArtworks || []);
     
-    if (dbArtworks.length === 0) {
-      return PlaceHolderImages.filter(img => img.featured);
-    }
-    return dbArtworks;
+    const seen = new Set();
+    return raw.filter(art => {
+      const url = art.imageUrl;
+      if (seen.has(url)) return false;
+      seen.add(url);
+      return true;
+    });
   }, [featuredArtworks, latestArtworks]);
 
   const navigateDisplay = useCallback((direction: 'next' | 'prev') => {
@@ -88,7 +90,7 @@ export function PortfolioGrid() {
             ))}
           </div>
         ) : (
-          <div className="py-24 text-center opacity-30 text-[10px] uppercase font-black tracking-widest">Voeg werken toe via het beheerpaneel</div>
+          <div className="py-24 text-center opacity-30 text-[10px] uppercase font-black tracking-widest">Voeg uw eigen werken toe via het beheerpaneel</div>
         )}
       </div>
 

@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
@@ -8,7 +7,6 @@ import { collection, query, orderBy } from 'firebase/firestore';
 import { Dialog, DialogContent, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { Maximize2, Loader2, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 function GalleryContent() {
   const searchParams = useSearchParams();
@@ -25,9 +23,16 @@ function GalleryContent() {
 
   const { data: dbArtworks, loading } = useCollection(artworksQuery);
 
+  // Deduplicatie op basis van imageUrl
   const artworks = useMemo(() => {
-    const fromDb = dbArtworks || [];
-    return [...fromDb, ...PlaceHolderImages];
+    if (!dbArtworks) return [];
+    const seen = new Set();
+    return dbArtworks.filter(art => {
+      const url = art.imageUrl;
+      if (seen.has(url)) return false;
+      seen.add(url);
+      return true;
+    });
   }, [dbArtworks]);
 
   const seriesWithCounts = useMemo(() => {
@@ -86,7 +91,7 @@ function GalleryContent() {
       </div>
 
       <div className="container mx-auto max-w-7xl px-6 pb-32">
-        {loading && dbArtworks?.length === 0 ? (
+        {loading && artworks.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-32"><Loader2 className="w-8 h-8 animate-spin text-accent/40" /></div>
         ) : (
           <>
@@ -132,6 +137,9 @@ function GalleryContent() {
                 </div>
               ))}
             </div>
+            {filteredArtworks.length === 0 && !loading && (
+              <div className="text-center py-32 opacity-20 uppercase font-black text-[11px] tracking-widest">Deze zaal is momenteel gesloten</div>
+            )}
           </>
         )}
       </div>

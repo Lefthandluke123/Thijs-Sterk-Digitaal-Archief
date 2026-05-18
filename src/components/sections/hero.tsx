@@ -1,14 +1,21 @@
-
 "use client";
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { ArrowDownRight } from 'lucide-react';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, where, limit } from 'firebase/firestore';
 
 export function Hero() {
-  const heroImage = PlaceHolderImages.find(img => img.id === 'basis-1' || img.id === 'hero-image');
+  const firestore = useFirestore();
+  const featuredQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'artworks'), where('featured', '==', true), limit(1));
+  }, [firestore]);
+
+  const { data: featured } = useCollection(featuredQuery);
+  const heroImage = featured?.[0]?.imageUrl || 'https://firebasestorage.googleapis.com/v0/b/studio-7311695883-2090f.firebasestorage.app/o/artworks%2F1778851761923_x2p82k_maannacht%20copy.jpg?alt=media';
 
   return (
     <section className="relative min-h-[50vh] flex flex-col items-center justify-center pt-24 px-4 overflow-hidden">
@@ -47,16 +54,14 @@ export function Hero() {
 
       <div className="container mx-auto mt-12 z-10 px-4 animate-fade-in-up delay-500 max-w-4xl">
         <div className="relative aspect-[21/9] w-full rounded-2xl overflow-hidden shadow-xl border border-border/10">
-          {heroImage && (
-            <Image
-              src={heroImage.imageUrl}
-              alt="Representatief werk van Thijs Sterk"
-              fill
-              className="object-cover"
-              priority
-              data-ai-hint="atmospheric landscape painting"
-            />
-          )}
+          <Image
+            src={heroImage}
+            alt="Representatief werk van Thijs Sterk"
+            fill
+            className="object-cover"
+            priority
+            data-ai-hint="atmospheric landscape painting"
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-background/20 to-transparent" />
         </div>
       </div>

@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -10,7 +9,6 @@ import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 const STANDARD_TAGS = [
   "Groet", "Schoorl", "Hargen", "Amsterdam", "Frankrijk", 
@@ -41,9 +39,16 @@ export default function CuratorPage() {
 
   const { data: dbArtworks, loading } = useCollection(artworksQuery);
 
+  // Deduplicatie op basis van imageUrl en exclusief database
   const artworks = useMemo(() => {
-    const fromDb = dbArtworks || [];
-    return [...fromDb, ...PlaceHolderImages];
+    if (!dbArtworks) return [];
+    const seen = new Set();
+    return dbArtworks.filter(art => {
+      const url = art.imageUrl;
+      if (seen.has(url)) return false;
+      seen.add(url);
+      return true;
+    });
   }, [dbArtworks]);
 
   const allAvailableTags = useMemo(() => {
@@ -131,7 +136,7 @@ export default function CuratorPage() {
 
         {showResults && (
           <div className="mt-20 pt-12 border-t border-black/10">
-            {loading && dbArtworks?.length === 0 ? <div className="flex justify-center py-20"><Loader2 className="animate-spin opacity-30" /></div> : filteredArtworks.length > 0 ? (
+            {loading && artworks.length === 0 ? <div className="flex justify-center py-20"><Loader2 className="animate-spin opacity-30" /></div> : filteredArtworks.length > 0 ? (
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
                 {filteredArtworks.map(item => (
                   <div key={item.id} className="group cursor-pointer" onClick={() => setSelectedArtwork(item)}>
@@ -143,7 +148,7 @@ export default function CuratorPage() {
                   </div>
                 ))}
               </div>
-            ) : <div className="py-20 text-center uppercase tracking-widest opacity-30 text-[10px] font-bold">Geen werken gevonden.</div>}
+            ) : <div className="py-20 text-center uppercase tracking-widest opacity-30 text-[10px] font-bold">Geen werken gevonden voor deze selectie.</div>}
           </div>
         )}
       </div>

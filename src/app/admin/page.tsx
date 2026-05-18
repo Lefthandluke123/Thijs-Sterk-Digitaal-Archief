@@ -1,9 +1,8 @@
-
 "use client";
 
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { useFirestore, useCollection, useMemoFirebase, useStorage, useDoc } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, doc, serverTimestamp, deleteDoc, addDoc, query, orderBy, updateDoc, writeBatch, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Button } from '@/components/ui/button';
@@ -25,14 +24,12 @@ import {
   CheckCircle2,
   CloudUpload,
   Sun,
-  Layers,
   Archive,
   Square,
   CheckSquare,
   FileJson,
   Type,
-  Upload,
-  LayoutGrid
+  Upload
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -91,7 +88,6 @@ function RepeatButton({ onStep, children, className, disabled }: { onStep: () =>
 
 export default function AdminPage() {
   const firestore = useFirestore();
-  const storage = useStorage();
   const [bulkJson, setBulkJson] = useState('');
   const [activeTab, setActiveTab] = useState('archive');
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -116,7 +112,19 @@ export default function AdminPage() {
     return query(collection(firestore, 'artworks'), orderBy('createdAt', 'desc'));
   }, [firestore]);
 
-  const { data: artworks, loading: isCollectionLoading } = useCollection(artworksQuery);
+  const { data: rawArtworks, loading: isCollectionLoading } = useCollection(artworksQuery);
+
+  // Deduplicatie op basis van imageUrl
+  const artworks = useMemo(() => {
+    if (!rawArtworks) return [];
+    const seen = new Set();
+    return rawArtworks.filter(art => {
+      const url = art.imageUrl;
+      if (seen.has(url)) return false;
+      seen.add(url);
+      return true;
+    });
+  }, [rawArtworks]);
 
   const siteSettingsRef = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -125,7 +133,6 @@ export default function AdminPage() {
   const { data: siteSettings } = useDoc(siteSettingsRef);
 
   const seriesWithCounts = useMemo(() => {
-    if (!artworks) return [];
     const counts: Record<string, number> = {};
     artworks.forEach(art => {
       const s = art.series || "Geen zaal";
@@ -137,7 +144,6 @@ export default function AdminPage() {
   }, [artworks]);
 
   const filteredArtworks = useMemo(() => {
-    if (!artworks) return [];
     return artworks.filter(art => {
       const matchesSearch = (art.title?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
                           (art.series?.toLowerCase() || "").includes(searchQuery.toLowerCase());
@@ -147,7 +153,7 @@ export default function AdminPage() {
   }, [artworks, searchQuery, filterSeries]);
 
   const editingArtwork = useMemo(() => {
-    return artworks?.find(art => art.id === editingId) || null;
+    return artworks.find(art => art.id === editingId) || null;
   }, [artworks, editingId]);
 
   useEffect(() => {
@@ -205,31 +211,11 @@ export default function AdminPage() {
     });
     
     batch.commit()
-      .then(() => {
-        toast({ title: "Verplaatst", description: `${selectedIds.length} werken verplaatst naar ${bulkMoveSeries}` });
-      })
-      .catch(() => {
-        toast({ variant: "destructive", title: "Fout", description: "Kon de werken niet verplaatsen." });
-      })
+      .then(() => toast({ title: "Verplaatst", description: `${selectedIds.length} werken verplaatst.` }))
+      .catch(() => toast({ variant: "destructive", title: "Fout", description: "Kon niet verplaatsen." }))
       .finally(() => {
         setSelectedIds([]);
         setBulkMoveSeries('');
-        setIsSaving(false);
-      });
-  };
-
-  const handleBulkDelete = () => {
-    if (!firestore || selectedIds.length === 0) return;
-    if (!confirm(`Weet u zeker dat u ${selectedIds.length} werken wilt verwijderen?`)) return;
-    setIsSaving(true);
-    const batch = writeBatch(firestore);
-    selectedIds.forEach(id => batch.delete(doc(firestore, 'artworks', id)));
-    
-    batch.commit()
-      .then(() => toast({ title: "Verwijderd", description: `${selectedIds.length} werken verwijderd` }))
-      .catch(() => toast({ variant: "destructive", title: "Fout", description: "Kon de werken niet verwijderen." }))
-      .finally(() => {
-        setSelectedIds([]);
         setIsSaving(false);
       });
   };
@@ -247,14 +233,8 @@ export default function AdminPage() {
     updateArtworkField(editingId, field, next);
   };
 
-  const uploadWithTimeout = async (storageRef: any, file: File, timeoutMs = 30000) => {
-    return Promise.race([
-      uploadBytes(storageRef, file),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), timeoutMs))
-    ]);
-  };
-
   const handleBatchProcess = async (files: FileList | null) => {
+    const storage = (window as any).storageInstance; 
     if (!files || !firestore || !storage) return;
     setIsUploading(true);
     setUploadProgress(0);
@@ -270,7 +250,11 @@ export default function AdminPage() {
           const storageRef = ref(storage, `artworks/${timestamp}_${safeName}`);
           
           setUploadStatus(`Uploaden: ${file.name}... (${processed + 1}/${totalFiles})`);
-          const snapshot: any = await uploadWithTimeout(storageRef, file);
+          
+          const uploadPromise = uploadBytes(storageRef, file);
+          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 30000));
+          
+          const snapshot: any = await Promise.race([uploadPromise, timeoutPromise]);
           const downloadUrl = await getDownloadURL(snapshot.ref);
           
           const docData = {
@@ -285,10 +269,8 @@ export default function AdminPage() {
             cropTop: 0, cropBottom: 0, cropLeft: 0, cropRight: 0, brightness: 1
           };
           
-          addDoc(collection(firestore, 'artworks'), docData).catch(e => console.error("Firestore write failed", e));
-
-        } catch (e: any) { 
-          console.error(`Fout bij: ${file.name}`, e);
+          addDoc(collection(firestore, 'artworks'), docData);
+        } catch (e) { 
           toast({ variant: "destructive", title: "Upload Fout", description: `Kon ${file.name} niet verwerken.` });
         }
         processed++;
@@ -329,13 +311,12 @@ export default function AdminPage() {
       
       batch.commit()
         .then(() => toast({ title: "Import Succesvol", description: `${dataToImport.length} werken geïmporteerd.` }))
-        .catch(() => toast({ variant: "destructive", title: "Import Fout", description: "Check de database-regels." }))
         .finally(() => {
           setBulkJson('');
           setIsSaving(false);
         });
     } catch (e) { 
-      toast({ variant: "destructive", title: "Import Fout", description: "Check de JSON structuur." }); 
+      toast({ variant: "destructive", title: "Import Fout", description: "Check JSON." }); 
       setIsSaving(false);
     }
   };
@@ -362,7 +343,7 @@ export default function AdminPage() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <TabsList className="bg-muted/50 p-1 rounded-full w-fit flex flex-wrap justify-center h-auto">
               <TabsTrigger value="archive" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">
-                Archief (Depot) <span className="ml-2 opacity-40">[{artworks?.length || 0}]</span>
+                Archief (Depot) <span className="ml-2 opacity-40">[{artworks.length}]</span>
               </TabsTrigger>
               <TabsTrigger value="upload" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Cloud Upload</TabsTrigger>
               <TabsTrigger value="texts" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Pagina Teksten</TabsTrigger>
@@ -376,7 +357,7 @@ export default function AdminPage() {
 
           <TabsContent value="archive" className="space-y-6">
             <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-black/5">
-              <Button variant={filterSeries === null ? "default" : "outline"} size="sm" onClick={() => setFilterSeries(null)} className="rounded-full text-[9px] uppercase tracking-widest font-bold h-7">Alles ({artworks?.length || 0})</Button>
+              <Button variant={filterSeries === null ? "default" : "outline"} size="sm" onClick={() => setFilterSeries(null)} className="rounded-full text-[9px] uppercase tracking-widest font-bold h-7">Alles ({artworks.length})</Button>
               {seriesWithCounts.map(s => (
                 <Button key={s.name} variant={filterSeries === s.name ? "default" : "outline"} size="sm" onClick={() => setFilterSeries(s.name)} className="rounded-full text-[9px] uppercase tracking-widest font-bold h-7 whitespace-nowrap">
                   {s.name} ({s.count})
@@ -389,16 +370,6 @@ export default function AdminPage() {
                  {isUploading ? <Loader2 className="w-3 h-3 mr-2 animate-spin" /> : <Upload className="w-3 h-3 mr-2" />}
                  Schilderij Importeren
                </Button>
-               {filterSeries && filterSeries !== "Geen zaal" && (
-                 <Button variant="ghost" size="sm" onClick={() => {
-                   if (!firestore || !filterSeries) return;
-                   const batch = writeBatch(firestore);
-                   filteredArtworks.forEach(art => batch.update(doc(firestore, 'artworks', art.id), { series: "Geen zaal" }));
-                   batch.commit().then(() => toast({ title: "Zaal Gesloten", description: "Alle werken zijn terug naar het depot." }));
-                 }} className="text-accent text-[11px] uppercase font-black tracking-widest">
-                   <Archive className="w-3 h-3 mr-2" /> Zaal sluiten
-                 </Button>
-               )}
             </div>
 
             {selectedIds.length > 0 && (
@@ -410,11 +381,11 @@ export default function AdminPage() {
                     {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : "Verplaats Nu"}
                   </Button>
                 </div>
-                <Button variant="outline" size="sm" onClick={handleBulkDelete} disabled={isSaving} className="h-8 rounded-full text-[11px] font-black uppercase tracking-widest text-red-500">Verwijder</Button>
+                <Button variant="outline" size="sm" onClick={() => { if(confirm('Verwijderen?')) { const b = writeBatch(firestore!); selectedIds.forEach(id => b.delete(doc(firestore!, 'artworks', id))); b.commit(); setSelectedIds([]); } }} className="h-8 rounded-full text-[11px] font-black uppercase tracking-widest text-red-500">Verwijder</Button>
               </div>
             )}
 
-            {isCollectionLoading && !artworks ? <div className="flex justify-center py-20"><Loader2 className="animate-spin opacity-20" /></div> : (
+            {isCollectionLoading && artworks.length === 0 ? <div className="flex justify-center py-20"><Loader2 className="animate-spin opacity-20" /></div> : (
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
                 {filteredArtworks.map((art: any) => (
                   <Card key={art.id} className={cn("overflow-hidden group cursor-pointer transition-all relative border-2", selectedIds.includes(art.id) ? "border-accent bg-accent/5 ring-1 ring-accent" : "border-transparent")} onClick={() => setEditingId(art.id)}>
@@ -461,10 +432,6 @@ export default function AdminPage() {
                  <Input defaultValue={siteSettings?.homeBioImageUrl || ''} onBlur={(e) => updateSettingsField('homeBioImageUrl', e.target.value)} placeholder="Hoofdafbeelding URL..." className="bg-black/5 border-none h-10 text-xs" />
                  <Textarea defaultValue={siteSettings?.homeBio || ''} onBlur={(e) => updateSettingsField('homeBio', e.target.value)} className="min-h-[120px] bg-black/5 border-none rounded-xl p-4 text-sm" placeholder="Biografie..." />
               </div>
-              <div className="pt-8 flex items-center gap-2 border-t border-black/5">
-                {isSaving ? <Loader2 className="w-3 h-3 animate-spin text-accent" /> : <CheckCircle2 className="w-3 h-3 text-green-500" />}
-                <span className="text-[9px] font-black uppercase tracking-widest opacity-40">{isSaving ? 'Opslaan...' : 'Opgeslagen'}</span>
-              </div>
             </Card>
           </TabsContent>
 
@@ -472,7 +439,7 @@ export default function AdminPage() {
             <Card className="p-8 rounded-3xl max-w-4xl mx-auto space-y-6">
               <div className="flex items-center justify-between">
                 <Label className="text-[11px] font-black text-black uppercase tracking-widest">JSON Data Import</Label>
-                <Button variant="outline" size="sm" onClick={() => jsonFileInputRef.current?.click()} className="text-[11px] uppercase tracking-widest font-black"><FileJson className="w-3 h-3 mr-2" /> Kies Bestand</Button>
+                <Button variant="outline" size="sm" onClick={() => jsonFileInputRef.current?.click()} className="text-[11px] uppercase tracking-widest font-black">Kies Bestand</Button>
               </div>
               <input type="file" ref={jsonFileInputRef} style={{ display: 'none' }} accept=".json" onChange={(e) => {
                 const file = e.target.files?.[0];
@@ -482,10 +449,7 @@ export default function AdminPage() {
                 reader.readAsText(file);
               }} />
               <Textarea value={bulkJson} onChange={(e) => setBulkJson(e.target.value)} placeholder='[{"title": "Werk", "imageUrl": "..."}]' className="min-h-[300px] font-mono text-[10px] bg-black/5" />
-              <Button onClick={handleImportJson} disabled={isSaving || !bulkJson} className="h-14 rounded-xl font-black uppercase tracking-widest w-full">
-                {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                Importeer naar Cloud
-              </Button>
+              <Button onClick={handleImportJson} disabled={isSaving || !bulkJson} className="h-14 rounded-xl font-black uppercase tracking-widest w-full">Importeer naar Cloud</Button>
             </Card>
           </TabsContent>
         </Tabs>

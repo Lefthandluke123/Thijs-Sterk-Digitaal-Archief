@@ -1,18 +1,15 @@
-
 "use client";
 
 import React, { useState } from 'react';
 import Image from 'next/image';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { Dialog, DialogContent, DialogTitle, DialogClose } from '@/components/ui/dialog';
-import { X, ChevronLeft, ChevronRight, Maximize2 } from 'lucide-react';
+import { X } from 'lucide-react';
 
 export function ArtistBio() {
   const [selectedArtworkId, setSelectedArtworkId] = useState<string | null>(null);
   const firestore = useFirestore();
-  const portrait = PlaceHolderImages.find(img => img.id === 'artist-portrait');
 
   const siteSettingsRef = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -27,7 +24,7 @@ export function ArtistBio() {
   const { data: selectedArtwork } = useDoc(linkedArtworkRef);
 
   const bioText = siteSettings?.homeBio || `Thijs Sterk (1913-1982) wijdde zijn leven aan het doorgronden van de atmosferische kwaliteiten van de Lage Landen.\n\n"Licht is niet iets dat op een object valt," schreef hij in 1954 in zijn dagboek, "het is de ruimte die tussen mij en de wereld ademt."`;
-  const bioImageUrl = siteSettings?.homeBioImageUrl || (portrait ? portrait.imageUrl : 'https://picsum.photos/seed/thijs/800/1000');
+  const bioImageUrl = siteSettings?.homeBioImageUrl || 'https://firebasestorage.googleapis.com/v0/b/studio-7311695883-2090f.firebasestorage.app/o/artworks%2F1778851761925_vh0ad_2_I.jpg?alt=media';
 
   const renderTextWithLinks = (text: string) => {
     const parts = text.split(/(\[\[.*?\]\])/g);
@@ -56,7 +53,7 @@ export function ArtistBio() {
           <div className="lg:col-span-5 order-2 lg:order-1">
             <div className="relative">
               <div className="absolute -top-6 -left-6 w-24 h-24 border-t-2 border-l-2 border-accent" />
-              <div className="relative aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl">
+              <div className="relative aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl bg-muted/20">
                 <Image
                   src={bioImageUrl}
                   alt="Portret van Thijs Sterk"
