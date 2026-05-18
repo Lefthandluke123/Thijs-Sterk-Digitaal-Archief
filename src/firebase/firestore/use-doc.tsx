@@ -12,39 +12,30 @@ import { FirestorePermissionError } from '../errors';
 
 export function useDoc<T = DocumentData>(docRef: DocumentReference<T> | null) {
   const [data, setData] = useState<T | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!!docRef);
   const [error, setError] = useState<Error | null>(null);
   
-  const lastDocPath = useRef<string | null>(null);
-  const docPath = docRef?.path || null;
+  const lastDocRef = useRef<DocumentReference<T> | null>(null);
 
   useEffect(() => {
     if (!docRef) {
       setLoading(false);
+      setData(null);
       return;
     }
 
-    if (docPath !== lastDocPath.current) {
+    if (docRef !== lastDocRef.current) {
       setLoading(true);
-      lastDocPath.current = docPath;
+      lastDocRef.current = docRef;
     }
-
-    const timeoutId = setTimeout(() => {
-      if (loading) {
-        setLoading(false);
-        setError(new Error('Firestore request timed out'));
-      }
-    }, 15000);
 
     const unsubscribe = onSnapshot(
       docRef,
       (snapshot: DocumentSnapshot<T>) => {
-        setData(snapshot.exists() ? { ...snapshot.data()!, id: snapshot.id } : null);
+        setData(snapshot.exists() ? { ...(snapshot.data() as any), id: snapshot.id } : null);
         setLoading(false);
-        clearTimeout(timeoutId);
       },
       async (serverError) => {
-        clearTimeout(timeoutId);
         const permissionError = new FirestorePermissionError({
           path: docRef.path,
           operation: 'get',
@@ -55,11 +46,8 @@ export function useDoc<T = DocumentData>(docRef: DocumentReference<T> | null) {
       }
     );
 
-    return () => {
-      unsubscribe();
-      clearTimeout(timeoutId);
-    };
-  }, [docRef, docPath]);
+    return () => unsubscribe();
+  }, [docRef]);
 
   return { data, loading, error };
 }

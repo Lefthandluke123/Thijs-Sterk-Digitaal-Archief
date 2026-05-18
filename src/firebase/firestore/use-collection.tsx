@@ -12,30 +12,29 @@ import { FirestorePermissionError } from '../errors';
 
 export function useCollection<T = DocumentData>(collectionQuery: Query<T> | null) {
   const [data, setData] = useState<T[] | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!!collectionQuery);
   const [error, setError] = useState<Error | null>(null);
   
-  const lastQueryRef = useRef<string | null>(null);
-  // Brittle but effective way to detect structural query changes for loading state
-  const queryIdentifier = (collectionQuery as any)?._query?.path?.toString() || null;
+  const lastQueryRef = useRef<Query<T> | null>(null);
 
   useEffect(() => {
     if (!collectionQuery) {
       setLoading(false);
+      setData(null);
       return;
     }
 
-    // Only trigger loading state if the query is fundamentally different
-    if (queryIdentifier !== lastQueryRef.current) {
+    // Only set loading to true if it's a genuinely different query instance
+    if (collectionQuery !== lastQueryRef.current) {
       setLoading(true);
-      lastQueryRef.current = queryIdentifier;
+      lastQueryRef.current = collectionQuery;
     }
 
     const unsubscribe = onSnapshot(
       collectionQuery,
       (snapshot: QuerySnapshot<T>) => {
         const items = snapshot.docs.map((doc) => ({
-          ...doc.data(),
+          ...(doc.data() as any),
           id: doc.id,
         }));
         setData(items);
@@ -43,7 +42,7 @@ export function useCollection<T = DocumentData>(collectionQuery: Query<T> | null
       },
       async (serverError) => {
         const permissionError = new FirestorePermissionError({
-          path: queryIdentifier || 'unknown',
+          path: 'collection',
           operation: 'list',
         });
         errorEmitter.emit('permission-error', permissionError);
@@ -53,7 +52,7 @@ export function useCollection<T = DocumentData>(collectionQuery: Query<T> | null
     );
 
     return () => unsubscribe();
-  }, [collectionQuery, queryIdentifier]);
+  }, [collectionQuery]);
 
   return { data, loading, error };
 }

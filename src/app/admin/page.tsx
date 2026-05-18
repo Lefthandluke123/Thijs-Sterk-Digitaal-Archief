@@ -38,7 +38,6 @@ import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogClose, DialogTitle } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
-import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -91,7 +90,6 @@ function RepeatButton({ onStep, children, className, disabled }: { onStep: () =>
 export default function AdminPage() {
   const firestore = useFirestore();
   const storage = useStorage();
-  const [loading, setLoading] = useState(false);
   const [bulkJson, setBulkJson] = useState('');
   const [activeTab, setActiveTab] = useState('archive');
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -111,7 +109,6 @@ export default function AdminPage() {
   const [bulkMoveSeries, setBulkMoveSeries] = useState('');
   const [localCrops, setLocalCrops] = useState<Record<string, number>>({});
 
-  // STABLE QUERY: Fully isolated from UI states
   const artworksQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'artworks'), orderBy('createdAt', 'desc'));
@@ -178,20 +175,16 @@ export default function AdminPage() {
 
   const updateArtworkField = (id: string, field: string, value: any) => {
     if (!firestore || !id) return;
-    setIsSaving(true);
     const artRef = doc(firestore, 'artworks', id);
     updateDoc(artRef, { [field]: value })
-      .catch(async () => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: artRef.path, operation: 'update' })))
-      .finally(() => setIsSaving(false));
+      .catch(async () => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: artRef.path, operation: 'update' })));
   };
 
   const updateSettingsField = (field: string, value: any) => {
     if (!firestore) return;
-    setIsSaving(true);
     const settingsRef = doc(firestore, 'settings', 'site');
     setDoc(settingsRef, { [field]: value }, { merge: true })
-      .catch(async () => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: settingsRef.path, operation: 'update' })))
-      .finally(() => setIsSaving(false));
+      .catch(async () => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: settingsRef.path, operation: 'update' })));
   };
 
   const handleBulkMove = async () => {
@@ -207,6 +200,8 @@ export default function AdminPage() {
       toast({ title: "Verplaatst", description: `${selectedIds.length} werken verplaatst naar ${bulkMoveSeries}` });
       setSelectedIds([]);
       setBulkMoveSeries('');
+    } catch (e) {
+      toast({ variant: "destructive", title: "Fout", description: "Kon de werken niet verplaatsen." });
     } finally {
       setIsSaving(false);
     }
@@ -214,6 +209,7 @@ export default function AdminPage() {
 
   const handleBulkDelete = async () => {
     if (!firestore || selectedIds.length === 0) return;
+    if (!confirm(`Weet u zeker dat u ${selectedIds.length} werken wilt verwijderen?`)) return;
     setIsSaving(true);
     const batch = writeBatch(firestore);
     selectedIds.forEach(id => batch.delete(doc(firestore, 'artworks', id)));
@@ -222,6 +218,8 @@ export default function AdminPage() {
       await batch.commit();
       toast({ title: "Verwijderd", description: `${selectedIds.length} werken verwijderd` });
       setSelectedIds([]);
+    } catch (e) {
+      toast({ variant: "destructive", title: "Fout", description: "Kon de werken niet verwijderen." });
     } finally {
       setIsSaving(false);
     }
@@ -235,9 +233,16 @@ export default function AdminPage() {
   const handleLocalStep = (field: string, delta: number, min = 0, max = 50) => {
     if (!editingArtwork || !editingId) return;
     const current = localCrops[field] ?? (editingArtwork as any)[field] ?? (field === 'brightness' ? 1 : 0);
-    const next = Math.min(max, Math.max(min, current + delta));
+    const next = Math.min(max, Math.max(min, Number((current + delta).toFixed(2))));
     setLocalCrops(prev => ({ ...prev, [field]: next }));
     updateArtworkField(editingId, field, next);
+  };
+
+  const uploadWithTimeout = async (storageRef: any, file: File, timeoutMs = 30000) => {
+    return Promise.race([
+      uploadBytes(storageRef, file),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout na 30 seconden')), timeoutMs))
+    ]);
   };
 
   const handleBatchProcess = async (files: FileList | null) => {
@@ -255,10 +260,10 @@ export default function AdminPage() {
           const safeName = file.name.replace(/[^a-z0-9.]/gi, '_');
           const storageRef = ref(storage, `artworks/${timestamp}_${safeName}`);
           
-          const snapshot = await uploadBytes(storageRef, file);
+          setUploadStatus(`Uploaden: ${file.name}...`);
+          const snapshot: any = await uploadWithTimeout(storageRef, file);
           const downloadUrl = await getDownloadURL(snapshot.ref);
           
-          // NON-BLOCKING Write
           const docData = {
             title: file.name.split('.')[0] || "Naamloos",
             series: filterSeries || "Nieuwe Uploads",
@@ -275,19 +280,17 @@ export default function AdminPage() {
             console.error("Firestore write failed", e);
           });
 
-        } catch (e) { 
-          console.error(`Fout bij uploaden: ${file.name}`, e);
-          toast({ variant: "destructive", title: "Upload fout", description: `Kon ${file.name} niet uploaden.` });
+        } catch (e: any) { 
+          console.error(`Fout bij: ${file.name}`, e);
+          toast({ variant: "destructive", title: "Fout", description: `Kon ${file.name} niet verwerken: ${e.message}` });
         }
         processed++;
         setUploadProgress((processed / totalFiles) * 100);
-        setUploadStatus(`Verwerkt: ${processed}/${totalFiles}`);
       }
     } finally {
       setIsUploading(false);
       setUploadProgress(0);
       setUploadStatus('');
-      // CLEAR INPUTS to allow re-selection
       if (fileInputRef.current) fileInputRef.current.value = '';
       if (uploadDirInputRef.current) uploadDirInputRef.current.value = '';
       toast({ title: "Klaar", description: "Verwerking voltooid." });
@@ -296,7 +299,7 @@ export default function AdminPage() {
 
   const handleImportJson = async () => {
     if (!firestore || !bulkJson) return;
-    setLoading(true);
+    setIsSaving(true);
     try {
       const items = JSON.parse(bulkJson);
       const dataToImport = Array.isArray(items) ? items : (items.placeholderImages || [items]);
@@ -324,7 +327,7 @@ export default function AdminPage() {
     } catch (e) { 
       toast({ variant: "destructive", title: "Import Fout", description: "Check de JSON structuur." }); 
     } finally {
-      setLoading(false);
+      setIsSaving(false);
     }
   };
 
@@ -337,7 +340,7 @@ export default function AdminPage() {
       
       <header className="h-16 border-b border-border bg-background/95 backdrop-blur-sm sticky top-14 z-40 px-8 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Link href="/" className="h-10 w-auto"><img src="/logo.png" className="h-10 w-auto" /></Link>
+          <Link href="/" className="h-10 w-auto"><img src="/logo.png" className="h-10 w-auto" alt="Logo" /></Link>
           <h1 className="font-headline text-lg font-light">Atelier <span className="italic">Beheer</span></h1>
         </div>
         <Link href="/" className="text-[11px] uppercase tracking-widest font-black text-muted-foreground hover:text-foreground border-l border-border pl-4 flex items-center gap-2">
@@ -378,7 +381,7 @@ export default function AdminPage() {
                    if (!firestore || !filterSeries) return;
                    const batch = writeBatch(firestore);
                    filteredArtworks.forEach(art => batch.update(doc(firestore, 'artworks', art.id), { series: "Geen zaal" }));
-                   batch.commit();
+                   batch.commit().then(() => toast({ title: "Zaal Gesloten", description: "Alle werken zijn terug naar het depot." }));
                  }} className="text-accent text-[11px] uppercase font-black tracking-widest">
                    <Archive className="w-3 h-3 mr-2" /> Zaal sluiten
                  </Button>
@@ -390,21 +393,23 @@ export default function AdminPage() {
                 <div className="flex items-center gap-4">
                   <span className="text-[11px] font-black uppercase tracking-widest text-accent">{selectedIds.length} geselecteerd</span>
                   <Input placeholder="Nieuwe zaal..." value={bulkMoveSeries} onChange={(e) => setBulkMoveSeries(e.target.value)} className="h-8 text-[11px] font-black uppercase w-48" />
-                  <Button onClick={handleBulkMove} disabled={isSaving || !bulkMoveSeries} size="sm" className="h-8 rounded-full text-[11px] font-black uppercase tracking-widest bg-accent">Verplaats Nu</Button>
+                  <Button onClick={handleBulkMove} disabled={isSaving || !bulkMoveSeries} size="sm" className="h-8 rounded-full text-[11px] font-black uppercase tracking-widest bg-accent">
+                    {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : "Verplaats Nu"}
+                  </Button>
                 </div>
-                <Button variant="outline" size="sm" onClick={handleBulkDelete} className="h-8 rounded-full text-[11px] font-black uppercase tracking-widest text-red-500">Verwijder</Button>
+                <Button variant="outline" size="sm" onClick={handleBulkDelete} disabled={isSaving} className="h-8 rounded-full text-[11px] font-black uppercase tracking-widest text-red-500">Verwijder</Button>
               </div>
             )}
 
             {isCollectionLoading ? <div className="flex justify-center py-20"><Loader2 className="animate-spin opacity-20" /></div> : (
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
                 {filteredArtworks.map((art: any) => (
-                  <Card key={art.id} className={cn("overflow-hidden group cursor-pointer transition-all relative", selectedIds.includes(art.id) && "ring-2 ring-accent bg-accent/5")} onClick={() => setEditingId(art.id)}>
+                  <Card key={art.id} className={cn("overflow-hidden group cursor-pointer transition-all relative border-2", selectedIds.includes(art.id) ? "border-accent bg-accent/5 ring-1 ring-accent" : "border-transparent")} onClick={() => setEditingId(art.id)}>
                     <button onClick={(e) => toggleSelect(e, art.id)} className="absolute top-2 left-2 z-10 w-6 h-6 rounded-full bg-white/80 border-2 border-accent flex items-center justify-center">
                       {selectedIds.includes(art.id) ? <CheckSquare className="w-4 h-4 text-accent fill-accent" /> : <Square className="w-4 h-4 text-accent/30" />}
                     </button>
                     <div className="relative aspect-square bg-muted/20">
-                      <img src={art.imageUrl} className="w-full h-full object-cover" style={{ clipPath: `inset(${art.cropTop || 0}% ${art.cropRight || 0}% ${art.cropBottom || 0}% ${art.cropLeft || 0}%)`, filter: `brightness(${art.brightness || 1})` }} />
+                      <img src={art.imageUrl} className="w-full h-full object-cover" style={{ clipPath: `inset(${art.cropTop || 0}% ${art.cropRight || 0}% ${art.cropBottom || 0}% ${art.cropLeft || 0}%)`, filter: `brightness(${art.brightness || 1})` }} alt={art.title} />
                     </div>
                     <CardContent className="p-2 text-center">
                       <h4 className="text-[9px] font-black text-black uppercase tracking-widest truncate">{art.title}</h4>
@@ -464,7 +469,10 @@ export default function AdminPage() {
                 reader.readAsText(file);
               }} />
               <Textarea value={bulkJson} onChange={(e) => setBulkJson(e.target.value)} placeholder='[{"title": "Werk", "imageUrl": "..."}]' className="min-h-[300px] font-mono text-[10px] bg-black/5" />
-              <Button onClick={handleImportJson} disabled={loading || !bulkJson} className="h-14 rounded-xl font-black uppercase tracking-widest w-full">Importeer naar Cloud</Button>
+              <Button onClick={handleImportJson} disabled={isSaving || !bulkJson} className="h-14 rounded-xl font-black uppercase tracking-widest w-full">
+                {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                Importeer naar Cloud
+              </Button>
             </Card>
           </TabsContent>
         </Tabs>
@@ -482,6 +490,7 @@ export default function AdminPage() {
                   clipPath: `inset(${localCrops.cropTop ?? 0}% ${localCrops.cropRight ?? 0}% ${localCrops.cropBottom ?? 0}% ${localCrops.cropLeft ?? 0}%)`, 
                   filter: `brightness(${localCrops.brightness ?? 1})` 
                 }} 
+                alt={editingArtwork.title}
               />
             )}
             <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-12 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
@@ -489,7 +498,7 @@ export default function AdminPage() {
               <button onClick={() => navigateEditing('next')} className="p-4 rounded-full bg-black/5 pointer-events-auto hover:bg-black/10"><ChevronRight className="w-8 h-8 text-black" /></button>
             </div>
             <div className="absolute top-4 right-4 flex gap-3 items-center">
-              <Button variant="ghost" size="icon" onClick={() => { if (!editingId || !firestore) return; deleteDoc(doc(firestore, 'artworks', editingId)); setEditingId(null); }} className="h-4 w-4 rounded-full text-red-600"><Trash2 className="w-3 h-3" /></Button>
+              <Button variant="ghost" size="icon" onClick={() => { if (!editingId || !firestore) return; if(confirm('Verwijderen?')) { deleteDoc(doc(firestore, 'artworks', editingId)); setEditingId(null); } }} className="h-4 w-4 rounded-full text-red-600"><Trash2 className="w-3 h-3" /></Button>
               <DialogClose className="h-5 w-5 flex items-center justify-center bg-black/10 rounded-full hover:bg-black/20"><X className="w-2.5 h-2.5 text-black" /></DialogClose>
             </div>
           </div>
