@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
@@ -30,7 +31,8 @@ import {
   CheckSquare,
   FileJson,
   Type,
-  Upload
+  Upload,
+  LayoutGrid
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -551,7 +553,7 @@ export default function AdminPage() {
                 </div>
                 <div className="flex items-center gap-3">
                    <RepeatButton onStep={() => handleLocalStep('brightness', -0.01, 0, 2)} className="h-8 w-8"><Minus className="h-4 w-4" /></RepeatButton>
-                   <Slider value={[localCrops.brightness ?? 1]} max={2} step={0.01} onValueChange={([val]) => { setLocalCrops(prev => ({ ...prev, brightness: val })); updateArtworkField(editingId!, 'brightness', val); }} className="w-24" />
+                   <Slider value={[localCrops.brightness ?? 1]} max={2} step={0.01} onValueChange={([val]) => { setLocalCrops(prev => ({ ...prev, brightness: val })); updateArtworkField(editingId!, fieldName, val); }} className="w-24" />
                   <RepeatButton onStep={() => handleLocalStep('brightness', 0.01, 0, 2)} className="h-8 w-8"><Plus className="h-4 w-4" /></RepeatButton>
                 </div>
               </div>
@@ -562,3 +564,4 @@ export default function AdminPage() {
     </div>
   );
 }
+
