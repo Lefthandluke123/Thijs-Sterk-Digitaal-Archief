@@ -19,6 +19,7 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [showMagnifier, setShowMagnifier] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(2.5);
+  const [isOverUI, setIsOverUI] = useState(false);
   const [magnifierPos, setMagnifierPos] = useState({ x: 0, y: 0, mouseX: 0, mouseY: 0 });
   const imgRef = useRef<HTMLImageElement>(null);
 
@@ -26,6 +27,7 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
     if (!artwork) {
       setIsFullScreen(false);
       setShowMagnifier(false);
+      setIsOverUI(false);
     }
   }, [artwork]);
 
@@ -45,6 +47,13 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
     });
   };
 
+  const handleToggleFullScreen = (e: React.MouseEvent) => {
+    // Voorkom toggle als we in loep-modus zijn (om verwarring te voorkomen)
+    // of als we over de UI elementen klikken
+    if (showMagnifier) return;
+    setIsFullScreen(!isFullScreen);
+  };
+
   return (
     <Dialog open={!!artwork} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background border-none rounded-none overflow-hidden outline-none">
@@ -54,9 +63,9 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
           className={cn(
             "relative w-full flex items-center justify-center overflow-hidden bg-black/5 group transition-all duration-500",
             isFullScreen ? "h-[100vh]" : "h-[75vh]",
-            showMagnifier ? "cursor-none" : "cursor-pointer"
+            showMagnifier ? (isOverUI ? "cursor-default" : "cursor-none") : "cursor-pointer"
           )}
-          onClick={() => !showMagnifier && setIsFullScreen(!isFullScreen)}
+          onClick={handleToggleFullScreen}
           onMouseMove={handleMouseMove}
         >
           {artwork && (
@@ -72,8 +81,8 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
             />
           )}
 
-          {/* De Loep (Magnifier) */}
-          {showMagnifier && artwork && (
+          {/* De Loep (Magnifier) - Alleen tonen als we niet over de knoppen bewegen */}
+          {showMagnifier && artwork && !isOverUI && (
             <div 
               className="fixed pointer-events-none border-4 border-white shadow-[0_0_50px_rgba(0,0,0,0.3)] rounded-full z-[100] overflow-hidden bg-background"
               style={{
@@ -90,7 +99,11 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
           )}
 
           {/* Navigatie Pijlen */}
-          <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-8 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity">
+          <div 
+            className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-8 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity"
+            onMouseEnter={() => setIsOverUI(true)}
+            onMouseLeave={() => setIsOverUI(false)}
+          >
             {onPrev && (
               <button 
                 onClick={(e) => { e.stopPropagation(); onPrev(); }} 
@@ -110,8 +123,16 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
           </div>
 
           {/* Top Controls (Loep instellingen & Sluiten) */}
-          <div className="absolute top-8 right-8 z-[110] flex items-center gap-4">
-             <div className="flex items-center gap-2 bg-background/80 backdrop-blur-xl p-1.5 rounded-full border border-border shadow-2xl">
+          <div 
+            className="absolute top-8 right-8 z-[110] flex items-center gap-4"
+            onMouseEnter={() => setIsOverUI(true)}
+            onMouseLeave={() => setIsOverUI(false)}
+            onMouseMove={(e) => e.stopPropagation()}
+          >
+             <div 
+              className="flex items-center gap-2 bg-background/80 backdrop-blur-xl p-1.5 rounded-full border border-border shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+             >
                <Button 
                  variant="ghost" 
                  size="icon" 
@@ -136,7 +157,10 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
                )}
              </div>
              
-             <DialogClose className="p-3 bg-background/80 backdrop-blur-xl rounded-full hover:bg-accent hover:text-accent-foreground transition-all shadow-2xl border border-border" onClick={(e) => e.stopPropagation()}>
+             <DialogClose 
+               className="p-3 bg-background/80 backdrop-blur-xl rounded-full hover:bg-accent hover:text-accent-foreground transition-all shadow-2xl border border-border" 
+               onClick={(e) => e.stopPropagation()}
+             >
                <X className="w-6 h-6 opacity-60" />
              </DialogClose>
           </div>
