@@ -252,7 +252,7 @@ export default function AdminPage() {
         // Vraag de gebruiker of ze nog meer willen verplaatsen
         setTimeout(() => {
           if (!window.confirm("Verplaatsing voltooid. Wilt u nog meer werken verplaatsen?")) {
-            // Optioneel: actie bij 'Nee', momenteel blijft de gebruiker gewoon in het Depot
+            // Optioneel: actie bij 'Nee'
           }
         }, 150);
       })
