@@ -32,7 +32,8 @@ import {
   Upload,
   Download,
   Database,
-  ShieldCheck
+  ShieldCheck,
+  Layers
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -296,7 +297,7 @@ export default function AdminPage() {
       let dataToImport: any[] = [];
       let settingsToImport: any = null;
 
-      // Detect Master Backup vs Legacy Array
+      // Detect Master Backup vs Legacy Array vs Bare Depot
       if (imported.artworks && Array.isArray(imported.artworks)) {
         dataToImport = imported.artworks;
         settingsToImport = imported.settings;
@@ -341,30 +342,42 @@ export default function AdminPage() {
     }
   };
 
-  const handleExportBackup = () => {
+  const handleExportBackup = (isMaster: boolean = true) => {
     if (!artworks || artworks.length === 0) {
       toast({ title: "Leeg Depot", description: "Niets te exporteren." });
       return;
     }
 
-    const masterBackup = {
-      version: "2.0",
-      exportedAt: new Date().toISOString(),
-      artworks: artworks,
-      settings: siteSettings || {}
-    };
+    let exportData: any;
+    let filename: string;
 
-    const dataStr = JSON.stringify(masterBackup, null, 2);
+    if (isMaster) {
+      exportData = {
+        version: "2.0",
+        exportedAt: new Date().toISOString(),
+        artworks: artworks,
+        settings: siteSettings || {}
+      };
+      filename = `thijs-sterk-master-backup-${new Date().toISOString().split('T')[0]}.json`;
+    } else {
+      exportData = artworks;
+      filename = `thijs-sterk-kaal-depot-${new Date().toISOString().split('T')[0]}.json`;
+    }
+
+    const dataStr = JSON.stringify(exportData, null, 2);
     const blob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `thijs-sterk-master-backup-${new Date().toISOString().split('T')[0]}.json`;
+    link.download = filename;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    toast({ title: "Master Backup Geslaagd", description: "Volledig Depot inclusief zalen en instellingen opgeslagen." });
+    toast({ 
+      title: isMaster ? "Master Backup Geslaagd" : "Kaal Depot Geëxporteerd", 
+      description: isMaster ? "Volledig Depot inclusief zalen en instellingen opgeslagen." : "Alleen de lijst met schilderijen is opgeslagen."
+    });
   };
 
   const STANDARD_TAGS = ["Groet", "Schoorl", "Hargen", "Amsterdam", "Frankrijk", "Griekenland", "Olieverf", "Aquarel", "Monumentaal", "Glas in lood", "Bloemen", "Dieren", "Water", "Portretten"];
@@ -511,16 +524,22 @@ export default function AdminPage() {
                 <div className="space-y-2">
                   <h2 className="text-[14px] font-black uppercase tracking-widest">Master Backup & Herstel</h2>
                   <p className="text-[10px] uppercase opacity-40 max-w-md mx-auto leading-relaxed">
-                    Een Master Backup bevat alles: alle schilderijen uit het Depot, hun zalen, tags, uitsnedes en alle teksten van de biografieën.
+                    Kies hieronder welk type backup u wilt maken. Een Master Backup bevat alles, een Kaal Depot alleen de schilderij-data.
                   </p>
                 </div>
                 
                 <div className="flex flex-wrap gap-4 justify-center">
-                  <Button onClick={handleExportBackup} className="h-14 px-8 rounded-xl font-black uppercase tracking-widest text-[11px] bg-accent hover:bg-accent/90">
+                  <Button onClick={() => handleExportBackup(true)} className="h-14 px-8 rounded-xl font-black uppercase tracking-widest text-[11px] bg-accent hover:bg-accent/90">
                     <Download className="w-4 h-4 mr-2" /> Download Master Backup
                   </Button>
-                  <Button variant="outline" onClick={() => jsonFileInputRef.current?.click()} className="h-14 px-8 rounded-xl font-black uppercase tracking-widest text-[11px] border-accent text-accent">
-                    <Upload className="w-4 h-4 mr-2" /> Kies Backup Bestand
+                  <Button variant="outline" onClick={() => handleExportBackup(false)} className="h-14 px-8 rounded-xl font-black uppercase tracking-widest text-[11px] border-accent text-accent bg-background">
+                    <Layers className="w-4 h-4 mr-2" /> Download Kaal Depot
+                  </Button>
+                </div>
+
+                <div className="pt-8 border-t border-black/5 w-full">
+                  <Button variant="secondary" onClick={() => jsonFileInputRef.current?.click()} className="h-12 px-8 rounded-xl font-black uppercase tracking-widest text-[10px] w-full max-w-xs">
+                    <Upload className="w-4 h-4 mr-2" /> Kies Backup Bestand om te Herstellen
                   </Button>
                 </div>
               </div>
