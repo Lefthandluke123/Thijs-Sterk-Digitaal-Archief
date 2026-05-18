@@ -249,10 +249,9 @@ export default function AdminPage() {
         setSelectedIds([]);
         setBulkMoveSeries('');
         
-        // Vraag de gebruiker of ze nog meer willen verplaatsen
         setTimeout(() => {
-          if (!window.confirm("Verplaatsing voltooid. Wilt u nog meer werken verplaatsen?")) {
-            // Optioneel: actie bij 'Nee'
+          if (!window.confirm("Verplaatsing voltooid en selectie vrijgegeven. Wilt u nog meer werken verplaatsen?")) {
+            // Geen verdere actie nodig
           }
         }, 150);
       })
@@ -284,13 +283,14 @@ export default function AdminPage() {
       for (const file of filesArray) {
         try {
           const timestamp = Date.now();
+          const randomId = Math.random().toString(36).substring(2, 8);
           const safeName = file.name.replace(/[^a-z0-9.]/gi, '_');
-          const storageRef = ref(storage, `artworks/${timestamp}_${safeName}`);
+          const storageRef = ref(storage, `artworks/${timestamp}_${randomId}_${safeName}`);
           
           setUploadStatus(`Uploaden: ${file.name}... (${processed + 1}/${totalFiles})`);
 
           const uploadPromise = uploadBytes(storageRef, file);
-          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 30000));
+          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 60000));
           
           const snapshot: any = await Promise.race([uploadPromise, timeoutPromise]);
           const downloadUrl = await getDownloadURL(snapshot.ref);
@@ -307,7 +307,7 @@ export default function AdminPage() {
             cropTop: 0, cropBottom: 0, cropLeft: 0, cropRight: 0, brightness: 1
           };
           
-          addDoc(collection(firestore, 'artworks'), docData);
+          await addDoc(collection(firestore, 'artworks'), docData);
         } catch (e) { 
           toast({ variant: "destructive", title: "Upload Fout", description: `Kon ${file.name} niet verwerken.` });
         }
@@ -649,7 +649,7 @@ export default function AdminPage() {
                 </div>
                 <div className="space-y-1">
                   <Label className="text-[10px] font-black uppercase tracking-widest text-accent">Zaal (Serie)</Label>
-                  <Input key={`${editingId}-series`} defaultValue={editingArtwork?.series || ''} onBlur={(e) => editingId && updateArtworkField(editingId, 'series', e.target.value)} className="h-8 text-[11px] font-black uppercase border-none bg-accent/5 rounded-sm p-2" />
+                  <Input key={`${editingId}-series`} defaultValue={editingArtwork?.series || ''} onBlur={(e) => editingId && updateArtworkField(editingId, 'series', e.target.value)} className="h-8 text-[11px) font-black uppercase border-none bg-accent/5 rounded-sm p-2" />
                 </div>
                 <div className="flex items-center justify-between pt-2">
                   <div className="flex items-center gap-2">
