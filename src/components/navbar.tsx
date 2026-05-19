@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, Loader2 } from 'lucide-react';
+import { ChevronDown, Loader2, Sparkles } from 'lucide-react';
 import { useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, doc } from 'firebase/firestore';
 
@@ -38,7 +38,6 @@ function NavbarContent() {
 
   const hiddenSeries = useMemo(() => siteSettings?.hiddenSeries || [], [siteSettings]);
 
-  // Deduplicatie en tellers op basis van unieke database-werken
   const seriesWithCounts = useMemo(() => {
     if (!dbArtworks) return [];
     
@@ -75,12 +74,13 @@ function NavbarContent() {
 
   if (!mounted) return null;
 
-  const NavLink = ({ href, children, active }: { href: string; children: React.ReactNode; active: boolean }) => (
+  const NavLink = ({ href, children, active, important }: { href: string; children: React.ReactNode; active: boolean; important?: boolean }) => (
     <Link 
       href={href}
       className={cn(
-        "px-4 py-1.5 rounded-full text-[11px] font-black tracking-[0.2em] uppercase transition-all duration-300",
-        active ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:text-foreground"
+        "px-4 py-1.5 rounded-full text-[11px] font-black tracking-[0.2em] uppercase transition-all duration-300 flex items-center gap-2",
+        active ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:text-foreground",
+        important && !active && "text-accent border border-accent/20"
       )}
     >
       {children}
@@ -96,6 +96,10 @@ function NavbarContent() {
         
         <div className="flex items-center gap-1 overflow-x-auto no-scrollbar max-w-[85%]">
           <NavLink href="/" active={pathname === "/"}>Home</NavLink>
+
+          <NavLink href="/exhibition" active={pathname === "/exhibition"} important>
+            <Sparkles className="w-3 h-3" /> Tour
+          </NavLink>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
