@@ -29,12 +29,12 @@ export function Hero() {
 
       <div className="container mx-auto z-10 text-center">
         <div className="inline-block animate-fade-in-up">
-          <span className="text-accent font-black tracking-[0.4em] uppercase text-[10px] mb-6 block">
+          <span className="text-accent font-black tracking-[0.4em] uppercase text-[12px] md:text-[14px] mb-6 block border-b border-accent/20 pb-2">
             Digitale Collectie &bull; Thijs Sterk (1913-1982)
           </span>
         </div>
         
-        <h1 className="font-headline text-3xl md:text-5xl lg:text-6xl font-light tracking-tight text-foreground mb-8 max-w-4xl mx-auto leading-[1.1] animate-fade-in-up delay-100">
+        <h1 className="font-headline text-2xl md:text-4xl lg:text-5xl font-light tracking-tight text-foreground mb-8 max-w-4xl mx-auto leading-[1.2] animate-fade-in-up delay-100">
           Een leven gewijd aan <span className="italic">Licht, Ruimte en Water</span>
         </h1>
         
