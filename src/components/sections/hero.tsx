@@ -39,11 +39,14 @@ export function Hero() {
           Een leven gewijd aan <span className="italic">Licht, Ruimte en Water</span>
         </h1>
         
-        <div className="max-w-2xl mx-auto mb-12 space-y-6 animate-fade-in-up delay-200">
+        <div className="max-w-3xl mx-auto mb-12 space-y-6 animate-fade-in-up delay-200">
           <p className="text-muted-foreground text-lg md:text-xl leading-relaxed font-light">
-            Dwaal op uw eigen tempo door de verschillende thematische zalen en laat u meevoeren door de atmosfeer van de polders, de kust en de verstilde dorpsgezichten. Het zijn die unieke momenten van licht en ruimte die Thijs in zijn werk steeds opnieuw probeerde te vangen en weergeven.
+            Dwaal op uw eigen tempo door de verschillende zalen en laat u meevoeren door de atmosfeer van de polders, de havens van Bretagne en Griekenland, en de verstilde dorpsgezichten. 
           </p>
           <p className="text-muted-foreground text-base md:text-lg leading-relaxed font-light">
+            Van intieme stillevens, bloemen en indringende portretten tot zijn monumentale wandkunst en kleurrijk glas in lood: het zijn die unieke momenten van licht en ruimte die Thijs in zijn werk steeds opnieuw probeerde te vangen en weergeven. 
+          </p>
+          <p className="text-muted-foreground text-base md:text-lg leading-relaxed font-light italic">
             We nodigen u uit om de collectie te verkennen of gebruik te maken van de mogelijkheid om bij <span className="text-accent font-medium">&quot;Uw Zaal&quot;</span> een geheel eigen inkijk te creëren uit zijn omvangrijke oeuvre.
           </p>
         </div>

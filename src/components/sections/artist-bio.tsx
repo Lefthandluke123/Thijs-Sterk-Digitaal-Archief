@@ -32,7 +32,14 @@ export function ArtistBio() {
     }
   }, [selectedArtwork]);
 
-  const bioText = siteSettings?.homeBio || `Thijs Sterk (1913-1982) wijdde zijn leven aan het doorgronden van de atmosferische kwaliteiten van de Lage Landen.\n\n"Licht is niet iets dat op een object valt," schreef hij in 1954 in zijn dagboek, "het is de ruimte die tussen mij en de wereld ademt."`;
+  const bioText = siteSettings?.homeBio || `Thijs Sterk (1913-1982) wijdde zijn leven aan het doorgronden van de atmosferische kwaliteiten van de wereld om hem heen. In zijn atelier in Groet, te midden van de geur van olieverf en het strijklicht van het duinlandschap, creëerde hij een oeuvre dat even veelzijdig als diepzinnig is.
+
+Zijn liefde voor het licht beperkte zich niet tot het Hollandse landschap alleen. In de havens van Bretagne en de zonovergoten dorpen van Griekenland zocht hij naar de juiste kleur voor het water en de lucht. Naast zijn bekende landschappen blonk hij uit in stillevens, bloemstukken en portretten die getuigen van een meesterlijke beheersing van techniek en gevoel.
+
+Thijs Sterk was bovendien een kunstenaar van de grote gebaren. Zijn monumentale wandkunst en zijn glas-in-loodramen sieren diverse publieke gebouwen en kerken, waarbij hij het licht niet alleen schilderde, maar letterlijk liet spreken door het glas.
+
+"Licht is niet iets dat op een object valt," schreef hij in 1954 in zijn dagboek, "het is de ruimte die tussen mij en de wereld ademt."`;
+  
   const bioImageUrl = siteSettings?.homeBioImageUrl || 'https://firebasestorage.googleapis.com/v0/b/studio-7311695883-2090f.firebasestorage.app/o/artworks%2F1778851761925_vh0ad_2_I.jpg?alt=media';
 
   const handleMainPortraitClick = () => {
@@ -99,18 +106,22 @@ export function ArtistBio() {
               {renderTextWithLinks(bioText)}
             </div>
             
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-8 mt-12 pt-12 border-t border-border">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 mt-12 pt-12 border-t border-border">
               <div>
                 <h4 className="font-headline text-2xl font-light text-foreground mb-1">1913</h4>
-                <p className="text-sm uppercase tracking-tighter text-muted-foreground">Geboortejaar</p>
+                <p className="text-[10px] uppercase tracking-tighter text-muted-foreground">Geboortejaar</p>
               </div>
               <div>
-                <h4 className="font-headline text-2xl font-light text-foreground mb-1">45+</h4>
-                <p className="text-sm uppercase tracking-tighter text-muted-foreground">Jaar actief</p>
+                <h4 className="font-headline text-2xl font-light text-foreground mb-1">Monumentaal</h4>
+                <p className="text-[10px] uppercase tracking-tighter text-muted-foreground">Wandkunst</p>
               </div>
               <div>
-                <h4 className="font-headline text-2xl font-light text-foreground mb-1">Nationaal</h4>
-                <p className="text-sm uppercase tracking-tighter text-muted-foreground">Erfgoed</p>
+                <h4 className="font-headline text-2xl font-light text-foreground mb-1">Glas</h4>
+                <p className="text-[10px] uppercase tracking-tighter text-muted-foreground">In lood</p>
+              </div>
+              <div>
+                <h4 className="font-headline text-2xl font-light text-foreground mb-1">Internationaal</h4>
+                <p className="text-[10px] uppercase tracking-tighter text-muted-foreground">Bretagne / Griekenland</p>
               </div>
             </div>
           </div>

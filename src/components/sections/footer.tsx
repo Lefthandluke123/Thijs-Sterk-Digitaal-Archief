@@ -24,7 +24,7 @@ export function Footer() {
               T
             </div>
           </div>
-          <div className="flex flex-col leading-none">
+          <div className="flex flex-col leading-none border-l border-border/40 pl-4">
             <span className="font-headline font-medium tracking-tight text-xl text-foreground">Thijs Sterk</span>
             <span className="text-[8px] font-black uppercase tracking-[0.3em] text-accent mt-1">Digitaal Museum</span>
           </div>
@@ -37,7 +37,6 @@ export function Footer() {
         <div className="flex gap-8 text-[11px] font-black uppercase tracking-widest">
           <Link href="/admin" className="text-muted-foreground hover:text-accent transition-colors">Beheer</Link>
           <a href="#" className="text-muted-foreground hover:text-accent transition-colors">Privacy</a>
-          <a href="#" className="text-muted-foreground hover:text-accent transition-colors">Nieuwsbrief</a>
         </div>
       </div>
     </footer>

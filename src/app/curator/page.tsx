@@ -13,7 +13,8 @@ import { ArtworkViewer } from '@/components/artwork-viewer';
 
 const STANDARD_TAGS = [
   "Groet", "Schoorl", "Hargen", "Amsterdam", "Frankrijk", 
-  "Griekenland", "Olieverf", "Aquarel", "Monumentaal", "Glas in lood",
+  "Bretagne", "Griekenland", "Olieverf", "Aquarel", 
+  "Monumentaal", "Glas in lood", "Havens", "Stillevens",
   "Bloemen", "Dieren", "Water", "Portretten"
 ];
 

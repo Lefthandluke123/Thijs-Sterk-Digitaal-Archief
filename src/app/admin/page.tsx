@@ -49,7 +49,6 @@ import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 
-// Helper om Firestore te ontlasten tijdens bulk-acties
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 function RepeatButton({ onStep, children, className, disabled }: { onStep: () => void, children: React.ReactNode, className?: string, disabled?: boolean }) {
@@ -98,7 +97,12 @@ function RepeatButton({ onStep, children, className, disabled }: { onStep: () =>
   );
 }
 
-const STANDARD_TAGS = ["Groet", "Schoorl", "Hargen", "Amsterdam", "Frankrijk", "Griekenland", "Olieverf", "Aquarel", "Monumentaal", "Glas in lood", "Bloemen", "Dieren", "Water", "Portretten"];
+const STANDARD_TAGS = [
+  "Groet", "Schoorl", "Hargen", "Amsterdam", "Frankrijk", 
+  "Bretagne", "Griekenland", "Olieverf", "Aquarel", 
+  "Monumentaal", "Glas in lood", "Havens", "Stillevens",
+  "Bloemen", "Dieren", "Water", "Portretten"
+];
 
 export default function AdminPage() {
   const firestore = useFirestore();
@@ -257,12 +261,6 @@ export default function AdminPage() {
         setSelectedIds([]); 
         setBulkMoveSeries('');
         toast({ title: "Verplaatst", description: `${total} werken verplaatst naar ${bulkMoveSeries}.` });
-        
-        setTimeout(() => {
-          if (window.confirm("Verplaatsing voltooid. Wilt u nog meer werken verplaatsen?")) {
-            // Gebruiker kan doorgaan
-          }
-        }, 100);
       })
       .finally(() => setIsSaving(false));
   };
@@ -314,16 +312,13 @@ export default function AdminPage() {
         };
         
         await addDoc(collection(firestore, 'artworks'), docData);
-        
-        // Throttling om 'resource-exhausted' te voorkomen
         await sleep(250);
-
         processedCount++;
         setUploadProgress((processedCount / totalFiles) * 100);
       } catch (e) {
         console.error(e);
         toast({ variant: "destructive", title: "Upload Fout", description: `Kon ${file.name} niet uploaden.` });
-        await sleep(1000); // Langer wachten bij fout
+        await sleep(1000);
       }
     }
 
@@ -357,7 +352,7 @@ export default function AdminPage() {
         setDoc(settingsRef, settingsToImport, { merge: true }).catch(async () => {});
       }
 
-      const chunkSize = 100; // Kleinere chunks om quota te sparen
+      const chunkSize = 100;
       for (let i = 0; i < dataToImport.length; i += chunkSize) {
         const chunk = dataToImport.slice(i, i + chunkSize);
         const batch = writeBatch(firestore);
@@ -380,7 +375,7 @@ export default function AdminPage() {
 
         await batch.commit();
         setUploadStatus(`Herstellen: ${Math.min(i + chunkSize, dataToImport.length)} van ${dataToImport.length}`);
-        await sleep(500); // Pauze tussen commits voor stabiliteit
+        await sleep(500);
       }
 
       toast({ title: "Herstel Voltooid", description: `${dataToImport.length} werken zijn succesvol hersteld.` });
@@ -425,10 +420,6 @@ export default function AdminPage() {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    toast({ 
-      title: isMaster ? "Master Backup Geslaagd" : "Kaal Depot Geëxporteerd", 
-      description: isMaster ? "Volledig Depot inclusief zalen en instellingen opgeslagen." : "Alleen de lijst met schilderijen is opgeslagen."
-    });
   };
 
   return (
@@ -491,19 +482,12 @@ export default function AdminPage() {
                     <Button variant={filterSeries === s.name ? "default" : "outline"} size="sm" onClick={() => setFilterSeries(s.name)} className={cn("rounded-l-full rounded-r-none text-[9px] uppercase tracking-widest font-bold h-7 whitespace-nowrap pr-2", isHidden && "opacity-40 grayscale")}>
                       {s.name} ({s.count})
                     </Button>
-                    <button onClick={() => toggleSeriesVisibility(name)} title="Zaal verbergen/tonen op website" className={cn("h-7 px-2 rounded-r-full border-2 border-l-0 transition-colors flex items-center justify-center bg-background", isHidden ? "text-red-500 border-red-200 hover:bg-red-50" : "text-green-600 border-black hover:bg-black/5")}>
+                    <button onClick={() => toggleSeriesVisibility(s.name)} title="Zaal verbergen/tonen op website" className={cn("h-7 px-2 rounded-r-full border-2 border-l-0 transition-colors flex items-center justify-center bg-background", isHidden ? "text-red-500 border-red-200 hover:bg-red-50" : "text-green-600 border-black hover:bg-black/5")}>
                       {isHidden ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
                     </button>
                   </div>
                 );
               })}
-            </div>
-
-            <div className="flex justify-between items-center h-12">
-               <Button onClick={() => fileInputRef.current?.click()} variant="outline" size="sm" disabled={isUploading} className="rounded-full text-[11px] uppercase font-black tracking-widest border-accent text-accent">
-                 {isUploading ? <Loader2 className="w-3 h-3 mr-2 animate-spin" /> : <Upload className="w-3 h-3 mr-2" />}
-                 Bestand naar Depot
-               </Button>
             </div>
 
             {selectedIds.length > 0 && (
@@ -593,7 +577,7 @@ export default function AdminPage() {
                 <div className="space-y-2">
                   <h2 className="text-[14px] font-black uppercase tracking-widest">Master Backup & Herstel</h2>
                   <p className="text-[10px] uppercase opacity-40 max-w-md mx-auto leading-relaxed">
-                    Kies hieronder welk type backup u wilt maken. Een Master Backup bevat alles (zalen, teksten, instellingen), een Kaal Depot alleen de schilderij-data.
+                    Een Master Backup bevat alles (zalen, teksten, instellingen).
                   </p>
                 </div>
                 
@@ -601,14 +585,11 @@ export default function AdminPage() {
                   <Button onClick={() => handleExportBackup(true)} className="h-14 px-8 rounded-xl font-black uppercase tracking-widest text-[11px] bg-accent hover:bg-accent/90">
                     <Download className="w-4 h-4 mr-2" /> Download Master Backup
                   </Button>
-                  <Button variant="outline" onClick={() => handleExportBackup(false)} className="h-14 px-8 rounded-xl font-black uppercase tracking-widest text-[11px] border-accent text-accent bg-background">
-                    <Layers className="w-4 h-4 mr-2" /> Download Kaal Depot
-                  </Button>
                 </div>
 
                 <div className="pt-8 border-t border-black/5 w-full">
                   <Button variant="secondary" onClick={() => jsonFileInputRef.current?.click()} className="h-12 px-8 rounded-xl font-black uppercase tracking-widest text-[10px] w-full max-w-xs">
-                    <Upload className="w-4 h-4 mr-2" /> Kies Backup Bestand om te Herstellen
+                    <Upload className="w-4 h-4 mr-2" /> Kies Backup Bestand
                   </Button>
                 </div>
               </div>
@@ -623,14 +604,10 @@ export default function AdminPage() {
               
               {bulkJson && (
                 <div className="space-y-4 animate-in fade-in slide-in-from-top-4">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-[10px] font-black uppercase tracking-widest opacity-40">JSON Preview (Geselecteerd voor Import)</Label>
-                    <Button variant="ghost" size="sm" onClick={() => setBulkJson('')} className="text-[9px] uppercase font-bold text-red-500">Annuleren</Button>
-                  </div>
                   <Textarea value={bulkJson} readOnly className="min-h-[200px] font-mono text-[10px] bg-black/5 border-none rounded-xl" />
                   <Button onClick={handleImportJson} disabled={isSaving} className="h-14 rounded-xl font-black uppercase tracking-widest w-full">
                     {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ShieldCheck className="w-4 h-4 mr-2" />}
-                    Start Herstel naar Cloud (Inclusief Zalen)
+                    Start Herstel naar Cloud
                   </Button>
                 </div>
               )}
@@ -668,15 +645,11 @@ export default function AdminPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-12 w-full h-full">
               <div className="flex flex-col gap-4 border-r border-black/5 pr-8">
                 <div className="space-y-1">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-accent flex items-center gap-2"><Monitor className="w-3 h-3" /> Schermtitel (Zichtbaar op site)</Label>
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-accent flex items-center gap-2"><Monitor className="w-3 h-3" /> Schermtitel</Label>
                   <Input key={`${editingId}-displayTitle`} defaultValue={editingArtwork?.displayTitle || ''} onBlur={(e) => editingId && updateArtworkField(editingId, 'displayTitle', e.target.value)} placeholder="Titel voor publiek..." className="h-8 text-[11px] font-black uppercase border-none bg-accent/5 rounded-sm p-2" />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-[10px] font-black uppercase tracking-widest opacity-40">Interne Titel (Bestandsnaam)</Label>
-                  <Input key={`${editingId}-title`} defaultValue={editingArtwork?.title || ''} onBlur={(e) => editingId && updateArtworkField(editingId, 'title', e.target.value)} className="h-8 text-[11px] font-black uppercase border-none bg-black/5 rounded-sm p-2" />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-accent">Zaal (Serie)</Label>
+                  <Label className="text-[10px] font-black uppercase tracking-widest opacity-40">Zaal (Serie)</Label>
                   <Input key={`${editingId}-series`} defaultValue={editingArtwork?.series || ''} onBlur={(e) => editingId && updateArtworkField(editingId, 'series', e.target.value)} className="h-8 text-[11px] font-black uppercase border-none bg-accent/5 rounded-sm p-2" />
                 </div>
                 <div className="flex items-center justify-between pt-2">
@@ -689,7 +662,6 @@ export default function AdminPage() {
                     <RepeatButton onStep={() => handleLocalStep('brightness', 0.01, 0, 2)} className="h-6 w-6"><Plus className="h-3 w-3" /></RepeatButton>
                   </div>
                 </div>
-                <Slider value={[localCrops.brightness ?? 1]} max={2} step={0.01} onValueChange={([val]) => { setLocalCrops(prev => ({ ...prev, brightness: val })); updateArtworkField(editingId!, 'brightness', val); }} className="w-full" />
               </div>
 
               <div className="flex flex-col gap-4 border-r border-black/5 pr-8">
@@ -709,18 +681,7 @@ export default function AdminPage() {
                       </button>
                     </span>
                   ))}
-                  {(editingArtwork?.tags || []).length === 0 && <span className="text-[9px] uppercase opacity-30 font-bold">Geen tags...</span>}
                 </div>
-
-                <form onSubmit={handleAddCustomTag} className="flex gap-2 mb-4">
-                  <Input 
-                    value={newTagInput} 
-                    onChange={(e) => setNewTagInput(e.target.value)} 
-                    placeholder="Nieuwe Tag..." 
-                    className="h-7 text-[10px] uppercase font-black tracking-widest bg-black/5 border-none rounded-sm"
-                  />
-                  <Button type="submit" size="sm" className="h-7 px-3 text-[9px] font-black uppercase">Voeg Toe</Button>
-                </form>
 
                 <div className="grid grid-cols-3 gap-1 overflow-y-auto">
                   {STANDARD_TAGS.map(tag => {

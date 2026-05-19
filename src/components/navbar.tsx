@@ -58,8 +58,6 @@ function NavbarContent() {
     
     return Object.entries(counts)
       .filter(([name]) => 
-        name !== "Monumentaal" && 
-        name !== "Glas in lood" && 
         name !== "Nieuwe Uploads" && 
         name !== "Geen zaal" &&
         !hiddenSeries.includes(name)
@@ -90,7 +88,7 @@ function NavbarContent() {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/10">
       <div className="container mx-auto px-6 h-14 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-4 h-14 group">
+        <Link href="/" className="flex items-center gap-4 h-14 group shrink-0">
           <img src="/logo.png" alt="Logo" className="h-9 w-auto object-contain" />
           <div className="flex flex-col leading-none border-l border-border/40 pl-4">
              <span className="font-headline font-light text-base tracking-tight text-foreground">Thijs Sterk</span>
@@ -110,7 +108,7 @@ function NavbarContent() {
               <button
                 className={cn(
                   "px-4 py-1.5 rounded-full text-[11px] font-black tracking-[0.2em] uppercase transition-all duration-300 flex items-center gap-1 outline-none",
-                  (pathname.includes('/gallery') && !['Monumentaal', 'Glas in lood'].includes(currentSeries || ''))
+                  pathname.includes('/gallery')
                     ? "bg-accent text-accent-foreground" 
                     : "text-muted-foreground hover:text-foreground"
                 )}
@@ -135,10 +133,6 @@ function NavbarContent() {
           </DropdownMenu>
 
           <NavLink href="/curator" active={pathname === "/curator"}>Uw Zaal</NavLink>
-          
-          {!hiddenSeries.includes("Monumentaal") && (
-            <NavLink href="/gallery?series=Monumentaal" active={pathname === "/gallery" && currentSeries === "Monumentaal"}>Monumentaal</NavLink>
-          )}
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
