@@ -1,10 +1,9 @@
-
 "use client";
 
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { ArrowDownRight, Maximize2, Sparkles, Layout } from 'lucide-react';
+import { Maximize2, Sparkles, Layout } from 'lucide-react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where, limit } from 'firebase/firestore';
 import { ArtworkViewer } from '@/components/artwork-viewer';
@@ -41,7 +40,7 @@ export function Hero() {
         
         <div className="max-w-3xl mx-auto mb-12 space-y-6 animate-fade-in-up delay-200">
           <p className="text-muted-foreground text-lg md:text-xl leading-relaxed font-light">
-            Dwaal op uw eigen tempo door de verschillende zalen en laat u meevoeren door de atmosfeer van de polders, de havens van Bretagne en Griekenland, en de verstilde dorpsgezichten. 
+            Dwaal hier op uw eigen tempo door de verschillende zalen en laat u meevoeren door de atmosfeer van de polders, de havens van Bretagne en Griekenland, en de verstilde dorpsgezichten. 
           </p>
           <p className="text-muted-foreground text-base md:text-lg leading-relaxed font-light">
             Van intieme stillevens, bloemen en indringende portretten tot zijn monumentale wandkunst en kleurrijk glas in lood: het zijn die unieke momenten van licht en ruimte die Thijs in zijn werk steeds opnieuw probeerde te vangen en weergeven. 
