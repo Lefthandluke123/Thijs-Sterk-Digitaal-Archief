@@ -90,8 +90,12 @@ function NavbarContent() {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/10">
       <div className="container mx-auto px-6 h-14 flex items-center justify-between">
-        <Link href="/" className="flex items-center h-14">
-          <img src="/logo.png" alt="Logo" className="h-10 w-auto object-contain" />
+        <Link href="/" className="flex items-center gap-4 h-14 group">
+          <img src="/logo.png" alt="Logo" className="h-9 w-auto object-contain" />
+          <div className="flex flex-col leading-none border-l border-border/40 pl-4">
+             <span className="font-headline font-light text-base tracking-tight text-foreground">Thijs Sterk</span>
+             <span className="text-[7px] font-black uppercase tracking-[0.3em] text-accent">Digitaal Museum</span>
+          </div>
         </Link>
         
         <div className="flex items-center gap-1 overflow-x-auto no-scrollbar max-w-[85%]">

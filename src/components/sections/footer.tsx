@@ -1,15 +1,15 @@
+
 "use client";
 
 import React from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 
 export function Footer() {
   return (
     <footer className="py-12 border-t border-border bg-background px-4">
-      <div className="container mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-        <div className="flex items-center gap-2">
-          <div className="h-8 w-auto flex items-center justify-center">
+      <div className="container mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
+        <div className="flex items-center gap-4">
+          <div className="h-10 w-auto flex items-center justify-center">
             <img 
               src="/logo.png" 
               alt="Logo" 
@@ -20,21 +20,24 @@ export function Footer() {
                 if (fallback) (fallback as HTMLElement).style.display = 'block';
               }}
             />
-            <div className="fallback-t hidden w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white font-headline font-bold text-lg">
+            <div className="fallback-t hidden w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white font-headline font-bold text-lg">
               T
             </div>
           </div>
-          <span className="font-headline font-medium tracking-tight text-xl">Thijs Sterk</span>
+          <div className="flex flex-col leading-none">
+            <span className="font-headline font-medium tracking-tight text-xl text-foreground">Thijs Sterk</span>
+            <span className="text-[8px] font-black uppercase tracking-[0.3em] text-accent mt-1">Digitaal Museum</span>
+          </div>
         </div>
         
-        <p className="text-muted-foreground text-sm uppercase tracking-widest font-medium">
+        <p className="text-muted-foreground text-[10px] uppercase tracking-widest font-black opacity-40">
           &copy; {new Date().getFullYear()} Erven Thijs Sterk. Alle rechten voorbehouden.
         </p>
         
-        <div className="flex gap-8 text-sm font-medium">
-          <Link href="/admin" className="text-muted-foreground hover:text-foreground transition-colors">Beheer</Link>
-          <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Privacy</a>
-          <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Nieuwsbrief</a>
+        <div className="flex gap-8 text-[11px] font-black uppercase tracking-widest">
+          <Link href="/admin" className="text-muted-foreground hover:text-accent transition-colors">Beheer</Link>
+          <a href="#" className="text-muted-foreground hover:text-accent transition-colors">Privacy</a>
+          <a href="#" className="text-muted-foreground hover:text-accent transition-colors">Nieuwsbrief</a>
         </div>
       </div>
     </footer>

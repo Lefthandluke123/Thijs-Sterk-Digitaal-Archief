@@ -452,9 +452,12 @@ export default function AdminPage() {
       )}
 
       <header className="h-16 border-b border-border bg-background/95 backdrop-blur-sm sticky top-14 z-40 px-8 flex items-center justify-between">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
           <img src="/logo.png" className="h-10 w-auto" alt="Logo" />
-          <h1 className="font-headline text-lg font-light">Atelier <span className="italic">Beheer</span></h1>
+          <div className="flex flex-col leading-none border-l border-border/40 pl-4">
+            <h1 className="font-headline text-lg font-light text-foreground">Thijs Sterk</h1>
+            <span className="text-[7px] font-black uppercase tracking-[0.3em] text-accent">Digitaal Museum &bull; Beheer</span>
+          </div>
         </div>
         <Link href="/" className="text-[11px] uppercase tracking-widest font-black text-muted-foreground hover:text-foreground border-l border-border pl-4 flex items-center gap-2">
           <ArrowLeft className="w-3 h-3" /> Website
@@ -488,7 +491,7 @@ export default function AdminPage() {
                     <Button variant={filterSeries === s.name ? "default" : "outline"} size="sm" onClick={() => setFilterSeries(s.name)} className={cn("rounded-l-full rounded-r-none text-[9px] uppercase tracking-widest font-bold h-7 whitespace-nowrap pr-2", isHidden && "opacity-40 grayscale")}>
                       {s.name} ({s.count})
                     </Button>
-                    <button onClick={() => toggleSeriesVisibility(s.name)} title="Zaal verbergen/tonen op website" className={cn("h-7 px-2 rounded-r-full border-2 border-l-0 transition-colors flex items-center justify-center bg-background", isHidden ? "text-red-500 border-red-200 hover:bg-red-50" : "text-green-600 border-black hover:bg-black/5")}>
+                    <button onClick={() => toggleSeriesVisibility(name)} title="Zaal verbergen/tonen op website" className={cn("h-7 px-2 rounded-r-full border-2 border-l-0 transition-colors flex items-center justify-center bg-background", isHidden ? "text-red-500 border-red-200 hover:bg-red-50" : "text-green-600 border-black hover:bg-black/5")}>
                       {isHidden ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
                     </button>
                   </div>
