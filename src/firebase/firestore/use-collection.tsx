@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
@@ -5,7 +6,8 @@ import {
   Query, 
   onSnapshot, 
   QuerySnapshot, 
-  DocumentData
+  DocumentData,
+  collection
 } from 'firebase/firestore';
 import { errorEmitter } from '../error-emitter';
 import { FirestorePermissionError } from '../errors';
@@ -15,7 +17,6 @@ export function useCollection<T = DocumentData>(collectionQuery: Query<T> | null
   const [loading, setLoading] = useState(!!collectionQuery);
   const [error, setError] = useState<Error | null>(null);
   
-  // Gebruik een ref om het query-pad te tracken in plaats van de query-instantie zelf
   const queryRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -25,7 +26,6 @@ export function useCollection<T = DocumentData>(collectionQuery: Query<T> | null
       return;
     }
 
-    // Stabiliseer de query-check op basis van de interne query-structuur
     const currentQueryKey = (collectionQuery as any)._query?.path?.toString() || 'unknown';
     
     if (currentQueryKey !== queryRef.current) {
@@ -44,8 +44,9 @@ export function useCollection<T = DocumentData>(collectionQuery: Query<T> | null
         setLoading(false);
       },
       async (serverError) => {
+        const path = (collectionQuery as any).path || (collectionQuery as any)._query?.path?.toString() || 'collection';
         const permissionError = new FirestorePermissionError({
-          path: 'collection',
+          path,
           operation: 'list',
         });
         errorEmitter.emit('permission-error', permissionError);

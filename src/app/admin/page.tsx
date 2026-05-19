@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
@@ -250,7 +251,7 @@ export default function AdminPage() {
     batch.commit()
       .then(() => {
         const total = selectedIds.length;
-        setSelectedIds([]);
+        setSelectedIds([]); // RELEASE SELECTION
         setBulkMoveSeries('');
         toast({ title: "Verplaatst", description: `${total} werken verplaatst naar ${bulkMoveSeries}.` });
         

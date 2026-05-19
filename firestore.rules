@@ -1,21 +1,18 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Iedereen mag kunstwerken en instellingen bekijken
+    // Openbare toegang voor alle collecties om weergave in privévensters te garanderen
     match /artworks/{artworkId} {
-      allow read: if true;
-      allow write: if true; // In productie kunt u dit beperken tot auth != null
+      allow read, write: if true;
     }
     
-    match /settings/site {
-      allow read: if true;
-      allow write: if true;
+    match /settings/{settingId} {
+      allow read, write: if true;
     }
     
-    // Bezoekers mogen interacties loggen (bijv. voor de curator pagina)
     match /interactions/{interactionId} {
-      allow create: if true;
-      allow read: if true;
+      allow read, write: if true;
     }
   }
 }
