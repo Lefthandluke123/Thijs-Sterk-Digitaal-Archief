@@ -1,22 +1,61 @@
 
 "use client";
 
-import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, limit } from 'firebase/firestore';
+import React, { useState, useMemo, useEffect, Suspense } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
+import { collection, query, orderBy, where, doc } from 'firebase/firestore';
 import { ArtworkViewer } from '@/components/artwork-viewer';
-import { Loader2, MousePointer2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, MousePointer2, ChevronLeft, ChevronRight, Layers } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export default function ExhibitionPage() {
+function ExhibitionContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const seriesParam = searchParams.get('series');
+  
   const [selectedArtwork, setSelectedArtwork] = useState<any | null>(null);
   const [scrollX, setScrollX] = useState(0);
   const firestore = useFirestore();
 
+  // Haal instellingen op voor verborgen zalen
+  const siteSettingsRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, 'settings', 'site');
+  }, [firestore]);
+  const { data: siteSettings } = useDoc(siteSettingsRef);
+  const hiddenSeries = useMemo(() => siteSettings?.hiddenSeries || [], [siteSettings]);
+
+  // Haal alle unieke series op voor de selector
+  const allArtworksQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'artworks'));
+  }, [firestore]);
+  const { data: allArtworks } = useCollection(allArtworksQuery);
+
+  const availableSeries = useMemo(() => {
+    if (!allArtworks) return [];
+    const counts: Record<string, number> = {};
+    allArtworks.forEach(art => {
+      const name = art.series || "Geen zaal";
+      if (!hiddenSeries.includes(name) && name !== "Nieuwe Uploads") {
+        counts[name] = (counts[name] || 0) + 1;
+      }
+    });
+    return Object.entries(counts)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [allArtworks, hiddenSeries]);
+
+  // Query voor de schilderijen in de actuele tour
   const artworksQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'artworks'), orderBy('createdAt', 'desc'), limit(50));
-  }, [firestore]);
+    let q = query(collection(firestore, 'artworks'), orderBy('createdAt', 'desc'));
+    if (seriesParam) {
+      q = query(collection(firestore, 'artworks'), where('series', '==', seriesParam), orderBy('createdAt', 'desc'));
+    }
+    return q;
+  }, [firestore, seriesParam]);
 
   const { data: dbArtworks, loading } = useCollection(artworksQuery);
 
@@ -31,12 +70,17 @@ export default function ExhibitionPage() {
     });
   }, [dbArtworks]);
 
+  // Reset scroll bij wisselen van zaal
+  useEffect(() => {
+    setScrollX(0);
+  }, [seriesParam]);
+
   // Toetsenbord navigatie
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (selectedArtwork) return;
-      if (e.key === 'ArrowRight') setScrollX(prev => prev + 400);
-      if (e.key === 'ArrowLeft') setScrollX(prev => Math.max(0, prev - 400));
+      if (e.key === 'ArrowRight') setScrollX(prev => prev + 500);
+      if (e.key === 'ArrowLeft') setScrollX(prev => Math.max(0, prev - 500));
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -56,6 +100,14 @@ export default function ExhibitionPage() {
     return () => window.removeEventListener('wheel', handleScroll);
   }, [selectedArtwork]);
 
+  const handleSeriesChange = (name: string) => {
+    if (name === "Alles") {
+      router.push('/exhibition');
+    } else {
+      router.push(`/exhibition?series=${encodeURIComponent(name)}`);
+    }
+  };
+
   if (loading && artworks.length === 0) {
     return (
       <div className="h-screen flex items-center justify-center bg-white">
@@ -69,10 +121,43 @@ export default function ExhibitionPage() {
       {/* Heldere Museum Achtergrond */}
       <div className="absolute inset-0 bg-gradient-to-b from-neutral-50 to-white pointer-events-none" />
       
+      {/* Zaal Selector Overlay */}
+      <div className="absolute top-20 left-0 right-0 z-40 flex justify-center px-6">
+        <div className="bg-white/80 backdrop-blur-md border border-black/5 rounded-full px-6 py-2 flex items-center gap-6 shadow-xl max-w-full overflow-x-auto no-scrollbar">
+          <div className="flex items-center gap-2 border-r border-black/10 pr-4 mr-2 hidden md:flex">
+            <Layers className="w-3.5 h-3.5 text-accent" />
+            <span className="text-[9px] font-black uppercase tracking-widest opacity-40">Kies Zaal</span>
+          </div>
+          <button 
+            onClick={() => handleSeriesChange("Alles")}
+            className={cn(
+              "text-[9px] font-black uppercase tracking-widest whitespace-nowrap transition-colors",
+              !seriesParam ? "text-accent" : "text-black/40 hover:text-black"
+            )}
+          >
+            Alle Werken
+          </button>
+          {availableSeries.map(s => (
+            <button 
+              key={s.name}
+              onClick={() => handleSeriesChange(s.name)}
+              className={cn(
+                "text-[9px] font-black uppercase tracking-widest whitespace-nowrap transition-colors",
+                seriesParam === s.name ? "text-accent" : "text-black/40 hover:text-black"
+              )}
+            >
+              {s.name} <span className="opacity-30 text-[7px]">[{s.count}]</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Header */}
-      <div className="absolute top-24 left-1/2 -translate-x-1/2 z-20 text-center pointer-events-none">
-        <span className="text-accent font-black tracking-[0.4em] uppercase text-[10px] block mb-2">Retrospectief Thijs Sterk</span>
-        <h1 className="text-black/80 font-headline text-3xl md:text-5xl font-light italic">De Grote Zaal</h1>
+      <div className="absolute top-36 left-1/2 -translate-x-1/2 z-20 text-center pointer-events-none">
+        <span className="text-accent font-black tracking-[0.4em] uppercase text-[10px] block mb-2">Virtuele Tour</span>
+        <h1 className="text-black/80 font-headline text-3xl md:text-5xl font-light italic">
+          {seriesParam || "De Grote Zaal"}
+        </h1>
       </div>
 
       {/* Wandeling Gebied */}
@@ -128,8 +213,8 @@ export default function ExhibitionPage() {
             {/* Einde van de zaal */}
             <div className="shrink-0 w-[50vw] flex flex-col items-center justify-center text-center opacity-30">
                <div className="w-1 h-32 bg-black/10 mb-8" />
-               <h4 className="text-[14px] font-black uppercase tracking-[0.5em]">Einde van de Exposities</h4>
-               <p className="text-[10px] mt-2 uppercase tracking-widest">Dank voor uw bezoek aan het Atelier</p>
+               <h4 className="text-[14px] font-black uppercase tracking-[0.5em]">Einde van {seriesParam ? `zaal ${seriesParam}` : "de Exposities"}</h4>
+               <p className="text-[10px] mt-2 uppercase tracking-widest">Dank voor uw bezoek</p>
             </div>
           </div>
         </div>
@@ -149,7 +234,7 @@ export default function ExhibitionPage() {
           <div className="flex flex-col items-center gap-3">
              <div className="flex items-center gap-3 text-black/40">
                 <MousePointer2 className="w-4 h-4 animate-bounce" />
-                <span className="text-[10px] font-black uppercase tracking-[0.4em]">Gebruik muis of knoppen</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.4em]">Scroll of gebruik knoppen</span>
              </div>
              <div className="w-64 h-1 bg-black/5 relative overflow-hidden rounded-full">
                 <div 
@@ -174,5 +259,13 @@ export default function ExhibitionPage() {
         onClose={() => setSelectedArtwork(null)} 
       />
     </main>
+  );
+}
+
+export default function ExhibitionPage() {
+  return (
+    <Suspense fallback={<div className="h-screen flex items-center justify-center bg-white"><Loader2 className="w-10 h-10 animate-spin text-accent" /></div>}>
+      <ExhibitionContent />
+    </Suspense>
   );
 }
