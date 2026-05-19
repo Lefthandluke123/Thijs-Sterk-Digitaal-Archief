@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
@@ -294,7 +293,6 @@ export default function AdminPage() {
         const safeName = file.name.replace(/[^a-z0-9.]/gi, '_');
         const storageRef = ref(storage, `artworks/${timestamp}_${randomId}_${safeName}`);
         
-        // Wacht op Storage upload
         const snapshot = await uploadBytes(storageRef, file);
         const downloadUrl = await getDownloadURL(snapshot.ref);
         
@@ -311,8 +309,7 @@ export default function AdminPage() {
           cropTop: 0, cropBottom: 0, cropLeft: 0, cropRight: 0, brightness: 1
         };
         
-        // Start Firestore write (niet awaiten volgens richtlijn)
-        addDoc(collection(firestore, 'artworks'), docData)
+        await addDoc(collection(firestore, 'artworks'), docData)
           .catch(async () => {
              errorEmitter.emit('permission-error', new FirestorePermissionError({
                path: 'artworks',
@@ -435,7 +432,6 @@ export default function AdminPage() {
       <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={(e) => handleBatchProcess(e.target.files)} accept="image/*" multiple />
       <input type="file" ref={uploadDirInputRef} style={{ display: 'none' }} onChange={(e) => handleBatchProcess(e.target.files)} {...({ webkitdirectory: "", directory: "" } as any)} />
       
-      {/* Globale Statusbalk voor Uploads - Nu op top-0 */}
       {isUploading && (
         <div className="fixed top-0 left-0 right-0 z-[100] bg-accent text-accent-foreground px-8 py-4 shadow-2xl animate-in slide-in-from-top duration-500 border-b border-black/10">
           <div className="max-w-7xl mx-auto flex flex-col gap-3">
