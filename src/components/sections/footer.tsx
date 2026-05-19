@@ -25,8 +25,8 @@ export function Footer() {
             </div>
           </div>
           <div className="flex flex-col leading-none border-l border-border/40 pl-4">
-            <span className="font-headline font-medium tracking-tight text-xl text-foreground">Thijs Sterk</span>
-            <span className="text-[8px] font-black uppercase tracking-[0.3em] text-accent mt-1">Digitaal Museum</span>
+            <span className="font-headline font-medium tracking-tight text-xl text-foreground">Digitaal Museum</span>
+            <span className="text-[8px] font-black uppercase tracking-[0.3em] text-accent mt-1">Thijs Sterk (1913-1982)</span>
           </div>
         </div>
         

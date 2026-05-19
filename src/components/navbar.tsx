@@ -91,8 +91,8 @@ function NavbarContent() {
         <Link href="/" className="flex items-center gap-4 h-14 group shrink-0">
           <img src="/logo.png" alt="Logo" className="h-9 w-auto object-contain" />
           <div className="flex flex-col leading-none border-l border-border/40 pl-4">
-             <span className="font-headline font-light text-base tracking-tight text-foreground">Thijs Sterk</span>
-             <span className="text-[7px] font-black uppercase tracking-[0.3em] text-accent">Digitaal Museum</span>
+             <span className="font-headline font-light text-base tracking-tight text-foreground">Digitaal Museum</span>
+             <span className="text-[7px] font-black uppercase tracking-[0.3em] text-accent">Thijs Sterk (1913-1982)</span>
           </div>
         </Link>
         
