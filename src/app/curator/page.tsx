@@ -11,12 +11,13 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { ArtworkViewer } from '@/components/artwork-viewer';
 
-const STANDARD_TAGS = [
-  "Groet", "Schoorl", "Hargen", "Amsterdam", "Frankrijk", 
-  "Bretagne", "Griekenland", "Olieverf", "Aquarel", 
-  "Monumentaal", "Glas in lood", "Havens", "Stillevens",
-  "Bloemen", "Dieren", "Water", "Portretten"
-];
+const TAG_CATEGORIES = {
+  "Techniek": ["Olieverf", "Aquarel", "Monumentaal", "Glas in lood"],
+  "Plaats": ["Groet", "Schoorl", "Hargen", "Amsterdam", "Frankrijk", "Bretagne", "Griekenland"],
+  "Onderwerp": ["Havens", "Stillevens", "Bloemen", "Dieren", "Water", "Portretten"]
+};
+
+const FLAT_STANDARD_TAGS = Object.values(TAG_CATEGORIES).flat();
 
 export default function CuratorPage() {
   const [activeTags, setActiveTags] = useState<string[]>([]);
@@ -52,13 +53,16 @@ export default function CuratorPage() {
     });
   }, [dbArtworks]);
 
-  const allAvailableTags = useMemo(() => {
+  const otherTags = useMemo(() => {
     const dbTags = new Set<string>();
     artworks.forEach(art => {
-      art.tags?.forEach((tag: string) => dbTags.add(tag));
+      art.tags?.forEach((tag: string) => {
+        if (!FLAT_STANDARD_TAGS.includes(tag)) {
+          dbTags.add(tag);
+        }
+      });
     });
-    const combined = new Set([...STANDARD_TAGS, ...Array.from(dbTags)]);
-    return Array.from(combined).sort();
+    return Array.from(dbTags).sort();
   }, [artworks]);
 
   const filteredArtworks = useMemo(() => {
@@ -106,50 +110,111 @@ export default function CuratorPage() {
           <h1 className="font-headline text-[14px] md:text-[16px] font-light text-black tracking-tight leading-tight uppercase">
             Uw Eigen <span className="italic">Zaal</span>
           </h1>
+          <p className="text-[9px] uppercase tracking-[0.3em] opacity-40">Stel uw persoonlijke selectie samen</p>
         </div>
       </div>
 
       <div className="container mx-auto max-w-7xl px-6 py-12 pb-48">
-        <div className="flex flex-col items-center space-y-12">
-          <div className="flex flex-wrap justify-center gap-2.5 max-w-4xl">
-            {allAvailableTags.map(tag => {
-              const isActive = activeTags.includes(tag);
-              return (
-                <button
-                  key={tag}
-                  onClick={() => toggleTag(tag)}
-                  className={cn(
-                    "px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all border-2 border-black",
-                    isActive ? "bg-black text-white" : "bg-white text-black hover:bg-black/5"
-                  )}
-                >
-                  {tag}
-                </button>
-              );
-            })}
+        <div className="flex flex-col items-center space-y-16">
+          
+          <div className="w-full max-w-4xl space-y-12">
+            {Object.entries(TAG_CATEGORIES).map(([category, tags]) => (
+              <div key={category} className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <div className="h-px bg-black/5 flex-1" />
+                  <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-accent">{category}</h2>
+                  <div className="h-px bg-black/5 flex-1" />
+                </div>
+                <div className="flex flex-wrap justify-center gap-2.5">
+                  {tags.map(tag => {
+                    const isActive = activeTags.includes(tag);
+                    return (
+                      <button
+                        key={tag}
+                        onClick={() => toggleTag(tag)}
+                        className={cn(
+                          "px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all border-2",
+                          isActive ? "bg-black text-white border-black shadow-lg" : "bg-white text-black border-black/10 hover:border-black/40"
+                        )}
+                      >
+                        {tag}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+
+            {otherTags.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <div className="h-px bg-black/5 flex-1" />
+                  <h2 className="text-[10px] font-black uppercase tracking-[0.4em] opacity-40">Overig</h2>
+                  <div className="h-px bg-black/5 flex-1" />
+                </div>
+                <div className="flex flex-wrap justify-center gap-2.5">
+                  {otherTags.map(tag => {
+                    const isActive = activeTags.includes(tag);
+                    return (
+                      <button
+                        key={tag}
+                        onClick={() => toggleTag(tag)}
+                        className={cn(
+                          "px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all border-2",
+                          isActive ? "bg-black text-white border-black shadow-lg" : "bg-white text-black border-black/10 hover:border-black/40"
+                        )}
+                      >
+                        {tag}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
-          <div className="flex gap-4">
-            <Button onClick={() => setActiveTags([])} variant="outline" className="rounded-full h-10 px-6 text-[9px] font-black uppercase tracking-widest border-2 border-black"><Eraser className="w-3 h-3 mr-2" /> Wis</Button>
-            <Button onClick={() => { setShowResults(true); logInteraction('filter_tags', { tags: activeTags }); }} disabled={activeTags.length === 0} className="rounded-full h-10 px-10 bg-black text-white text-[9px] font-black uppercase tracking-widest border-2 border-black disabled:opacity-20"><Play className="w-3 h-3 mr-2" /> Presenteer</Button>
+          <div className="flex flex-col items-center gap-8">
+            <div className="flex gap-4">
+              <Button onClick={() => setActiveTags([])} variant="outline" className="rounded-full h-12 px-8 text-[9px] font-black uppercase tracking-widest border-2 border-black/10 hover:bg-black/5 transition-all"><Eraser className="w-3 h-3 mr-2" /> Wis Selectie</Button>
+              <Button 
+                onClick={() => { setShowResults(true); logInteraction('filter_tags', { tags: activeTags }); }} 
+                disabled={activeTags.length === 0} 
+                className="rounded-full h-12 px-12 bg-black text-white text-[9px] font-black uppercase tracking-widest border-2 border-black shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-20"
+              >
+                <Play className="w-3 h-3 mr-2" /> Open Uw Zaal
+              </Button>
+            </div>
+            {activeTags.length > 0 && !showResults && (
+              <p className="text-[9px] uppercase tracking-widest font-bold text-accent animate-pulse">Klik op &quot;Open Uw Zaal&quot; om {filteredArtworks.length} werken te bekijken</p>
+            )}
           </div>
         </div>
 
         {showResults && (
-          <div className="mt-20 pt-12 border-t border-black/10">
+          <div className="mt-24 pt-16 border-t-2 border-black/5 animate-in fade-in slide-in-from-bottom-8 duration-1000">
             {loading && artworks.length === 0 ? <div className="flex justify-center py-20"><Loader2 className="animate-spin opacity-30" /></div> : filteredArtworks.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-10">
                 {filteredArtworks.map(item => (
                   <div key={item.id} className="group cursor-pointer" onClick={() => setSelectedArtwork(item)}>
-                    <div className="relative aspect-[4/5] overflow-hidden rounded-sm bg-muted/10 shadow-lg">
-                      <img src={item.imageUrl} className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-[1.05]" style={{ clipPath: `inset(${item.cropTop || 0}% ${item.cropRight || 0}% ${item.cropBottom || 0}% ${item.cropLeft || 0}%)`, filter: `brightness(${item.brightness || 1})` }} />
-                      <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"><Maximize2 className="text-white w-5 h-5" /></div>
+                    <div className="relative aspect-[4/5] overflow-hidden rounded-sm bg-muted/10 shadow-lg group-hover:shadow-2xl transition-all duration-700">
+                      <img 
+                        src={item.imageUrl} 
+                        className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-[1.08]" 
+                        style={{ 
+                          clipPath: `inset(${item.cropTop || 0}% ${item.cropRight || 0}% ${item.cropBottom || 0}% ${item.cropLeft || 0}%)`, 
+                          filter: `brightness(${item.brightness || 1})` 
+                        }} 
+                        alt={item.displayTitle || item.title}
+                      />
+                      <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"><Maximize2 className="text-white w-6 h-6 drop-shadow-2xl" /></div>
                     </div>
-                    <div className="mt-4 text-center"><h3 className="text-[9px] font-black uppercase tracking-[0.2em] opacity-60 group-hover:opacity-100">{item.displayTitle || item.title}</h3></div>
+                    <div className="mt-4 text-center">
+                      <h3 className="text-[9px] font-black uppercase tracking-[0.25em] opacity-40 group-hover:opacity-100 group-hover:text-accent transition-all">{item.displayTitle || item.title}</h3>
+                    </div>
                   </div>
                 ))}
               </div>
-            ) : <div className="py-20 text-center uppercase tracking-widest opacity-30 text-[10px] font-bold">Geen werken gevonden voor deze selectie.</div>}
+            ) : <div className="py-20 text-center uppercase tracking-[0.5em] opacity-30 text-[10px] font-bold">Geen werken gevonden voor deze unieke combinatie.</div>}
           </div>
         )}
       </div>

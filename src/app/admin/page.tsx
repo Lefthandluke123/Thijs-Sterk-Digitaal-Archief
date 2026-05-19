@@ -97,12 +97,13 @@ function RepeatButton({ onStep, children, className, disabled }: { onStep: () =>
   );
 }
 
-const STANDARD_TAGS = [
-  "Groet", "Schoorl", "Hargen", "Amsterdam", "Frankrijk", 
-  "Bretagne", "Griekenland", "Olieverf", "Aquarel", 
-  "Monumentaal", "Glas in lood", "Havens", "Stillevens",
-  "Bloemen", "Dieren", "Water", "Portretten"
-];
+const TAG_CATEGORIES = {
+  "Techniek": ["Olieverf", "Aquarel", "Monumentaal", "Glas in lood"],
+  "Plaats": ["Groet", "Schoorl", "Hargen", "Amsterdam", "Frankrijk", "Bretagne", "Griekenland"],
+  "Onderwerp": ["Havens", "Stillevens", "Bloemen", "Dieren", "Water", "Portretten"]
+};
+
+const FLAT_STANDARD_TAGS = Object.values(TAG_CATEGORIES).flat();
 
 export default function AdminPage() {
   const firestore = useFirestore();
@@ -482,7 +483,7 @@ export default function AdminPage() {
                     <Button variant={filterSeries === s.name ? "default" : "outline"} size="sm" onClick={() => setFilterSeries(s.name)} className={cn("rounded-l-full rounded-r-none text-[9px] uppercase tracking-widest font-bold h-7 whitespace-nowrap pr-2", isHidden && "opacity-40 grayscale")}>
                       {s.name} ({s.count})
                     </Button>
-                    <button onClick={() => toggleSeriesVisibility(name)} title="Zaal verbergen/tonen op website" className={cn("h-7 px-2 rounded-r-full border-2 border-l-0 transition-colors flex items-center justify-center bg-background", isHidden ? "text-red-500 border-red-200 hover:bg-red-50" : "text-green-600 border-black hover:bg-black/5")}>
+                    <button onClick={() => toggleSeriesVisibility(s.name)} title="Zaal verbergen/tonen op website" className={cn("h-7 px-2 rounded-r-full border-2 border-l-0 transition-colors flex items-center justify-center bg-background", isHidden ? "text-red-500 border-red-200 hover:bg-red-50" : "text-green-600 border-black hover:bg-black/5")}>
                       {isHidden ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
                     </button>
                   </div>
@@ -683,26 +684,45 @@ export default function AdminPage() {
                   ))}
                 </div>
 
-                <div className="grid grid-cols-3 gap-1 overflow-y-auto">
-                  {STANDARD_TAGS.map(tag => {
-                    const isActive = (editingArtwork?.tags || []).includes(tag);
-                    return (
-                      <button 
-                        key={tag} 
-                        onClick={() => {
-                          const currentTags = editingArtwork?.tags || [];
-                          const newTags = isActive ? currentTags.filter((t: string) => t !== tag) : [...currentTags, tag];
-                          updateArtworkField(editingId!, 'tags', newTags);
-                        }} 
-                        className={cn(
-                          "px-1 py-1 rounded-sm text-[8px] font-black uppercase tracking-tight border transition-all text-center", 
-                          isActive ? "bg-black text-white border-black" : "bg-white text-black border-black/10 hover:border-black/30"
-                        )}
-                      >
-                        {tag}
-                      </button>
-                    );
-                  })}
+                <div className="space-y-4 overflow-y-auto pr-2">
+                  {Object.entries(TAG_CATEGORIES).map(([category, tags]) => (
+                    <div key={category} className="space-y-1">
+                      <span className="text-[8px] font-black uppercase opacity-40 border-b border-black/5 block mb-1">{category}</span>
+                      <div className="grid grid-cols-3 gap-1">
+                        {tags.map(tag => {
+                          const isActive = (editingArtwork?.tags || []).includes(tag);
+                          return (
+                            <button 
+                              key={tag} 
+                              onClick={() => {
+                                const currentTags = editingArtwork?.tags || [];
+                                const newTags = isActive ? currentTags.filter((t: string) => t !== tag) : [...currentTags, tag];
+                                updateArtworkField(editingId!, 'tags', newTags);
+                              }} 
+                              className={cn(
+                                "px-1 py-1 rounded-sm text-[8px] font-black uppercase tracking-tight border transition-all text-center", 
+                                isActive ? "bg-black text-white border-black" : "bg-white text-black border-black/10 hover:border-black/30"
+                              )}
+                            >
+                              {tag}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                  
+                  <div className="pt-2">
+                    <form onSubmit={handleAddCustomTag} className="flex gap-1">
+                      <Input 
+                        value={newTagInput} 
+                        onChange={(e) => setNewTagInput(e.target.value)}
+                        placeholder="Nieuwe tag..." 
+                        className="h-7 text-[8px] uppercase font-black"
+                      />
+                      <Button type="submit" size="sm" className="h-7 px-2"><Plus className="w-3 h-3" /></Button>
+                    </form>
+                  </div>
                 </div>
               </div>
 
@@ -711,7 +731,7 @@ export default function AdminPage() {
                 <div className="grid grid-cols-2 gap-x-8 gap-y-4">
                   {['Top', 'Bottom', 'Left', 'Right'].map(side => {
                     const fieldName = `crop${side}`;
-                    const currentVal = localCrops[fieldName] ?? 0;
+                    const currentVal = (localCrops as any)[fieldName] ?? 0;
                     return (
                       <div key={side} className="flex flex-col gap-2">
                         <div className="flex justify-between items-center">
