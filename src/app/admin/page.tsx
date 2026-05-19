@@ -49,6 +49,9 @@ import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 
+// Helper om Firestore te ontlasten tijdens bulk-acties
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 function RepeatButton({ onStep, children, className, disabled }: { onStep: () => void, children: React.ReactNode, className?: string, disabled?: boolean }) {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -311,12 +314,16 @@ export default function AdminPage() {
         };
         
         await addDoc(collection(firestore, 'artworks'), docData);
+        
+        // Throttling om 'resource-exhausted' te voorkomen
+        await sleep(250);
 
         processedCount++;
         setUploadProgress((processedCount / totalFiles) * 100);
       } catch (e) {
         console.error(e);
         toast({ variant: "destructive", title: "Upload Fout", description: `Kon ${file.name} niet uploaden.` });
+        await sleep(1000); // Langer wachten bij fout
       }
     }
 
@@ -328,7 +335,7 @@ export default function AdminPage() {
     toast({ title: "Klaar", description: "Alle bestanden zijn toegevoegd aan de cloud." });
   };
 
-  const handleImportJson = () => {
+  const handleImportJson = async () => {
     if (!firestore || !bulkJson) return;
     setIsSaving(true);
     try {
@@ -350,7 +357,7 @@ export default function AdminPage() {
         setDoc(settingsRef, settingsToImport, { merge: true }).catch(async () => {});
       }
 
-      const chunkSize = 400;
+      const chunkSize = 100; // Kleinere chunks om quota te sparen
       for (let i = 0; i < dataToImport.length; i += chunkSize) {
         const chunk = dataToImport.slice(i, i + chunkSize);
         const batch = writeBatch(firestore);
@@ -371,15 +378,18 @@ export default function AdminPage() {
           batch.set(doc(collection(firestore, 'artworks')), sanitizedItem);
         });
 
-        batch.commit().catch(async () => {});
+        await batch.commit();
+        setUploadStatus(`Herstellen: ${Math.min(i + chunkSize, dataToImport.length)} van ${dataToImport.length}`);
+        await sleep(500); // Pauze tussen commits voor stabiliteit
       }
 
-      toast({ title: "Herstel Gestart", description: `${dataToImport.length} werken worden nu op de achtergrond hersteld.` });
+      toast({ title: "Herstel Voltooid", description: `${dataToImport.length} werken zijn succesvol hersteld.` });
       setBulkJson('');
     } catch (e) { 
       toast({ variant: "destructive", title: "Import Fout", description: "Controleer of de JSON data correct is." }); 
     } finally {
       setIsSaving(false);
+      setUploadStatus('');
     }
   };
 
@@ -426,7 +436,7 @@ export default function AdminPage() {
       <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={(e) => handleBatchProcess(e.target.files)} accept="image/*" multiple />
       <input type="file" ref={uploadDirInputRef} style={{ display: 'none' }} onChange={(e) => handleBatchProcess(e.target.files)} {...({ webkitdirectory: "", directory: "" } as any)} />
       
-      {isUploading && (
+      {(isUploading || uploadStatus) && (
         <div className="fixed top-0 left-0 right-0 z-[100] bg-accent text-accent-foreground px-8 py-4 shadow-2xl animate-in slide-in-from-top duration-500 border-b border-black/10">
           <div className="max-w-7xl mx-auto flex flex-col gap-3">
             <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-[0.2em]">
@@ -434,9 +444,9 @@ export default function AdminPage() {
                 <Loader2 className="w-4 h-4 animate-spin" />
                 <span>{uploadStatus}</span>
               </div>
-              <span className="tabular-nums">{Math.round(uploadProgress)}%</span>
+              {uploadProgress > 0 && <span className="tabular-nums">{Math.round(uploadProgress)}%</span>}
             </div>
-            <Progress value={uploadProgress} className="h-2 bg-white/20" />
+            {uploadProgress > 0 && <Progress value={uploadProgress} className="h-2 bg-white/20" />}
           </div>
         </div>
       )}
