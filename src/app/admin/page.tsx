@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
@@ -99,8 +98,8 @@ function RepeatButton({ onStep, children, className, disabled }: { onStep: () =>
 
 const TAG_CATEGORIES = {
   "Techniek": ["Olieverf", "Aquarel", "Monumentaal", "Glas in lood"],
-  "Plaats": ["Groet", "Schoorl", "Hargen", "Amsterdam", "Frankrijk", "Bretagne", "Griekenland"],
-  "Onderwerp": ["Havens", "Stillevens", "Bloemen", "Dieren", "Water", "Portretten"]
+  "Plaats": ["Groet", "Schoorl", "Hargen", "Camperduin", "Holland", "Amsterdam", "Frankrijk", "Bretagne", "Griekenland"],
+  "Onderwerp": ["Havens", "Stillevens", "Bloemen", "Dieren", "Water", "Mensen", "Polder"]
 };
 
 const FLAT_STANDARD_TAGS = Object.values(TAG_CATEGORIES).flat();
