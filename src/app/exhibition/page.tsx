@@ -52,7 +52,7 @@ function ExhibitionContent() {
     if (!firestore) return null;
     let q = query(collection(firestore, 'artworks'), orderBy('createdAt', 'desc'));
     if (seriesParam) {
-      q = query(collection(firestore, 'artworks'), where('series', '==', seriesParam), orderBy('createdAt', 'desc'));
+      q = query(collection(firestore, 'artworks'), where('series', '==', seriesParam));
     }
     return q;
   }, [firestore, seriesParam]);
@@ -118,8 +118,8 @@ function ExhibitionContent() {
 
   return (
     <main className="h-screen w-full bg-white overflow-hidden flex flex-col relative pt-14">
-      {/* Heldere Museum Achtergrond */}
-      <div className="absolute inset-0 bg-gradient-to-b from-neutral-50 to-white pointer-events-none" />
+      {/* Heldere Museum Achtergrond - Geen Mist */}
+      <div className="absolute inset-0 bg-neutral-50 pointer-events-none" />
       
       {/* Zaal Selector Overlay */}
       <div className="absolute top-20 left-0 right-0 z-40 flex justify-center px-6">
@@ -167,8 +167,8 @@ function ExhibitionContent() {
           style={{ transform: `translateX(${-scrollX}px)` }}
         >
           {/* Lichte Museumvloer */}
-          <div className="absolute bottom-0 left-[-5000px] right-[-5000px] h-[35vh] bg-[#f5f1e8] z-0">
-             <div className="absolute inset-0 opacity-40 bg-[url('https://www.transparenttextures.com/patterns/wood-pattern.png')]" />
+          <div className="absolute bottom-0 left-[-10000px] right-[-10000px] h-[35vh] bg-[#f5f1e8] z-0">
+             <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/wood-pattern.png')]" />
              <div className="absolute top-0 left-0 right-0 h-px bg-black/10" />
              <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-black/5 to-transparent" />
           </div>
