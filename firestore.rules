@@ -2,16 +2,16 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Openbare toegang voor alle collecties om weergave in privévensters te garanderen
-    match /artworks/{artworkId} {
+    // Volledige openbare toegang voor alle collecties om weergave op de live site te garanderen
+    match /artworks/{document=**} {
       allow read, write: if true;
     }
     
-    match /settings/{settingId} {
+    match /settings/{document=**} {
       allow read, write: if true;
     }
     
-    match /interactions/{interactionId} {
+    match /interactions/{document=**} {
       allow read, write: if true;
     }
   }

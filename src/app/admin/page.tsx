@@ -251,13 +251,13 @@ export default function AdminPage() {
     batch.commit()
       .then(() => {
         const total = selectedIds.length;
-        setSelectedIds([]); // RELEASE SELECTION
+        setSelectedIds([]); 
         setBulkMoveSeries('');
         toast({ title: "Verplaatst", description: `${total} werken verplaatst naar ${bulkMoveSeries}.` });
         
         setTimeout(() => {
           if (window.confirm("Verplaatsing voltooid. Wilt u nog meer werken verplaatsen?")) {
-            // Gebruiker kan doorgaan met selecteren
+            // Gebruiker kan doorgaan
           }
         }, 100);
       })
@@ -310,14 +310,7 @@ export default function AdminPage() {
           cropTop: 0, cropBottom: 0, cropLeft: 0, cropRight: 0, brightness: 1
         };
         
-        await addDoc(collection(firestore, 'artworks'), docData)
-          .catch(async () => {
-             errorEmitter.emit('permission-error', new FirestorePermissionError({
-               path: 'artworks',
-               operation: 'create',
-               requestResourceData: docData
-             }));
-          });
+        await addDoc(collection(firestore, 'artworks'), docData);
 
         processedCount++;
         setUploadProgress((processedCount / totalFiles) * 100);
