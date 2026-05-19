@@ -6,8 +6,7 @@ import {
   Query, 
   onSnapshot, 
   QuerySnapshot, 
-  DocumentData,
-  collection
+  DocumentData
 } from 'firebase/firestore';
 import { errorEmitter } from '../error-emitter';
 import { FirestorePermissionError } from '../errors';
@@ -26,7 +25,8 @@ export function useCollection<T = DocumentData>(collectionQuery: Query<T> | null
       return;
     }
 
-    const currentQueryKey = (collectionQuery as any)._query?.path?.toString() || 'unknown';
+    // Genereer een stabiele sleutel voor de query om onnodige re-renders te voorkomen
+    const currentQueryKey = JSON.stringify((collectionQuery as any)._query || 'default');
     
     if (currentQueryKey !== queryRef.current) {
       if (!data) setLoading(true);
@@ -42,13 +42,22 @@ export function useCollection<T = DocumentData>(collectionQuery: Query<T> | null
         }));
         setData(items);
         setLoading(false);
+        setError(null);
       },
       async (serverError) => {
-        const path = (collectionQuery as any).path || (collectionQuery as any)._query?.path?.toString() || 'collection';
+        // Bepaal het pad voor de foutmelding
+        let path = 'collection';
+        try {
+          path = (collectionQuery as any)._query?.path?.segments?.join('/') || 'artworks';
+        } catch (e) {
+          path = 'artworks';
+        }
+
         const permissionError = new FirestorePermissionError({
           path,
           operation: 'list',
         });
+        
         errorEmitter.emit('permission-error', permissionError);
         setError(permissionError);
         setLoading(false);
