@@ -41,10 +41,10 @@ export function Hero() {
         
         <div className="max-w-2xl mx-auto mb-12 space-y-6 animate-fade-in-up delay-200">
           <p className="text-muted-foreground text-lg md:text-xl leading-relaxed font-light">
-            Wat fijn dat u de weg naar dit digitale retrospectief heeft gevonden. We nodigen u uit om u te laten meevoeren door de atmosfeer van de polders, de kust en de verstilde dorpsgezichten; die unieke momenten van licht en ruimte die Thijs in zijn werk steeds opnieuw probeerde te vangen en weergeven.
+            Dwaal op uw eigen tempo door de verschillende thematische zalen en laat u meevoeren door de atmosfeer van de polders, de kust en de verstilde dorpsgezichten. Het zijn die unieke momenten van licht en ruimte die Thijs in zijn werk steeds opnieuw probeerde te vangen en weergeven.
           </p>
           <p className="text-muted-foreground text-base md:text-lg leading-relaxed font-light">
-            Dwaal op uw eigen tempo door de verschillende <span className="text-accent font-medium">thematische zalen</span> of maak gebruik van de mogelijkheid om bij <span className="text-accent font-medium">&quot;Uw Zaal&quot;</span> een geheel eigen inkijk te creëren uit zijn omvangrijke oeuvre.
+            We nodigen u uit om de collectie te verkennen of gebruik te maken van de mogelijkheid om bij <span className="text-accent font-medium">&quot;Uw Zaal&quot;</span> een geheel eigen inkijk te creëren uit zijn omvangrijke oeuvre.
           </p>
         </div>
         
