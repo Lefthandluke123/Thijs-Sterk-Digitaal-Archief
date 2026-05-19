@@ -11,6 +11,7 @@ import { FirestorePermissionError } from '@/firebase/errors';
 import { ArtworkViewer } from '@/components/artwork-viewer';
 
 const TAG_CATEGORIES = {
+  "Periode": ["Vroeg werk", "45-50", "50-60", "70-82"],
   "Techniek": ["Olieverf", "Aquarel", "Monumentaal", "Glas in lood"],
   "Plaats": ["Groet", "Schoorl", "Hargen", "Camperduin", "Holland", "Amsterdam", "Frankrijk", "Bretagne", "Griekenland"],
   "Onderwerp": ["Havens", "Stillevens", "Bloemen", "Dieren", "Water", "Mensen", "Polder"]
@@ -104,7 +105,7 @@ export default function CuratorPage() {
 
   return (
     <main className="min-h-screen bg-background pt-14">
-      <div className="w-full bg-secondary/10 border-b border-border/20 py-16 md:py-24">
+      <div className="w-full bg-secondary/10 border-b border-border/20 py-10 md:py-16">
         <div className="container mx-auto px-6 max-w-5xl text-center space-y-4">
           <h1 className="font-headline text-3xl md:text-5xl font-light text-foreground tracking-tight leading-tight uppercase">
             Uw Eigen <span className="italic">Zaal</span>
@@ -113,17 +114,17 @@ export default function CuratorPage() {
         </div>
       </div>
 
-      <div className="container mx-auto max-w-7xl px-6 py-16 pb-48">
-        <div className="flex flex-col items-center space-y-20">
+      <div className="container mx-auto max-w-7xl px-6 py-12 pb-48">
+        <div className="flex flex-col items-center space-y-12">
           
-          <div className="w-full max-w-5xl space-y-16">
+          <div className="w-full max-w-5xl space-y-10">
             {Object.entries(TAG_CATEGORIES).map(([category, tags]) => (
-              <div key={category} className="space-y-6">
+              <div key={category} className="space-y-4">
                 <div className="flex items-center gap-6">
-                  <h2 className="text-sm font-black uppercase tracking-[0.3em] text-accent whitespace-nowrap">{category}</h2>
-                  <div className="h-px bg-border flex-1" />
+                  <h2 className="text-xs font-black uppercase tracking-[0.3em] text-accent whitespace-nowrap">{category}</h2>
+                  <div className="h-px bg-border flex-1 opacity-40" />
                 </div>
-                <div className="flex flex-wrap justify-center gap-3">
+                <div className="flex flex-wrap justify-center gap-2">
                   {tags.map(tag => {
                     const isActive = activeTags.includes(tag);
                     return (
@@ -131,9 +132,9 @@ export default function CuratorPage() {
                         key={tag}
                         onClick={() => toggleTag(tag)}
                         className={cn(
-                          "px-7 py-3.5 rounded-xl text-[13px] md:text-[15px] font-bold uppercase tracking-wider transition-all border-2",
+                          "px-5 py-2.5 rounded-lg text-[12px] md:text-[14px] font-bold uppercase tracking-wider transition-all border-2",
                           isActive 
-                            ? "bg-primary text-primary-foreground border-primary shadow-lg scale-105" 
+                            ? "bg-primary text-primary-foreground border-primary shadow-md scale-105" 
                             : "bg-background text-foreground border-border hover:border-accent hover:bg-accent/5"
                         )}
                       >
@@ -146,12 +147,12 @@ export default function CuratorPage() {
             ))}
 
             {otherTags.length > 0 && (
-              <div className="space-y-6">
+              <div className="space-y-4">
                 <div className="flex items-center gap-6">
-                  <h2 className="text-sm font-black uppercase tracking-[0.3em] opacity-40 whitespace-nowrap">Overig</h2>
-                  <div className="h-px bg-border flex-1" />
+                  <h2 className="text-xs font-black uppercase tracking-[0.3em] opacity-40 whitespace-nowrap">Overig</h2>
+                  <div className="h-px bg-border flex-1 opacity-20" />
                 </div>
-                <div className="flex flex-wrap justify-center gap-3">
+                <div className="flex flex-wrap justify-center gap-2">
                   {otherTags.map(tag => {
                     const isActive = activeTags.includes(tag);
                     return (
@@ -159,10 +160,10 @@ export default function CuratorPage() {
                         key={tag}
                         onClick={() => toggleTag(tag)}
                         className={cn(
-                          "px-7 py-3.5 rounded-xl text-[13px] md:text-[15px] font-bold uppercase tracking-wider transition-all border-2",
+                          "px-5 py-2.5 rounded-lg text-[12px] md:text-[14px] font-bold uppercase tracking-wider transition-all border-2",
                           isActive 
-                            ? "bg-primary text-primary-foreground border-primary shadow-lg scale-105" 
-                            : "bg-background text-foreground border-border hover:border-accent hover:bg-accent/5"
+                            ? "bg-primary text-primary-foreground border-primary shadow-md" 
+                            : "bg-background text-foreground border-border hover:border-accent"
                         )}
                       >
                         {tag}
@@ -174,25 +175,25 @@ export default function CuratorPage() {
             )}
           </div>
 
-          <div className="flex flex-col items-center gap-10">
-            <div className="flex flex-col sm:flex-row gap-6">
+          <div className="flex flex-col items-center gap-8">
+            <div className="flex flex-col sm:flex-row gap-4">
               <Button 
                 onClick={() => setActiveTags([])} 
                 variant="outline" 
-                className="rounded-full h-14 px-10 text-[11px] font-black uppercase tracking-[0.2em] border-2 border-border hover:bg-accent/5 transition-all"
+                className="rounded-full h-12 px-8 text-[10px] font-black uppercase tracking-[0.2em] border-2 border-border hover:bg-accent/5 transition-all"
               >
-                <Eraser className="w-4 h-4 mr-3" /> Wis Selectie
+                <Eraser className="w-3 h-3 mr-3" /> Wis Selectie
               </Button>
               <Button 
                 onClick={() => { setShowResults(true); logInteraction('filter_tags', { tags: activeTags }); }} 
                 disabled={activeTags.length === 0} 
-                className="rounded-full h-14 px-14 bg-primary text-primary-foreground text-[11px] font-black uppercase tracking-[0.2em] border-2 border-primary shadow-2xl hover:scale-[1.03] active:scale-[0.97] transition-all disabled:opacity-20"
+                className="rounded-full h-12 px-12 bg-primary text-primary-foreground text-[10px] font-black uppercase tracking-[0.2em] border-2 border-primary shadow-xl hover:scale-[1.03] active:scale-[0.97] transition-all disabled:opacity-20"
               >
-                <Play className="w-4 h-4 mr-3" /> Open Uw Zaal
+                <Play className="w-3 h-3 mr-3" /> Open Uw Zaal
               </Button>
             </div>
             {activeTags.length > 0 && !showResults && (
-              <p className="text-[10px] uppercase tracking-[0.25em] font-bold text-accent animate-pulse">
+              <p className="text-[9px] uppercase tracking-[0.25em] font-bold text-accent animate-pulse">
                 Klik op &quot;Open Uw Zaal&quot; om {filteredArtworks.length} werken te bekijken
               </p>
             )}
@@ -200,14 +201,14 @@ export default function CuratorPage() {
         </div>
 
         {showResults && (
-          <div className="mt-32 pt-20 border-t border-border/30 animate-in fade-in slide-in-from-bottom-12 duration-1000">
+          <div className="mt-20 pt-16 border-t border-border/30 animate-in fade-in slide-in-from-bottom-8 duration-700">
             {loading && artworks.length === 0 ? (
-              <div className="flex justify-center py-32"><Loader2 className="animate-spin opacity-30 w-10 h-10" /></div>
+              <div className="flex justify-center py-24"><Loader2 className="animate-spin opacity-30 w-8 h-8" /></div>
             ) : filteredArtworks.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-12">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8">
                 {filteredArtworks.map(item => (
                   <div key={item.id} className="group cursor-pointer" onClick={() => setSelectedArtwork(item)}>
-                    <div className="relative aspect-[4/5] overflow-hidden rounded-sm bg-muted/20 shadow-xl group-hover:shadow-2xl transition-all duration-700">
+                    <div className="relative aspect-[4/5] overflow-hidden rounded-sm bg-muted/20 shadow-md group-hover:shadow-xl transition-all duration-700">
                       <img 
                         src={item.imageUrl} 
                         className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-[1.1]" 
@@ -218,20 +219,20 @@ export default function CuratorPage() {
                         alt={item.displayTitle || item.title}
                       />
                       <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                        <Maximize2 className="text-white w-8 h-8 drop-shadow-2xl" />
+                        <Maximize2 className="text-white w-6 h-6 drop-shadow-2xl" />
                       </div>
                     </div>
-                    <div className="mt-6 text-center">
-                      <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-foreground/50 group-hover:text-accent transition-all leading-relaxed">
+                    <div className="mt-4 text-center">
+                      <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground/50 group-hover:text-accent transition-all leading-relaxed">
                         {item.displayTitle || item.title}
                       </h3>
-                      <p className="text-[8px] uppercase tracking-widest opacity-30 mt-1">{item.year}</p>
+                      <p className="text-[7px] uppercase tracking-widest opacity-30 mt-1">{item.year}</p>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="py-32 text-center uppercase tracking-[0.4em] opacity-30 text-[12px] font-bold">
+              <div className="py-24 text-center uppercase tracking-[0.4em] opacity-30 text-[11px] font-bold">
                 Geen werken gevonden voor deze unieke combinatie.
               </div>
             )}
