@@ -4,7 +4,7 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useFirestore, useCollection, useMemoFirebase, useDoc, useStorage } from '@/firebase';
-import { collection, doc, serverTimestamp, deleteDoc, addDoc, query, orderBy, updateDoc, writeBatch, setDoc } from 'firebase/firestore';
+import { collection, doc, serverTimestamp, deleteDoc, addDoc, query, orderBy, updateDoc, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -16,36 +16,19 @@ import {
   Loader2, 
   ArrowLeft,
   Plus,
-  Minus,
-  FolderOpen,
-  X,
-  ChevronLeft,
-  ChevronRight,
   Search,
-  CheckCircle2,
   CloudUpload,
-  Sun,
-  Archive,
-  Square,
-  CheckSquare,
-  FileJson,
-  Type,
-  Upload,
   Download,
-  Database,
-  ShieldCheck,
-  Layers,
-  Eye,
-  EyeOff,
-  Tag as TagIcon,
-  Monitor,
-  PenTool
+  FileJson,
+  PenTool,
+  Home,
+  User,
+  Quote
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogClose, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
@@ -63,7 +46,6 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState('archive');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterSeries, setFilterSeries] = useState<string | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -100,10 +82,9 @@ export default function AdminPage() {
       const displayTitle = art.displayTitle || art.title || "";
       const matchesSearch = displayTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           (art.series?.toLowerCase() || "").includes(searchQuery.toLowerCase());
-      const matchesFilter = !filterSeries || (art.series || "Geen zaal") === filterSeries;
-      return matchesSearch && matchesFilter;
+      return matchesSearch;
     });
-  }, [artworks, searchQuery, filterSeries]);
+  }, [artworks, searchQuery]);
 
   const editingArtwork = useMemo(() => {
     return artworks.find(art => art.id === editingId) || null;
@@ -161,7 +142,7 @@ export default function AdminPage() {
 
   const handleExportBackup = () => {
     const exportData = {
-      version: "2.4",
+      version: "2.5",
       exportedAt: new Date().toISOString(),
       artworks: artworks,
       settings: siteSettings || {}
@@ -253,16 +234,46 @@ export default function AdminPage() {
               <div className="space-y-2 text-center border-b border-border/20 pb-8">
                   <PenTool className="w-8 h-8 mx-auto text-accent mb-4" />
                   <h2 className="text-2xl font-headline font-light">Website Teksten</h2>
-                  <p className="text-[10px] uppercase font-black tracking-[0.2em] opacity-40">Beheer hier alle biografieën op de site</p>
+                  <p className="text-[10px] uppercase font-black tracking-[0.2em] opacity-40">Beheer hier alle biografieën en het openingswoord</p>
               </div>
 
               <div className="grid gap-12">
-                 {/* Thijs Sterk Hoofd Bio */}
+                 {/* Introductie Tekst (Bovenaan Homepagina) */}
                  <div className="space-y-4">
-                    <Label className="text-[11px] font-black uppercase text-accent border-l-4 border-accent pl-4 block">Hoofdbiografie Thijs Sterk (Homepagina)</Label>
+                    <div className="flex items-center gap-3">
+                       <Home className="w-4 h-4 text-accent" />
+                       <Label className="text-[11px] font-black uppercase text-accent border-l-4 border-accent pl-4 block">Introductie Tekst (Bovenaan Homepagina)</Label>
+                    </div>
                     <div className="space-y-4 bg-black/5 p-6 rounded-2xl">
                       <div className="space-y-2">
-                        <Label className="text-[9px] uppercase opacity-50">Titel / Kopregel</Label>
+                        <Label className="text-[9px] uppercase opacity-50">Kopregel (Groot)</Label>
+                        <Input 
+                          defaultValue={siteSettings?.homeHeroTitle || 'Een leven gewijd aan Licht, Ruimte en Water'} 
+                          onBlur={(e) => updateSettingsField('homeHeroTitle', e.target.value)}
+                          className="bg-white border-none font-headline text-xl"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-[9px] uppercase opacity-50">Openingswoord / Introductie</Label>
+                        <Textarea 
+                          defaultValue={siteSettings?.homeHeroIntro || ''} 
+                          onBlur={(e) => updateSettingsField('homeHeroIntro', e.target.value)} 
+                          className="min-h-[200px] bg-white border-none p-6 text-base leading-relaxed font-light" 
+                          placeholder="De tekst die direct bovenaan de homepagina verschijnt..." 
+                        />
+                      </div>
+                    </div>
+                 </div>
+
+                 {/* Thijs Sterk Hoofd Bio (Onderaan Homepagina) */}
+                 <div className="space-y-4 pt-8 border-t border-border/10">
+                    <div className="flex items-center gap-3">
+                       <Quote className="w-4 h-4 text-accent" />
+                       <Label className="text-[11px] font-black uppercase text-accent border-l-4 border-accent pl-4 block">Biografie Thijs Sterk (Onderaan Homepagina)</Label>
+                    </div>
+                    <div className="space-y-4 bg-black/5 p-6 rounded-2xl">
+                      <div className="space-y-2">
+                        <Label className="text-[9px] uppercase opacity-50">Biografie Titel / Kopregel</Label>
                         <Input 
                           defaultValue={siteSettings?.homeBioTitle || 'Een leven gewijd aan de Essentie'} 
                           onBlur={(e) => updateSettingsField('homeBioTitle', e.target.value)}
@@ -275,7 +286,7 @@ export default function AdminPage() {
                           defaultValue={siteSettings?.homeBio || ''} 
                           onBlur={(e) => updateSettingsField('homeBio', e.target.value)} 
                           className="min-h-[250px] bg-white border-none p-6 text-base leading-relaxed font-light" 
-                          placeholder="De hoofdtekst over Thijs Sterk die op de homepagina verschijnt..." 
+                          placeholder="De hoofdtekst over Thijs Sterk die onderaan de homepagina verschijnt..." 
                         />
                       </div>
                     </div>
@@ -283,7 +294,10 @@ export default function AdminPage() {
 
                  {/* Leo Duppen Bio */}
                  <div className="space-y-4 pt-8 border-t border-border/10">
-                    <Label className="text-[11px] font-black uppercase opacity-60 block">Leo Duppen (Kunsthistoricus)</Label>
+                    <div className="flex items-center gap-3">
+                       <User className="w-4 h-4 opacity-40" />
+                       <Label className="text-[11px] font-black uppercase opacity-60 block">Leo Duppen (Kunsthistoricus)</Label>
+                    </div>
                     <Textarea 
                       defaultValue={siteSettings?.leoDuppenBio || ''} 
                       onBlur={(e) => updateSettingsField('leoDuppenBio', e.target.value)} 

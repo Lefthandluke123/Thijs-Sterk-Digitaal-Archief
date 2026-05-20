@@ -83,7 +83,7 @@
     },
     "Interaction": {
       "title": "Interaction",
-      "description": "Een registratie van een bezoekersactie met persistent ID. Schrijfbaar door bezoekers, leesbaar door admin.",
+      "description": "Een interactie van een bezoeker.",
       "type": "object",
       "properties": {
         "visitorId": {
@@ -126,7 +126,15 @@
         },
         "siteTitle": {
           "type": "string",
-          "description": "De titel van the website"
+          "description": "De titel van de website"
+        },
+        "homeHeroTitle": {
+          "type": "string",
+          "description": "De kopregel bovenaan de homepagina"
+        },
+        "homeHeroIntro": {
+          "type": "string",
+          "description": "Het openingswoord bovenaan de homepagina"
         },
         "homeBioTitle": {
           "type": "string",

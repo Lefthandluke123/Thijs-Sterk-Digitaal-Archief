@@ -5,13 +5,21 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Maximize2, Sparkles, Layout } from 'lucide-react';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where, limit } from 'firebase/firestore';
+import { useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
+import { collection, query, where, limit, doc } from 'firebase/firestore';
 import { ArtworkViewer } from '@/components/artwork-viewer';
 
 export function Hero() {
   const [selectedArtwork, setSelectedArtwork] = useState<any | null>(null);
   const firestore = useFirestore();
+
+  // Haal settings op voor de tekst
+  const siteSettingsRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, 'settings', 'site');
+  }, [firestore]);
+  const { data: siteSettings } = useDoc(siteSettingsRef);
+
   const featuredQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'artworks'), where('featured', '==', true), limit(1));
@@ -19,7 +27,15 @@ export function Hero() {
 
   const { data: featured } = useCollection(featuredQuery);
   const artwork = featured?.[0];
+  
   const heroImage = artwork?.imageUrl || 'https://firebasestorage.googleapis.com/v0/b/studio-7311695883-2090f.firebasestorage.app/o/artworks%2F1778851761923_x2p82k_maannacht%20copy.jpg?alt=media';
+
+  const heroTitle = siteSettings?.homeHeroTitle || 'Een leven gewijd aan Licht, Ruimte en Water';
+  const heroIntro = siteSettings?.homeHeroIntro || `Dwaal hier op uw eigen tempo door de verschillende zalen en laat u meevoeren door de atmosfeer van de polders, de havens van Bretagne en Griekenland, en de verstilde dorpsgezichten. 
+
+Van intieme stillevens, bloemen en indringende portretten tot zijn monumentale wandkunst en kleurrijk glas in lood: het zijn die unieke momenten van licht en ruimte die Thijs in zijn werk steeds opnieuw probeerde te vangen en weergeven. 
+
+We nodigen u uit om de collectie te verkennen of gebruik te maken van de mogelijkheid om bij "Uw Zaal" een geheel eigen inkijk te creëren uit zijn omvangrijke oeuvre.`;
 
   return (
     <section className="relative min-h-[70vh] flex flex-col items-center justify-center pt-24 pb-16 px-4 overflow-hidden">
@@ -36,19 +52,15 @@ export function Hero() {
         </div>
         
         <h1 className="font-headline text-xl md:text-3xl lg:text-4xl font-light tracking-tight text-foreground mb-8 max-w-4xl mx-auto leading-[1.2] animate-fade-in-up delay-100">
-          Een leven gewijd aan <span className="italic">Licht, Ruimte en Water</span>
+          {heroTitle.split(' ').map((word, i, arr) => 
+            i >= arr.length - 3 ? <span key={i} className="italic">{word} </span> : word + ' '
+          )}
         </h1>
         
         <div className="max-w-3xl mx-auto mb-12 space-y-6 animate-fade-in-up delay-200">
-          <p className="text-muted-foreground text-lg md:text-xl leading-relaxed font-light">
-            Dwaal hier op uw eigen tempo door de verschillende zalen en laat u meevoeren door de atmosfeer van de polders, de havens van Bretagne en Griekenland, en de verstilde dorpsgezichten. 
-          </p>
-          <p className="text-muted-foreground text-base md:text-lg leading-relaxed font-light">
-            Van intieme stillevens, bloemen en indringende portretten tot zijn monumentale wandkunst en kleurrijk glas in lood: het zijn die unieke momenten van licht en ruimte die Thijs in zijn werk steeds opnieuw probeerde te vangen en weergeven. 
-          </p>
-          <p className="text-muted-foreground text-base md:text-lg leading-relaxed font-light italic">
-            We nodigen u uit om de collectie te verkennen of gebruik te maken van de mogelijkheid om bij <span className="text-accent font-medium">&quot;Uw Zaal&quot;</span> een geheel eigen inkijk te creëren uit zijn omvangrijke oeuvre.
-          </p>
+          <div className="text-muted-foreground text-base md:text-lg leading-relaxed font-light whitespace-pre-line">
+            {heroIntro}
+          </div>
         </div>
         
         <div className="flex flex-col sm:flex-row items-center justify-center gap-6 animate-fade-in-up delay-300">
