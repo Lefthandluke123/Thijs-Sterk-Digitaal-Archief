@@ -22,17 +22,28 @@ Als beheerder van dit platform hanteer je twee vlijmscherpe tarieven. Dit zorgt 
 *   **De Succes-Fee (Commission)**: **20% van de omzet**.
 *   **Extra werkzaamheden**: Standaard uurtarief van **€75,- ex BTW**.
 
-## 2. Aanleverspecificaties (Museale Kwaliteit)
+## 2. De Exit: Het Concept Verkopen (Master Franchise)
+
+Wil iemand het hele concept van je overnemen om zelf 20+ kunstenaars te gaan bedienen? Dan verkoop je de **Master Franchise**.
+
+*   **Vriendenprijs Overname: €2.500,- ex BTW**
+    *   Inclusief 40 uur intensieve training & begeleiding.
+    *   Volledige overdracht van de codebase en workflow.
+*   **Enterprise Overname: €5.000,- ex BTW**
+    *   Inclusief 40 uur professionele implementatie-training.
+    *   Commerciële licentie voor onbeperkt gebruik van het framework.
+
+## 3. Aanleverspecificaties (Museale Kwaliteit)
 Om de Deep Zoom beleving te garanderen, accepteer je alleen het beste:
 *   **Beeld**: JPEG/WebP, minimaal **4000px** aan de langste zijde.
 *   **Kleur**: sRGB profiel.
 *   **Data**: Titel, Jaar, Medium en Afmetingen.
 
-## 3. Technisch Uitrolplan
+## 4. Technisch Uitrolplan
 1.  **Project Clone**: Gebruik dit framework als GitHub Template.
 2.  **Firebase Setup**: Maak een nieuw project aan per artiest.
 3.  **Branding**: Vul de `Settings` collectie via het `/admin` paneel.
 4.  **Stripe**: Activeer 'Direct Checkout' door de API keys van de klant in te voeren.
 
-## 4. De Perceptie
+## 5. De Perceptie
 Verkoop jezelf niet als "webbouwer", maar als **Digitaal Conservator**. Jij ontsluit een oeuvre op een manier die normaal alleen voor nationale musea beschikbaar is. Dat is de waarde van de Deep Zoom technologie.
