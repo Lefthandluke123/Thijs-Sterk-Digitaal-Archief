@@ -6,19 +6,20 @@ Dit document bevat de essentiële instructies voor het beheren, bewaren en delen
 ## Versie: 10-5/18.30 (Optimale Resolutie & Performance)
 
 ### 1. Richtlijnen voor Foto-uploads (Kwaliteit vs. Snelheid)
-Voor de volledige collectie van ~360 werken adviseren wij de volgende instellingen voor een optimale balans tussen detail en laadtijd:
+Voor de volledige collectie van ~360 werken adviseren wij de volgende instellingen voor een maximale detaillering (loep-ervaring) en snelle laadtijden:
 
-*   **Maximale Resolutie**: 3500px tot 4000px aan de langste zijde. Dit is ideaal voor weergave op 4K-schermen en biedt een nagenoeg 'Retina' ervaring.
-*   **Bestandsformaat**: Bij voorkeur **WebP**. Als u JPG gebruikt, kies dan voor 'Kwaliteit Hoog' (80-85%).
-*   **Bestandsgrootte**: Richt op **2MB tot 4MB** per foto.
+*   **Bestandsformaat**: **WebP** (Sterk aanbevolen). Dit formaat biedt de beste compressie zonder verlies van detail. Als u geen WebP kunt maken, gebruik dan JPG (Kwaliteit 85%).
+*   **Maximale Resolutie**: **3500px tot 4000px** aan de langste zijde. Dit is ideaal voor weergave op 4K-schermen en zorgt dat verfstreken haarscherp blijven bij vergroting.
+*   **Bestandsgrootte**: Richt op **2MB tot 4MB** per foto. Dit houdt de totale database (~1.2 GB) gezond en razendsnel.
 *   **Kleurprofiel**: Altijd **sRGB** om kleurafwijkingen op verschillende schermen te voorkomen.
-*   **Bestandsnaam**: Gebruik het formaat `[Volgnummer]-[RomeinsCijfer].jpg` (bijv. `12-XIII.jpg`). Het systeem sorteert hier automatisch op.
+*   **Bestandsnaam**: Gebruik het formaat `[Volgnummer]-[RomeinsCijfer].webp` (bijv. `12-XIII.webp`). Het systeem sorteert hier automatisch op.
 
 ### 2. Digitalisering van Dia's (Diapositieven)
 Heeft u het archief op dia? Houd bij het scannen rekening met het volgende:
 *   **Scan-resolutie**: Om 4000 pixels te halen uit een standaard 35mm dia, moet u scannen op minimaal **3000 DPI tot 4000 DPI**.
+*   **Kleurdiepte**: Scan in 24-bit of 48-bit voor maximale kleurnuances in de schaduwen.
 *   **Stof & Krassen**: Gebruik bij voorkeur een scanner met 'Digital ICE' technologie om stofjes op de dia automatisch te verwijderen.
-*   **Nawerking**: Dia's hebben vaak een hoog contrast. Controleer na het scannen of de details in de donkere partijen (schaduwen) nog goed zichtbaar zijn voor ze op de website worden geplaatst.
+*   **Nawerking**: Sla uw scans eerst op als TIF (ongecomprimeerd) voor u ze bewerkt, en exporteer ze pas als laatste stap naar **WebP** voor de website.
 
 ### 3. Hoe publiceer ik mijn wijzigingen?
 *   **Inhoud (Foto's, Tags, Bio's)**: Wijzigingen in het beheerpaneel (`/admin`) zijn **direct live**.
