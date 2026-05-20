@@ -45,8 +45,16 @@ const translateFlow = ai.defineFlow(
     outputSchema: TranslateOutputSchema,
   },
   async input => {
-    const { output } = await prompt(input);
-    if (!output) throw new Error('Vertaling mislukt');
-    return output;
+    try {
+      const { output } = await prompt(input);
+      if (!output) throw new Error('Vertaling mislukt: Geen resultaat van AI');
+      return output;
+    } catch (error: any) {
+      // Specifieke afhandeling voor quota/billing fouten van Google AI
+      if (error.message?.includes('RESOURCE_EXHAUSTED') || error.status === 429) {
+        throw new Error('AI Quotum overschreden of prepaid tegoed op. Ga naar ai.studio om uw facturering te controleren.');
+      }
+      throw error;
+    }
   }
 );

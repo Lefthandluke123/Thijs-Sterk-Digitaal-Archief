@@ -89,7 +89,6 @@ export default function AdminPage() {
     });
   }, [artworks, searchQuery]);
 
-  // Oplossing voor de ReferenceError: bepaal het kunstwerk dat momenteel bewerkt wordt
   const editingArtwork = useMemo(() => {
     if (!editingId) return null;
     return artworks.find((art: any) => art.id === editingId);
@@ -118,9 +117,13 @@ export default function AdminPage() {
       const result = await translateMuseumText({ text: currentText, context });
       updateSettingsField(field, result.translatedText);
       toast({ title: "Vertaling voltooid", description: "De tekst is bijgewerkt." });
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      toast({ variant: "destructive", title: "Vertaling mislukt", description: "Probeer het later opnieuw." });
+      toast({ 
+        variant: "destructive", 
+        title: "AI Vertaling mislukt", 
+        description: e.message || "Er is een fout opgetreden bij het aanroepen van de AI." 
+      });
     } finally {
       setIsTranslating(null);
     }
