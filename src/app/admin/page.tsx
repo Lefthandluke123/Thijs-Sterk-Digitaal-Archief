@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useRef } from 'react';
@@ -29,7 +28,11 @@ import {
   ShieldCheck,
   LifeBuoy,
   FileText,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Camera,
+  HelpCircle,
+  CheckCircle,
+  AlertCircle
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -40,6 +43,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/components/language-provider';
 
 const ROMAN_VALUES: Record<string, number> = {
   'I': 1, 'II': 2, 'III': 3, 'IV': 4, 'V': 5, 'VI': 6, 'VII': 7, 'VIII': 8, 'IX': 9, 'X': 10, 
@@ -49,6 +53,7 @@ const ROMAN_VALUES: Record<string, number> = {
 export default function AdminPage() {
   const firestore = useFirestore();
   const storage = useStorage();
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState('archive');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -213,7 +218,7 @@ export default function AdminPage() {
             <TabsTrigger value="upload" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Upload</TabsTrigger>
             <TabsTrigger value="branding" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Site Branding</TabsTrigger>
             <TabsTrigger value="payments" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Betalingen</TabsTrigger>
-            <TabsTrigger value="help" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest bg-accent/10"><LifeBuoy className="w-3 h-3 mr-2" /> Help</TabsTrigger>
+            <TabsTrigger value="help" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest bg-accent/10"><LifeBuoy className="w-3 h-3 mr-2" /> Help & Gids</TabsTrigger>
           </TabsList>
 
           <TabsContent value="archive" className="space-y-6">
@@ -369,39 +374,100 @@ export default function AdminPage() {
           </TabsContent>
 
           <TabsContent value="help">
-             <Card className="p-8 md:p-12 rounded-3xl max-w-4xl mx-auto space-y-12 shadow-2xl border-none bg-primary text-primary-foreground relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-12 opacity-10 rotate-12"><ShieldCheck className="w-64 h-64" /></div>
-                <div className="relative z-10 space-y-12">
-                   <div className="space-y-2">
-                      <h2 className="text-3xl font-headline font-light italic">Business Management Guide</h2>
-                      <p className="text-primary-foreground/70 text-sm">Hulp bij het beheren van jouw museum klanten.</p>
-                   </div>
-                   
-                   <div className="grid md:grid-cols-2 gap-8">
-                      <div className="p-6 rounded-2xl bg-white/10 border border-white/20 space-y-4">
-                         <h4 className="font-black uppercase text-[10px] tracking-widest text-accent flex items-center gap-2">
-                           <TrendingUp className="w-3 h-3" /> Business Model
-                         </h4>
-                         <p className="text-xs leading-relaxed">Factureer minimaal 3-5 uur (@€50/u) voor de initiële setup. Hanteer daarna een vaste maandelijkse fee voor hosting en support. Dit rechtvaardigt jouw uurtarief door constante bereikbaarheid.</p>
+             <div className="max-w-4xl mx-auto space-y-12 pb-24">
+               {/* Business Guide Card */}
+               <Card className="p-8 md:p-12 rounded-3xl shadow-2xl border-none bg-primary text-primary-foreground relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-12 opacity-10 rotate-12"><ShieldCheck className="w-64 h-64" /></div>
+                  <div className="relative z-10 space-y-12">
+                     <div className="space-y-2">
+                        <h2 className="text-3xl font-headline font-light italic">Business Management Guide</h2>
+                        <p className="text-primary-foreground/70 text-sm">Beheer uw museum en klanten op professioneel niveau.</p>
+                     </div>
+                     
+                     <div className="grid md:grid-cols-2 gap-8">
+                        <div className="p-6 rounded-2xl bg-white/10 border border-white/20 space-y-4">
+                           <h4 className="font-black uppercase text-[10px] tracking-widest text-accent flex items-center gap-2">
+                             <TrendingUp className="w-3 h-3" /> Business Model
+                           </h4>
+                           <p className="text-xs leading-relaxed">Factureer minimaal 3-5 uur (@€50/u) voor de initiële setup. Hanteer daarna een vaste maandelijkse fee voor hosting en support. Dit rechtvaardigt uw expertise en constante bereikbaarheid.</p>
+                        </div>
+                        <div className="p-6 rounded-2xl bg-white/10 border border-white/20 space-y-4">
+                           <h4 className="font-black uppercase text-[10px] tracking-widest text-accent flex items-center gap-2">
+                             <ImageIcon className="w-3 h-3" /> Uw Rol
+                           </h4>
+                           <p className="text-xs leading-relaxed">U bent de <strong>Digitaal Conservator</strong>. U waarborgt de kwaliteit van het archief, beheert de Deep Zoom infrastructuur en zorgt dat de verkoop van gecertificeerde prints vlekkeloos verloopt.</p>
+                        </div>
+                     </div>
+                  </div>
+               </Card>
+
+               {/* Asset Delivery Guide (Meertalig via t()) */}
+               <Card className="p-8 md:p-12 rounded-3xl shadow-xl border-none bg-white space-y-12">
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-4">
+                       <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center text-accent"><ImageIcon className="w-6 h-6" /></div>
+                       <div>
+                         <h2 className="text-2xl font-headline font-light">{t('asset_guide_title')}</h2>
+                         <p className="text-sm text-muted-foreground">{t('asset_guide_subtitle')}</p>
+                       </div>
+                    </div>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-12">
+                    <div className="space-y-8">
+                      <div className="space-y-4">
+                        <h4 className="text-[10px] font-black uppercase tracking-widest text-accent flex items-center gap-2">
+                          <CheckCircle className="w-3 h-3" /> {t('asset_specs_title')}
+                        </h4>
+                        <ul className="space-y-3 text-sm">
+                           <li className="flex gap-3 items-start"><span className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 shrink-0" /> {t('asset_specs_pixels')}</li>
+                           <li className="flex gap-3 items-start"><span className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 shrink-0" /> {t('asset_specs_format')}</li>
+                           <li className="flex gap-3 items-start"><span className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 shrink-0" /> {t('asset_specs_color')}</li>
+                        </ul>
                       </div>
-                      <div className="p-6 rounded-2xl bg-white/10 border border-white/20 space-y-4">
-                         <h4 className="font-black uppercase text-[10px] tracking-widest text-accent flex items-center gap-2">
-                           <ImageIcon className="w-3 h-3" /> Aanleverspecificaties
-                         </h4>
-                         <ul className="text-xs space-y-2 opacity-80">
-                           <li className="flex gap-2"><strong>Foto's:</strong> JPEG/WebP, min. 4000px breed.</li>
-                           <li className="flex gap-2"><strong>Metadata:</strong> Titel, jaar, medium, afmetingen.</li>
-                           <li className="flex gap-2"><strong>Branding:</strong> Logo (PNG transparant).</li>
-                           <li className="flex gap-2"><strong>Stripe:</strong> Eigen API keys van de artiest.</li>
-                         </ul>
+
+                      <div className="space-y-4">
+                        <h4 className="text-[10px] font-black uppercase tracking-widest text-accent flex items-center gap-2">
+                          <Camera className="w-3 h-3" /> {t('asset_manual_title')}
+                        </h4>
+                        <div className="space-y-4 text-sm text-muted-foreground leading-relaxed">
+                           <p>{t('asset_manual_step1')}</p>
+                           <p>{t('asset_manual_step2')}</p>
+                           <p>{t('asset_manual_step3')}</p>
+                        </div>
                       </div>
-                   </div>
-                   
-                   <div className="pt-8 border-t border-white/10">
-                      <p className="text-[10px] uppercase tracking-widest font-black opacity-40">Safe Harbor Architecture v2.2 &bull; SaaS Edition</p>
-                   </div>
-                </div>
-             </Card>
+                    </div>
+
+                    <div className="bg-secondary/10 p-8 rounded-3xl space-y-6">
+                       <h4 className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                         <HelpCircle className="w-3 h-3" /> {t('asset_faq_title')}
+                       </h4>
+                       <div className="space-y-6">
+                         <div className="space-y-2">
+                           <p className="text-[11px] font-black uppercase tracking-tight text-foreground">{t('asset_faq_q1')}</p>
+                           <p className="text-xs text-muted-foreground leading-relaxed italic">{t('asset_faq_a1')}</p>
+                         </div>
+                         <div className="space-y-2">
+                           <p className="text-[11px] font-black uppercase tracking-tight text-foreground">{t('asset_faq_q2')}</p>
+                           <p className="text-xs text-muted-foreground leading-relaxed italic">{t('asset_faq_a2')}</p>
+                         </div>
+                         <div className="space-y-2">
+                           <p className="text-[11px] font-black uppercase tracking-tight text-foreground">{t('asset_faq_q3')}</p>
+                           <p className="text-xs text-muted-foreground leading-relaxed italic">{t('asset_faq_a3')}</p>
+                         </div>
+                       </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-8 border-t border-black/5 flex items-center justify-between">
+                     <p className="text-[9px] uppercase tracking-widest font-black opacity-30">Safe Harbor Framework &bull; Curator Edition</p>
+                     <div className="flex gap-2">
+                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                        <span className="text-[9px] font-bold opacity-40 uppercase">System Ready</span>
+                     </div>
+                  </div>
+               </Card>
+             </div>
           </TabsContent>
 
           <TabsContent value="upload">
@@ -410,7 +476,10 @@ export default function AdminPage() {
                 <div className="space-y-2">
                    <h2 className="text-xl font-headline font-light">Nieuwe werken toevoegen</h2>
                    <p className="text-sm text-muted-foreground">Sleep hier foto's naartoe of klik op de knop.</p>
-                   <p className="text-[10px] text-accent uppercase font-black mt-2 tracking-widest italic">Tip: gebruik foto's van minstens 4000px voor optimale Deep Zoom</p>
+                   <div className="flex items-center justify-center gap-2 mt-4 text-accent">
+                      <AlertCircle className="w-4 h-4" />
+                      <p className="text-[10px] uppercase font-black tracking-widest italic">{t('asset_specs_pixels')}</p>
+                   </div>
                 </div>
                 <input type="file" ref={fileInputRef} className="hidden" onChange={(e) => handleBatchProcess(e.target.files)} accept="image/*" multiple />
                 <Button size="lg" onClick={() => fileInputRef.current?.click()} disabled={isUploading} className="rounded-full px-12 h-14">
