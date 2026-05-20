@@ -2,9 +2,8 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Loader2, Search, Minimize2, ZoomIn, ZoomOut } from 'lucide-react';
+import { Loader2, Search, Minimize2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
 
 interface DeepZoomViewerProps {
   imageUrl: string;
@@ -19,20 +18,20 @@ export function DeepZoomViewer({ imageUrl, title, brightness = 1, className }: D
   const [isLoading, setIsLoading] = useState(true);
   const [isZoomedIn, setIsZoomedIn] = useState(false);
 
-  const toggleZoom = useCallback(() => {
+  // De verbeterde toggle functie
+  const handleToggleZoom = useCallback(() => {
     if (!osdRef.current) return;
+    
     const viewport = osdRef.current.viewport;
     const currentZoom = viewport.getZoom();
     const homeZoom = viewport.getHomeZoom();
     
-    // Als we dicht bij de "home" zoom zijn (volledig beeld), zoom dan 5x in.
-    // Anders, ga terug naar home.
-    if (currentZoom <= homeZoom * 1.2) {
-      viewport.zoomTo(homeZoom * 5, null, false);
-      setIsZoomedIn(true);
+    // Als we dicht bij home zoom zijn, zoom dan 5x in op het midden.
+    // Anders, ga terug naar het volledige overzicht.
+    if (currentZoom <= homeZoom * 1.5) {
+      viewport.zoomTo(homeZoom * 5, viewport.getCenter(), false);
     } else {
       viewport.goHome(false);
-      setIsZoomedIn(false);
     }
   }, []);
 
@@ -88,12 +87,12 @@ export function DeepZoomViewer({ imageUrl, title, brightness = 1, className }: D
           }
         });
 
-        // Update de zoom-state als de gebruiker handmatig zoomt
+        // Update de visuele staat van de knop op basis van werkelijke zoom
         osdInstance.addHandler('zoom', () => {
           const viewport = osdInstance.viewport;
           const currentZoom = viewport.getZoom();
           const homeZoom = viewport.getHomeZoom();
-          setIsZoomedIn(currentZoom > homeZoom * 1.2);
+          setIsZoomedIn(currentZoom > homeZoom * 1.5);
         });
 
         osdInstance.addHandler('open-failed', () => {
@@ -119,7 +118,7 @@ export function DeepZoomViewer({ imageUrl, title, brightness = 1, className }: D
   return (
     <div className={cn("relative w-full h-full bg-black overflow-hidden group", className)}>
       {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center z-10 bg-black/20 backdrop-blur-sm">
+        <div className="absolute inset-0 flex items-center justify-center z-50 bg-black/20 backdrop-blur-sm">
           <Loader2 className="w-10 h-10 animate-spin text-accent/50" />
         </div>
       )}
@@ -144,15 +143,15 @@ export function DeepZoomViewer({ imageUrl, title, brightness = 1, className }: D
       `}} />
 
       {/* Custom Controls Overlay */}
-      <div className="absolute top-8 left-8 flex flex-col gap-4 z-30">
+      <div className="absolute top-8 left-8 flex flex-col gap-4 z-[120]">
         <div className="bg-black/40 backdrop-blur-xl border border-white/10 p-4 rounded-2xl shadow-2xl transition-all duration-500">
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-1">Collectie Thijs Sterk</p>
           <p className="text-white text-xs font-medium truncate max-w-[200px]">{title}</p>
         </div>
 
-        {/* De nieuwe Toggle Zoom knop */}
+        {/* De herstelde Zoom Knop */}
         <button 
-          onClick={toggleZoom}
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleToggleZoom(); }}
           className="w-14 h-14 bg-accent/90 hover:bg-accent text-accent-foreground rounded-2xl flex items-center justify-center shadow-2xl border border-white/10 transition-all hover:scale-105 active:scale-95 group/zoom"
           title={isZoomedIn ? "Terug naar overzicht" : "Zoom in op details (5x)"}
         >
@@ -165,7 +164,7 @@ export function DeepZoomViewer({ imageUrl, title, brightness = 1, className }: D
       </div>
 
       {/* Touch/Mouse Hint bij hover */}
-      <div className="absolute bottom-8 left-8 bg-black/20 backdrop-blur-md px-4 py-2 rounded-full border border-white/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+      <div className="absolute bottom-8 left-8 bg-black/20 backdrop-blur-md px-4 py-2 rounded-full border border-white/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
         <p className="text-[9px] font-black uppercase tracking-widest text-white/60">Gebruik muiswiel of dubbelklik voor handmatige zoom</p>
       </div>
     </div>
