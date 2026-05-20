@@ -35,7 +35,8 @@ import {
   FileImage,
   Globe2,
   Mail,
-  ListTodo
+  ListTodo,
+  CheckCircle2
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -271,8 +272,8 @@ export default function AdminPage() {
             </div>
           </TabsContent>
 
-          <TabsContent value="upload">
-             <Card className="p-24 border-dashed border-4 border-muted flex flex-col items-center justify-center text-center space-y-6">
+          <TabsContent value="upload" className="space-y-12">
+             <Card className="p-16 border-dashed border-4 border-muted flex flex-col items-center justify-center text-center space-y-6">
                 <CloudUpload className="w-16 h-16 opacity-20" />
                 <div className="space-y-2">
                    <h2 className="text-xl font-headline font-light">Nieuwe werken toevoegen</h2>
@@ -289,6 +290,27 @@ export default function AdminPage() {
                   </div>
                 )}
              </Card>
+
+             <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                <div className="bg-accent/5 border border-accent/10 p-8 rounded-3xl space-y-4">
+                   <div className="flex items-center gap-3">
+                      <CheckCircle2 className="w-5 h-5 text-accent" />
+                      <h4 className="text-[11px] font-black uppercase tracking-widest text-accent">Aanbevolen Resolutie</h4>
+                   </div>
+                   <p className="text-sm leading-relaxed text-muted-foreground font-light">
+                      Voor een perfecte Deep Zoom ervaring adviseren wij afbeeldingen van <strong>4000 pixels</strong> aan de langste zijde.
+                   </p>
+                </div>
+                <div className="bg-secondary/10 border border-secondary/20 p-8 rounded-3xl space-y-4">
+                   <div className="flex items-center gap-3">
+                      <FileImage className="w-5 h-5 text-primary" />
+                      <h4 className="text-[11px] font-black uppercase tracking-widest text-primary">Bestandsformaat</h4>
+                   </div>
+                   <p className="text-sm leading-relaxed text-muted-foreground font-light">
+                      Gebruik bij voorkeur <strong>WebP</strong>. Dit formaat is 30% kleiner dan JPG en behoudt alle details van de schilderijen.
+                   </p>
+                </div>
+             </div>
           </TabsContent>
 
           <TabsContent value="texts">
