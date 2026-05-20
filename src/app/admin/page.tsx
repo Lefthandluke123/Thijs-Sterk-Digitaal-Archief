@@ -34,7 +34,8 @@ import {
   ChevronRight,
   FileImage,
   Globe2,
-  Mail
+  Mail,
+  ListTodo
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -43,7 +44,6 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
-import { translateMuseumText } from '@/ai/flows/translate-flow';
 
 const TAG_CATEGORIES = {
   "Periode": ["Vroeg werk", "45-50", "50-60", "70-82"],
@@ -218,12 +218,6 @@ export default function AdminPage() {
     link.click();
   };
 
-  const formatFileSize = (bytes?: number) => {
-    if (!bytes) return "Onbekend";
-    const mb = bytes / (1024 * 1024);
-    return `${mb.toFixed(2)} MB`;
-  };
-
   return (
     <div className="min-h-screen bg-background flex flex-col pt-14">
       <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={(e) => handleBatchProcess(e.target.files)} accept="image/*" multiple />
@@ -319,28 +313,11 @@ export default function AdminPage() {
                     <div className="space-y-4 bg-black/5 p-6 rounded-2xl">
                       <div className="space-y-2">
                         <Label className="text-[9px] uppercase opacity-50">Kopregel (Groot)</Label>
-                        <Input defaultValue={siteSettings?.homeHeroTitle || ''} onBlur={(e) => updateSettingsField('homeHeroTitle', e.target.value)} className="bg-white border-none font-headline text-xl" />
+                        <Input defaultValue={siteSettings?.homeHeroTitle || 'Een leven gewijd aan Licht, Ruimte en Water'} onBlur={(e) => updateSettingsField('homeHeroTitle', e.target.value)} className="bg-white border-none font-headline text-xl" />
                       </div>
                       <div className="space-y-2">
                         <Label className="text-[9px] uppercase opacity-50">Openingswoord</Label>
                         <Textarea key={siteSettings?.homeHeroIntro} defaultValue={siteSettings?.homeHeroIntro || ''} onBlur={(e) => updateSettingsField('homeHeroIntro', e.target.value)} className="min-h-[150px] bg-white border-none p-6 text-base font-light" />
-                      </div>
-                    </div>
-                 </div>
-
-                 <div className="space-y-4 pt-8 border-t border-border/10">
-                    <div className="flex items-center gap-3">
-                       <Quote className="w-4 h-4 text-accent" />
-                       <Label className="text-[11px] font-black uppercase text-accent border-l-4 border-accent pl-4 block">Biografie Thijs Sterk</Label>
-                    </div>
-                    <div className="space-y-4 bg-black/5 p-6 rounded-2xl">
-                      <div className="space-y-2">
-                        <Label className="text-[9px] uppercase opacity-50">Biografie Titel</Label>
-                        <Input defaultValue={siteSettings?.homeBioTitle || ''} onBlur={(e) => updateSettingsField('homeBioTitle', e.target.value)} className="bg-white border-none font-headline text-xl" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-[9px] uppercase opacity-50">Biografische Tekst</Label>
-                        <Textarea key={siteSettings?.homeBio} defaultValue={siteSettings?.homeBio || ''} onBlur={(e) => updateSettingsField('homeBio', e.target.value)} className="min-h-[200px] bg-white border-none p-6 text-base font-light" />
                       </div>
                     </div>
                  </div>
@@ -362,6 +339,35 @@ export default function AdminPage() {
                       <div className="space-y-2">
                         <Label className="text-[9px] uppercase opacity-50">Contact Quote (Italic)</Label>
                         <Textarea defaultValue={siteSettings?.contactQuote || ''} onBlur={(e) => updateSettingsField('contactQuote', e.target.value)} className="min-h-[100px] bg-white border-none p-4 text-sm italic" />
+                      </div>
+                    </div>
+                 </div>
+
+                 <div className="space-y-4 pt-8 border-t border-border/10">
+                    <div className="flex items-center gap-3">
+                       <ListTodo className="w-4 h-4 text-accent" />
+                       <Label className="text-[11px] font-black uppercase text-accent border-l-4 border-accent pl-4 block">Contact Formulier Velden (NL)</Label>
+                    </div>
+                    <div className="grid sm:grid-cols-2 gap-4 bg-black/5 p-6 rounded-2xl">
+                      <div className="space-y-2">
+                        <Label className="text-[9px] uppercase opacity-50">Label Naam</Label>
+                        <Input defaultValue={siteSettings?.contactLabelName || 'Naam'} onBlur={(e) => updateSettingsField('contactLabelName', e.target.value)} className="bg-white border-none text-xs" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-[9px] uppercase opacity-50">Label E-mail</Label>
+                        <Input defaultValue={siteSettings?.contactLabelEmail || 'E-mail'} onBlur={(e) => updateSettingsField('contactLabelEmail', e.target.value)} className="bg-white border-none text-xs" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-[9px] uppercase opacity-50">Label Onderwerp</Label>
+                        <Input defaultValue={siteSettings?.contactLabelSubject || 'Onderwerp'} onBlur={(e) => updateSettingsField('contactLabelSubject', e.target.value)} className="bg-white border-none text-xs" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-[9px] uppercase opacity-50">Label Bericht</Label>
+                        <Input defaultValue={siteSettings?.contactLabelMessage || 'Bericht / Herinnering'} onBlur={(e) => updateSettingsField('contactLabelMessage', e.target.value)} className="bg-white border-none text-xs" />
+                      </div>
+                      <div className="col-span-2 space-y-2">
+                        <Label className="text-[9px] uppercase opacity-50">Knop Tekst</Label>
+                        <Input defaultValue={siteSettings?.contactButtonSend || 'Verstuur Bericht'} onBlur={(e) => updateSettingsField('contactButtonSend', e.target.value)} className="bg-white border-none text-xs" />
                       </div>
                     </div>
                  </div>

@@ -32,17 +32,21 @@ export function ContactForm() {
   }, [firestore]);
   const { data: siteSettings } = useDoc(siteSettingsRef);
 
-  const contactTitle = (language !== 'nl' && siteSettings?.[`contactTitle_${language}`])
-    ? siteSettings[`contactTitle_${language}`]
-    : siteSettings?.contactTitle || 'Informatie & Uw Verhalen';
+  const getTranslatedValue = (field: string, defaultVal: string) => {
+    if (!siteSettings) return defaultVal;
+    if (language === 'nl') return siteSettings[field] || defaultVal;
+    return siteSettings[`${field}_${language}`] || siteSettings[field] || defaultVal;
+  };
 
-  const contactIntro = (language !== 'nl' && siteSettings?.[`contactIntro_${language}`])
-    ? siteSettings[`contactIntro_${language}`]
-    : siteSettings?.contactIntro || 'Heeft u vragen over specifieke werken in de collectie of verzoeken voor exposities? Wij staan u graag te woord.';
-
-  const contactQuote = (language !== 'nl' && siteSettings?.[`contactQuote_${language}`])
-    ? siteSettings[`contactQuote_${language}`]
-    : siteSettings?.contactQuote || '"Wij zijn ook altijd benieuwd naar uw verhalen over hem en zijn werk. Wat heeft u thuis hangen? Hoe komt u er aan, en wat betekent het voor u?"';
+  const contactTitle = getTranslatedValue('contactTitle', 'Informatie & Uw Verhalen');
+  const contactIntro = getTranslatedValue('contactIntro', 'Heeft u vragen over specifieke werken in de collectie of verzoeken voor exposities? Wij staan u graag te woord.');
+  const contactQuote = getTranslatedValue('contactQuote', '"Wij zijn ook altijd benieuwd naar uw verhalen over hem en zijn werk."');
+  
+  const labelName = getTranslatedValue('contactLabelName', t('contact_label_name'));
+  const labelEmail = getTranslatedValue('contactLabelEmail', t('contact_label_email'));
+  const labelSubject = getTranslatedValue('contactLabelSubject', t('contact_label_subject'));
+  const labelMessage = getTranslatedValue('contactLabelMessage', t('contact_label_message'));
+  const buttonSend = getTranslatedValue('contactButtonSend', t('contact_button_send'));
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -50,7 +54,6 @@ export function ContactForm() {
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
     toast({
       title: t('contact_success_title'),
       description: t('contact_success_desc'),
@@ -105,14 +108,14 @@ export function ContactForm() {
                 <div className="grid sm:grid-cols-2 gap-6">
                   <FormField control={form.control} name="name" render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-[10px] uppercase tracking-widest font-bold">{t('contact_label_name')}</FormLabel>
+                      <FormLabel className="text-[10px] uppercase tracking-widest font-bold">{labelName}</FormLabel>
                       <FormControl><Input placeholder={t('contact_placeholder_name')} className="bg-background border-none h-12" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
                   <FormField control={form.control} name="email" render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-[10px] uppercase tracking-widest font-bold">{t('contact_label_email')}</FormLabel>
+                      <FormLabel className="text-[10px] uppercase tracking-widest font-bold">{labelEmail}</FormLabel>
                       <FormControl><Input placeholder={t('contact_placeholder_email')} className="bg-background border-none h-12" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
@@ -120,20 +123,20 @@ export function ContactForm() {
                 </div>
                 <FormField control={form.control} name="subject" render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-[10px] uppercase tracking-widest font-bold">{t('contact_label_subject')}</FormLabel>
+                    <FormLabel className="text-[10px] uppercase tracking-widest font-bold">{labelSubject}</FormLabel>
                     <FormControl><Input placeholder={t('contact_placeholder_subject')} className="bg-background border-none h-12" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="message" render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-[10px] uppercase tracking-widest font-bold">{t('contact_label_message')}</FormLabel>
+                    <FormLabel className="text-[10px] uppercase tracking-widest font-bold">{labelMessage}</FormLabel>
                     <FormControl><Textarea placeholder={t('contact_placeholder_message')} className="min-h-[150px] bg-background border-none resize-none p-4" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 <Button type="submit" size="lg" className="w-full bg-primary hover:bg-primary/90 text-white rounded-full h-14 font-bold uppercase tracking-widest text-xs">
-                  {t('contact_button_send')} <Send className="ml-2 w-4 h-4" />
+                  {buttonSend} <Send className="ml-2 w-4 h-4" />
                 </Button>
               </form>
             </Form>

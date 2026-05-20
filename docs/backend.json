@@ -194,6 +194,11 @@
         "contactQuote_de": { "type": "string" },
         "contactQuote_fr": { "type": "string" },
         "contactQuote_es": { "type": "string" },
+        "contactLabelName": { "type": "string" },
+        "contactLabelEmail": { "type": "string" },
+        "contactLabelSubject": { "type": "string" },
+        "contactLabelMessage": { "type": "string" },
+        "contactButtonSend": { "type": "string" },
         "hiddenSeries": { "type": "array", "items": { "type": "string" } }
       }
     }
