@@ -3,15 +3,20 @@
 
 Dit document bevat de essentiële instructies voor het beheren, bewaren en delen van de digitale collectie (325+ werken).
 
-## Versie: 10-5/18.30 (Optimale Resolutie & Performance)
+## Versie: 10-5/19.15 (Museum-Grade Deep Zoom Edition)
 
-### 1. Richtlijnen voor Foto-uploads (Kwaliteit vs. Snelheid)
-Voor de volledige collectie van ~360 werken adviseren wij de volgende instellingen voor een maximale detaillering (loep-ervaring) en snelle laadtijden:
+### 1. Richtlijnen voor Foto-uploads (Deep Zoom)
+Voor een optimale ervaring in de nieuwe OpenSeadragon viewer adviseren wij twee paden:
 
-*   **Bestandsformaat**: **WebP** (Sterk aanbevolen). Dit formaat biedt de beste compressie zonder verlies van detail.
-*   **Maximale Resolutie**: **3500px tot 4000px** aan de langste zijde. Dit is ideaal voor weergave op 4K-schermen.
-*   **Bestandsgrootte**: Richt op **2MB tot 4MB** per foto. 
-*   **Bestandsnaam**: Gebruik het formaat `[Volgnummer]-[RomeinsCijfer].webp` (bijv. `12-XIII.webp`). 
+#### Pad A: Standaard Upload (Eenvoudig)
+*   Upload een **WebP** bestand van **4000px**.
+*   De viewer bouwt automatisch een tijdelijke piramide in het geheugen van de bezoeker. Dit werkt uitstekend voor de meeste werken.
+
+#### Pad B: Deep Zoom Architectuur (Voor Meesterwerken)
+Voor werken met extreme details (bijv. gigapixel scans) raden wij aan de foto voor te bewerken met **VIPS** voordat u deze naar Firebase Storage uploadt.
+*   **Commando**: `vips dzsave schilderij.webp output_map --layout dzi`
+*   **Resultaat**: U krijgt een `.dzi` bestand en een map met duizenden kleine tegels.
+*   **Voordeel**: De bezoeker laadt alleen de pixels die hij op dat moment ziet. Dit is "True Tiled Architecture".
 
 ### 2. Digitalisering van Dia's (Diapositieven)
 Heeft u het archief op dia? Houd bij het scannen rekening met het volgende:
@@ -28,9 +33,11 @@ Om berichten direct in uw mailbox te ontvangen:
     *(Vervang GEBRUIKERSNAAM door uw e-mailadres en WACHTWOORD door uw Titan wachtwoord)*.
 5.  Ontvanger: `lhcsterk@doggyfew.com`.
 
-### 4. Hoe publiceer ik mijn wijzigingen?
-*   **Inhoud (Foto's, Tags, Bio's)**: Wijzigingen in het beheerpaneel (`/admin`) zijn **direct live**.
-*   **Vertaal Station**: Gebruik de AI-toverstaf om Nederlandse teksten direct om te zetten naar EN, DE, FR of ES.
+### 4. Navigatie & Bediening
+*   **Virtuele Tour**: Gebruik de **Pijltjestoetsen** (links/rechts) om door de zaal te lopen.
+*   **Viewer**: In de viewer bladeren de pijltjestoetsen direct tussen de schilderijen. 
+*   **Zoom**: Gebruik het muiswiel, dubbelklik of 'pinch' op mobiel voor Deep Zoom details.
+*   **Escape**: Sluit de viewer direct met de `Esc` toets.
 
 ### 5. Sortering van het Archief
 De collectie wordt automatisch gesorteerd op:
