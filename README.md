@@ -3,9 +3,9 @@
 
 Welkom bij de **Curator Edition**. Dit platform is niet zomaar een website; het is een schaalbare museum-infrastructuur bedoeld voor digitale conservatoren die kunstenaars helpen hun werk op het hoogste niveau te ontsluiten.
 
-## 1. De Bottomline: Pricing Strategy (Vrienden vs. Anderen)
+## 1. De Bottomline: Pricing Strategy (Vrienden vs. Zakelijk)
 
-Als beheerder van dit platform hanteer je twee vlijmscherpe tarieven. Dit zorgt ervoor dat je tijd altijd goed betaald wordt, terwijl je de mensen die je mag een partner-deal geeft.
+Als beheerder van dit platform hanteer je twee vlijmscherpe tarieven. Dit zorgt ervoor dat je tijd (uurtarief €50,- tot €75,-) altijd goed betaald wordt, terwijl je de mensen die je mag een partner-deal geeft.
 
 ### A. De Partner Deal (Voor wie je "Wel oké" vindt)
 *   **De Kickstart (Setup Fee)**: Eénmalig **€250,-**. 
