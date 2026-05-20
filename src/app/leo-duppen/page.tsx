@@ -8,11 +8,13 @@ import { doc } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { Maximize2 } from 'lucide-react';
 import { ArtworkViewer } from '@/components/artwork-viewer';
+import { useLanguage } from '@/components/language-provider';
 
 export default function LeoDuppenPage() {
   const [activeArtwork, setActiveArtwork] = useState<any | null>(null);
   const [selectedArtworkId, setSelectedArtworkId] = useState<string | null>(null);
   const firestore = useFirestore();
+  const { language } = useLanguage();
 
   const siteSettingsRef = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -33,7 +35,9 @@ export default function LeoDuppenPage() {
     }
   }, [selectedArtwork]);
 
-  const bioText = siteSettings?.leoDuppenBio || `Leo Duppen is een vooraanstaand kunsthistoricus die zich diepgaand heeft beziggehouden met het ontsluiten en duiden van het werk van Thijs Sterk.`;
+  const bioText = (language !== 'nl' && siteSettings?.[`leoDuppenBio_${language}`])
+    ? siteSettings[`leoDuppenBio_${language}`]
+    : siteSettings?.leoDuppenBio || `Leo Duppen is een vooraanstaand kunsthistoricus die zich diepgaand heeft beziggehouden met Thijs Sterk.`;
   
   const images = siteSettings?.leoDuppenBioImages || [];
   const hasMultipleImages = images.length > 1;
@@ -53,6 +57,7 @@ export default function LeoDuppenPage() {
   };
 
   const renderTextWithLinks = (text: string) => {
+    if (!text) return "";
     const parts = text.split(/(\[\[.*?\]\])/g);
     return parts.map((part, i) => {
       const match = part.match(/\[\[(.*?)\|(.*?)\]\]/);

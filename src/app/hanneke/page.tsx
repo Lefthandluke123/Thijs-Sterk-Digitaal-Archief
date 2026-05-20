@@ -8,11 +8,13 @@ import { doc } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { Maximize2 } from 'lucide-react';
 import { ArtworkViewer } from '@/components/artwork-viewer';
+import { useLanguage } from '@/components/language-provider';
 
 export default function HannekeSterkPage() {
   const [activeArtwork, setActiveArtwork] = useState<any | null>(null);
   const [selectedArtworkId, setSelectedArtworkId] = useState<string | null>(null);
   const firestore = useFirestore();
+  const { language } = useLanguage();
 
   const siteSettingsRef = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -33,7 +35,9 @@ export default function HannekeSterkPage() {
     }
   }, [selectedArtwork]);
 
-  const bioText = siteSettings?.hannekeBio || `Als dochter van Thijs Sterk groeide Hanneke op te midden van de geur van olieverf en het strijklicht van het atelier.`;
+  const bioText = (language !== 'nl' && siteSettings?.[`hannekeBio_${language}`])
+    ? siteSettings[`hannekeBio_${language}`]
+    : siteSettings?.hannekeBio || `Als dochter van Thijs Sterk groeide Hanneke op te midden van de geur van olieverf en het strijklicht van het atelier.`;
   
   const images = siteSettings?.hannekeBioImages || [];
   const hasMultipleImages = images.length > 1;
@@ -53,6 +57,7 @@ export default function HannekeSterkPage() {
   };
 
   const renderTextWithLinks = (text: string) => {
+    if (!text) return "";
     const parts = text.split(/(\[\[.*?\]\])/g);
     return parts.map((part, i) => {
       const match = part.match(/\[\[(.*?)\|(.*?)\]\]/);
@@ -97,9 +102,6 @@ export default function HannekeSterkPage() {
                     />
                     <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                       <Maximize2 className="text-white w-8 h-8 drop-shadow-2xl" />
-                    </div>
-                    <div className="absolute bottom-4 right-4 z-10 opacity-20 text-[8px] uppercase tracking-widest text-white font-bold bg-black/40 px-2 py-1 rounded-sm">
-                      &copy; Erven Thijs Sterk
                     </div>
                   </div>
                 ))}

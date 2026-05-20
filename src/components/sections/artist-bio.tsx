@@ -7,11 +7,13 @@ import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { Maximize2 } from 'lucide-react';
 import { ArtworkViewer } from '@/components/artwork-viewer';
+import { useLanguage } from '@/components/language-provider';
 
 export function ArtistBio() {
   const [activeArtwork, setActiveArtwork] = useState<any | null>(null);
   const [selectedArtworkId, setSelectedArtworkId] = useState<string | null>(null);
   const firestore = useFirestore();
+  const { language } = useLanguage();
 
   const siteSettingsRef = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -32,14 +34,14 @@ export function ArtistBio() {
     }
   }, [selectedArtwork]);
 
-  const bioTitle = siteSettings?.homeBioTitle || 'Een leven gewijd aan de Essentie';
-  const bioText = siteSettings?.homeBio || `Thijs Sterk (1913-1982) wijdde zijn leven aan het doorgronden van de atmosferische kwaliteiten van de wereld om hem heen. In zijn atelier in Groet, te midden van de geur van olieverf and het strijklicht van het duinlandschap, creëerde hij een oeuvre dat even veelzijdig als diepzinnig is.
+  // Vertalingen voor bio
+  const bioTitle = (language !== 'nl' && siteSettings?.[`homeBioTitle_${language}`])
+    ? siteSettings[`homeBioTitle_${language}`]
+    : siteSettings?.homeBioTitle || 'Een leven gewijd aan de Essentie';
 
-Zijn liefde voor het licht beperkte zich niet tot het Hollandse landschap alleen. In de havens van Bretagne en de zonovergoten dorpen van Griekenland zocht hij naar de juiste kleur voor het water en de lucht. Naast zijn bekende landschappen blonk hij uit in stillevens, bloemstukken en portretten die getuigen van een meesterlijke beheersing van techniek en gevoel.
-
-Thijs Sterk was bovendien een kunstenaar van de grote gebaren. Zijn monumentale wandkunst en zijn glas-in-loodramen sieren diverse publieke gebouwen en kerken, waarbij hij het licht niet alleen schilderde, maar letterlijk liet spreken door het glas.
-
-"Licht is niet iets dat op een object valt," schreef hij in 1954 in zijn dagboek, "het is de ruimte die tussen mij en de wereld ademt."`;
+  const bioText = (language !== 'nl' && siteSettings?.[`homeBio_${language}`])
+    ? siteSettings[`homeBio_${language}`]
+    : siteSettings?.homeBio || `Thijs Sterk (1913-1982) wijdde zijn leven aan het doorgronden van de atmosferische kwaliteiten van de wereld om hem heen.`;
   
   const bioImageUrl = siteSettings?.homeBioImageUrl || 'https://firebasestorage.googleapis.com/v0/b/studio-7311695883-2090f.firebasestorage.app/o/artworks%2F1778851761925_vh0ad_2_I.jpg?alt=media';
 
@@ -55,6 +57,7 @@ Thijs Sterk was bovendien een kunstenaar van de grote gebaren. Zijn monumentale 
   };
 
   const renderTextWithLinks = (text: string) => {
+    if (!text) return "";
     const parts = text.split(/(\[\[.*?\]\])/g);
     return parts.map((part, i) => {
       const match = part.match(/\[\[(.*?)\|(.*?)\]\]/);

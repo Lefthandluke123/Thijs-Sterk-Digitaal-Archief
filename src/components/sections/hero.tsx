@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -12,7 +13,7 @@ import { useLanguage } from '@/components/language-provider';
 export function Hero() {
   const [selectedArtwork, setSelectedArtwork] = useState<any | null>(null);
   const firestore = useFirestore();
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
 
   // Haal settings op voor de tekst
   const siteSettingsRef = useMemoFirebase(() => {
@@ -31,12 +32,14 @@ export function Hero() {
   
   const heroImage = artwork?.imageUrl || 'https://firebasestorage.googleapis.com/v0/b/studio-7311695883-2090f.firebasestorage.app/o/artworks%2F1778851761923_x2p82k_maannacht%20copy.jpg?alt=media';
 
-  const heroTitle = siteSettings?.homeHeroTitle || 'Een leven gewijd aan Licht, Ruimte en Water';
-  const heroIntro = siteSettings?.homeHeroIntro || `Dwaal hier op uw eigen tempo door de verschillende zalen en laat u meevoeren door de atmosfeer van de polders, de havens van Bretagne en Griekenland, en de verstilde dorpsgezichten. 
+  // Gebruik vertalingen indien beschikbaar
+  const heroTitle = (language !== 'nl' && siteSettings?.[`homeHeroTitle_${language}`]) 
+    ? siteSettings[`homeHeroTitle_${language}`] 
+    : siteSettings?.homeHeroTitle || 'Een leven gewijd aan Licht, Ruimte en Water';
 
-Van intieme stillevens, bloemen en indringende portretten tot zijn monumentale wandkunst en kleurrijk glas in lood: het zijn die unieke momenten van licht en ruimte die Thijs in zijn werk steeds opnieuw probeerde te vangen en weergeven. 
-
-We nodigen u uit om de collectie te verkennen of gebruik te maken van de mogelijkheid om bij "Uw Zaal" een geheel eigen inkijk te creëren uit zijn omvangrijke oeuvre.`;
+  const heroIntro = (language !== 'nl' && siteSettings?.[`homeHeroIntro_${language}`])
+    ? siteSettings[`homeHeroIntro_${language}`]
+    : siteSettings?.homeHeroIntro || `Dwaal hier op uw eigen tempo door de verschillende zalen en laat u meevoeren door de atmosfeer van de polders, de havens van Bretagne en Griekenland, en de verstilde dorpsgezichten.`;
 
   return (
     <section className="relative min-h-[70vh] flex flex-col items-center justify-center pt-24 pb-16 px-4 overflow-hidden">
@@ -100,7 +103,7 @@ We nodigen u uit om de collectie te verkennen of gebruik te maken van de mogelij
           </div>
           <div className="absolute bottom-6 left-6 z-20">
             <span className="text-white/60 text-[9px] font-black uppercase tracking-[0.3em] bg-black/40 px-3 py-1.5 rounded-sm backdrop-blur-md">
-              Focus op de maand: {artwork?.displayTitle || "Atmosfeer"}
+              Focus: {artwork?.displayTitle || "Atmosfeer"}
             </span>
           </div>
           <div className="absolute inset-0 bg-gradient-to-t from-background/30 via-transparent to-transparent" />

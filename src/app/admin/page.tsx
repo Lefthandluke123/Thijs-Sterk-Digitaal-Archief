@@ -32,7 +32,8 @@ import {
   Maximize,
   ChevronLeft,
   ChevronRight,
-  FileImage
+  FileImage,
+  Globe2
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -344,6 +345,12 @@ export default function AdminPage() {
                   <PenTool className="w-8 h-8 mx-auto text-accent mb-4" />
                   <h2 className="text-2xl font-headline font-light">Website Teksten</h2>
                   <p className="text-[10px] uppercase font-black tracking-[0.2em] opacity-40">Beheer hier alle biografieën en het openingswoord</p>
+                  
+                  <Link href="/admin/translate">
+                    <Button variant="outline" className="mt-6 rounded-full border-accent text-accent hover:bg-accent hover:text-accent-foreground">
+                      <Globe2 className="w-4 h-4 mr-2" /> Naar het Vertaal Station
+                    </Button>
+                  </Link>
               </div>
 
               <div className="grid gap-12">
@@ -353,16 +360,6 @@ export default function AdminPage() {
                          <Home className="w-4 h-4 text-accent" />
                          <Label className="text-[11px] font-black uppercase text-accent border-l-4 border-accent pl-4 block">Introductie Tekst (Bovenaan Homepagina)</Label>
                       </div>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="text-[9px] uppercase font-black tracking-widest text-accent hover:text-accent/70"
-                        onClick={() => handleTranslate('homeHeroIntro', siteSettings?.homeHeroIntro || '', 'Introductietekst bovenaan de homepagina')}
-                        disabled={!!isTranslating}
-                      >
-                        {isTranslating === 'homeHeroIntro' ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : <Sparkles className="w-3 h-3 mr-2" />}
-                        Vertaal naar Engels (AI)
-                      </Button>
                     </div>
                     <div className="space-y-4 bg-black/5 p-6 rounded-2xl">
                       <div className="space-y-2">
@@ -392,16 +389,6 @@ export default function AdminPage() {
                           <Quote className="w-4 h-4 text-accent" />
                           <Label className="text-[11px] font-black uppercase text-accent border-l-4 border-accent pl-4 block">Biografie Thijs Sterk (Onderaan Homepagina)</Label>
                        </div>
-                       <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="text-[9px] uppercase font-black tracking-widest text-accent hover:text-accent/70"
-                        onClick={() => handleTranslate('homeBio', siteSettings?.homeBio || '', 'Hoofdbiografie van de artiest Thijs Sterk')}
-                        disabled={!!isTranslating}
-                      >
-                        {isTranslating === 'homeBio' ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : <Sparkles className="w-3 h-3 mr-2" />}
-                        Vertaal naar Engels (AI)
-                      </Button>
                     </div>
                     <div className="space-y-4 bg-black/5 p-6 rounded-2xl">
                       <div className="space-y-2">
@@ -431,16 +418,6 @@ export default function AdminPage() {
                           <User className="w-4 h-4 opacity-40" />
                           <Label className="text-[11px] font-black uppercase opacity-60 block">Leo Duppen (Kunsthistoricus)</Label>
                        </div>
-                       <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="text-[9px] uppercase font-black tracking-widest opacity-40 hover:opacity-100"
-                        onClick={() => handleTranslate('leoDuppenBio', siteSettings?.leoDuppenBio || '', 'Biografie van kunsthistoricus Leo Duppen')}
-                        disabled={!!isTranslating}
-                      >
-                        {isTranslating === 'leoDuppenBio' ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : <Sparkles className="w-3 h-3 mr-2" />}
-                        Vertaal naar Engels (AI)
-                      </Button>
                     </div>
                     <Textarea 
                       key={siteSettings?.leoDuppenBio}
@@ -491,9 +468,11 @@ export default function AdminPage() {
               </div>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Button onClick={handleExportBackup} size="lg" className="rounded-full px-12"><Download className="mr-2" /> Download Master Backup</Button>
-                <Button variant="outline" size="lg" className="rounded-full px-12 border-accent text-accent hover:bg-accent/5">
-                  <Languages className="mr-2 w-4 h-4" /> Batch Vertaling Starten
-                </Button>
+                <Link href="/admin/translate">
+                  <Button variant="outline" size="lg" className="rounded-full px-12 border-accent text-accent hover:bg-accent/5">
+                    <Languages className="mr-2 w-4 h-4" /> Vertaal Station Openen
+                  </Button>
+                </Link>
               </div>
             </Card>
           </TabsContent>
@@ -673,3 +652,4 @@ export default function AdminPage() {
     </div>
   );
 }
+

@@ -129,78 +129,49 @@
     },
     "Settings": {
       "title": "Settings",
-      "description": "Algemene website instellingen en teksten. Openbaar leesbaar.",
+      "description": "Algemene website instellingen en teksten. Bevat vertalingen voor EN, DE en FR.",
       "type": "object",
       "properties": {
-        "logoUrl": {
-          "type": "string",
-          "description": "URL naar het website logo"
-        },
-        "siteTitle": {
-          "type": "string",
-          "description": "De titel van de website"
-        },
-        "homeHeroTitle": {
-          "type": "string",
-          "description": "De kopregel bovenaan de homepagina"
-        },
-        "homeHeroIntro": {
-          "type": "string",
-          "description": "Het openingswoord bovenaan de homepagina"
-        },
-        "homeBioTitle": {
-          "type": "string",
-          "description": "De kopregel van de biografie op de homepagina"
-        },
-        "homeBio": {
-          "type": "string",
-          "description": "Biografie op de homepagina"
-        },
-        "homeBioImageUrl": {
-          "type": "string",
-          "description": "URL naar de afbeelding bij de biografie op home"
-        },
-        "hannekeBio": {
-          "type": "string",
-          "description": "Biografie van Hanneke Sterk"
-        },
-        "hannekeBioImages": {
-          "type": "array",
-          "items": { "type": "string" },
-          "description": "Lijst van afbeeldings-URLs voor Hanneke"
-        },
-        "beatrijsBio": {
-          "type": "string",
-          "description": "Biografie van Beatrijs Sterk"
-        },
-        "beatrijsBioImages": {
-          "type": "array",
-          "items": { "type": "string" },
-          "description": "Lijst van afbeeldings-URLs voor Beatrijs"
-        },
-        "peterBesBio": {
-          "type": "string",
-          "description": "Biografie van Peter Bes"
-        },
-        "peterBesBioImages": {
-          "type": "array",
-          "items": { "type": "string" },
-          "description": "Lijst van afbeeldings-URLs voor Peter Bes"
-        },
-        "leoDuppenBio": {
-          "type": "string",
-          "description": "Biografie van Leo Duppen"
-        },
-        "leoDuppenBioImages": {
-          "type": "array",
-          "items": { "type": "string" },
-          "description": "Lijst van afbeeldings-URLs voor Leo Duppen"
-        },
-        "hiddenSeries": {
-          "type": "array",
-          "items": { "type": "string" },
-          "description": "Lijst van zalen die verborgen zijn voor publiek"
-        }
+        "logoUrl": { "type": "string" },
+        "siteTitle": { "type": "string" },
+        "homeHeroTitle": { "type": "string" },
+        "homeHeroTitle_en": { "type": "string" },
+        "homeHeroTitle_de": { "type": "string" },
+        "homeHeroTitle_fr": { "type": "string" },
+        "homeHeroIntro": { "type": "string" },
+        "homeHeroIntro_en": { "type": "string" },
+        "homeHeroIntro_de": { "type": "string" },
+        "homeHeroIntro_fr": { "type": "string" },
+        "homeBioTitle": { "type": "string" },
+        "homeBioTitle_en": { "type": "string" },
+        "homeBioTitle_de": { "type": "string" },
+        "homeBioTitle_fr": { "type": "string" },
+        "homeBio": { "type": "string" },
+        "homeBio_en": { "type": "string" },
+        "homeBio_de": { "type": "string" },
+        "homeBio_fr": { "type": "string" },
+        "homeBioImageUrl": { "type": "string" },
+        "hannekeBio": { "type": "string" },
+        "hannekeBio_en": { "type": "string" },
+        "hannekeBio_de": { "type": "string" },
+        "hannekeBio_fr": { "type": "string" },
+        "hannekeBioImages": { "type": "array", "items": { "type": "string" } },
+        "beatrijsBio": { "type": "string" },
+        "beatrijsBio_en": { "type": "string" },
+        "beatrijsBio_de": { "type": "string" },
+        "beatrijsBio_fr": { "type": "string" },
+        "beatrijsBioImages": { "type": "array", "items": { "type": "string" } },
+        "peterBesBio": { "type": "string" },
+        "peterBesBio_en": { "type": "string" },
+        "peterBesBio_de": { "type": "string" },
+        "peterBesBio_fr": { "type": "string" },
+        "peterBesBioImages": { "type": "array", "items": { "type": "string" } },
+        "leoDuppenBio": { "type": "string" },
+        "leoDuppenBio_en": { "type": "string" },
+        "leoDuppenBio_de": { "type": "string" },
+        "leoDuppenBio_fr": { "type": "string" },
+        "leoDuppenBioImages": { "type": "array", "items": { "type": "string" } },
+        "hiddenSeries": { "type": "array", "items": { "type": "string" } }
       }
     }
   },
