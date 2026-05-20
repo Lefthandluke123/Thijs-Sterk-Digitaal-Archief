@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -18,7 +17,7 @@ interface ArtworkViewerProps {
 export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewerProps) {
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [showMagnifier, setShowMagnifier] = useState(false);
-  const [zoomLevel, setZoomLevel] = useState(2.5);
+  const [zoomLevel, setZoomLevel] = useState(3.0);
   const [isOverUI, setIsOverUI] = useState(false);
   const [magnifierPos, setMagnifierPos] = useState({ x: 0, y: 0, mouseX: 0, mouseY: 0 });
   const imgRef = useRef<HTMLImageElement>(null);
@@ -73,7 +72,7 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
               alt={artwork.displayTitle || artwork.title} 
               className="max-w-full max-h-[90%] object-contain p-4 md:p-16 shadow-2xl transition-all duration-700 pointer-events-none" 
               style={{ 
-                clipPath: `inset(${artwork.cropTop || 0}% ${artwork.cropRight || 0}% ${artwork.cropBottom || 0}% ${artwork.cropLeft || 0}%)`, 
+                clipPath: artwork.cropTop !== undefined ? `inset(${artwork.cropTop || 0}% ${artwork.cropRight || 0}% ${artwork.cropBottom || 0}% ${artwork.cropLeft || 0}%)` : undefined, 
                 filter: `brightness(${artwork.brightness || 1})` 
               }} 
             />
@@ -81,12 +80,12 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
 
           {showMagnifier && artwork && !isOverUI && (
             <div 
-              className="fixed pointer-events-none border-4 border-white shadow-[0_0_50px_rgba(0,0,0,0.3)] rounded-full z-[100] overflow-hidden bg-background"
+              className="fixed pointer-events-none border-4 border-white shadow-[0_0_60px_rgba(0,0,0,0.4)] rounded-full z-[100] overflow-hidden bg-background"
               style={{
-                width: '280px',
-                height: '280px',
-                left: `${magnifierPos.mouseX - 140}px`,
-                top: `${magnifierPos.mouseY - 140}px`,
+                width: '350px',
+                height: '350px',
+                left: `${magnifierPos.mouseX - 175}px`,
+                top: `${magnifierPos.mouseY - 175}px`,
                 backgroundImage: `url(${artwork.imageUrl})`,
                 backgroundRepeat: 'no-repeat',
                 backgroundSize: `${zoomLevel * 100}% auto`,
@@ -137,12 +136,12 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
                  <Search className="w-5 h-5" />
                </Button>
                {showMagnifier && (
-                 <div className="flex items-center gap-3 px-4 w-40 animate-in fade-in slide-in-from-right-4 duration-300">
+                 <div className="flex items-center gap-3 px-4 w-48 animate-in fade-in slide-in-from-right-4 duration-300">
                    <ZoomOut className="w-3 h-3 opacity-40" />
                    <Slider 
                     value={[zoomLevel]} 
                     min={1.5} 
-                    max={6} 
+                    max={10} 
                     step={0.1} 
                     onValueChange={([val]) => setZoomLevel(val)} 
                     className="flex-1"
