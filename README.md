@@ -26,8 +26,9 @@ Voor werken met extreme details (bijv. gigapixel scans > 8000px) raden wij aan d
 
 ### 2. Digitalisering van Dia's (Diapositieven)
 Heeft u het archief op dia? Houd bij het scannen rekening met het volgende:
-*   **Scan-resolutie**: Om 4000 pixels te halen uit een standaard 35mm dia, moet u scannen op minimaal **3000 DPI tot 4000 DPI**.
-*   **Kleurdiepte**: Scan in 24-bit of 48-bit voor maximale kleurnuances.
+*   **Scan-resolutie**: Om de optimale 4000 pixels te halen uit een standaard 35mm dia, scant u op **2800 DPI tot 3000 DPI**.
+*   **Hogere resolutie**: Scannen op 4000 DPI of hoger is technisch mogelijk, maar levert vaak meer korrel/ruis op dan extra beelddetail. **2800 DPI** is de 'sweet spot'.
+*   **Kleurdiepte**: Scan bij voorkeur in 24-bit of 48-bit voor maximale kleurnuances in de lucht- en waterpartijen.
 
 ### 3. E-mail Instellen (Hostinger / Titan)
 Om berichten direct in uw mailbox te ontvangen:

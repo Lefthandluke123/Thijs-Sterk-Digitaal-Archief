@@ -36,7 +36,8 @@ import {
   Globe2,
   Mail,
   ListTodo,
-  CheckCircle2
+  CheckCircle2,
+  Scan
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -291,7 +292,7 @@ export default function AdminPage() {
                 )}
              </Card>
 
-             <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+             <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
                 <div className="bg-accent/5 border border-accent/10 p-8 rounded-3xl space-y-4">
                    <div className="flex items-center gap-3">
                       <CheckCircle2 className="w-5 h-5 text-accent" />
@@ -303,11 +304,20 @@ export default function AdminPage() {
                 </div>
                 <div className="bg-secondary/10 border border-secondary/20 p-8 rounded-3xl space-y-4">
                    <div className="flex items-center gap-3">
-                      <FileImage className="w-5 h-5 text-primary" />
-                      <h4 className="text-[11px] font-black uppercase tracking-widest text-primary">Bestandsformaat</h4>
+                      <Scan className="w-5 h-5 text-primary" />
+                      <h4 className="text-[11px] font-black uppercase tracking-widest text-primary">Scannen van Dia's</h4>
                    </div>
                    <p className="text-sm leading-relaxed text-muted-foreground font-light">
-                      Gebruik bij voorkeur <strong>WebP</strong>. Dit formaat is 30% kleiner dan JPG en behoudt alle details van de schilderijen.
+                      Heeft u kleinbeeld-dia's? Scan deze op minimaal <strong>2800 DPI</strong> om de gewenste 4000px breedte te bereiken.
+                   </p>
+                </div>
+                <div className="bg-muted/10 border border-muted/20 p-8 rounded-3xl space-y-4">
+                   <div className="flex items-center gap-3">
+                      <FileImage className="w-5 h-5 text-muted-foreground" />
+                      <h4 className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">Bestandsformaat</h4>
+                   </div>
+                   <p className="text-sm leading-relaxed text-muted-foreground font-light">
+                      Gebruik bij voorkeur <strong>WebP</strong>. Dit formaat is circa 30% kleiner dan JPG bij dezelfde kwaliteit.
                    </p>
                 </div>
              </div>
