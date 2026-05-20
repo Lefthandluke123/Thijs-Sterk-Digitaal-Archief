@@ -63,6 +63,7 @@ export default function AdminPage() {
 
   const { data: rawArtworks } = useCollection(artworksQuery);
 
+  // Zorg dat we geen dubbele afbeeldingen tonen in het overzicht
   const artworks = useMemo(() => {
     if (!rawArtworks) return [];
     const seen = new Set();
@@ -89,6 +90,7 @@ export default function AdminPage() {
     });
   }, [artworks, searchQuery]);
 
+  // CRUCIALE FIX: Definieer editingArtwork zodat het beschikbaar is in de Dialog
   const editingArtwork = useMemo(() => {
     if (!editingId) return null;
     return artworks.find((art: any) => art.id === editingId);
@@ -423,7 +425,7 @@ export default function AdminPage() {
           <div className="flex-1 bg-black/5 flex items-center justify-center p-4">
              {editingArtwork && (
                <div className="relative max-h-full">
-                  <img src={editingArtwork.imageUrl} className="max-h-[60vh] object-contain shadow-2xl" />
+                  <img src={editingArtwork.imageUrl} className="max-h-[60vh] object-contain shadow-2xl" alt="Preview" />
                   <div className="absolute top-4 right-4 flex gap-2">
                      <Button variant="destructive" size="icon" onClick={() => { if(confirm('Zeker weten?')) { deleteDoc(doc(firestore!, 'artworks', editingId!)); setEditingId(null); }}} className="rounded-full shadow-xl"><Trash2 className="w-4 h-4" /></Button>
                   </div>

@@ -31,3 +31,4 @@ Mocht u per ongeluk een zaal wissen of de database beschadigen:
 *   **Gecategoriseerde Tags**: Tags zijn nu verdeeld in Periode, Techniek, Plaats en Onderwerp.
 *   **Compacte Curator**: De pagina 'Uw Zaal' is compacter en overzichtelijker voor bezoekers.
 *   **Verbeterde Tour**: De virtuele wandeling heeft een strakkere layout met informatiebordjes die niet meer over de kunst heen vallen.
+*   **AI Vertaling**: Biografieën kunnen nu met één klik naar het Engels vertaald worden in het beheerpaneel.
