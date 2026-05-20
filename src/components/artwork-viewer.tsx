@@ -59,7 +59,7 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
         <div 
           className={cn(
             "relative w-full flex items-center justify-center overflow-hidden bg-black/5 group transition-all duration-500",
-            isFullScreen ? "h-[100vh]" : "h-[75vh]",
+            isFullScreen ? "h-[100vh]" : "h-[82vh]",
             showMagnifier ? (isOverUI ? "cursor-default" : "cursor-none") : "cursor-pointer"
           )}
           onClick={handleToggleFullScreen}
@@ -70,7 +70,7 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
               ref={imgRef}
               src={artwork.imageUrl} 
               alt={artwork.displayTitle || artwork.title} 
-              className="max-w-full max-h-[90%] object-contain p-4 md:p-16 shadow-2xl transition-all duration-700 pointer-events-none" 
+              className="max-w-full max-h-[96%] object-contain p-2 md:p-6 shadow-2xl transition-all duration-700 pointer-events-none" 
               style={{ 
                 clipPath: artwork.cropTop !== undefined ? `inset(${artwork.cropTop || 0}% ${artwork.cropRight || 0}% ${artwork.cropBottom || 0}% ${artwork.cropLeft || 0}%)` : undefined, 
                 filter: `brightness(${artwork.brightness || 1})` 
@@ -161,22 +161,22 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
         </div>
 
         <div className={cn(
-          "w-full bg-background/95 backdrop-blur-md py-8 px-12 border-t border-border/10 flex flex-col items-center justify-center overflow-y-auto text-center transition-all duration-500",
-          isFullScreen ? "h-0 opacity-0 pointer-events-none py-0 px-0" : "h-[25vh] opacity-100"
+          "w-full bg-background/95 backdrop-blur-md py-4 px-12 border-t border-border/10 flex flex-col items-center justify-center overflow-y-auto text-center transition-all duration-500",
+          isFullScreen ? "h-0 opacity-0 pointer-events-none py-0 px-0" : "h-[18vh] opacity-100"
         )}>
           <div className="max-w-4xl mx-auto">
-            <h2 className="text-[10px] md:text-[11px] font-black tracking-[0.4em] uppercase text-foreground/40 mb-4">{artwork?.displayTitle || artwork?.title}</h2>
-            <div className="text-[12px] md:text-[14px] uppercase font-black tracking-[0.5em] text-accent flex flex-wrap gap-x-12 gap-y-4 justify-center items-center">
-              <span className="bg-accent/10 px-6 py-1.5 rounded-sm">Zaal: {artwork?.series}</span>
-              <span className="w-2 h-2 rounded-full bg-accent/30 self-center hidden md:inline" />
-              <span>{artwork?.year}</span>
+            <h2 className="text-[10px] md:text-[11px] font-black tracking-[0.4em] uppercase text-foreground/40 mb-3">{artwork?.displayTitle || artwork?.title}</h2>
+            <div className="text-[11px] md:text-[13px] uppercase font-black tracking-[0.4em] text-accent flex flex-wrap gap-x-10 gap-y-3 justify-center items-center">
+              <span className="bg-accent/10 px-5 py-1 rounded-sm">Zaal: {artwork?.series}</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-accent/30 self-center hidden md:inline" />
+              <span>{artwork?.year || 'Onbekend'}</span>
               {artwork?.dimensions && (
                 <>
-                  <span className="w-2 h-2 rounded-full bg-accent/30 self-center hidden md:inline" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-accent/30 self-center hidden md:inline" />
                   <span>{artwork?.dimensions}</span>
                 </>
               )}
-              <span className="w-2 h-2 rounded-full bg-accent/30 self-center hidden md:inline" />
+              <span className="w-1.5 h-1.5 rounded-full bg-accent/30 self-center hidden md:inline" />
               <span>{artwork?.medium}</span>
             </div>
           </div>
