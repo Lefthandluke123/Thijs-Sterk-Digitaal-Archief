@@ -6,125 +6,57 @@
       "description": "Een kunstwerk in het portfolio van de artiest. Openbaar leesbaar voor alle bezoekers.",
       "type": "object",
       "properties": {
-        "title": {
-          "type": "string",
-          "description": "De interne titel of bestandsnaam van het schilderij"
-        },
-        "displayTitle": {
-          "type": "string",
-          "description": "De titel die aan het publiek wordt getoond in de zalen"
-        },
-        "series": {
-          "type": "string",
-          "description": "De collectie of serie waar het bij hoort"
-        },
-        "year": {
-          "type": "string",
-          "description": "Het jaar van creatie"
-        },
-        "medium": {
-          "type": "string",
-          "description": "Het gebruikte materiaal (bijv. Olieverf, Digitaal)"
-        },
-        "dimensions": {
-          "type": "string",
-          "description": "De afmetingen van het werk (bijv. 50x60 cm)"
-        },
-        "description": {
-          "type": "string",
-          "description": "Een beschrijving van het werk"
-        },
-        "imageUrl": {
-          "type": "string",
-          "description": "URL naar de afbeelding"
-        },
-        "imageHint": {
-          "type": "string",
-          "description": "Keywords voor zoekmachines"
-        },
-        "fileSize": {
-          "type": "number",
-          "description": "Grootte van het bestand in bytes"
-        },
-        "fileType": {
-          "type": "string",
-          "description": "MIME-type van het bestand (bijv. image/jpeg)"
-        },
-        "tags": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "Tags voor filtering (bijv. Atmosferisch, Geometrisch)"
-        },
-        "cropTop": {
-          "type": "number",
-          "description": "Percentage crop aan de bovenkant"
-        },
-        "cropBottom": {
-          "type": "number",
-          "description": "Percentage crop aan de onderkant"
-        },
-        "cropLeft": {
-          "type": "number",
-          "description": "Percentage crop aan de linkerkant"
-        },
-        "cropRight": {
-          "type": "number",
-          "description": "Percentage crop aan de rechterkant"
-        },
-        "brightness": {
-          "type": "number",
-          "description": "Helderheid factor (1.0 is standaard)"
-        },
-        "featured": {
-          "type": "boolean",
-          "description": "Of dit werk op de voorpagina moet verschijnen"
-        },
-        "createdAt": {
-          "type": "string",
-          "format": "date-time",
-          "description": "Tijdstip van toevoegen"
-        }
+        "title": { "type": "string" },
+        "displayTitle": { "type": "string" },
+        "series": { "type": "string" },
+        "year": { "type": "string" },
+        "medium": { "type": "string" },
+        "dimensions": { "type": "string" },
+        "description": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "imageHint": { "type": "string" },
+        "fileSize": { "type": "number" },
+        "fileType": { "type": "string" },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "cropTop": { "type": "number" },
+        "cropBottom": { "type": "number" },
+        "cropLeft": { "type": "number" },
+        "cropRight": { "type": "number" },
+        "brightness": { "type": "number" },
+        "featured": { "type": "boolean" },
+        "inShop": { "type": "boolean", "description": "Of dit werk in de winkel te koop is" },
+        "pricePostcard": { "type": "number", "description": "Prijs voor een ansichtkaart" },
+        "pricePoster": { "type": "number", "description": "Prijs voor een poster" },
+        "pricePrint": { "type": "number", "description": "Prijs voor een Fine Art print" },
+        "priceDigital": { "type": "number", "description": "Prijs voor een digitale download" },
+        "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": [
-        "title",
-        "series",
-        "imageUrl"
-      ]
+      "required": ["title", "series", "imageUrl"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Een bestelling geplaatst in de museumwinkel.",
+      "type": "object",
+      "properties": {
+        "customerName": { "type": "string" },
+        "customerEmail": { "type": "string" },
+        "customerAddress": { "type": "string" },
+        "artworkId": { "type": "string" },
+        "artworkTitle": { "type": "string" },
+        "productType": { "type": "string", "enum": ["postcard", "poster", "fine-art", "digital"] },
+        "status": { "type": "string", "enum": ["new", "pending", "shipped"] },
+        "timestamp": { "type": "string", "format": "date-time" }
+      }
     },
     "Interaction": {
       "title": "Interaction",
       "description": "Een interactie van een bezoeker.",
       "type": "object",
       "properties": {
-        "visitorId": {
-          "type": "string",
-          "description": "Unieke persistent ID van de bezoeker"
-        },
-        "type": {
-          "type": "string",
-          "enum": ["view_artwork", "filter_tags"],
-          "description": "Het type interactie"
-        },
-        "artworkId": {
-          "type": "string",
-          "description": "ID van het bekeken kunstwerk"
-        },
-        "artworkTitle": {
-          "type": "string",
-          "description": "Titel van het bekeken kunstwerk"
-        },
-        "tags": {
-          "type": "array",
-          "items": { "type": "string" },
-          "description": "De geselecteerde filters"
-        },
-        "timestamp": {
-          "type": "string",
-          "format": "date-time",
-          "description": "Tijdstip van de interactie"
-        }
+        "visitorId": { "type": "string" },
+        "type": { "type": "string", "enum": ["view_artwork", "filter_tags", "shop_view"] },
+        "artworkId": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
       }
     },
     "Mail": {
@@ -146,101 +78,26 @@
     },
     "Settings": {
       "title": "Settings",
-      "description": "Algemene website instellingen en teksten. Bevat vertalingen voor EN, DE, FR en ES.",
+      "description": "Algemene website instellingen en teksten.",
       "type": "object",
       "properties": {
         "logoUrl": { "type": "string" },
         "siteTitle": { "type": "string" },
-        "homeHeroTitle": { "type": "string" },
-        "homeHeroTitle_en": { "type": "string" },
-        "homeHeroTitle_de": { "type": "string" },
-        "homeHeroTitle_fr": { "type": "string" },
-        "homeHeroTitle_es": { "type": "string" },
-        "homeHeroIntro": { "type": "string" },
-        "homeHeroIntro_en": { "type": "string" },
-        "homeHeroIntro_de": { "type": "string" },
-        "homeHeroIntro_fr": { "type": "string" },
-        "homeHeroIntro_es": { "type": "string" },
-        "homeBioTitle": { "type": "string" },
-        "homeBioTitle_en": { "type": "string" },
-        "homeBioTitle_de": { "type": "string" },
-        "homeBioTitle_fr": { "type": "string" },
-        "homeBioTitle_es": { "type": "string" },
-        "homeBio": { "type": "string" },
-        "homeBio_en": { "type": "string" },
-        "homeBio_de": { "type": "string" },
-        "homeBio_fr": { "type": "string" },
-        "homeBio_es": { "type": "string" },
-        "homeBioImageUrl": { "type": "string" },
-        "hannekeBio": { "type": "string" },
-        "hannekeBio_en": { "type": "string" },
-        "hannekeBio_de": { "type": "string" },
-        "hannekeBio_fr": { "type": "string" },
-        "hannekeBio_es": { "type": "string" },
-        "hannekeBioImages": { "type": "array", "items": { "type": "string" } },
-        "beatrijsBio": { "type": "string" },
-        "beatrijsBio_en": { "type": "string" },
-        "beatrijsBio_de": { "type": "string" },
-        "beatrijsBio_fr": { "type": "string" },
-        "beatrijsBio_es": { "type": "string" },
-        "beatrijsBioImages": { "type": "array", "items": { "type": "string" } },
-        "peterBesBio": { "type": "string" },
-        "peterBesBio_en": { "type": "string" },
-        "peterBesBio_de": { "type": "string" },
-        "peterBesBio_fr": { "type": "string" },
-        "peterBesBio_es": { "type": "string" },
-        "peterBesBioImages": { "type": "array", "items": { "type": "string" } },
-        "leoDuppenBio": { "type": "string" },
-        "leoDuppenBio_en": { "type": "string" },
-        "leoDuppenBio_de": { "type": "string" },
-        "leoDuppenBio_fr": { "type": "string" },
-        "leoDuppenBio_es": { "type": "string" },
-        "leoDuppenBioImages": { "type": "array", "items": { "type": "string" } },
-        "contactTitle": { "type": "string" },
-        "contactTitle_en": { "type": "string" },
-        "contactTitle_de": { "type": "string" },
-        "contactTitle_fr": { "type": "string" },
-        "contactTitle_es": { "type": "string" },
-        "contactIntro": { "type": "string" },
-        "contactIntro_en": { "type": "string" },
-        "contactIntro_de": { "type": "string" },
-        "contactIntro_fr": { "type": "string" },
-        "contactIntro_es": { "type": "string" },
-        "contactQuote": { "type": "string" },
-        "contactQuote_en": { "type": "string" },
-        "contactQuote_de": { "type": "string" },
-        "contactQuote_fr": { "type": "string" },
-        "contactQuote_es": { "type": "string" },
-        "contactLabelName": { "type": "string" },
-        "contactLabelEmail": { "type": "string" },
-        "contactLabelSubject": { "type": "string" },
-        "contactLabelMessage": { "type": "string" },
-        "contactButtonSend": { "type": "string" },
+        "shopIntro": { "type": "string" },
+        "shopIntro_en": { "type": "string" },
+        "shopIntro_de": { "type": "string" },
+        "shopIntro_fr": { "type": "string" },
+        "shopIntro_es": { "type": "string" },
         "hiddenSeries": { "type": "array", "items": { "type": "string" } }
       }
     }
   },
-  "auth": {
-    "providers": [
-      "google"
-    ]
-  },
+  "auth": { "providers": ["google"] },
   "firestore": {
-    "/artworks/{artworkId}": {
-      "schema": "Artwork",
-      "description": "Collectie van alle kunstwerken"
-    },
-    "/interactions/{interactionId}": {
-      "schema": "Interaction",
-      "description": "Log van bezoekersinteracties"
-    },
-    "/mail/{mailId}": {
-      "schema": "Mail",
-      "description": "Wachtrij voor te verzenden e-mails"
-    },
-    "/settings/site": {
-      "schema": "Settings",
-      "description": "Website configuratie en teksten"
-    }
+    "/artworks/{artworkId}": { "schema": "Artwork", "description": "Collectie van alle kunstwerken" },
+    "/orders/{orderId}": { "schema": "Order", "description": "Bestellingen uit de winkel" },
+    "/interactions/{interactionId}": { "schema": "Interaction", "description": "Log van bezoekersinteracties" },
+    "/mail/{mailId}": { "schema": "Mail", "description": "Wachtrij voor e-mails" },
+    "/settings/site": { "schema": "Settings", "description": "Website configuratie" }
   }
 }

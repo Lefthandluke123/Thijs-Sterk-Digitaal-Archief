@@ -2,10 +2,13 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Volledige openbare toegang voor alle collecties om weergave op de live site te garanderen.
-    // Dit is noodzakelijk voor de virtuele tour en de publieke gallery.
     match /{document=**} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if true;
+    }
+    // Specifieke regels voor bestellingen (ter illustratie, momenteel open wegens prototype fase)
+    match /orders/{orderId} {
+      allow create: if true;
     }
   }
 }

@@ -39,7 +39,10 @@ import {
   CheckCircle2,
   Scan,
   ShieldCheck,
-  Zap
+  Zap,
+  ShoppingBag,
+  Star,
+  Euro
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -48,6 +51,7 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 
 const TAG_CATEGORIES = {
   "Periode": ["Vroeg werk", "45-50", "50-60", "70-82"],
@@ -196,7 +200,9 @@ export default function AdminPage() {
           fileType: file.type,
           createdAt: serverTimestamp(),
           cropTop: 0, cropBottom: 0, cropLeft: 0, cropRight: 0, brightness: 1,
-          year: "", dimensions: ""
+          year: "", dimensions: "",
+          featured: false, inShop: false,
+          pricePostcard: 2.50, pricePoster: 24.00, pricePrint: 85.00, priceDigital: 15.00
         });
         processedCount++;
         setUploadProgress((processedCount / totalFiles) * 100);
@@ -209,7 +215,7 @@ export default function AdminPage() {
 
   const handleExportBackup = () => {
     const exportData = {
-      version: "3.1",
+      version: "4.0",
       exportedAt: new Date().toISOString(),
       artworks: artworks,
       settings: siteSettings || {}
@@ -258,11 +264,12 @@ export default function AdminPage() {
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                </div>
-               <div className="text-[9px] font-black uppercase opacity-40">Groepering op Romeinse Cijfers (I, II, III...)</div>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
               {filteredArtworks.map((art: any) => (
-                <Card key={art.id} className="overflow-hidden cursor-pointer hover:ring-2 hover:ring-accent transition-all" onClick={() => setEditingId(art.id)}>
+                <Card key={art.id} className="overflow-hidden cursor-pointer hover:ring-2 hover:ring-accent transition-all relative" onClick={() => setEditingId(art.id)}>
+                  {art.featured && <Star className="absolute top-2 left-2 w-3 h-3 text-accent fill-accent" />}
+                  {art.inShop && <ShoppingBag className="absolute top-2 right-2 w-3 h-3 text-accent" />}
                   <div className="aspect-square bg-muted/20">
                     <img src={art.imageUrl} className="w-full h-full object-cover" alt={art.title} style={{ filter: `brightness(${art.brightness || 1})` }} />
                   </div>
@@ -286,132 +293,20 @@ export default function AdminPage() {
                    {isUploading ? <Loader2 className="animate-spin mr-2" /> : <Plus className="mr-2" />} 
                    Selecteer Foto's
                 </Button>
-                {isUploading && (
-                  <div className="w-full max-w-md space-y-4">
-                     <Progress value={uploadProgress} />
-                     <p className="text-[10px] uppercase font-black tracking-widest text-accent">{uploadStatus}</p>
-                  </div>
-                )}
              </Card>
-
-             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
-                <div className="bg-accent/5 border border-accent/10 p-6 rounded-3xl space-y-3">
-                   <div className="flex items-center gap-3">
-                      <Zap className="w-5 h-5 text-accent" />
-                      <h4 className="text-[10px] font-black uppercase tracking-widest text-accent">Display Master</h4>
-                   </div>
-                   <p className="text-xs leading-relaxed text-muted-foreground font-light">
-                      <strong>4000 pixels</strong> aan de langste zijde. Dit is de museale web-standaard voor een perfecte Deep Zoom ervaring.
-                   </p>
-                </div>
-                <div className="bg-primary/5 border border-primary/10 p-6 rounded-3xl space-y-3">
-                   <div className="flex items-center gap-3">
-                      <ShieldCheck className="w-5 h-5 text-primary" />
-                      <h4 className="text-[10px] font-black uppercase tracking-widest text-primary">Archive Master</h4>
-                   </div>
-                   <p className="text-xs leading-relaxed text-muted-foreground font-light">
-                      <strong>6000+ pixels</strong>. Voor de hoogste kwaliteit archivering en toekomstige reproductie.
-                   </p>
-                </div>
-                <div className="bg-secondary/10 border border-secondary/20 p-6 rounded-3xl space-y-3">
-                   <div className="flex items-center gap-3">
-                      <Scan className="w-5 h-5 text-primary" />
-                      <h4 className="text-[10px] font-black uppercase tracking-widest text-primary">Dia Scanning</h4>
-                   </div>
-                   <p className="text-xs leading-relaxed text-muted-foreground font-light">
-                      Scan op minimaal <strong>2800 DPI</strong> (Display) of <strong>4000 DPI</strong> (Archief) voor kleinbeeld dia's.
-                   </p>
-                </div>
-                <div className="bg-muted/10 border border-muted/20 p-6 rounded-3xl space-y-3">
-                   <div className="flex items-center gap-3">
-                      <FileImage className="w-5 h-5 text-muted-foreground" />
-                      <h4 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Bestand</h4>
-                   </div>
-                   <p className="text-xs leading-relaxed text-muted-foreground font-light">
-                      Gebruik <strong>WebP</strong> (85% kwaliteit). Dit is sneller en behoudt de museale kleurnuances.
-                   </p>
-                </div>
-             </div>
           </TabsContent>
 
           <TabsContent value="texts">
             <Card className="p-8 md:p-12 rounded-3xl max-w-4xl mx-auto space-y-12">
-              <div className="space-y-2 text-center border-b border-border/20 pb-8">
-                  <PenTool className="w-8 h-8 mx-auto text-accent mb-4" />
-                  <h2 className="text-2xl font-headline font-light">Website Teksten</h2>
-                  <p className="text-[10px] uppercase font-black tracking-[0.2em] opacity-40">Beheer hier alle biografieën en het openingswoord</p>
-                  <Link href="/admin/translate">
-                    <Button variant="outline" className="mt-6 rounded-full border-accent text-accent hover:bg-accent hover:text-accent-foreground">
-                      <Globe2 className="w-4 h-4 mr-2" /> Naar het Vertaal Station
-                    </Button>
-                  </Link>
-              </div>
-
-              <div className="grid gap-12">
-                 <div className="space-y-4">
-                    <div className="flex items-center gap-3">
-                       <Home className="w-4 h-4 text-accent" />
-                       <Label className="text-[11px] font-black uppercase text-accent border-l-4 border-accent pl-4 block">Introductie Tekst (Bovenaan Homepagina)</Label>
-                    </div>
-                    <div className="space-y-4 bg-black/5 p-6 rounded-2xl">
-                      <div className="space-y-2">
-                        <Label className="text-[9px] uppercase opacity-50">Kopregel (Groot)</Label>
-                        <Input defaultValue={siteSettings?.homeHeroTitle || 'Een leven gewijd aan Licht, Ruimte en Water'} onBlur={(e) => updateSettingsField('homeHeroTitle', e.target.value)} className="bg-white border-none font-headline text-xl" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-[9px] uppercase opacity-50">Openingswoord</Label>
-                        <Textarea key={siteSettings?.homeHeroIntro} defaultValue={siteSettings?.homeHeroIntro || ''} onBlur={(e) => updateSettingsField('homeHeroIntro', e.target.value)} className="min-h-[150px] bg-white border-none p-6 text-base font-light" />
-                      </div>
-                    </div>
+              <div className="space-y-4">
+                 <div className="flex items-center gap-3">
+                    <ShoppingBag className="w-4 h-4 text-accent" />
+                    <Label className="text-[11px] font-black uppercase text-accent border-l-4 border-accent pl-4 block">Winkel Teksten</Label>
                  </div>
-
-                 <div className="space-y-4 pt-8 border-t border-border/10">
-                    <div className="flex items-center gap-3">
-                       <Mail className="w-4 h-4 text-accent" />
-                       <Label className="text-[11px] font-black uppercase text-accent border-l-4 border-accent pl-4 block">Contact Sectie Teksten</Label>
-                    </div>
-                    <div className="space-y-4 bg-black/5 p-6 rounded-2xl">
-                      <div className="space-y-2">
-                        <Label className="text-[9px] uppercase opacity-50">Contact Titel</Label>
-                        <Input defaultValue={siteSettings?.contactTitle || 'Informatie & Uw Verhalen'} onBlur={(e) => updateSettingsField('contactTitle', e.target.value)} className="bg-white border-none font-headline text-xl" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-[9px] uppercase opacity-50">Contact Introductie</Label>
-                        <Textarea defaultValue={siteSettings?.contactIntro || ''} onBlur={(e) => updateSettingsField('contactIntro', e.target.value)} className="min-h-[100px] bg-white border-none p-4 text-sm" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-[9px] uppercase opacity-50">Contact Quote (Italic)</Label>
-                        <Textarea defaultValue={siteSettings?.contactQuote || ''} onBlur={(e) => updateSettingsField('contactQuote', e.target.value)} className="min-h-[100px] bg-white border-none p-4 text-sm italic" />
-                      </div>
-                    </div>
-                 </div>
-
-                 <div className="space-y-4 pt-8 border-t border-border/10">
-                    <div className="flex items-center gap-3">
-                       <ListTodo className="w-4 h-4 text-accent" />
-                       <Label className="text-[11px] font-black uppercase text-accent border-l-4 border-accent pl-4 block">Contact Formulier Velden (NL)</Label>
-                    </div>
-                    <div className="grid sm:grid-cols-2 gap-4 bg-black/5 p-6 rounded-2xl">
-                      <div className="space-y-2">
-                        <Label className="text-[9px] uppercase opacity-50">Label Naam</Label>
-                        <Input defaultValue={siteSettings?.contactLabelName || 'Naam'} onBlur={(e) => updateSettingsField('contactLabelName', e.target.value)} className="bg-white border-none text-xs" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-[9px] uppercase opacity-50">Label E-mail</Label>
-                        <Input defaultValue={siteSettings?.contactLabelEmail || 'E-mail'} onBlur={(e) => updateSettingsField('contactLabelEmail', e.target.value)} className="bg-white border-none text-xs" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-[9px] uppercase opacity-50">Label Onderwerp</Label>
-                        <Input defaultValue={siteSettings?.contactLabelSubject || 'Onderwerp'} onBlur={(e) => updateSettingsField('contactLabelSubject', e.target.value)} className="bg-white border-none text-xs" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-[9px] uppercase opacity-50">Label Bericht</Label>
-                        <Input defaultValue={siteSettings?.contactLabelMessage || 'Bericht / Herinnering'} onBlur={(e) => updateSettingsField('contactLabelMessage', e.target.value)} className="bg-white border-none text-xs" />
-                      </div>
-                      <div className="col-span-2 space-y-2">
-                        <Label className="text-[9px] uppercase opacity-50">Knop Tekst</Label>
-                        <Input defaultValue={siteSettings?.contactButtonSend || 'Verstuur Bericht'} onBlur={(e) => updateSettingsField('contactButtonSend', e.target.value)} className="bg-white border-none text-xs" />
-                      </div>
+                 <div className="space-y-4 bg-black/5 p-6 rounded-2xl">
+                    <div className="space-y-2">
+                      <Label className="text-[9px] uppercase opacity-50">Winkel Introductie</Label>
+                      <Textarea defaultValue={siteSettings?.shopIntro || ''} onBlur={(e) => updateSettingsField('shopIntro', e.target.value)} className="min-h-[100px] bg-white border-none p-4" />
                     </div>
                  </div>
               </div>
@@ -419,12 +314,10 @@ export default function AdminPage() {
           </TabsContent>
 
           <TabsContent value="bulk">
-            <Card className="p-12 text-center space-y-8">
+             <Card className="p-12 text-center space-y-8">
               <FileJson className="w-12 h-12 mx-auto opacity-20" />
               <h2 className="text-xl font-headline font-light">Master Backup</h2>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Button onClick={handleExportBackup} size="lg" className="rounded-full px-12"><Download className="mr-2" /> Download Backup</Button>
-              </div>
+              <Button onClick={handleExportBackup} size="lg" className="rounded-full px-12"><Download className="mr-2" /> Download Backup</Button>
             </Card>
           </TabsContent>
         </Tabs>
@@ -445,36 +338,60 @@ export default function AdminPage() {
           </div>
           <div className="h-[45vh] border-t p-8 bg-background overflow-y-auto">
              {editingArtwork && (
-               <div className="max-w-7xl mx-auto space-y-8">
+               <div className="max-w-7xl mx-auto space-y-12">
                   <div className="grid md:grid-cols-3 gap-8">
                     <div className="space-y-4 bg-muted/20 p-6 rounded-2xl">
                       <Label className="text-[10px] font-black uppercase opacity-60">Publieke Titel</Label>
                       <Input key={`displayTitle-${editingId}`} defaultValue={editingArtwork?.displayTitle || ''} onBlur={(e) => updateArtworkField(editingId!, 'displayTitle', e.target.value)} />
-                      <Label className="text-[10px] font-black uppercase opacity-60">Jaartal</Label>
-                      <Input key={`year-${editingId}`} defaultValue={editingArtwork?.year || ''} onBlur={(e) => updateArtworkField(editingId!, 'year', e.target.value)} />
                       <Label className="text-[10px] font-black uppercase opacity-60">Zaal / Serie</Label>
                       <Input key={`series-${editingId}`} defaultValue={editingArtwork?.series || ''} onBlur={(e) => updateArtworkField(editingId!, 'series', e.target.value)} />
+                      
+                      <div className="flex items-center justify-between pt-4 border-t border-black/5">
+                        <Label className="text-[10px] font-black uppercase">Featured (Homepage)</Label>
+                        <Switch checked={editingArtwork.featured} onCheckedChange={(val) => updateArtworkField(editingId!, 'featured', val)} />
+                      </div>
                     </div>
-                    <div className="md:col-span-2 space-y-4 bg-black/[0.02] p-6 rounded-2xl border border-black/5">
-                      <Label className="text-[11px] font-black uppercase tracking-widest text-accent">Tags</Label>
-                      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                         {Object.entries(TAG_CATEGORIES).map(([category, tags]) => (
-                           <div key={category} className="space-y-2">
-                              <Label className="text-[9px] font-black uppercase opacity-40">{category}</Label>
-                              <div className="flex flex-wrap gap-1">
-                                 {tags.map(tag => {
-                                   const hasTag = editingArtwork?.tags?.includes(tag);
-                                   return (
-                                     <button key={tag} onClick={() => {
-                                       const current = editingArtwork?.tags || [];
-                                       const next = hasTag ? current.filter((t: string) => t !== tag) : [...current, tag];
-                                       updateArtworkField(editingId!, 'tags', next);
-                                     }} className={cn("px-2 py-1 rounded text-[9px] font-black uppercase border", hasTag ? "bg-accent text-accent-foreground border-accent" : "bg-background text-muted-foreground")}>{tag}</button>
-                                   )
-                                 })}
-                              </div>
-                           </div>
-                         ))}
+
+                    <div className="space-y-4 bg-accent/5 p-6 rounded-2xl border border-accent/10">
+                      <div className="flex items-center gap-3 mb-4">
+                        <ShoppingBag className="w-4 h-4 text-accent" />
+                        <Label className="text-[11px] font-black uppercase text-accent">Winkel Instellingen</Label>
+                        <Switch checked={editingArtwork.inShop} onCheckedChange={(val) => updateArtworkField(editingId!, 'inShop', val)} className="ml-auto" />
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <Label className="text-[9px] uppercase opacity-60">Prijs Kaart</Label>
+                          <Input type="number" defaultValue={editingArtwork.pricePostcard || 2.50} onBlur={(e) => updateArtworkField(editingId!, 'pricePostcard', parseFloat(e.target.value))} className="h-8 text-xs" />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-[9px] uppercase opacity-60">Prijs Poster</Label>
+                          <Input type="number" defaultValue={editingArtwork.pricePoster || 24.00} onBlur={(e) => updateArtworkField(editingId!, 'pricePoster', parseFloat(e.target.value))} className="h-8 text-xs" />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-[9px] uppercase opacity-60">Prijs Print</Label>
+                          <Input type="number" defaultValue={editingArtwork.pricePrint || 85.00} onBlur={(e) => updateArtworkField(editingId!, 'pricePrint', parseFloat(e.target.value))} className="h-8 text-xs" />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-[9px] uppercase opacity-60">Prijs Digitaal</Label>
+                          <Input type="number" defaultValue={editingArtwork.priceDigital || 15.00} onBlur={(e) => updateArtworkField(editingId!, 'priceDigital', parseFloat(e.target.value))} className="h-8 text-xs" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4 bg-black/[0.02] p-6 rounded-2xl border border-black/5">
+                      <Label className="text-[11px] font-black uppercase tracking-widest">Tags</Label>
+                      <div className="flex flex-wrap gap-1">
+                         {Object.values(TAG_CATEGORIES).flat().map(tag => {
+                           const hasTag = editingArtwork?.tags?.includes(tag);
+                           return (
+                             <button key={tag} onClick={() => {
+                               const current = editingArtwork?.tags || [];
+                               const next = hasTag ? current.filter((t: string) => t !== tag) : [...current, tag];
+                               updateArtworkField(editingId!, 'tags', next);
+                             }} className={cn("px-2 py-1 rounded text-[9px] font-black uppercase border", hasTag ? "bg-accent text-accent-foreground border-accent" : "bg-background text-muted-foreground")}>{tag}</button>
+                           )
+                         })}
                       </div>
                     </div>
                   </div>
