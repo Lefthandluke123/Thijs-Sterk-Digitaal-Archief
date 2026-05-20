@@ -37,7 +37,9 @@ import {
   Mail,
   ListTodo,
   CheckCircle2,
-  Scan
+  Scan,
+  ShieldCheck,
+  Zap
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -292,32 +294,41 @@ export default function AdminPage() {
                 )}
              </Card>
 
-             <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-                <div className="bg-accent/5 border border-accent/10 p-8 rounded-3xl space-y-4">
+             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+                <div className="bg-accent/5 border border-accent/10 p-6 rounded-3xl space-y-3">
                    <div className="flex items-center gap-3">
-                      <CheckCircle2 className="w-5 h-5 text-accent" />
-                      <h4 className="text-[11px] font-black uppercase tracking-widest text-accent">Aanbevolen Resolutie</h4>
+                      <Zap className="w-5 h-5 text-accent" />
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-accent">Display Master</h4>
                    </div>
-                   <p className="text-sm leading-relaxed text-muted-foreground font-light">
-                      Voor een perfecte Deep Zoom ervaring adviseren wij afbeeldingen van <strong>4000 pixels</strong> aan de langste zijde.
+                   <p className="text-xs leading-relaxed text-muted-foreground font-light">
+                      <strong>4000 pixels</strong> aan de langste zijde. Dit is de museale web-standaard voor een perfecte Deep Zoom ervaring.
                    </p>
                 </div>
-                <div className="bg-secondary/10 border border-secondary/20 p-8 rounded-3xl space-y-4">
+                <div className="bg-primary/5 border border-primary/10 p-6 rounded-3xl space-y-3">
+                   <div className="flex items-center gap-3">
+                      <ShieldCheck className="w-5 h-5 text-primary" />
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-primary">Archive Master</h4>
+                   </div>
+                   <p className="text-xs leading-relaxed text-muted-foreground font-light">
+                      <strong>6000+ pixels</strong>. Voor de hoogste kwaliteit archivering en toekomstige reproductie.
+                   </p>
+                </div>
+                <div className="bg-secondary/10 border border-secondary/20 p-6 rounded-3xl space-y-3">
                    <div className="flex items-center gap-3">
                       <Scan className="w-5 h-5 text-primary" />
-                      <h4 className="text-[11px] font-black uppercase tracking-widest text-primary">Scannen van Dia's</h4>
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-primary">Dia Scanning</h4>
                    </div>
-                   <p className="text-sm leading-relaxed text-muted-foreground font-light">
-                      Heeft u kleinbeeld-dia's? Scan deze op minimaal <strong>2800 DPI</strong> om de gewenste 4000px breedte te bereiken.
+                   <p className="text-xs leading-relaxed text-muted-foreground font-light">
+                      Scan op minimaal <strong>2800 DPI</strong> (Display) of <strong>4000 DPI</strong> (Archief) voor kleinbeeld dia's.
                    </p>
                 </div>
-                <div className="bg-muted/10 border border-muted/20 p-8 rounded-3xl space-y-4">
+                <div className="bg-muted/10 border border-muted/20 p-6 rounded-3xl space-y-3">
                    <div className="flex items-center gap-3">
                       <FileImage className="w-5 h-5 text-muted-foreground" />
-                      <h4 className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">Bestandsformaat</h4>
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Bestand</h4>
                    </div>
-                   <p className="text-sm leading-relaxed text-muted-foreground font-light">
-                      Gebruik bij voorkeur <strong>WebP</strong>. Dit formaat is circa 30% kleiner dan JPG bij dezelfde kwaliteit.
+                   <p className="text-xs leading-relaxed text-muted-foreground font-light">
+                      Gebruik <strong>WebP</strong> (85% kwaliteit). Dit is sneller en behoudt de museale kleurnuances.
                    </p>
                 </div>
              </div>

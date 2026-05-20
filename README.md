@@ -3,32 +3,32 @@
 
 Dit document bevat de essentiële instructies voor het beheren, bewaren en delen van de digitale collectie (325+ werken).
 
-## Versie: 10-5/21.45 (Resolution Master Edition)
+## Versie: 10-5/22.15 (Archival Excellence Edition)
 
 ### 1. Richtlijnen voor Foto-uploads (Deep Zoom)
-Voor de beste weergave in de OpenSeadragon viewer hanteren we de volgende standaarden:
+Voor de beste balans tussen snelheid en detail hanteren we de volgende gelaagde standaarden:
 
-| Type | Resolutie (Langste zijde) | Formaat | Gebruik |
+| Type | Resolutie (Langste zijde) | Gebruik | Toelichting |
 | :--- | :--- | :--- | :--- |
-| **Optimaal** | **4000 px** | **WebP** | Standaard voor alle schilderijen. Perfecte zoom. |
-| **Minimum** | 2000 px | WebP / JPG | Acceptabel, maar minder detail bij diep inzoomen. |
-| **Maximum** | 8000 px | DZI (VIPS) | Alleen voor 'Gigapixel' presentaties via Pad B. |
+| **Display Master** | **4000 px** | Standaard weergave | **Museale web-standaard.** Perfect voor Deep Zoom. |
+| **Archive Master** | **6000 - 8000 px** | Lange termijn archief | Voor extreme vergrotingen en reproductie. |
+| **Minimum** | 2000 px | Snelle preview | Acceptabel, maar minder detail bij diep inzoomen. |
 
-#### Pad A: Standaard Upload (Eenvoudig)
-*   Sla uw scan op als **WebP** met een kwaliteit van **80-85%**.
+#### Pad A: Standaard Upload (Display)
+*   Sla uw scan op als **WebP** met een kwaliteit van **85%**.
 *   Zorg dat de langste zijde **4000 pixels** is.
-*   De viewer bouwt automatisch een tijdelijke piramide in het geheugen. Dit werkt uitstekend tot 5000px.
+*   De viewer bouwt automatisch een piramide in het geheugen. Dit werkt uitstekend tot 5000px.
 
-#### Pad B: Deep Zoom Architectuur (Voor Meesterwerken)
-Voor werken met extreme details (bijv. gigapixel scans > 8000px) raden wij aan de foto voor te bewerken met **VIPS** voordat u deze naar Firebase Storage uploadt.
+#### Pad B: Archival / Gigapixel (Voor Meesterwerken)
+Voor werken met extreme details (> 5000px) raden wij aan de foto voor te bewerken met **VIPS** naar een DZI-structuur.
 *   **Commando**: `vips dzsave schilderij.webp output_map --layout dzi`
-*   **Resultaat**: U krijgt een `.dzi` bestand en een map met duizenden kleine tegels.
+*   **Resultaat**: U krijgt een `.dzi` bestand en een map met tegels. Dit voorkomt dat de browser van de bezoeker vastloopt.
 
 ### 2. Digitalisering van Dia's (Diapositieven)
-Heeft u het archief op dia? Houd bij het scannen rekening met het volgende:
-*   **Scan-resolutie**: Om de optimale 4000 pixels te halen uit een standaard 35mm dia, scant u op **2800 DPI tot 3000 DPI**.
-*   **Hogere resolutie**: Scannen op 4000 DPI of hoger is technisch mogelijk, maar levert vaak meer korrel/ruis op dan extra beelddetail. **2800 DPI** is de 'sweet spot'.
-*   **Kleurdiepte**: Scan bij voorkeur in 24-bit of 48-bit voor maximale kleurnuances in de lucht- en waterpartijen.
+Heeft u het archief op dia? Volg de Metamorfoze-geïnspireerde richtlijnen:
+*   **Scan-resolutie (Display)**: Scan op **2800 DPI**. Dit levert de optimale 4000px Display Master op.
+*   **Scan-resolutie (Archief)**: Scan op **4000 DPI**. Dit is de fysieke limiet van de meeste professionele filmscanners (zoals de Nikon Coolscan of Hasselblad Flextight) en legt alle korreldetails vast.
+*   **Kleurdiepte**: Scan bij voorkeur in **48-bit (16-bit per kanaal)** voor de archief-master; converteer naar 24-bit WebP voor de website.
 
 ### 3. E-mail Instellen (Hostinger / Titan)
 Om berichten direct in uw mailbox te ontvangen:
