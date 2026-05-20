@@ -25,7 +25,9 @@ import {
   Star,
   Globe2,
   TrendingUp,
-  History
+  History,
+  ShieldCheck,
+  LifeBuoy
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -35,6 +37,7 @@ import { Progress } from '@/components/ui/progress';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { cn } from '@/lib/utils';
 
 const ROMAN_VALUES: Record<string, number> = {
   'I': 1, 'II': 2, 'III': 3, 'IV': 4, 'V': 5, 'VI': 6, 'VII': 7, 'VIII': 8, 'IX': 9, 'X': 10, 
@@ -187,7 +190,7 @@ export default function AdminPage() {
           <img src={siteSettings?.logoUrl || "/logo.png"} className="h-10 w-auto" alt="Logo" />
           <div className="flex flex-col leading-none border-l border-border/40 pl-4">
             <h1 className="font-headline text-lg font-light text-foreground">{siteSettings?.siteTitle || "Digitaal Museum"}</h1>
-            <span className="text-[7px] font-black uppercase tracking-[0.3em] text-accent">Beheerpaneel</span>
+            <span className="text-[7px] font-black uppercase tracking-[0.3em] text-accent">SaaS Framework Dashboard</span>
           </div>
         </div>
         <div className="flex items-center gap-4">
@@ -195,19 +198,20 @@ export default function AdminPage() {
              <Languages className="w-3.5 h-3.5" /> Vertaal Station
            </Link>
            <Link href="/" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-foreground border-l border-border pl-4 flex items-center gap-2">
-             <ArrowLeft className="w-3.5 h-3.5" /> Website
+             <ArrowLeft className="w-3.5 h-3.5" /> Naar Website
            </Link>
         </div>
       </header>
 
       <main className="flex-1 p-8 max-w-7xl mx-auto w-full">
         <Tabs defaultValue="archive" className="space-y-8">
-          <TabsList className="bg-muted/50 p-1 rounded-full w-fit mx-auto flex flex-wrap justify-center h-auto">
+          <TabsList className="bg-muted/50 p-1 rounded-full w-fit mx-auto flex flex-wrap justify-center h-auto border border-black/5">
             <TabsTrigger value="archive" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Archief [{artworks.length}]</TabsTrigger>
-            <TabsTrigger value="orders" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Bestellingen [{orders?.length || 0}]</TabsTrigger>
+            <TabsTrigger value="orders" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Orders [{orders?.length || 0}]</TabsTrigger>
             <TabsTrigger value="upload" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Upload</TabsTrigger>
             <TabsTrigger value="branding" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Site Branding</TabsTrigger>
-            <TabsTrigger value="payments" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Betalingen (Stripe)</TabsTrigger>
+            <TabsTrigger value="payments" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Betalingen</TabsTrigger>
+            <TabsTrigger value="help" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest bg-accent/10"><LifeBuoy className="w-3 h-3 mr-2" /> Help</TabsTrigger>
           </TabsList>
 
           <TabsContent value="archive" className="space-y-6">
@@ -215,19 +219,19 @@ export default function AdminPage() {
                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-30" />
                <Input 
                  placeholder="Zoek op titel of zaal..." 
-                 className="pl-12 h-12 bg-white/50 border-none rounded-full"
+                 className="pl-12 h-12 bg-white/50 border-none rounded-full shadow-sm"
                  value={searchQuery}
                  onChange={(e) => setSearchQuery(e.target.value)}
                />
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
               {filteredArtworks.map((art: any) => (
-                <Card key={art.id} className="overflow-hidden cursor-pointer hover:ring-2 hover:ring-accent transition-all relative" onClick={() => setEditingId(art.id)}>
+                <Card key={art.id} className="overflow-hidden cursor-pointer hover:ring-2 hover:ring-accent transition-all relative border-none shadow-md group" onClick={() => setEditingId(art.id)}>
                   {art.featured && <Star className="absolute top-2 left-2 w-3 h-3 text-accent fill-accent" />}
                   <div className="aspect-square bg-muted/20">
-                    <img src={art.imageUrl} className="w-full h-full object-cover" alt={art.title} />
+                    <img src={art.imageUrl} className="w-full h-full object-cover transition-transform group-hover:scale-105" alt={art.title} />
                   </div>
-                  <CardContent className="p-2 text-center">
+                  <CardContent className="p-2 text-center bg-white">
                     <h4 className="text-[9px] font-black uppercase truncate">{art.displayTitle || art.title}</h4>
                     <p className="text-[7px] opacity-40 uppercase font-bold mt-1">{art.series}</p>
                   </CardContent>
@@ -240,7 +244,7 @@ export default function AdminPage() {
              <Card className="p-6 rounded-3xl border-none shadow-xl bg-white/50 backdrop-blur-md">
                 <div className="flex items-center gap-3 mb-8 border-l-4 border-accent pl-4">
                    <TrendingUp className="w-5 h-5 text-accent" />
-                   <h2 className="text-[12px] font-black uppercase tracking-widest text-accent">Order Historie (Dashboard)</h2>
+                   <h2 className="text-[12px] font-black uppercase tracking-widest text-accent">Order Historie</h2>
                 </div>
                 
                 <Table>
@@ -282,28 +286,8 @@ export default function AdminPage() {
              </Card>
           </TabsContent>
 
-          <TabsContent value="upload">
-             <Card className="p-16 border-dashed border-4 border-muted flex flex-col items-center justify-center text-center space-y-6">
-                <CloudUpload className="w-16 h-16 opacity-20" />
-                <div className="space-y-2">
-                   <h2 className="text-xl font-headline font-light">Nieuwe werken toevoegen</h2>
-                   <p className="text-sm text-muted-foreground">Upload hier meerdere foto's tegelijk.</p>
-                </div>
-                <input type="file" ref={fileInputRef} className="hidden" onChange={(e) => handleBatchProcess(e.target.files)} accept="image/*" multiple />
-                <Button size="lg" onClick={() => fileInputRef.current?.click()} disabled={isUploading} className="rounded-full px-12">
-                   {isUploading ? <Loader2 className="animate-spin mr-2" /> : <Plus className="mr-2" />} Selecteer Foto's
-                </Button>
-                {isUploading && (
-                   <div className="w-full max-w-xs space-y-2">
-                      <Progress value={uploadProgress} className="h-1" />
-                      <p className="text-[10px] uppercase font-bold opacity-40">{uploadStatus}</p>
-                   </div>
-                )}
-             </Card>
-          </TabsContent>
-
           <TabsContent value="branding">
-             <Card className="p-8 md:p-12 rounded-3xl max-w-4xl mx-auto space-y-12">
+             <Card className="p-8 md:p-12 rounded-3xl max-w-4xl mx-auto space-y-12 shadow-2xl border-none bg-white">
                 <div className="space-y-8">
                    <div className="flex items-center gap-3 border-l-4 border-accent pl-4">
                       <Palette className="w-5 h-5 text-accent" />
@@ -322,17 +306,17 @@ export default function AdminPage() {
                          </div>
                          <div className="space-y-2">
                             <Label className="text-[10px] uppercase opacity-60">Admin Email (voor orders)</Label>
-                            <Input defaultValue={siteSettings?.adminEmail || ''} onBlur={(e) => updateSettingsField('adminEmail', e.target.value)} placeholder="lhcsterk@doggyfew.com" />
+                            <Input defaultValue={siteSettings?.adminEmail || ''} onBlur={(e) => updateSettingsField('adminEmail', e.target.value)} placeholder="jouw@email.com" />
                          </div>
                       </div>
 
                       <div className="space-y-4 bg-accent/5 p-6 rounded-2xl border border-accent/10 flex flex-col items-center justify-center">
                          <Label className="text-[10px] uppercase opacity-60 mb-4 block w-full">Site Logo</Label>
                          <div className="w-32 h-32 rounded-2xl bg-white flex items-center justify-center border-2 border-dashed border-accent/20 mb-4 overflow-hidden">
-                            {siteSettings?.logoUrl ? <img src={siteSettings.logoUrl} className="max-w-full max-h-full object-contain" /> : <Palette className="w-8 h-8 opacity-20" />}
+                            {siteSettings?.logoUrl ? <img src={siteSettings.logoUrl} className="max-w-full max-h-full object-contain p-2" /> : <Palette className="w-8 h-8 opacity-20" />}
                          </div>
                          <input type="file" ref={logoInputRef} className="hidden" onChange={handleLogoUpload} accept="image/*" />
-                         <Button variant="outline" size="sm" onClick={() => logoInputRef.current?.click()} className="rounded-full">Logo Wijzigen</Button>
+                         <Button variant="outline" size="sm" onClick={() => logoInputRef.current?.click()} className="rounded-full border-accent/40 text-accent">Logo Wijzigen</Button>
                       </div>
                    </div>
                 </div>
@@ -340,13 +324,13 @@ export default function AdminPage() {
           </TabsContent>
 
           <TabsContent value="payments">
-             <Card className="p-8 md:p-12 rounded-3xl max-w-4xl mx-auto space-y-8">
+             <Card className="p-8 md:p-12 rounded-3xl max-w-4xl mx-auto space-y-8 shadow-2xl border-none bg-white">
                 <div className="flex items-center gap-3 border-l-4 border-primary pl-4">
                    <CreditCard className="w-5 h-5 text-primary" />
                    <h2 className="text-[12px] font-black uppercase tracking-widest text-primary">Commerciële Instellingen (Stripe)</h2>
                 </div>
 
-                <div className="bg-primary/5 p-8 rounded-2xl space-y-6">
+                <div className="bg-primary/5 p-8 rounded-2xl space-y-6 border border-primary/10">
                    <div className="flex items-center justify-between border-b border-primary/10 pb-6">
                       <div className="space-y-1">
                          <h4 className="font-bold text-sm">Directe betalingen inschakelen</h4>
@@ -375,10 +359,57 @@ export default function AdminPage() {
                            onBlur={(e) => updateSettingsField('stripeSecretKey', e.target.value)} 
                            placeholder="sk_test_..." 
                          />
-                         <p className="text-[9px] text-muted-foreground italic">Let op: Voor een productieomgeving raden we aan deze sleutels in de Server Environment te plaatsen.</p>
+                         <p className="text-[9px] text-muted-foreground italic">Let op: Deze sleutel is essentieel voor het afhandelen van betalingen.</p>
                       </div>
                    </div>
                 </div>
+             </Card>
+          </TabsContent>
+
+          <TabsContent value="help">
+             <Card className="p-12 rounded-3xl max-w-4xl mx-auto space-y-12 shadow-2xl border-none bg-primary text-primary-foreground relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-12 opacity-10 rotate-12"><ShieldCheck className="w-64 h-64" /></div>
+                <div className="relative z-10 space-y-8">
+                   <div className="space-y-2">
+                      <h2 className="text-3xl font-headline font-light italic">Business Management Guide</h2>
+                      <p className="text-primary-foreground/70 text-sm">Hulp bij het beheren van jouw museum klanten.</p>
+                   </div>
+                   
+                   <div className="grid md:grid-cols-2 gap-8">
+                      <div className="p-6 rounded-2xl bg-white/10 border border-white/20 space-y-4">
+                         <h4 className="font-black uppercase text-[10px] tracking-widest text-accent">Opstarten</h4>
+                         <p className="text-xs leading-relaxed">Factureer minimaal 3-5 uur (@€50/u) voor de initiële setup. Dit omvat domeinkoppeling, Stripe-configuratie en de eerste batch uploads.</p>
+                      </div>
+                      <div className="p-6 rounded-2xl bg-white/10 border border-white/20 space-y-4">
+                         <h4 className="font-black uppercase text-[10px] tracking-widest text-accent">Onderhoud</h4>
+                         <p className="text-xs leading-relaxed">Hanteer een vaste maandelijkse fee voor hosting en support. Dit rechtvaardigt jouw uurtarief door constante bereikbaarheid voor de kunstenaar.</p>
+                      </div>
+                   </div>
+                   
+                   <div className="pt-8 border-t border-white/10">
+                      <p className="text-[10px] uppercase tracking-widest font-black opacity-40">Safe Harbor Architecture v2.1 &bull; SaaS Edition</p>
+                   </div>
+                </div>
+             </Card>
+          </TabsContent>
+
+          <TabsContent value="upload">
+             <Card className="p-16 border-dashed border-4 border-muted flex flex-col items-center justify-center text-center space-y-6 bg-white shadow-inner">
+                <CloudUpload className="w-16 h-16 opacity-20" />
+                <div className="space-y-2">
+                   <h2 className="text-xl font-headline font-light">Nieuwe werken toevoegen</h2>
+                   <p className="text-sm text-muted-foreground">Sleep hier foto's naartoe of klik op de knop.</p>
+                </div>
+                <input type="file" ref={fileInputRef} className="hidden" onChange={(e) => handleBatchProcess(e.target.files)} accept="image/*" multiple />
+                <Button size="lg" onClick={() => fileInputRef.current?.click()} disabled={isUploading} className="rounded-full px-12 h-14">
+                   {isUploading ? <Loader2 className="animate-spin mr-2" /> : <Plus className="mr-2" />} Selecteer Bestanden
+                </Button>
+                {isUploading && (
+                   <div className="w-full max-w-xs space-y-2">
+                      <Progress value={uploadProgress} className="h-1" />
+                      <p className="text-[10px] uppercase font-bold opacity-40">{uploadStatus}</p>
+                   </div>
+                )}
              </Card>
           </TabsContent>
         </Tabs>
@@ -392,7 +423,7 @@ export default function AdminPage() {
                 <img src={artworks.find(a => a.id === editingId)?.imageUrl} className="max-h-[60vh] object-contain shadow-2xl" alt="Preview" />
              )}
           </div>
-          <div className="h-[40vh] border-t p-8 overflow-y-auto">
+          <div className="h-[40vh] border-t p-8 overflow-y-auto bg-white">
              <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-8">
                 <div className="space-y-4">
                    <Label className="text-[10px] uppercase font-bold">Titel</Label>
