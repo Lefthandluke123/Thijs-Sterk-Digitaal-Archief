@@ -1,13 +1,17 @@
-
 "use client";
 
 import React, { useState, useMemo, useEffect, Suspense, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
-import { collection, query, orderBy, where, doc } from 'firebase/firestore';
+import { collection, query, where, doc } from 'firebase/firestore';
 import { ArtworkViewer } from '@/components/artwork-viewer';
 import { Loader2, MousePointer2, ChevronLeft, ChevronRight, Layers } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+const ROMAN_VALUES: Record<string, number> = {
+  'I': 1, 'II': 2, 'III': 3, 'IV': 4, 'V': 5, 'VI': 6, 'VII': 7, 'VIII': 8, 'IX': 9, 'X': 10, 
+  'XI': 11, 'XII': 12, 'XIII': 13, 'XIV': 14, 'XV': 15, 'XVI': 16, 'XVII': 17, 'XVIII': 18, 'XIX': 19, 'XX': 20
+};
 
 function ExhibitionContent() {
   const searchParams = useSearchParams();
@@ -18,7 +22,6 @@ function ExhibitionContent() {
   const [scrollX, setScrollX] = useState(0);
   const firestore = useFirestore();
 
-  // Haal instellingen op voor verborgen zalen
   const siteSettingsRef = useMemoFirebase(() => {
     if (!firestore) return null;
     return doc(firestore, 'settings', 'site');
@@ -26,7 +29,6 @@ function ExhibitionContent() {
   const { data: siteSettings } = useDoc(siteSettingsRef);
   const hiddenSeries = useMemo(() => siteSettings?.hiddenSeries || [], [siteSettings]);
 
-  // Haal alle unieke series op voor de selector
   const allArtworksQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'artworks'));
@@ -47,10 +49,9 @@ function ExhibitionContent() {
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [allArtworks, hiddenSeries]);
 
-  // Query voor de schilderijen in de actuele tour
   const artworksQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    let q = query(collection(firestore, 'artworks'), orderBy('createdAt', 'desc'));
+    let q = query(collection(firestore, 'artworks'));
     if (seriesParam) {
       q = query(collection(firestore, 'artworks'), where('series', '==', seriesParam));
     }
@@ -61,16 +62,41 @@ function ExhibitionContent() {
 
   const artworks = useMemo(() => {
     if (!dbArtworks) return [];
+    
     const seen = new Set();
-    return dbArtworks.filter(art => {
+    const unique = dbArtworks.filter(art => {
       const url = art.imageUrl;
       if (!url || seen.has(url)) return false;
       seen.add(url);
       return true;
     });
+
+    const parseTitle = (title: string) => {
+      const match = title.match(/^(\d+)([a-z]*)?\s+(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII)\b/i);
+      if (match) {
+        return {
+          num: parseInt(match[1], 10),
+          suffix: match[2] || '',
+          romanVal: ROMAN_VALUES[match[3].toUpperCase()] || 0
+        };
+      }
+      return null;
+    };
+
+    return [...unique].sort((a: any, b: any) => {
+      const pA = parseTitle(a.title || '');
+      const pB = parseTitle(b.title || '');
+      if (pA && pB) {
+        if (pA.romanVal !== pB.romanVal) return pA.romanVal - pB.romanVal;
+        if (pA.num !== pB.num) return pA.num - pB.num;
+        return pA.suffix.localeCompare(pB.suffix);
+      }
+      if (pA) return -1;
+      if (pB) return 1;
+      return (a.title || '').localeCompare(b.title || '');
+    });
   }, [dbArtworks]);
 
-  // Reset scroll bij wisselen van zaal
   useEffect(() => {
     setScrollX(0);
   }, [seriesParam]);
@@ -79,7 +105,6 @@ function ExhibitionContent() {
     setScrollX(prev => Math.max(0, prev + delta));
   }, []);
 
-  // Toetsenbord navigatie
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (selectedArtwork) return;
@@ -90,7 +115,6 @@ function ExhibitionContent() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedArtwork, handleStep]);
 
-  // Scroll navigatie
   useEffect(() => {
     const handleScroll = (e: WheelEvent) => {
       if (selectedArtwork) return;
@@ -122,10 +146,8 @@ function ExhibitionContent() {
 
   return (
     <main className="h-screen w-full bg-white overflow-hidden flex flex-col relative pt-14">
-      {/* Heldere Museum Achtergrond */}
       <div className="absolute inset-0 bg-[#fafafa] pointer-events-none" />
       
-      {/* Minimalistische Zaal Selector */}
       <div className="absolute top-20 left-0 right-0 z-40 flex justify-center px-6">
         <div className="bg-white/60 backdrop-blur-md border border-black/5 rounded-full px-6 py-1.5 flex items-center gap-6 shadow-sm hover:shadow-md transition-shadow max-w-full overflow-x-auto no-scrollbar">
           <div className="flex items-center gap-2 border-r border-black/5 pr-4 mr-2 hidden md:flex">
@@ -156,7 +178,6 @@ function ExhibitionContent() {
         </div>
       </div>
 
-      {/* Header - Strakker gecentreerd */}
       <div className="absolute top-32 left-1/2 -translate-x-1/2 z-20 text-center pointer-events-none opacity-80">
         <span className="text-accent font-black tracking-[0.4em] uppercase text-[9px] block mb-1">Virtuele Tour</span>
         <h1 className="text-black/60 font-headline text-2xl md:text-4xl font-light italic">
@@ -164,27 +185,23 @@ function ExhibitionContent() {
         </h1>
       </div>
 
-      {/* Wandeling Gebied */}
       <div className="relative flex-1 flex items-center justify-center">
         <div 
           className="relative w-full h-full flex items-center transition-transform duration-1000 ease-out"
           style={{ transform: `translateX(${-scrollX}px)` }}
         >
-          {/* Zeer lichte Museumvloer */}
           <div className="absolute bottom-0 left-[-10000px] right-[-10000px] h-[32vh] bg-[#f9f9f9] z-0">
              <div className="absolute top-0 left-0 right-0 h-px bg-black/[0.03]" />
              <div className="absolute inset-0 opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/wood-pattern.png')]" />
              <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-black/[0.02] to-transparent" />
           </div>
 
-          {/* Schilderijen aan de wand - Strakke panelen */}
           <div className="flex gap-[40vw] px-[50vw] items-center pt-8">
             {artworks.map((art) => (
               <div 
                 key={art.id} 
                 className="relative group shrink-0"
               >
-                {/* Wit Museum Paneel - Nu met flex-col voor strikte scheiding */}
                 <div 
                   className="relative flex flex-col bg-white shadow-[0_25px_50px_-12px_rgba(0,0,0,0.05)] border border-black/[0.03] cursor-pointer transition-all duration-700 hover:scale-[1.01] hover:shadow-xl"
                   onClick={() => setSelectedArtwork(art)}
@@ -201,23 +218,22 @@ function ExhibitionContent() {
                     />
                   </div>
                   
-                  {/* Informatiebordje - Onder het schilderij, binnen het paneel maar apart */}
                   <div className="px-8 py-6 border-t border-black/[0.03] bg-white">
                     <h3 className="text-black text-[9px] font-black uppercase tracking-[0.2em] mb-1 truncate">{art.displayTitle || art.title}</h3>
                     <div className="flex items-center gap-2">
                        <span className="text-accent text-[8px] font-bold uppercase tracking-widest">{art.year}</span>
                        <span className="w-1 h-1 rounded-full bg-black/10" />
                        <span className="text-black/30 text-[8px] font-bold uppercase tracking-widest">{art.medium}</span>
+                       <span className="w-1 h-1 rounded-full bg-black/10" />
+                       <span className="text-black/10 text-[7px] font-bold uppercase tracking-[0.2em]">{art.title}</span>
                     </div>
                   </div>
                 </div>
 
-                {/* Subtiele schaduw op de vloer */}
                 <div className="absolute -bottom-10 left-10 right-10 h-4 bg-black/[0.02] blur-xl rounded-full" />
               </div>
             ))}
 
-            {/* Einde van de zaal */}
             <div className="shrink-0 w-[50vw] flex flex-col items-center justify-center text-center opacity-20">
                <div className="w-px h-24 bg-black/10 mb-6" />
                <h4 className="text-[11px] font-black uppercase tracking-[0.5em]">Einde</h4>
@@ -227,7 +243,6 @@ function ExhibitionContent() {
         </div>
       </div>
 
-      {/* Navigatie Besturing - Minimalistischer */}
       <div className="absolute bottom-12 left-0 right-0 z-30 flex flex-col items-center gap-6 pointer-events-none">
         <div className="flex items-center gap-20 pointer-events-auto">
           <button 

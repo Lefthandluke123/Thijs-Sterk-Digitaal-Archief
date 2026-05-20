@@ -1,13 +1,17 @@
-
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
-import { collection, query, orderBy, doc } from 'firebase/firestore';
+import { collection, query, doc } from 'firebase/firestore';
 import { ArtworkViewer } from '@/components/artwork-viewer';
 import { Maximize2, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+const ROMAN_VALUES: Record<string, number> = {
+  'I': 1, 'II': 2, 'III': 3, 'IV': 4, 'V': 5, 'VI': 6, 'VII': 7, 'VIII': 8, 'IX': 9, 'X': 10, 
+  'XI': 11, 'XII': 12, 'XIII': 13, 'XIV': 14, 'XV': 15, 'XVI': 16, 'XVII': 17, 'XVIII': 18, 'XIX': 19, 'XX': 20
+};
 
 function GalleryContent() {
   const searchParams = useSearchParams();
@@ -19,7 +23,7 @@ function GalleryContent() {
   
   const artworksQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'artworks'), orderBy('createdAt', 'desc'));
+    return query(collection(firestore, 'artworks'));
   }, [firestore]);
 
   const { data: dbArtworks, loading } = useCollection(artworksQuery);
@@ -34,12 +38,38 @@ function GalleryContent() {
 
   const artworks = useMemo(() => {
     if (!dbArtworks) return [];
+    
     const seen = new Set();
-    return dbArtworks.filter(art => {
+    const unique = dbArtworks.filter(art => {
       const url = art.imageUrl;
       if (!url || seen.has(url)) return false;
       seen.add(url);
       return true;
+    });
+
+    const parseTitle = (title: string) => {
+      const match = title.match(/^(\d+)([a-z]*)?\s+(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII)\b/i);
+      if (match) {
+        return {
+          num: parseInt(match[1], 10),
+          suffix: match[2] || '',
+          romanVal: ROMAN_VALUES[match[3].toUpperCase()] || 0
+        };
+      }
+      return null;
+    };
+
+    return [...unique].sort((a: any, b: any) => {
+      const pA = parseTitle(a.title || '');
+      const pB = parseTitle(b.title || '');
+      if (pA && pB) {
+        if (pA.romanVal !== pB.romanVal) return pA.romanVal - pB.romanVal;
+        if (pA.num !== pB.num) return pA.num - pB.num;
+        return pA.suffix.localeCompare(pB.suffix);
+      }
+      if (pA) return -1;
+      if (pB) return 1;
+      return (a.title || '').localeCompare(b.title || '');
     });
   }, [dbArtworks]);
 
@@ -147,6 +177,7 @@ function GalleryContent() {
                   </div>
                   <div className="mt-4 text-center">
                     <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground group-hover:text-foreground transition-colors truncate">{item.displayTitle || item.title}</h3>
+                    <p className="text-[7px] uppercase opacity-20 tracking-widest mt-1">{item.title}</p>
                   </div>
                 </div>
               ))}

@@ -48,6 +48,12 @@ const TAG_CATEGORIES = {
   "Onderwerp": ["Havens", "Stillevens", "Bloemen", "Dieren", "Water", "Mensen", "Polder"]
 };
 
+// Romeinse cijfer naar waarde mapping voor sortering
+const ROMAN_VALUES: Record<string, number> = {
+  'I': 1, 'II': 2, 'III': 3, 'IV': 4, 'V': 5, 'VI': 6, 'VII': 7, 'VIII': 8, 'IX': 9, 'X': 10, 
+  'XI': 11, 'XII': 12, 'XIII': 13, 'XIV': 14, 'XV': 15, 'XVI': 16, 'XVII': 17, 'XVIII': 18, 'XIX': 19, 'XX': 20
+};
+
 export default function AdminPage() {
   const firestore = useFirestore();
   const storage = useStorage();
@@ -64,19 +70,52 @@ export default function AdminPage() {
 
   const artworksQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'artworks'), orderBy('createdAt', 'desc'));
+    // We halen alles op, sortering doen we in-memory voor complexe Romeinse logica
+    return query(collection(firestore, 'artworks'));
   }, [firestore]);
 
   const { data: rawArtworks } = useCollection(artworksQuery);
 
   const artworks = useMemo(() => {
     if (!rawArtworks) return [];
+    
+    // Unieke afbeeldingen filteren
     const seen = new Set();
-    return rawArtworks.filter(art => {
+    const unique = rawArtworks.filter(art => {
       const url = (art as any).imageUrl;
       if (!url || seen.has(url)) return false;
       seen.add(url);
       return true;
+    });
+
+    const parseTitle = (title: string) => {
+      // Regex voor patroon: [Getal][Suffix] [Romeins] (bijv. "12a XIII")
+      const match = title.match(/^(\d+)([a-z]*)?\s+(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII)\b/i);
+      if (match) {
+        return {
+          num: parseInt(match[1], 10),
+          suffix: match[2] || '',
+          romanVal: ROMAN_VALUES[match[3].toUpperCase()] || 0
+        };
+      }
+      return null;
+    };
+
+    // Sorteren op Romeinse cijfers en volgnummer
+    return [...unique].sort((a: any, b: any) => {
+      const pA = parseTitle(a.title || '');
+      const pB = parseTitle(b.title || '');
+
+      if (pA && pB) {
+        if (pA.romanVal !== pB.romanVal) return pA.romanVal - pB.romanVal;
+        if (pA.num !== pB.num) return pA.num - pB.num;
+        return pA.suffix.localeCompare(pB.suffix);
+      }
+      
+      if (pA) return -1;
+      if (pB) return 1;
+      
+      return (a.title || '').localeCompare(b.title || '');
     });
   }, [rawArtworks]);
 
@@ -117,7 +156,6 @@ export default function AdminPage() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!editingId) return;
       
-      // Voorkom navigatie als de gebruiker aan het typen is in een invoerveld
       const target = e.target as HTMLElement;
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
         return;
@@ -208,7 +246,7 @@ export default function AdminPage() {
 
   const handleExportBackup = () => {
     const exportData = {
-      version: "2.7",
+      version: "2.8",
       exportedAt: new Date().toISOString(),
       artworks: artworks,
       settings: siteSettings || {}
@@ -258,6 +296,7 @@ export default function AdminPage() {
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                </div>
+               <div className="text-[9px] font-black uppercase opacity-40">Gesorteerd op Romeinse Cijfers</div>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
