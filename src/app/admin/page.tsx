@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useRef } from 'react';
@@ -34,7 +35,9 @@ import {
   CheckCircle,
   AlertCircle,
   Zap,
-  Gem
+  Gem,
+  Coins,
+  Users
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -376,28 +379,59 @@ export default function AdminPage() {
           </TabsContent>
 
           <TabsContent value="help">
-             <div className="max-w-4xl mx-auto space-y-12 pb-24">
-               {/* Business Guide Card */}
+             <div className="max-w-5xl mx-auto space-y-12 pb-24">
+               {/* Vlijmscherpe Business Guide */}
                <Card className="p-8 md:p-12 rounded-3xl shadow-2xl border-none bg-primary text-primary-foreground relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-12 opacity-10 rotate-12"><Gem className="w-64 h-64" /></div>
+                  <div className="absolute top-0 right-0 p-12 opacity-10 rotate-12"><Coins className="w-64 h-64" /></div>
                   <div className="relative z-10 space-y-12">
                      <div className="space-y-2">
-                        <h2 className="text-3xl font-headline font-light italic">De Digital Conservator Gids</h2>
-                        <p className="text-primary-foreground/70 text-sm">Hoe jij waarde toevoegt aan de artiest.</p>
+                        <h2 className="text-3xl font-headline font-light italic">De Digital Conservator Bottomline</h2>
+                        <p className="text-primary-foreground/70 text-sm">Jouw vlijmscherpe commerciële strategie voor 20+ kunstenaars.</p>
                      </div>
                      
-                     <div className="grid md:grid-cols-2 gap-8">
-                        <div className="p-6 rounded-2xl bg-white/10 border border-white/20 space-y-4">
-                           <h4 className="font-black uppercase text-[10px] tracking-widest text-accent flex items-center gap-2">
-                             <Zap className="w-3 h-3" /> Verdiensten
-                           </h4>
-                           <p className="text-xs leading-relaxed">Hanteer een vaste setup-fee van €250,- per kunstenaar. De maandelijkse fee van €25,- dekt jouw technische waakzaamheid. De 10% provisie motiveert je om hun werk commercieel te optimaliseren.</p>
+                     <div className="grid md:grid-cols-2 gap-12">
+                        <div className="p-8 rounded-3xl bg-white/5 border border-white/10 space-y-6">
+                           <div className="flex items-center gap-3">
+                              <Users className="w-5 h-5 text-accent" />
+                              <h4 className="font-black uppercase text-[11px] tracking-widest text-accent">De Vriendenprijs (Wel oké)</h4>
+                           </div>
+                           <div className="space-y-4">
+                              <div className="flex justify-between items-end border-b border-white/10 pb-2">
+                                 <span className="text-[10px] uppercase opacity-60">Per Opstart (Setup)</span>
+                                 <span className="font-headline text-2xl">€250,-</span>
+                              </div>
+                              <div className="flex justify-between items-end border-b border-white/10 pb-2">
+                                 <span className="text-[10px] uppercase opacity-60">Per Maand (Service)</span>
+                                 <span className="font-headline text-2xl">€25,-</span>
+                              </div>
+                              <div className="flex justify-between items-end border-b border-white/10 pb-2">
+                                 <span className="text-[10px] uppercase opacity-60">Per Verkoop (Commissie)</span>
+                                 <span className="font-headline text-2xl">10%</span>
+                              </div>
+                           </div>
+                           <p className="text-[10px] italic opacity-40">Uurtarief extra werk: €50,- ex BTW</p>
                         </div>
-                        <div className="p-6 rounded-2xl bg-white/10 border border-white/20 space-y-4">
-                           <h4 className="font-black uppercase text-[10px] tracking-widest text-accent flex items-center gap-2">
-                             <ShieldCheck className="w-3 h-3" /> Jouw Rol
-                           </h4>
-                           <p className="text-xs leading-relaxed">Jij bent de <strong>Digitaal Conservator</strong>. Jij garandeert dat hun levenswerk in de hoogste resolutie (Deep Zoom) bewaard blijft voor de toekomst, terwijl zij zich kunnen focussen op creatie.</p>
+
+                        <div className="p-8 rounded-3xl bg-black/20 border border-white/5 space-y-6">
+                           <div className="flex items-center gap-3">
+                              <Zap className="w-5 h-5 text-red-400" />
+                              <h4 className="font-black uppercase text-[11px] tracking-widest text-red-400">Het "Niet zo leuk" Tarief</h4>
+                           </div>
+                           <div className="space-y-4">
+                              <div className="flex justify-between items-end border-b border-white/10 pb-2">
+                                 <span className="text-[10px] uppercase opacity-60">Per Opstart (Setup)</span>
+                                 <span className="font-headline text-2xl">€500,-</span>
+                              </div>
+                              <div className="flex justify-between items-end border-b border-white/10 pb-2">
+                                 <span className="text-[10px] uppercase opacity-60">Per Maand (Service)</span>
+                                 <span className="font-headline text-2xl">€50,-</span>
+                              </div>
+                              <div className="flex justify-between items-end border-b border-white/10 pb-2">
+                                 <span className="text-[10px] uppercase opacity-60">Per Verkoop (Commissie)</span>
+                                 <span className="font-headline text-2xl">20%</span>
+                              </div>
+                           </div>
+                           <p className="text-[10px] italic opacity-40">Uurtarief extra werk: €75,- ex BTW</p>
                         </div>
                      </div>
                   </div>
