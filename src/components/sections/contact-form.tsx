@@ -10,10 +10,12 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
-import { Send, Mail, MapPin, Phone } from 'lucide-react';
+import { Send, Mail, MapPin, Phone, Loader2 } from 'lucide-react';
 import { useLanguage } from '@/components/language-provider';
 import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { doc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 const formSchema = z.object({
   name: z.string().min(2),
@@ -25,6 +27,7 @@ const formSchema = z.object({
 export function ContactForm() {
   const { language, t } = useLanguage();
   const firestore = useFirestore();
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const siteSettingsRef = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -53,12 +56,50 @@ export function ContactForm() {
     defaultValues: { name: "", email: "", subject: "", message: "" },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    toast({
-      title: t('contact_success_title'),
-      description: t('contact_success_desc'),
-    });
-    form.reset();
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    if (!firestore) return;
+    setIsSubmitting(true);
+
+    const mailData = {
+      to: 'lhcsterk@doggyfew.com',
+      message: {
+        subject: `[Thijs Sterk Museum] ${values.subject}`,
+        text: `Nieuw bericht van de website:\n\nNaam: ${values.name}\nE-mail: ${values.email}\nOnderwerp: ${values.subject}\n\nBericht:\n${values.message}`,
+        html: `
+          <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
+            <h2 style="color: #458941;">Nieuw bericht van ThijsSterk.nl</h2>
+            <p><strong>Naam:</strong> ${values.name}</p>
+            <p><strong>E-mail:</strong> ${values.email}</p>
+            <p><strong>Onderwerp:</strong> ${values.subject}</p>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+            <p><strong>Bericht:</strong></p>
+            <p style="white-space: pre-wrap;">${values.message}</p>
+          </div>
+        `,
+      },
+      createdAt: serverTimestamp(),
+      fromName: values.name,
+      fromEmail: values.email
+    };
+
+    addDoc(collection(firestore, 'mail'), mailData)
+      .then(() => {
+        toast({
+          title: t('contact_success_title'),
+          description: t('contact_success_desc'),
+        });
+        form.reset();
+      })
+      .catch(async (error) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: 'mail',
+          operation: 'create',
+          requestResourceData: mailData,
+        }));
+      })
+      .finally(() => {
+        setIsSubmitting(false);
+      });
   }
 
   return (
@@ -135,8 +176,9 @@ export function ContactForm() {
                     <FormMessage />
                   </FormItem>
                 )} />
-                <Button type="submit" size="lg" className="w-full bg-primary hover:bg-primary/90 text-white rounded-full h-14 font-bold uppercase tracking-widest text-xs">
-                  {buttonSend} <Send className="ml-2 w-4 h-4" />
+                <Button type="submit" size="lg" disabled={isSubmitting} className="w-full bg-primary hover:bg-primary/90 text-white rounded-full h-14 font-bold uppercase tracking-widest text-xs">
+                  {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Send className="ml-2 w-4 h-4" />}
+                  {buttonSend}
                 </Button>
               </form>
             </Form>

@@ -127,6 +127,23 @@
         }
       }
     },
+    "Mail": {
+      "title": "Mail",
+      "description": "Een uitgaand e-mail bericht voor de Trigger Email extensie.",
+      "type": "object",
+      "properties": {
+        "to": { "type": "string" },
+        "message": {
+          "type": "object",
+          "properties": {
+            "subject": { "type": "string" },
+            "text": { "type": "string" },
+            "html": { "type": "string" }
+          }
+        },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
     "Settings": {
       "title": "Settings",
       "description": "Algemene website instellingen en teksten. Bevat vertalingen voor EN, DE, FR en ES.",
@@ -216,6 +233,10 @@
     "/interactions/{interactionId}": {
       "schema": "Interaction",
       "description": "Log van bezoekersinteracties"
+    },
+    "/mail/{mailId}": {
+      "schema": "Mail",
+      "description": "Wachtrij voor te verzenden e-mails"
     },
     "/settings/site": {
       "schema": "Settings",
