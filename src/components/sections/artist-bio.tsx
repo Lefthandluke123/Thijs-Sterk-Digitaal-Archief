@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -31,7 +32,8 @@ export function ArtistBio() {
     }
   }, [selectedArtwork]);
 
-  const bioText = siteSettings?.homeBio || `Thijs Sterk (1913-1982) wijdde zijn leven aan het doorgronden van de atmosferische kwaliteiten van de wereld om hem heen. In zijn atelier in Groet, te midden van de geur van olieverf en het strijklicht van het duinlandschap, creëerde hij een oeuvre dat even veelzijdig als diepzinnig is.
+  const bioTitle = siteSettings?.homeBioTitle || 'Een leven gewijd aan de Essentie';
+  const bioText = siteSettings?.homeBio || `Thijs Sterk (1913-1982) wijdde zijn leven aan het doorgronden van de atmosferische kwaliteiten van de wereld om hem heen. In zijn atelier in Groet, te midden van de geur van olieverf and het strijklicht van het duinlandschap, creëerde hij een oeuvre dat even veelzijdig als diepzinnig is.
 
 Zijn liefde voor het licht beperkte zich niet tot het Hollandse landschap alleen. In de havens van Bretagne en de zonovergoten dorpen van Griekenland zocht hij naar de juiste kleur voor het water en de lucht. Naast zijn bekende landschappen blonk hij uit in stillevens, bloemstukken en portretten die getuigen van een meesterlijke beheersing van techniek en gevoel.
 
@@ -99,7 +101,11 @@ Thijs Sterk was bovendien een kunstenaar van de grote gebaren. Zijn monumentale 
           
           <div className="lg:col-span-7 order-1 lg:order-2">
             <span className="text-accent font-medium tracking-widest uppercase text-sm mb-4 block">De Biografie</span>
-            <h2 className="font-headline text-4xl md:text-5xl font-light mb-8 leading-tight">Een leven gewijd aan de <span className="italic">Essentie</span></h2>
+            <h2 className="font-headline text-4xl md:text-5xl font-light mb-8 leading-tight">
+              {bioTitle.split(' ').map((word, i, arr) => 
+                i === arr.length - 1 ? <span key={i} className="italic">{word}</span> : word + ' '
+              )}
+            </h2>
             
             <div className="space-y-6 text-lg text-muted-foreground leading-relaxed font-light whitespace-pre-line">
               {renderTextWithLinks(bioText)}

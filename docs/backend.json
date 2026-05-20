@@ -128,6 +128,10 @@
           "type": "string",
           "description": "De titel van the website"
         },
+        "homeBioTitle": {
+          "type": "string",
+          "description": "De kopregel van de biografie op de homepagina"
+        },
         "homeBio": {
           "type": "string",
           "description": "Biografie op de homepagina"

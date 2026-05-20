@@ -259,13 +259,26 @@ export default function AdminPage() {
               <div className="grid gap-12">
                  {/* Thijs Sterk Hoofd Bio */}
                  <div className="space-y-4">
-                    <Label className="text-[11px] font-black uppercase text-accent border-l-4 border-accent pl-4 block">Hoofdbiografie (Thijs Sterk - Homepagina)</Label>
-                    <Textarea 
-                      defaultValue={siteSettings?.homeBio || ''} 
-                      onBlur={(e) => updateSettingsField('homeBio', e.target.value)} 
-                      className="min-h-[250px] bg-black/5 border-none rounded-2xl p-6 text-base leading-relaxed font-light" 
-                      placeholder="De hoofdtekst over Thijs Sterk die op de homepagina verschijnt..." 
-                    />
+                    <Label className="text-[11px] font-black uppercase text-accent border-l-4 border-accent pl-4 block">Hoofdbiografie Thijs Sterk (Homepagina)</Label>
+                    <div className="space-y-4 bg-black/5 p-6 rounded-2xl">
+                      <div className="space-y-2">
+                        <Label className="text-[9px] uppercase opacity-50">Titel / Kopregel</Label>
+                        <Input 
+                          defaultValue={siteSettings?.homeBioTitle || 'Een leven gewijd aan de Essentie'} 
+                          onBlur={(e) => updateSettingsField('homeBioTitle', e.target.value)}
+                          className="bg-white border-none font-headline text-xl"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-[9px] uppercase opacity-50">Biografische Tekst</Label>
+                        <Textarea 
+                          defaultValue={siteSettings?.homeBio || ''} 
+                          onBlur={(e) => updateSettingsField('homeBio', e.target.value)} 
+                          className="min-h-[250px] bg-white border-none p-6 text-base leading-relaxed font-light" 
+                          placeholder="De hoofdtekst over Thijs Sterk die op de homepagina verschijnt..." 
+                        />
+                      </div>
+                    </div>
                  </div>
 
                  {/* Leo Duppen Bio */}
