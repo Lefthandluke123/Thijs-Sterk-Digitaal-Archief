@@ -3,14 +3,16 @@
 
 Dit document bevat de essentiële instructies voor het beheren, bewaren en delen van de digitale collectie (325+ werken).
 
-## Versie: 10-5/17.00 (Sorteerlogica & Foto Richtlijnen)
+## Versie: 10-5/18.30 (Optimale Resolutie & Performance)
 
 ### 1. Richtlijnen voor Foto-uploads (Kwaliteit vs. Snelheid)
-Om de kunstwerken optimaal groot te kunnen tonen zonder de site traag te maken, adviseren wij:
-*   **Resolutie**: 2500px tot 3500px aan de langste zijde.
-*   **Bestandsgrootte**: Richt op 1MB tot 3MB per foto.
-*   **Formaat**: JPG (kwaliteit 80-90%) in sRGB kleurprofiel.
-*   **Bestandsnaam**: Gebruik een logische naam zoals `12-XIII.jpg`. De site gebruikt dit automatisch als titel.
+Voor de volledige collectie van ~360 werken adviseren wij de volgende instellingen voor een optimale balans tussen detail en laadtijd:
+
+*   **Maximale Resolutie**: 3500px tot 4000px aan de langste zijde. Dit is ideaal voor weergave op 4K-schermen.
+*   **Bestandsformaat**: Bij voorkeur **WebP**. Als u JPG gebruikt, kies dan voor 'Kwaliteit Hoog' (80-85%).
+*   **Bestandsgrootte**: Richt op **2MB tot 4MB** per foto.
+*   **Kleurprofiel**: Altijd **sRGB** om kleurafwijkingen op verschillende schermen te voorkomen.
+*   **Bestandsnaam**: Gebruik het formaat `[Volgnummer]-[RomeinsCijfer].jpg` (bijv. `12-XIII.jpg`). Het systeem sorteert hier automatisch op.
 
 ### 2. Hoe publiceer ik mijn wijzigingen?
 *   **Inhoud (Foto's, Tags, Bio's)**: Wijzigingen in het beheerpaneel (`/admin`) zijn **direct live**.
@@ -20,10 +22,9 @@ Om de kunstwerken optimaal groot te kunnen tonen zonder de site traag te maken, 
 De collectie wordt automatisch gesorteerd op:
 1.  **Romeinse Cijfergroep** (I, II, III... t/m XX)
 2.  **Volgnummer** binnen die groep (1, 2, 3...)
-*Zorg dat de Interne Titel het cijfer en nummer bevat voor de juiste volgorde.*
 
 ### 4. Back-up & Herstel
-Onder **'Master Backup'** kunt u een JSON-bestand downloaden. Dit is uw veiligheidsnet. Doe dit altijd na een grote bewerksessie.
+Onder **'Master Backup'** kunt u een JSON-bestand downloaden. Dit bevat alle titels, jaartallen en zaal-indelingen. Doe dit altijd na een grote bewerksessie.
 
-### 5. AI Vertaling
-Biografieën en introducties kunnen met één klik naar het Engels vertaald worden via de knoppen in het tabblad **Pagina Teksten**.
+### 5. Meertaligheid
+De menu's en interface zijn beschikbaar in NL, EN, DE en FR. De biografieën kunnen via de AI-knoppen in het tabblad **Pagina Teksten** per taal worden geoptimaliseerd.
