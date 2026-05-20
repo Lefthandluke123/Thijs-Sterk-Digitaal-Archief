@@ -29,7 +29,9 @@ import {
   Tag,
   Info,
   Calendar,
-  Maximize
+  Maximize,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -100,6 +102,37 @@ export default function AdminPage() {
     return artworks.find((art: any) => art.id === editingId);
   }, [artworks, editingId]);
 
+  const navigateEditor = useCallback((direction: 'next' | 'prev') => {
+    if (!editingId || !filteredArtworks.length) return;
+    const currentIndex = filteredArtworks.findIndex((art: any) => art.id === editingId);
+    if (currentIndex === -1) return;
+    
+    let nextIndex = direction === 'next' 
+      ? (currentIndex + 1) % filteredArtworks.length 
+      : (currentIndex - 1 + filteredArtworks.length) % filteredArtworks.length;
+    
+    setEditingId(filteredArtworks[nextIndex].id);
+  }, [editingId, filteredArtworks]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!editingId) return;
+      
+      // Voorkom navigatie als de gebruiker aan het typen is in een invoerveld
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+        return;
+      }
+
+      if (e.key === 'ArrowRight') navigateEditor('next');
+      if (e.key === 'ArrowLeft') navigateEditor('prev');
+      if (e.key === 'Escape') setEditingId(null);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [editingId, navigateEditor]);
+
   const updateArtworkField = (id: string, field: string, value: any) => {
     if (!firestore || !id) return;
     const artRef = doc(firestore, 'artworks', id);
@@ -156,12 +189,13 @@ export default function AdminPage() {
         
         await addDoc(collection(firestore, 'artworks'), {
           title: fileNameNoExt,
-          displayTitle: fileNameNoExt, // Gebruik interne titel als start schermtitel
+          displayTitle: fileNameNoExt,
           series: "Nieuwe Uploads",
           imageUrl: downloadUrl,
           createdAt: serverTimestamp(),
           cropTop: 0, cropBottom: 0, cropLeft: 0, cropRight: 0, brightness: 1,
-          year: "" // Geen jaartal standaard invullen
+          year: "",
+          dimensions: ""
         });
         processedCount++;
         setUploadProgress((processedCount / totalFiles) * 100);
@@ -175,7 +209,7 @@ export default function AdminPage() {
 
   const handleExportBackup = () => {
     const exportData = {
-      version: "2.6",
+      version: "2.7",
       exportedAt: new Date().toISOString(),
       artworks: artworks,
       settings: siteSettings || {}
@@ -271,7 +305,6 @@ export default function AdminPage() {
               </div>
 
               <div className="grid gap-12">
-                 {/* Introductie Tekst (Bovenaan Homepagina) */}
                  <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -311,7 +344,6 @@ export default function AdminPage() {
                     </div>
                  </div>
 
-                 {/* Thijs Sterk Hoofd Bio (Onderaan Homepagina) */}
                  <div className="space-y-4 pt-8 border-t border-border/10">
                     <div className="flex items-center justify-between">
                        <div className="flex items-center gap-3">
@@ -351,7 +383,6 @@ export default function AdminPage() {
                     </div>
                  </div>
 
-                 {/* Leo Duppen Bio */}
                  <div className="space-y-4 pt-8 border-t border-border/10">
                     <div className="flex items-center justify-between">
                        <div className="flex items-center gap-3">
@@ -428,22 +459,45 @@ export default function AdminPage() {
       </main>
 
       <Dialog open={!!editingId} onOpenChange={() => setEditingId(null)}>
-        <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background">
+        <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background border-none">
           <DialogTitle className="sr-only">Editor</DialogTitle>
-          <div className="flex-1 bg-black/5 flex items-center justify-center p-4">
+          
+          <div className="flex-1 bg-black/5 flex items-center justify-center p-4 relative group">
              {editingArtwork && (
-               <div className="relative max-h-full">
-                  <img src={editingArtwork.imageUrl} className="max-h-[60vh] object-contain shadow-2xl" alt="Preview" />
-                  <div className="absolute top-4 right-4 flex gap-2">
-                     <Button variant="destructive" size="icon" onClick={() => { if(confirm('Zeker weten?')) { deleteDoc(doc(firestore!, 'artworks', editingId!)); setEditingId(null); }}} className="rounded-full shadow-xl"><Trash2 className="w-4 h-4" /></Button>
+               <>
+                  {/* Navigatieknoppen Over de afbeelding */}
+                  <button 
+                    onClick={() => navigateEditor('prev')}
+                    className="absolute left-8 z-10 p-4 rounded-full bg-white/20 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all hover:bg-white/40"
+                  >
+                    <ChevronLeft className="w-8 h-8" />
+                  </button>
+
+                  <div className="relative max-h-full">
+                    <img 
+                      src={editingArtwork.imageUrl} 
+                      className="max-h-[60vh] object-contain shadow-2xl transition-all duration-300" 
+                      alt="Preview" 
+                      style={{ filter: `brightness(${editingArtwork.brightness || 1})` }}
+                    />
+                    <div className="absolute top-4 right-4 flex gap-2">
+                       <Button variant="destructive" size="icon" onClick={() => { if(confirm('Zeker weten?')) { deleteDoc(doc(firestore!, 'artworks', editingId!)); setEditingId(null); }}} className="rounded-full shadow-xl"><Trash2 className="w-4 h-4" /></Button>
+                    </div>
                   </div>
-               </div>
+
+                  <button 
+                    onClick={() => navigateEditor('next')}
+                    className="absolute right-8 z-10 p-4 rounded-full bg-white/20 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all hover:bg-white/40"
+                  >
+                    <ChevronRight className="w-8 h-8" />
+                  </button>
+               </>
              )}
           </div>
+
           <div className="h-[45vh] border-t p-8 bg-background overflow-y-auto">
              <div className="max-w-7xl mx-auto space-y-12 pb-12">
                 <div className="grid md:grid-cols-3 gap-12">
-                  {/* KOLOM 1: TITELS & IDENTITEIT */}
                   <div className="space-y-8 bg-muted/20 p-6 rounded-2xl">
                     <div className="flex items-center gap-3 border-b border-border/50 pb-3">
                       <Info className="w-4 h-4 text-accent" />
@@ -453,6 +507,7 @@ export default function AdminPage() {
                       <div className="space-y-2">
                         <Label className="text-[10px] font-black uppercase opacity-60">Publieke Schermtitel</Label>
                         <Input 
+                          key={`displayTitle-${editingId}`}
                           defaultValue={editingArtwork?.displayTitle || ''} 
                           onBlur={(e) => updateArtworkField(editingId!, 'displayTitle', e.target.value)} 
                           className="font-bold border-accent/20 focus:border-accent"
@@ -462,6 +517,7 @@ export default function AdminPage() {
                       <div className="space-y-2">
                         <Label className="text-[10px] font-black uppercase opacity-60">Interne Titel / Bestandsnaam</Label>
                         <Input 
+                          key={`title-${editingId}`}
                           defaultValue={editingArtwork?.title || ''} 
                           onBlur={(e) => updateArtworkField(editingId!, 'title', e.target.value)} 
                           className="text-[11px] opacity-70 bg-white/50" 
@@ -472,6 +528,7 @@ export default function AdminPage() {
                         <div className="relative">
                           <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 opacity-30" />
                           <Input 
+                            key={`year-${editingId}`}
                             defaultValue={editingArtwork?.year || ''} 
                             onBlur={(e) => updateArtworkField(editingId!, 'year', e.target.value)} 
                             className="pl-10"
@@ -484,6 +541,7 @@ export default function AdminPage() {
                         <div className="relative">
                           <Maximize className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 opacity-30" />
                           <Input 
+                            key={`dimensions-${editingId}`}
                             defaultValue={editingArtwork?.dimensions || ''} 
                             onBlur={(e) => updateArtworkField(editingId!, 'dimensions', e.target.value)} 
                             className="pl-10"
@@ -494,7 +552,6 @@ export default function AdminPage() {
                     </div>
                   </div>
 
-                  {/* KOLOM 2: TAGS (GECATEGORISEERD) */}
                   <div className="md:col-span-2 space-y-8 bg-black/[0.02] p-6 rounded-2xl border border-black/5">
                     <div className="flex items-center gap-3 border-b border-border/50 pb-3">
                       <Tag className="w-4 h-4 text-accent" />
@@ -533,11 +590,11 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                {/* ONDERSTE BALK: EXTRA OPTIES */}
                 <div className="grid md:grid-cols-3 gap-8 pt-8 border-t border-border/10">
                    <div className="space-y-2">
                       <Label className="text-[10px] font-black uppercase opacity-60">Zaal / Serie</Label>
                       <Input 
+                        key={`series-${editingId}`}
                         defaultValue={editingArtwork?.series || ''} 
                         onBlur={(e) => updateArtworkField(editingId!, 'series', e.target.value)} 
                         className="bg-white"
@@ -552,6 +609,9 @@ export default function AdminPage() {
                         className="w-5 h-5 accent-accent"
                       />
                       <Label htmlFor="featured-check" className="text-[11px] font-black uppercase cursor-pointer">Toon op homepagina (Meester Selectie)</Label>
+                   </div>
+                   <div className="flex items-center justify-end gap-2 text-[9px] font-black uppercase opacity-30">
+                      <ChevronLeft className="w-3 h-3" /> Gebruik pijltjestoetsen om te bladeren <ChevronRight className="w-3 h-3" />
                    </div>
                 </div>
              </div>
