@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useRef } from 'react';
@@ -22,7 +23,9 @@ import {
   CreditCard,
   Settings as SettingsIcon,
   Star,
-  Globe2
+  Globe2,
+  TrendingUp,
+  History
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -31,6 +34,7 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const ROMAN_VALUES: Record<string, number> = {
   'I': 1, 'II': 2, 'III': 3, 'IV': 4, 'V': 5, 'VI': 6, 'VII': 7, 'VIII': 8, 'IX': 9, 'X': 10, 
@@ -56,7 +60,13 @@ export default function AdminPage() {
     return query(collection(firestore, 'artworks'));
   }, [firestore]);
 
+  const ordersQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'orders'));
+  }, [firestore]);
+
   const { data: rawArtworks } = useCollection(artworksQuery);
+  const { data: orders } = useCollection(ordersQuery);
 
   const artworks = useMemo(() => {
     if (!rawArtworks) return [];
@@ -194,6 +204,7 @@ export default function AdminPage() {
         <Tabs defaultValue="archive" className="space-y-8">
           <TabsList className="bg-muted/50 p-1 rounded-full w-fit mx-auto flex flex-wrap justify-center h-auto">
             <TabsTrigger value="archive" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Archief [{artworks.length}]</TabsTrigger>
+            <TabsTrigger value="orders" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Bestellingen [{orders?.length || 0}]</TabsTrigger>
             <TabsTrigger value="upload" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Upload</TabsTrigger>
             <TabsTrigger value="branding" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Site Branding</TabsTrigger>
             <TabsTrigger value="payments" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Betalingen (Stripe)</TabsTrigger>
@@ -223,6 +234,52 @@ export default function AdminPage() {
                 </Card>
               ))}
             </div>
+          </TabsContent>
+
+          <TabsContent value="orders" className="space-y-6">
+             <Card className="p-6 rounded-3xl border-none shadow-xl bg-white/50 backdrop-blur-md">
+                <div className="flex items-center gap-3 mb-8 border-l-4 border-accent pl-4">
+                   <TrendingUp className="w-5 h-5 text-accent" />
+                   <h2 className="text-[12px] font-black uppercase tracking-widest text-accent">Order Historie (Dashboard)</h2>
+                </div>
+                
+                <Table>
+                  <TableHeader>
+                    <TableRow className="text-[10px] uppercase font-black tracking-widest opacity-40">
+                      <TableHead>Datum</TableHead>
+                      <TableHead>Klant</TableHead>
+                      <TableHead>Werk</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {orders && orders.length > 0 ? orders.sort((a:any, b:any) => b.timestamp?.seconds - a.timestamp?.seconds).map((order: any) => (
+                      <TableRow key={order.id} className="text-xs group hover:bg-black/5 transition-colors">
+                        <TableCell className="font-mono opacity-50">{order.timestamp?.toDate().toLocaleDateString()}</TableCell>
+                        <TableCell>
+                          <div className="font-bold">{order.customerName}</div>
+                          <div className="text-[10px] opacity-40">{order.customerEmail}</div>
+                        </TableCell>
+                        <TableCell className="italic">{order.artworkTitle}</TableCell>
+                        <TableCell className="uppercase text-[9px] font-black">{order.productType}</TableCell>
+                        <TableCell>
+                          <span className={cn(
+                            "px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest",
+                            order.status === 'paid' ? "bg-green-100 text-green-700" : "bg-accent/10 text-accent"
+                          )}>
+                            {order.status || 'nieuw'}
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    )) : (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-12 opacity-30 uppercase font-black tracking-widest">Nog geen bestellingen</TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+             </Card>
           </TabsContent>
 
           <TabsContent value="upload">
