@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -14,11 +15,12 @@ interface ArtworkViewerProps {
 }
 
 export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewerProps) {
-  const [showMetadata, setShowMetadata] = useState(true);
+  // Standaard uitgeschakeld voor een schone "art-first" ervaring
+  const [showMetadata, setShowMetadata] = useState(false);
 
   useEffect(() => {
     if (!artwork) {
-      setShowMetadata(true);
+      setShowMetadata(false);
     }
   }, [artwork]);
 
@@ -27,7 +29,7 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
       <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-black border-none rounded-none overflow-hidden outline-none shadow-none fixed inset-0 translate-x-0 translate-y-0 left-0 top-0 z-[100]">
         <DialogTitle className="sr-only">Deep Zoom Artwork Viewer</DialogTitle>
         
-        {/* Main Deep Zoom Area */}
+        {/* Main Deep Zoom Area - Full Screen */}
         <div className="relative flex-1 bg-black overflow-hidden">
           {artwork && (
             <DeepZoomViewer 
@@ -67,7 +69,7 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
                  "p-3 rounded-full backdrop-blur-xl border border-white/10 transition-all shadow-2xl",
                  showMetadata ? "bg-accent text-accent-foreground" : "bg-black/40 text-white hover:bg-black/60"
                )}
-               title="Toon informatie"
+               title={showMetadata ? "Verberg informatie" : "Toon informatie"}
              >
                <Info className="w-6 h-6" />
              </button>
@@ -77,29 +79,29 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
                <X className="w-6 h-6 opacity-60" />
              </DialogClose>
           </div>
-        </div>
 
-        {/* Metadata Bar */}
-        <div className={cn(
-          "w-full bg-background/95 backdrop-blur-md border-t border-border/10 flex flex-col items-center justify-center overflow-y-auto text-center transition-all duration-700 ease-in-out",
-          showMetadata ? "h-[15vh] opacity-100 py-6 px-12" : "h-0 opacity-0 pointer-events-none py-0 px-0"
-        )}>
-          <div className="max-w-4xl mx-auto space-y-2">
-            <h2 className="text-xl md:text-2xl font-headline font-light italic text-foreground tracking-tight">
-              {artwork?.displayTitle || artwork?.title}
-            </h2>
-            <div className="text-[12px] md:text-[14px] font-bold tracking-[0.1em] text-accent flex flex-wrap gap-x-6 gap-y-2 justify-center items-center">
-              <span className="uppercase opacity-70">Zaal: {artwork?.series}</span>
-              <span className="w-1 h-1 rounded-full bg-accent/30 self-center hidden md:inline" />
-              <span className="italic">{artwork?.year || 'Jaartal onbekend'}</span>
-              {artwork?.dimensions && (
-                <>
-                  <span className="w-1 h-1 rounded-full bg-accent/30 self-center hidden md:inline" />
-                  <span>{artwork?.dimensions}</span>
-                </>
-              )}
-              <span className="w-1 h-1 rounded-full bg-accent/30 self-center hidden md:inline" />
-              <span className="uppercase tracking-widest">{artwork?.medium}</span>
+          {/* Metadata Bar - Nu als zwevende overlay onderaan */}
+          <div className={cn(
+            "absolute bottom-0 left-0 right-0 bg-background/90 backdrop-blur-xl border-t border-border/10 flex flex-col items-center justify-center overflow-y-auto text-center transition-all duration-700 ease-in-out z-[105]",
+            showMetadata ? "h-[18vh] opacity-100 py-6 px-12 translate-y-0" : "h-0 opacity-0 pointer-events-none translate-y-12"
+          )}>
+            <div className="max-w-4xl mx-auto space-y-3">
+              <h2 className="text-xl md:text-3xl font-headline font-light italic text-foreground tracking-tight">
+                {artwork?.displayTitle || artwork?.title}
+              </h2>
+              <div className="text-[12px] md:text-[13px] font-bold tracking-[0.15em] text-accent flex flex-wrap gap-x-6 gap-y-2 justify-center items-center">
+                <span className="uppercase opacity-70">Zaal: {artwork?.series}</span>
+                <span className="w-1 h-1 rounded-full bg-accent/30 self-center hidden md:inline" />
+                <span className="italic">{artwork?.year || 'Jaartal onbekend'}</span>
+                {artwork?.dimensions && (
+                  <>
+                    <span className="w-1 h-1 rounded-full bg-accent/30 self-center hidden md:inline" />
+                    <span>{artwork?.dimensions}</span>
+                  </>
+                )}
+                <span className="w-1 h-1 rounded-full bg-accent/30 self-center hidden md:inline" />
+                <span className="uppercase tracking-widest">{artwork?.medium}</span>
+              </div>
             </div>
           </div>
         </div>
