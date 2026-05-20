@@ -63,7 +63,6 @@ export default function AdminPage() {
 
   const { data: rawArtworks } = useCollection(artworksQuery);
 
-  // Zorg dat we geen dubbele afbeeldingen tonen in het overzicht
   const artworks = useMemo(() => {
     if (!rawArtworks) return [];
     const seen = new Set();
@@ -85,12 +84,12 @@ export default function AdminPage() {
     return artworks.filter((art: any) => {
       const displayTitle = art.displayTitle || art.title || "";
       const matchesSearch = displayTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          (art.series?.toLowerCase() || "").includes(searchQuery.toLowerCase());
+                          (art.series?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
+                          (art.title?.toLowerCase() || "").includes(searchQuery.toLowerCase());
       return matchesSearch;
     });
   }, [artworks, searchQuery]);
 
-  // CRUCIALE FIX: Definieer editingArtwork zodat het beschikbaar is in de Dialog
   const editingArtwork = useMemo(() => {
     if (!editingId) return null;
     return artworks.find((art: any) => art.id === editingId);
@@ -211,7 +210,7 @@ export default function AdminPage() {
                <div className="relative flex-1">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-30" />
                   <Input 
-                    placeholder="Zoek in collectie..." 
+                    placeholder="Zoek op titel, bestandsnaam of zaal..." 
                     className="pl-12 h-12 bg-white/50 border-none rounded-full"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -442,6 +441,10 @@ export default function AdminPage() {
                   <div className="space-y-2">
                     <Label className="text-[10px] font-black uppercase opacity-40">Zaal / Serie</Label>
                     <Input defaultValue={editingArtwork?.series || ''} onBlur={(e) => updateArtworkField(editingId!, 'series', e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-black uppercase opacity-40">Interne Titel / Bestandsnaam</Label>
+                    <Input defaultValue={editingArtwork?.title || ''} onBlur={(e) => updateArtworkField(editingId!, 'title', e.target.value)} className="text-[10px] opacity-60" />
                   </div>
                 </div>
 
