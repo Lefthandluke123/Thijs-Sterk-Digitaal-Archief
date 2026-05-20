@@ -163,6 +163,15 @@
           "items": { "type": "string" },
           "description": "Lijst van afbeeldings-URLs voor Peter Bes"
         },
+        "leoDuppenBio": {
+          "type": "string",
+          "description": "Biografie van Leo Duppen"
+        },
+        "leoDuppenBioImages": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Lijst van afbeeldings-URLs voor Leo Duppen"
+        },
         "hiddenSeries": {
           "type": "array",
           "items": { "type": "string" },

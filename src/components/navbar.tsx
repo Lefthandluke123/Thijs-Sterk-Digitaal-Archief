@@ -19,7 +19,6 @@ import { collection, query, doc } from 'firebase/firestore';
 function NavbarContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const currentSeries = searchParams.get('series');
   const [mounted, setMounted] = useState(false);
   const firestore = useFirestore();
 
@@ -139,7 +138,7 @@ function NavbarContent() {
               <button
                 className={cn(
                   "px-4 py-1.5 rounded-full text-[11px] font-black tracking-[0.2em] uppercase transition-all duration-300 flex items-center gap-1 outline-none",
-                  pathname.includes('hanneke') || pathname.includes('beatrijs') || pathname.includes('peter-bes')
+                  pathname.includes('hanneke') || pathname.includes('beatrijs') || pathname.includes('peter-bes') || pathname.includes('leo-duppen')
                     ? "bg-secondary/80 text-foreground" 
                     : "text-muted-foreground hover:text-foreground"
                 )}
@@ -154,8 +153,11 @@ function NavbarContent() {
               <DropdownMenuItem asChild className="text-[10px] uppercase font-black tracking-[0.15em] focus:bg-accent focus:text-accent-foreground rounded-xl cursor-pointer p-3 mb-1">
                 <Link href="/beatrijs">Beatrijs Sterk</Link>
               </DropdownMenuItem>
-              <DropdownMenuItem asChild className="text-[10px] uppercase font-black tracking-[0.15em] focus:bg-accent focus:text-accent-foreground rounded-xl cursor-pointer p-3">
+              <DropdownMenuItem asChild className="text-[10px] uppercase font-black tracking-[0.15em] focus:bg-accent focus:text-accent-foreground rounded-xl cursor-pointer p-3 mb-1">
                 <Link href="/peter-bes">Peter Bes</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild className="text-[10px] uppercase font-black tracking-[0.15em] focus:bg-accent focus:text-accent-foreground rounded-xl cursor-pointer p-3">
+                <Link href="/leo-duppen">Leo Duppen</Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

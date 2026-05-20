@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
@@ -103,8 +104,6 @@ const TAG_CATEGORIES = {
   "Onderwerp": ["Havens", "Stillevens", "Bloemen", "Dieren", "Water", "Mensen", "Polder"]
 };
 
-const FLAT_STANDARD_TAGS = Object.values(TAG_CATEGORIES).flat();
-
 export default function AdminPage() {
   const firestore = useFirestore();
   const storage = useStorage();
@@ -201,35 +200,13 @@ export default function AdminPage() {
     setEditingId(filteredArtworks[nextIndex].id);
   }, [editingId, filteredArtworks]);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!editingId) return;
-      if (e.key === 'ArrowRight') navigateEditing('next');
-      if (e.key === 'ArrowLeft') navigateEditing('prev');
-      if (e.key === 'Escape') setEditingId(null);
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [editingId, navigateEditing]);
-
   const updateArtworkField = (id: string, field: string, value: any) => {
     if (!firestore || !id) return;
     const artRef = doc(firestore, 'artworks', id);
     updateDoc(artRef, { [field]: value })
       .catch(async () => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: artRef.path, operation: 'update' }));
-        toast({ variant: "destructive", title: "Opslaan mislukt", description: "Controleer uw verbinding." });
       });
-  };
-
-  const handleAddCustomTag = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingArtwork || !newTagInput.trim()) return;
-    const currentTags = editingArtwork.tags || [];
-    if (!currentTags.includes(newTagInput.trim())) {
-      updateArtworkField(editingArtwork.id, 'tags', [...currentTags, newTagInput.trim()]);
-    }
-    setNewTagInput('');
   };
 
   const updateSettingsField = (field: string, value: any) => {
@@ -237,46 +214,6 @@ export default function AdminPage() {
     const settingsRef = doc(firestore, 'settings', 'site');
     setDoc(settingsRef, { [field]: value }, { merge: true })
       .catch(async () => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: settingsRef.path, operation: 'update' })));
-  };
-
-  const toggleSeriesVisibility = (name: string) => {
-    const current = siteSettings?.hiddenSeries || [];
-    const updated = current.includes(name) 
-      ? current.filter((s: string) => s !== name) 
-      : [...current, name];
-    updateSettingsField('hiddenSeries', updated);
-  };
-
-  const handleBulkMove = () => {
-    if (!firestore || selectedIds.length === 0 || !bulkMoveSeries.trim()) return;
-    setIsSaving(true);
-    const batch = writeBatch(firestore);
-    
-    selectedIds.forEach(id => {
-      batch.update(doc(firestore, 'artworks', id), { series: bulkMoveSeries.trim() });
-    });
-    
-    batch.commit()
-      .then(() => {
-        const total = selectedIds.length;
-        setSelectedIds([]); 
-        setBulkMoveSeries('');
-        toast({ title: "Verplaatst", description: `${total} werken verplaatst naar ${bulkMoveSeries}.` });
-      })
-      .finally(() => setIsSaving(false));
-  };
-
-  const toggleSelect = (e: React.MouseEvent, id: string) => {
-    e.stopPropagation();
-    setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
-  };
-
-  const handleLocalStep = (field: string, delta: number, min = 0, max = 50) => {
-    if (!editingArtwork || !editingId) return;
-    const current = localCrops[field] ?? (editingArtwork as any)[field] ?? (field === 'brightness' ? 1 : 0);
-    const next = Math.min(max, Math.max(min, Number((current + delta).toFixed(2))));
-    setLocalCrops(prev => ({ ...prev, [field]: next }));
-    updateArtworkField(editingId, field, next);
   };
 
   const handleBatchProcess = async (files: FileList | null) => {
@@ -290,137 +227,42 @@ export default function AdminPage() {
     for (const file of filesArray) {
       try {
         setUploadStatus(`Uploaden: ${file.name} (${processedCount + 1}/${totalFiles})`);
-        
         const timestamp = Date.now();
-        const randomId = Math.random().toString(36).substring(2, 8);
         const safeName = file.name.replace(/[^a-z0-9.]/gi, '_');
-        const storageRef = ref(storage, `artworks/${timestamp}_${randomId}_${safeName}`);
-        
+        const storageRef = ref(storage, `artworks/${timestamp}_${safeName}`);
         const snapshot = await uploadBytes(storageRef, file);
         const downloadUrl = await getDownloadURL(snapshot.ref);
         
-        const docData = {
+        await addDoc(collection(firestore, 'artworks'), {
           title: file.name.split('.')[0] || "Naamloos",
-          displayTitle: "", 
           series: "Nieuwe Uploads",
-          year: new Date().getFullYear().toString(),
-          medium: "Olieverf",
           imageUrl: downloadUrl,
-          tags: [],
-          featured: false,
           createdAt: serverTimestamp(),
           cropTop: 0, cropBottom: 0, cropLeft: 0, cropRight: 0, brightness: 1
-        };
-        
-        await addDoc(collection(firestore, 'artworks'), docData);
-        await sleep(250);
+        });
         processedCount++;
         setUploadProgress((processedCount / totalFiles) * 100);
-      } catch (e) {
-        console.error(e);
-        toast({ variant: "destructive", title: "Upload Fout", description: `Kon ${file.name} niet uploaden.` });
-        await sleep(1000);
-      }
+      } catch (e) { console.error(e); }
     }
 
     setIsUploading(false);
     setUploadStatus('');
-    setUploadProgress(0);
-    if (fileInputRef.current) fileInputRef.current.value = '';
-    if (uploadDirInputRef.current) uploadDirInputRef.current.value = '';
-    toast({ title: "Klaar", description: "Alle bestanden zijn toegevoegd aan de cloud." });
+    toast({ title: "Upload voltooid" });
   };
 
-  const handleImportJson = async () => {
-    if (!firestore || !bulkJson) return;
-    setIsSaving(true);
-    try {
-      const imported = JSON.parse(bulkJson);
-      let dataToImport: any[] = [];
-      let settingsToImport: any = null;
-
-      if (imported.artworks && Array.isArray(imported.artworks)) {
-        dataToImport = imported.artworks;
-        settingsToImport = imported.settings;
-      } else if (Array.isArray(imported)) {
-        dataToImport = imported;
-      } else {
-        dataToImport = [imported];
-      }
-      
-      if (settingsToImport) {
-        const settingsRef = doc(firestore, 'settings', 'site');
-        setDoc(settingsRef, settingsToImport, { merge: true }).catch(async () => {});
-      }
-
-      const chunkSize = 100;
-      for (let i = 0; i < dataToImport.length; i += chunkSize) {
-        const chunk = dataToImport.slice(i, i + chunkSize);
-        const batch = writeBatch(firestore);
-        
-        chunk.forEach(item => {
-          const { id, createdAt, ...rest } = item;
-          const sanitizedItem = {
-            ...rest,
-            series: rest.series || "Nieuwe Uploads",
-            tags: Array.isArray(rest.tags) ? rest.tags : [],
-            cropTop: Number(rest.cropTop) || 0,
-            cropBottom: Number(rest.cropBottom) || 0,
-            cropLeft: Number(rest.cropLeft) || 0,
-            cropRight: Number(rest.cropRight) || 0,
-            brightness: Number(rest.brightness) || 1,
-            createdAt: serverTimestamp()
-          };
-          batch.set(doc(collection(firestore, 'artworks')), sanitizedItem);
-        });
-
-        await batch.commit();
-        setUploadStatus(`Herstellen: ${Math.min(i + chunkSize, dataToImport.length)} van ${dataToImport.length}`);
-        await sleep(500);
-      }
-
-      toast({ title: "Herstel Voltooid", description: `${dataToImport.length} werken zijn succesvol hersteld.` });
-      setBulkJson('');
-    } catch (e) { 
-      toast({ variant: "destructive", title: "Import Fout", description: "Controleer of de JSON data correct is." }); 
-    } finally {
-      setIsSaving(false);
-      setUploadStatus('');
-    }
-  };
-
-  const handleExportBackup = (isMaster: boolean = true) => {
-    if (!artworks || artworks.length === 0) {
-      toast({ title: "Leeg Depot", description: "Niets te exporteren." });
-      return;
-    }
-
-    let exportData: any;
-    let filename: string;
-
-    if (isMaster) {
-      exportData = {
-        version: "2.2",
-        exportedAt: new Date().toISOString(),
-        artworks: artworks,
-        settings: siteSettings || {}
-      };
-      filename = `thijs-sterk-master-backup-${new Date().toISOString().split('T')[0]}.json`;
-    } else {
-      exportData = artworks;
-      filename = `thijs-sterk-kaal-depot-${new Date().toISOString().split('T')[0]}.json`;
-    }
-
-    const dataStr = JSON.stringify(exportData, null, 2);
-    const blob = new Blob([dataStr], { type: 'application/json' });
+  const handleExportBackup = () => {
+    const exportData = {
+      version: "2.3",
+      exportedAt: new Date().toISOString(),
+      artworks: artworks,
+      settings: siteSettings || {}
+    };
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
+    link.download = `thijs-sterk-master-backup-${new Date().toISOString().split('T')[0]}.json`;
     link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
   };
 
   return (
@@ -428,21 +270,6 @@ export default function AdminPage() {
       <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={(e) => handleBatchProcess(e.target.files)} accept="image/*" multiple />
       <input type="file" ref={uploadDirInputRef} style={{ display: 'none' }} onChange={(e) => handleBatchProcess(e.target.files)} {...({ webkitdirectory: "", directory: "" } as any)} />
       
-      {(isUploading || uploadStatus) && (
-        <div className="fixed top-0 left-0 right-0 z-[100] bg-accent text-accent-foreground px-8 py-4 shadow-2xl animate-in slide-in-from-top duration-500 border-b border-black/10">
-          <div className="max-w-7xl mx-auto flex flex-col gap-3">
-            <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-[0.2em]">
-              <div className="flex items-center gap-3">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>{uploadStatus}</span>
-              </div>
-              {uploadProgress > 0 && <span className="tabular-nums">{Math.round(uploadProgress)}%</span>}
-            </div>
-            {uploadProgress > 0 && <Progress value={uploadProgress} className="h-2 bg-white/20" />}
-          </div>
-        </div>
-      )}
-
       <header className="h-16 border-b border-border bg-background/95 backdrop-blur-sm sticky top-14 z-40 px-8 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <img src="/logo.png" className="h-10 w-auto" alt="Logo" />
@@ -458,296 +285,74 @@ export default function AdminPage() {
 
       <main className="flex-1 p-8 max-w-7xl mx-auto w-full">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <TabsList className="bg-muted/50 p-1 rounded-full w-fit flex flex-wrap justify-center h-auto">
-              <TabsTrigger value="archive" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">
-                Archief (Depot) <span className="ml-2 opacity-40">[{artworks.length}]</span>
-              </TabsTrigger>
-              <TabsTrigger value="upload" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Importeer Map</TabsTrigger>
-              <TabsTrigger value="texts" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Pagina Teksten</TabsTrigger>
-              <TabsTrigger value="bulk" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Master Backup</TabsTrigger>
-            </TabsList>
-            <div className="relative w-full md:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input placeholder="Zoek op titel..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10 rounded-full h-10 text-xs bg-muted/30 border-none" />
-            </div>
-          </div>
+          <TabsList className="bg-muted/50 p-1 rounded-full w-fit mx-auto flex flex-wrap justify-center h-auto">
+            <TabsTrigger value="archive" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Archief [{artworks.length}]</TabsTrigger>
+            <TabsTrigger value="upload" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Upload</TabsTrigger>
+            <TabsTrigger value="texts" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Pagina Teksten</TabsTrigger>
+            <TabsTrigger value="bulk" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Master Backup</TabsTrigger>
+          </TabsList>
 
           <TabsContent value="archive" className="space-y-6">
-            <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-black/5">
-              <Button variant={filterSeries === null ? "default" : "outline"} size="sm" onClick={() => setFilterSeries(null)} className="rounded-full text-[9px] uppercase tracking-widest font-bold h-7">Alles ({artworks.length})</Button>
-              {seriesWithCounts.map(s => {
-                const isHidden = hiddenSeries.includes(s.name);
-                return (
-                  <div key={s.name} className="flex items-center gap-1 group">
-                    <Button variant={filterSeries === s.name ? "default" : "outline"} size="sm" onClick={() => setFilterSeries(s.name)} className={cn("rounded-l-full rounded-r-none text-[9px] uppercase tracking-widest font-bold h-7 whitespace-nowrap pr-2", isHidden && "opacity-40 grayscale")}>
-                      {s.name} ({s.count})
-                    </Button>
-                    <button onClick={() => toggleSeriesVisibility(s.name)} title="Zaal verbergen/tonen op website" className={cn("h-7 px-2 rounded-r-full border-2 border-l-0 transition-colors flex items-center justify-center bg-background", isHidden ? "text-red-500 border-red-200 hover:bg-red-50" : "text-green-600 border-black hover:bg-black/5")}>
-                      {isHidden ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                    </button>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              {filteredArtworks.map((art: any) => (
+                <Card key={art.id} className="overflow-hidden cursor-pointer" onClick={() => setEditingId(art.id)}>
+                  <div className="aspect-square bg-muted/20">
+                    <img src={art.imageUrl} className="w-full h-full object-cover" alt={art.title} style={{ filter: `brightness(${art.brightness || 1})` }} />
                   </div>
-                );
-              })}
+                  <CardContent className="p-2 text-center">
+                    <h4 className="text-[9px] font-black uppercase truncate">{art.displayTitle || art.title}</h4>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
-
-            {selectedIds.length > 0 && (
-              <div className="bg-accent/10 border border-accent/20 p-4 rounded-2xl flex flex-wrap items-center justify-between gap-4 animate-in slide-in-from-left duration-300">
-                <div className="flex items-center gap-4">
-                  <span className="text-[11px] font-black uppercase tracking-widest text-accent">{selectedIds.length} geselecteerd</span>
-                  <Input placeholder="Nieuwe zaalnaam..." value={bulkMoveSeries} onChange={(e) => setBulkMoveSeries(e.target.value)} className="h-8 text-[11px] font-black uppercase w-48 bg-background border-accent/20" />
-                  <Button onClick={handleBulkMove} disabled={isSaving || !bulkMoveSeries} size="sm" className="h-8 rounded-full text-[11px] font-black uppercase tracking-widest bg-accent hover:bg-accent/90">
-                    {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : "Nu Verplaatsen"}
-                  </Button>
-                </div>
-                <Button variant="outline" size="sm" onClick={() => { if(confirm('Wilt u deze selectie definitief verwijderen?')) { const b = writeBatch(firestore!); selectedIds.forEach(id => b.delete(doc(firestore!, 'artworks', id))); b.commit(); setSelectedIds([]); toast({title: "Verwijderd"}); } }} className="h-8 rounded-full text-[11px] font-black uppercase tracking-widest text-red-500 hover:bg-red-50">Verwijder Selectie</Button>
-              </div>
-            )}
-
-            {isCollectionLoading && artworks.length === 0 ? <div className="flex justify-center py-20"><Loader2 className="animate-spin opacity-20" /></div> : (
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {filteredArtworks.map((art: any) => (
-                  <Card key={art.id} className={cn("overflow-hidden group cursor-pointer transition-all relative border-2", selectedIds.includes(art.id) ? "border-accent bg-accent/5 ring-1 ring-accent" : "border-transparent")} onClick={() => setEditingId(art.id)}>
-                    <button onClick={(e) => toggleSelect(e, art.id)} className="absolute top-2 left-2 z-10 w-6 h-6 rounded-full bg-white/80 border-2 border-accent flex items-center justify-center">
-                      {selectedIds.includes(art.id) ? <CheckSquare className="w-4 h-4 text-accent fill-accent" /> : <Square className="w-4 h-4 text-accent/30" />}
-                    </button>
-                    <div className="relative aspect-square bg-muted/20">
-                      <img src={art.imageUrl} className="w-full h-full object-cover" style={{ clipPath: `inset(${art.cropTop || 0}% ${art.cropRight || 0}% ${art.cropBottom || 0}% ${art.cropLeft || 0}%)`, filter: `brightness(${art.brightness || 1})` }} alt={art.title} />
-                    </div>
-                    <CardContent className="p-2 text-center">
-                      <h4 className="text-[9px] font-black text-black uppercase tracking-widest truncate">{art.displayTitle || art.title}</h4>
-                      <p className="text-[7px] uppercase tracking-widest opacity-40 mt-1 truncate">{art.series}</p>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="upload">
-             <Card className="p-16 rounded-3xl border-dashed border-2 border-accent/20 bg-accent/5 flex flex-col items-center justify-center space-y-8 max-w-2xl mx-auto text-center">
-                <CloudUpload className="w-12 h-12 text-accent" />
-                <div className="space-y-2">
-                  <h3 className="text-[12px] font-black uppercase tracking-widest">Bulk Import naar Depot</h3>
-                  <p className="text-[10px] uppercase opacity-40 leading-relaxed">Alle afbeeldingen in de geselecteerde map worden direct naar het centrale Depot geüpload onder "Nieuwe Uploads".</p>
-                </div>
-                <div className="grid grid-cols-2 gap-4 w-full">
-                  <Button onClick={() => fileInputRef.current?.click()} disabled={isUploading} className="h-24 rounded-2xl font-black uppercase tracking-widest text-[11px]"><Plus className="w-4 h-4 mr-2" />Bestanden</Button>
-                  <Button onClick={() => uploadDirInputRef.current?.click()} disabled={isUploading} variant="secondary" className="h-24 rounded-2xl font-black uppercase tracking-widest text-[11px]"><FolderOpen className="w-4 h-4 mr-2" />Volledige Map</Button>
-                </div>
-              </Card>
           </TabsContent>
 
           <TabsContent value="texts">
             <Card className="p-8 rounded-3xl max-w-4xl mx-auto space-y-8">
-              <div className="flex items-center gap-3 border-b border-black/5 pb-4">
-                <Type className="w-5 h-5 text-accent" />
-                <h2 className="text-[12px] font-black uppercase tracking-[0.2em]">Pagina Teksten</h2>
-              </div>
-              
               <div className="grid gap-8">
                  <div className="space-y-4">
-                    <Label className="text-[11px] font-black uppercase text-accent border-b border-accent/20 pb-1 block">Homepagina - Thijs Sterk</Label>
-                    <Input defaultValue={siteSettings?.homeBioImageUrl || ''} onBlur={(e) => updateSettingsField('homeBioImageUrl', e.target.value)} placeholder="Hoofdafbeelding URL..." className="bg-black/5 border-none h-10 text-xs" />
-                    <Textarea defaultValue={siteSettings?.homeBio || ''} onBlur={(e) => updateSettingsField('homeBio', e.target.value)} className="min-h-[120px] bg-black/5 border-none rounded-xl p-4 text-sm" placeholder="Biografie..." />
+                    <Label className="text-[11px] font-black uppercase text-accent border-b border-accent/20 pb-1 block">Leo Duppen (Bio)</Label>
+                    <Textarea defaultValue={siteSettings?.leoDuppenBio || ''} onBlur={(e) => updateSettingsField('leoDuppenBio', e.target.value)} className="min-h-[120px] bg-black/5 border-none rounded-xl p-4 text-sm" placeholder="Biografie Leo Duppen..." />
                  </div>
-
                  <div className="grid md:grid-cols-2 gap-8">
                     <div className="space-y-4">
                         <Label className="text-[10px] font-black uppercase opacity-60">Hanneke Sterk (Bio)</Label>
-                        <Textarea defaultValue={siteSettings?.hannekeBio || ''} onBlur={(e) => updateSettingsField('hannekeBio', e.target.value)} className="min-h-[100px] bg-black/5 border-none text-xs" placeholder="Hanneke bio..." />
+                        <Textarea defaultValue={siteSettings?.hannekeBio || ''} onBlur={(e) => updateSettingsField('hannekeBio', e.target.value)} className="min-h-[100px] bg-black/5 border-none text-xs" />
                     </div>
                     <div className="space-y-4">
                         <Label className="text-[10px] font-black uppercase opacity-60">Beatrijs Sterk (Bio)</Label>
-                        <Textarea defaultValue={siteSettings?.beatrijsBio || ''} onBlur={(e) => updateSettingsField('beatrijsBio', e.target.value)} className="min-h-[100px] bg-black/5 border-none text-xs" placeholder="Beatrijs bio..." />
+                        <Textarea defaultValue={siteSettings?.beatrijsBio || ''} onBlur={(e) => updateSettingsField('beatrijsBio', e.target.value)} className="min-h-[100px] bg-black/5 border-none text-xs" />
                     </div>
                  </div>
-
                  <div className="space-y-4">
                     <Label className="text-[10px] font-black uppercase opacity-60">Peter Bes (Bio)</Label>
-                    <Textarea defaultValue={siteSettings?.peterBesBio || ''} onBlur={(e) => updateSettingsField('peterBesBio', e.target.value)} className="min-h-[100px] bg-black/5 border-none text-xs" placeholder="Peter Bes bio..." />
+                    <Textarea defaultValue={siteSettings?.peterBesBio || ''} onBlur={(e) => updateSettingsField('peterBesBio', e.target.value)} className="min-h-[100px] bg-black/5 border-none text-xs" />
                  </div>
               </div>
             </Card>
           </TabsContent>
 
           <TabsContent value="bulk">
-            <Card className="p-8 rounded-3xl max-w-4xl mx-auto space-y-6">
-              <div className="flex flex-col items-center justify-center p-12 bg-accent/5 rounded-2xl border-2 border-dashed border-accent/20 text-center space-y-6">
-                <ShieldCheck className="w-16 h-16 text-accent" />
-                <div className="space-y-2">
-                  <h2 className="text-[14px] font-black uppercase tracking-widest">Master Backup & Herstel</h2>
-                  <p className="text-[10px] uppercase opacity-40 max-w-md mx-auto leading-relaxed">
-                    Een Master Backup bevat alles (zalen, teksten, instellingen).
-                  </p>
-                </div>
-                
-                <div className="flex flex-wrap gap-4 justify-center">
-                  <Button onClick={() => handleExportBackup(true)} className="h-14 px-8 rounded-xl font-black uppercase tracking-widest text-[11px] bg-accent hover:bg-accent/90">
-                    <Download className="w-4 h-4 mr-2" /> Download Master Backup
-                  </Button>
-                </div>
-
-                <div className="pt-8 border-t border-black/5 w-full">
-                  <Button variant="secondary" onClick={() => jsonFileInputRef.current?.click()} className="h-12 px-8 rounded-xl font-black uppercase tracking-widest text-[10px] w-full max-w-xs">
-                    <Upload className="w-4 h-4 mr-2" /> Kies Backup Bestand
-                  </Button>
-                </div>
-              </div>
-              
-              <input type="file" ref={jsonFileInputRef} style={{ display: 'none' }} accept=".json" onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = (ev) => setBulkJson(ev.target?.result as string);
-                reader.readAsText(file);
-              }} />
-              
-              {bulkJson && (
-                <div className="space-y-4 animate-in fade-in slide-in-from-top-4">
-                  <Textarea value={bulkJson} readOnly className="min-h-[200px] font-mono text-[10px] bg-black/5 border-none rounded-xl" />
-                  <Button onClick={handleImportJson} disabled={isSaving} className="h-14 rounded-xl font-black uppercase tracking-widest w-full">
-                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ShieldCheck className="w-4 h-4 mr-2" />}
-                    Start Herstel naar Cloud
-                  </Button>
-                </div>
-              )}
+            <Card className="p-12 text-center">
+              <Button onClick={handleExportBackup} size="lg"><Download className="mr-2" /> Download Master Backup</Button>
             </Card>
           </TabsContent>
         </Tabs>
       </main>
 
       <Dialog open={!!editingId} onOpenChange={() => setEditingId(null)}>
-        <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background border-none rounded-none outline-none">
-          <DialogTitle className="sr-only">Master Editor</DialogTitle>
-          <div className="relative h-[65vh] w-full flex items-center justify-center bg-[#f3f3f3] group">
-            {editingArtwork && (
-              <img 
-                src={editingArtwork.imageUrl} 
-                className="max-w-[90%] max-h-[90%] object-contain shadow-2xl" 
-                style={{ 
-                  clipPath: `inset(${localCrops.cropTop ?? 0}% ${localCrops.cropRight ?? 0}% ${localCrops.cropBottom ?? 0}% ${localCrops.cropLeft ?? 0}%)`, 
-                  filter: `brightness(${localCrops.brightness ?? 1})` 
-                }} 
-                alt={editingArtwork.title}
-              />
-            )}
-            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-12 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-              <button onClick={() => navigateEditing('prev')} className="p-4 rounded-full bg-black/5 pointer-events-auto hover:bg-black/10"><ChevronLeft className="w-8 h-8 text-black" /></button>
-              <button onClick={() => navigateEditing('next')} className="p-4 rounded-full bg-black/5 pointer-events-auto hover:bg-black/10"><ChevronRight className="w-8 h-8 text-black" /></button>
-            </div>
-            <div className="absolute top-4 right-4 flex gap-3 items-center">
-              <Button variant="ghost" size="icon" onClick={() => { if (!editingId || !firestore) return; if(confirm('Verwijderen?')) { deleteDoc(doc(firestore, 'artworks', editingId)); setEditingId(null); toast({title: "Verwijderd"}); } }} className="h-4 w-4 rounded-full text-red-600"><Trash2 className="w-3 h-3" /></Button>
-              <DialogClose className="h-5 w-5 flex items-center justify-center bg-black/10 rounded-full hover:bg-black/20"><X className="w-2.5 h-2.5 text-black" /></DialogClose>
-            </div>
+        <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background">
+          <DialogTitle className="sr-only">Editor</DialogTitle>
+          <div className="flex-1 bg-black/5 flex items-center justify-center p-4">
+             {editingArtwork && <img src={editingArtwork.imageUrl} className="max-h-full object-contain shadow-2xl" />}
           </div>
-
-          <div className="h-[35vh] w-full bg-background border-t border-black/10 px-8 py-4 overflow-y-auto">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-12 w-full h-full">
-              <div className="flex flex-col gap-4 border-r border-black/5 pr-8">
-                <div className="space-y-1">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-accent flex items-center gap-2"><Monitor className="w-3 h-3" /> Schermtitel</Label>
-                  <Input key={`${editingId}-displayTitle`} defaultValue={editingArtwork?.displayTitle || ''} onBlur={(e) => editingId && updateArtworkField(editingId, 'displayTitle', e.target.value)} placeholder="Titel voor publiek..." className="h-8 text-[11px] font-black uppercase border-none bg-accent/5 rounded-sm p-2" />
+          <div className="h-[35vh] border-t p-8 bg-background overflow-y-auto">
+             <div className="grid md:grid-cols-3 gap-8">
+                <div className="space-y-4">
+                  <Label className="text-[10px] font-black uppercase">Schermtitel</Label>
+                  <Input defaultValue={editingArtwork?.displayTitle || ''} onBlur={(e) => updateArtworkField(editingId!, 'displayTitle', e.target.value)} />
                 </div>
-                <div className="space-y-1">
-                  <Label className="text-[10px] font-black uppercase tracking-widest opacity-40">Zaal (Serie)</Label>
-                  <Input key={`${editingId}-series`} defaultValue={editingArtwork?.series || ''} onBlur={(e) => editingId && updateArtworkField(editingId, 'series', e.target.value)} className="h-8 text-[11px] font-black uppercase border-none bg-accent/5 rounded-sm p-2" />
-                </div>
-                <div className="flex items-center justify-between pt-2">
-                  <div className="flex items-center gap-2">
-                    <Sun className="w-3 h-3 text-black/40" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Licht {(localCrops.brightness ?? 1).toFixed(2)}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <RepeatButton onStep={() => handleLocalStep('brightness', -0.01, 0, 2)} className="h-6 w-6"><Minus className="h-3 w-3" /></RepeatButton>
-                    <RepeatButton onStep={() => handleLocalStep('brightness', 0.01, 0, 2)} className="h-6 w-6"><Plus className="h-3 w-3" /></RepeatButton>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-4 border-r border-black/5 pr-8">
-                <Label className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                  <TagIcon className="w-3 h-3" /> Tags & Kenmerken
-                </Label>
-                
-                <div className="flex flex-wrap gap-1.5 mb-2 max-h-20 overflow-y-auto">
-                  {(editingArtwork?.tags || []).map((tag: string) => (
-                    <span key={tag} className="inline-flex items-center gap-1 px-2 py-0.5 bg-black text-white text-[9px] font-black uppercase rounded-sm group">
-                      {tag}
-                      <button onClick={() => {
-                        const newTags = (editingArtwork?.tags || []).filter((t: string) => t !== tag);
-                        updateArtworkField(editingId!, 'tags', newTags);
-                      }} className="hover:text-red-400 transition-colors">
-                        <X className="w-2.5 h-2.5" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-
-                <div className="space-y-4 overflow-y-auto pr-2">
-                  {Object.entries(TAG_CATEGORIES).map(([category, tags]) => (
-                    <div key={category} className="space-y-1">
-                      <span className="text-[8px] font-black uppercase opacity-40 border-b border-black/5 block mb-1">{category}</span>
-                      <div className="grid grid-cols-3 gap-1">
-                        {tags.map(tag => {
-                          const isActive = (editingArtwork?.tags || []).includes(tag);
-                          return (
-                            <button 
-                              key={tag} 
-                              onClick={() => {
-                                const currentTags = editingArtwork?.tags || [];
-                                const newTags = isActive ? currentTags.filter((t: string) => t !== tag) : [...currentTags, tag];
-                                updateArtworkField(editingId!, 'tags', newTags);
-                              }} 
-                              className={cn(
-                                "px-1 py-1 rounded-sm text-[8px] font-black uppercase tracking-tight border transition-all text-center", 
-                                isActive ? "bg-black text-white border-black" : "bg-white text-black border-black/10 hover:border-black/30"
-                              )}
-                            >
-                              {tag}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                  
-                  <div className="pt-2">
-                    <form onSubmit={handleAddCustomTag} className="flex gap-1">
-                      <Input 
-                        value={newTagInput} 
-                        onChange={(e) => setNewTagInput(e.target.value)}
-                        placeholder="Nieuwe tag..." 
-                        className="h-7 text-[8px] uppercase font-black"
-                      />
-                      <Button type="submit" size="sm" className="h-7 px-2"><Plus className="w-3 h-3" /></Button>
-                    </form>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-6">
-                <Label className="text-[10px] font-black uppercase tracking-widest">Uitsnede (Cropping)</Label>
-                <div className="grid grid-cols-2 gap-x-8 gap-y-4">
-                  {['Top', 'Bottom', 'Left', 'Right'].map(side => {
-                    const fieldName = `crop${side}`;
-                    const currentVal = (localCrops as any)[fieldName] ?? 0;
-                    return (
-                      <div key={side} className="flex flex-col gap-2">
-                        <div className="flex justify-between items-center">
-                          <span className="text-[9px] font-black uppercase">{side}</span>
-                          <span className="text-[9px] font-mono opacity-50">{currentVal.toFixed(1)}%</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <RepeatButton onStep={() => handleLocalStep(fieldName, -0.1)} className="h-6 w-6"><Minus className="h-3 w-3" /></RepeatButton>
-                          <RepeatButton onStep={() => handleLocalStep(fieldName, 0.1)} className="h-6 w-6"><Plus className="h-3 w-3" /></RepeatButton>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
+             </div>
           </div>
         </DialogContent>
       </Dialog>
