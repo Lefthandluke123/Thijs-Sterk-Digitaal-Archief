@@ -38,7 +38,8 @@ import {
   Eye,
   EyeOff,
   Tag as TagIcon,
-  Monitor
+  Monitor,
+  PenTool
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -48,54 +49,6 @@ import { Dialog, DialogContent, DialogClose, DialogTitle } from '@/components/ui
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
-
-const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-function RepeatButton({ onStep, children, className, disabled }: { onStep: () => void, children: React.ReactNode, className?: string, disabled?: boolean }) {
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const onStepRef = useRef(onStep);
-
-  useEffect(() => {
-    onStepRef.current = onStep;
-  }, [onStep]);
-
-  const stop = useCallback(() => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    if (intervalRef.current) clearInterval(intervalRef.current);
-  }, []);
-
-  const start = useCallback((e: React.MouseEvent | React.TouchEvent) => {
-    if (disabled) return;
-    e.preventDefault();
-    onStepRef.current(); 
-    timerRef.current = setTimeout(() => {
-      intervalRef.current = setInterval(() => {
-        onStepRef.current();
-      }, 50);
-    }, 400);
-  }, [disabled]);
-
-  useEffect(() => {
-    return () => stop();
-  }, [stop]);
-
-  return (
-    <Button
-      variant="outline"
-      size="icon"
-      className={cn("select-none transition-all active:scale-95 border-2 border-black", className)}
-      disabled={disabled}
-      onMouseDown={start}
-      onMouseUp={stop}
-      onMouseLeave={stop}
-      onTouchStart={start}
-      onTouchEnd={stop}
-    >
-      {children}
-    </Button>
-  );
-}
 
 const TAG_CATEGORIES = {
   "Periode": ["Vroeg werk", "45-50", "50-60", "70-82"],
@@ -107,32 +60,23 @@ const TAG_CATEGORIES = {
 export default function AdminPage() {
   const firestore = useFirestore();
   const storage = useStorage();
-  const [bulkJson, setBulkJson] = useState('');
   const [activeTab, setActiveTab] = useState('archive');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterSeries, setFilterSeries] = useState<string | null>(null);
-  const [newTagInput, setNewTagInput] = useState('');
   
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const uploadDirInputRef = useRef<HTMLInputElement>(null);
-  const jsonFileInputRef = useRef<HTMLInputElement>(null);
   
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
-
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [bulkMoveSeries, setBulkMoveSeries] = useState('');
-  const [localCrops, setLocalCrops] = useState<Record<string, number>>({});
 
   const artworksQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'artworks'), orderBy('createdAt', 'desc'));
   }, [firestore]);
 
-  const { data: rawArtworks, loading: isCollectionLoading } = useCollection(artworksQuery);
+  const { data: rawArtworks } = useCollection(artworksQuery);
 
   const artworks = useMemo(() => {
     if (!rawArtworks) return [];
@@ -151,19 +95,6 @@ export default function AdminPage() {
   }, [firestore]);
   const { data: siteSettings } = useDoc(siteSettingsRef);
 
-  const hiddenSeries = useMemo(() => siteSettings?.hiddenSeries || [], [siteSettings]);
-
-  const seriesWithCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    artworks.forEach(art => {
-      const s = art.series || "Geen zaal";
-      counts[s] = (counts[s] || 0) + 1;
-    });
-    return Object.entries(counts)
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => a.name.localeCompare(b.name));
-  }, [artworks]);
-
   const filteredArtworks = useMemo(() => {
     return artworks.filter(art => {
       const displayTitle = art.displayTitle || art.title || "";
@@ -177,28 +108,6 @@ export default function AdminPage() {
   const editingArtwork = useMemo(() => {
     return artworks.find(art => art.id === editingId) || null;
   }, [artworks, editingId]);
-
-  useEffect(() => {
-    if (editingArtwork) {
-      setLocalCrops({
-        cropTop: editingArtwork.cropTop || 0,
-        cropBottom: editingArtwork.cropBottom || 0,
-        cropLeft: editingArtwork.cropLeft || 0,
-        cropRight: editingArtwork.cropRight || 0,
-        brightness: editingArtwork.brightness || 1,
-      });
-      setNewTagInput('');
-    }
-  }, [editingId, editingArtwork?.id]);
-
-  const navigateEditing = useCallback((direction: 'next' | 'prev') => {
-    if (!editingId || !filteredArtworks.length) return;
-    const currentIndex = filteredArtworks.findIndex(art => art.id === editingId);
-    let nextIndex = direction === 'next' 
-      ? (currentIndex + 1) % filteredArtworks.length 
-      : (currentIndex - 1 + filteredArtworks.length) % filteredArtworks.length;
-    setEditingId(filteredArtworks[nextIndex].id);
-  }, [editingId, filteredArtworks]);
 
   const updateArtworkField = (id: string, field: string, value: any) => {
     if (!firestore || !id) return;
@@ -252,7 +161,7 @@ export default function AdminPage() {
 
   const handleExportBackup = () => {
     const exportData = {
-      version: "2.3",
+      version: "2.4",
       exportedAt: new Date().toISOString(),
       artworks: artworks,
       settings: siteSettings || {}
@@ -268,7 +177,6 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-background flex flex-col pt-14">
       <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={(e) => handleBatchProcess(e.target.files)} accept="image/*" multiple />
-      <input type="file" ref={uploadDirInputRef} style={{ display: 'none' }} onChange={(e) => handleBatchProcess(e.target.files)} {...({ webkitdirectory: "", directory: "" } as any)} />
       
       <header className="h-16 border-b border-border bg-background/95 backdrop-blur-sm sticky top-14 z-40 px-8 flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -293,48 +201,123 @@ export default function AdminPage() {
           </TabsList>
 
           <TabsContent value="archive" className="space-y-6">
+            <div className="flex items-center gap-4 mb-8">
+               <div className="relative flex-1">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-30" />
+                  <Input 
+                    placeholder="Zoek in collectie..." 
+                    className="pl-12 h-12 bg-white/50 border-none rounded-full"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+               </div>
+            </div>
+
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
               {filteredArtworks.map((art: any) => (
-                <Card key={art.id} className="overflow-hidden cursor-pointer" onClick={() => setEditingId(art.id)}>
+                <Card key={art.id} className="overflow-hidden cursor-pointer hover:ring-2 hover:ring-accent transition-all" onClick={() => setEditingId(art.id)}>
                   <div className="aspect-square bg-muted/20">
                     <img src={art.imageUrl} className="w-full h-full object-cover" alt={art.title} style={{ filter: `brightness(${art.brightness || 1})` }} />
                   </div>
                   <CardContent className="p-2 text-center">
                     <h4 className="text-[9px] font-black uppercase truncate">{art.displayTitle || art.title}</h4>
+                    <p className="text-[7px] opacity-40 uppercase font-bold mt-1">{art.series}</p>
                   </CardContent>
                 </Card>
               ))}
             </div>
           </TabsContent>
 
+          <TabsContent value="upload">
+             <Card className="p-24 border-dashed border-4 border-muted flex flex-col items-center justify-center text-center space-y-6">
+                <CloudUpload className="w-16 h-16 opacity-20" />
+                <div className="space-y-2">
+                   <h2 className="text-xl font-headline font-light">Nieuwe werken toevoegen</h2>
+                   <p className="text-sm text-muted-foreground max-w-md mx-auto">Upload hier meerdere foto's tegelijk. Ze verschijnen direct in de categorie 'Nieuwe Uploads'.</p>
+                </div>
+                <Button size="lg" onClick={() => fileInputRef.current?.click()} disabled={isUploading} className="rounded-full px-12">
+                   {isUploading ? <Loader2 className="animate-spin mr-2" /> : <Plus className="mr-2" />} 
+                   Selecteer Foto's
+                </Button>
+                {isUploading && (
+                  <div className="w-full max-w-md space-y-4">
+                     <Progress value={uploadProgress} />
+                     <p className="text-[10px] uppercase font-black tracking-widest text-accent">{uploadStatus}</p>
+                  </div>
+                )}
+             </Card>
+          </TabsContent>
+
           <TabsContent value="texts">
-            <Card className="p-8 rounded-3xl max-w-4xl mx-auto space-y-8">
-              <div className="grid gap-8">
+            <Card className="p-8 md:p-12 rounded-3xl max-w-4xl mx-auto space-y-12">
+              <div className="space-y-2 text-center border-b border-border/20 pb-8">
+                  <PenTool className="w-8 h-8 mx-auto text-accent mb-4" />
+                  <h2 className="text-2xl font-headline font-light">Website Teksten</h2>
+                  <p className="text-[10px] uppercase font-black tracking-[0.2em] opacity-40">Beheer hier alle biografieën op de site</p>
+              </div>
+
+              <div className="grid gap-12">
+                 {/* Thijs Sterk Hoofd Bio */}
                  <div className="space-y-4">
-                    <Label className="text-[11px] font-black uppercase text-accent border-b border-accent/20 pb-1 block">Leo Duppen (Bio)</Label>
-                    <Textarea defaultValue={siteSettings?.leoDuppenBio || ''} onBlur={(e) => updateSettingsField('leoDuppenBio', e.target.value)} className="min-h-[120px] bg-black/5 border-none rounded-xl p-4 text-sm" placeholder="Biografie Leo Duppen..." />
+                    <Label className="text-[11px] font-black uppercase text-accent border-l-4 border-accent pl-4 block">Hoofdbiografie (Thijs Sterk - Homepagina)</Label>
+                    <Textarea 
+                      defaultValue={siteSettings?.homeBio || ''} 
+                      onBlur={(e) => updateSettingsField('homeBio', e.target.value)} 
+                      className="min-h-[250px] bg-black/5 border-none rounded-2xl p-6 text-base leading-relaxed font-light" 
+                      placeholder="De hoofdtekst over Thijs Sterk die op de homepagina verschijnt..." 
+                    />
                  </div>
-                 <div className="grid md:grid-cols-2 gap-8">
+
+                 {/* Leo Duppen Bio */}
+                 <div className="space-y-4 pt-8 border-t border-border/10">
+                    <Label className="text-[11px] font-black uppercase opacity-60 block">Leo Duppen (Kunsthistoricus)</Label>
+                    <Textarea 
+                      defaultValue={siteSettings?.leoDuppenBio || ''} 
+                      onBlur={(e) => updateSettingsField('leoDuppenBio', e.target.value)} 
+                      className="min-h-[150px] bg-black/5 border-none rounded-xl p-4 text-sm" 
+                      placeholder="Biografie Leo Duppen..." 
+                    />
+                 </div>
+
+                 <div className="grid md:grid-cols-2 gap-12 pt-8 border-t border-border/10">
                     <div className="space-y-4">
-                        <Label className="text-[10px] font-black uppercase opacity-60">Hanneke Sterk (Bio)</Label>
-                        <Textarea defaultValue={siteSettings?.hannekeBio || ''} onBlur={(e) => updateSettingsField('hannekeBio', e.target.value)} className="min-h-[100px] bg-black/5 border-none text-xs" />
+                        <Label className="text-[10px] font-black uppercase opacity-60">Hanneke Sterk (Dochter)</Label>
+                        <Textarea 
+                          defaultValue={siteSettings?.hannekeBio || ''} 
+                          onBlur={(e) => updateSettingsField('hannekeBio', e.target.value)} 
+                          className="min-h-[120px] bg-black/5 border-none text-xs rounded-xl p-4" 
+                        />
                     </div>
                     <div className="space-y-4">
-                        <Label className="text-[10px] font-black uppercase opacity-60">Beatrijs Sterk (Bio)</Label>
-                        <Textarea defaultValue={siteSettings?.beatrijsBio || ''} onBlur={(e) => updateSettingsField('beatrijsBio', e.target.value)} className="min-h-[100px] bg-black/5 border-none text-xs" />
+                        <Label className="text-[10px] font-black uppercase opacity-60">Beatrijs Sterk (Dochter)</Label>
+                        <Textarea 
+                          defaultValue={siteSettings?.beatrijsBio || ''} 
+                          onBlur={(e) => updateSettingsField('beatrijsBio', e.target.value)} 
+                          className="min-h-[120px] bg-black/5 border-none text-xs rounded-xl p-4" 
+                        />
                     </div>
                  </div>
-                 <div className="space-y-4">
-                    <Label className="text-[10px] font-black uppercase opacity-60">Peter Bes (Bio)</Label>
-                    <Textarea defaultValue={siteSettings?.peterBesBio || ''} onBlur={(e) => updateSettingsField('peterBesBio', e.target.value)} className="min-h-[100px] bg-black/5 border-none text-xs" />
+
+                 <div className="space-y-4 pt-8 border-t border-border/10">
+                    <Label className="text-[10px] font-black uppercase opacity-60">Peter Bes (Leerling)</Label>
+                    <Textarea 
+                      defaultValue={siteSettings?.peterBesBio || ''} 
+                      onBlur={(e) => updateSettingsField('peterBesBio', e.target.value)} 
+                      className="min-h-[120px] bg-black/5 border-none text-xs rounded-xl p-4" 
+                    />
                  </div>
               </div>
             </Card>
           </TabsContent>
 
           <TabsContent value="bulk">
-            <Card className="p-12 text-center">
-              <Button onClick={handleExportBackup} size="lg"><Download className="mr-2" /> Download Master Backup</Button>
+            <Card className="p-12 text-center space-y-8">
+              <div className="space-y-2">
+                 <FileJson className="w-12 h-12 mx-auto opacity-20" />
+                 <h2 className="text-xl font-headline font-light">Master Backup</h2>
+                 <p className="text-sm text-muted-foreground">Download een volledig overzicht van alle schermtitels, tags en uitsnedes als veiligheidsnet.</p>
+              </div>
+              <Button onClick={handleExportBackup} size="lg" className="rounded-full px-12"><Download className="mr-2" /> Download Master Backup</Button>
             </Card>
           </TabsContent>
         </Tabs>
@@ -344,13 +327,67 @@ export default function AdminPage() {
         <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background">
           <DialogTitle className="sr-only">Editor</DialogTitle>
           <div className="flex-1 bg-black/5 flex items-center justify-center p-4">
-             {editingArtwork && <img src={editingArtwork.imageUrl} className="max-h-full object-contain shadow-2xl" />}
+             {editingArtwork && (
+               <div className="relative max-h-full">
+                  <img src={editingArtwork.imageUrl} className="max-h-[60vh] object-contain shadow-2xl" />
+                  <div className="absolute top-4 right-4 flex gap-2">
+                     <Button variant="destructive" size="icon" onClick={() => { if(confirm('Zeker weten?')) { deleteDoc(doc(firestore!, 'artworks', editingId!)); setEditingId(null); }}} className="rounded-full shadow-xl"><Trash2 className="w-4 h-4" /></Button>
+                  </div>
+               </div>
+             )}
           </div>
-          <div className="h-[35vh] border-t p-8 bg-background overflow-y-auto">
-             <div className="grid md:grid-cols-3 gap-8">
+          <div className="h-[40vh] border-t p-8 bg-background overflow-y-auto">
+             <div className="grid md:grid-cols-3 gap-12 max-w-6xl mx-auto">
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-black uppercase opacity-40">Schermtitel</Label>
+                    <Input defaultValue={editingArtwork?.displayTitle || ''} onBlur={(e) => updateArtworkField(editingId!, 'displayTitle', e.target.value)} className="font-bold" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-black uppercase opacity-40">Zaal / Serie</Label>
+                    <Input defaultValue={editingArtwork?.series || ''} onBlur={(e) => updateArtworkField(editingId!, 'series', e.target.value)} />
+                  </div>
+                </div>
+
                 <div className="space-y-4">
-                  <Label className="text-[10px] font-black uppercase">Schermtitel</Label>
-                  <Input defaultValue={editingArtwork?.displayTitle || ''} onBlur={(e) => updateArtworkField(editingId!, 'displayTitle', e.target.value)} />
+                   <Label className="text-[10px] font-black uppercase opacity-40">Tags & Categorieën</Label>
+                   <div className="flex flex-wrap gap-1">
+                      {Object.values(TAG_CATEGORIES).flat().map(tag => {
+                        const hasTag = editingArtwork?.tags?.includes(tag);
+                        return (
+                          <button
+                            key={tag}
+                            onClick={() => {
+                              const current = editingArtwork?.tags || [];
+                              const next = hasTag ? current.filter((t: string) => t !== tag) : [...current, tag];
+                              updateArtworkField(editingId!, 'tags', next);
+                            }}
+                            className={cn(
+                              "px-2 py-1 rounded text-[8px] font-black uppercase tracking-widest transition-all border",
+                              hasTag ? "bg-accent text-accent-foreground border-accent" : "bg-transparent text-muted-foreground border-border opacity-40 hover:opacity-100"
+                            )}
+                          >
+                            {tag}
+                          </button>
+                        )
+                      })}
+                   </div>
+                </div>
+
+                <div className="space-y-6">
+                   <div className="space-y-2">
+                      <Label className="text-[10px] font-black uppercase opacity-40">Jaartal / Periode</Label>
+                      <Input defaultValue={editingArtwork?.year || ''} onBlur={(e) => updateArtworkField(editingId!, 'year', e.target.value)} />
+                   </div>
+                   <div className="flex items-center justify-between p-4 bg-muted/30 rounded-xl">
+                      <Label className="text-[10px] font-black uppercase">Toon op homepagina</Label>
+                      <input 
+                        type="checkbox" 
+                        checked={editingArtwork?.featured || false} 
+                        onChange={(e) => updateArtworkField(editingId!, 'featured', e.target.checked)}
+                        className="w-5 h-5 accent-accent"
+                      />
+                   </div>
                 </div>
              </div>
           </div>
