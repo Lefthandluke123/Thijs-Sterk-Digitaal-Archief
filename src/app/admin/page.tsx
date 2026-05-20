@@ -31,7 +31,8 @@ import {
   Calendar,
   Maximize,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  FileImage
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -224,9 +225,11 @@ export default function AdminPage() {
           displayTitle: fileNameNoExt,
           series: "Nieuwe Uploads",
           imageUrl: downloadUrl,
+          fileSize: file.size,
+          fileType: file.type,
           createdAt: serverTimestamp(),
           cropTop: 0, cropBottom: 0, cropLeft: 0, cropRight: 0, brightness: 1,
-          year: "", // Jaartal standaard leeglaten
+          year: "", 
           dimensions: ""
         });
         processedCount++;
@@ -241,7 +244,7 @@ export default function AdminPage() {
 
   const handleExportBackup = () => {
     const exportData = {
-      version: "2.9",
+      version: "3.0",
       exportedAt: new Date().toISOString(),
       artworks: artworks,
       settings: siteSettings || {}
@@ -252,6 +255,12 @@ export default function AdminPage() {
     link.href = url;
     link.download = `thijs-sterk-master-backup-${new Date().toISOString().split('T')[0]}.json`;
     link.click();
+  };
+
+  const formatFileSize = (bytes?: number) => {
+    if (!bytes) return "Onbekend";
+    const mb = bytes / (1024 * 1024);
+    return `${mb.toFixed(2)} MB`;
   };
 
   return (
@@ -529,125 +538,135 @@ export default function AdminPage() {
           </div>
 
           <div className="h-[45vh] border-t p-8 bg-background overflow-y-auto">
-             <div className="max-w-7xl mx-auto space-y-12 pb-12">
-                <div className="grid md:grid-cols-3 gap-12">
-                  <div className="space-y-8 bg-muted/20 p-6 rounded-2xl">
-                    <div className="flex items-center gap-3 border-b border-border/50 pb-3">
-                      <Info className="w-4 h-4 text-accent" />
-                      <h3 className="text-[11px] font-black uppercase tracking-widest text-accent">Identificatie</h3>
+             {editingArtwork && (
+               <div className="max-w-7xl mx-auto space-y-12 pb-12">
+                  <div className="grid md:grid-cols-3 gap-12">
+                    <div className="space-y-8 bg-muted/20 p-6 rounded-2xl">
+                      <div className="flex items-center justify-between border-b border-border/50 pb-3">
+                        <div className="flex items-center gap-3">
+                          <Info className="w-4 h-4 text-accent" />
+                          <h3 className="text-[11px] font-black uppercase tracking-widest text-accent">Identificatie</h3>
+                        </div>
+                        {editingArtwork.fileSize && (
+                          <div className="flex items-center gap-1.5 opacity-40">
+                            <FileImage className="w-3 h-3" />
+                            <span className="text-[8px] font-black uppercase tracking-widest">{formatFileSize(editingArtwork.fileSize)} &bull; {editingArtwork.fileType?.split('/')[1].toUpperCase()}</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="space-y-6">
+                        <div className="space-y-2">
+                          <Label className="text-[10px] font-black uppercase opacity-60">Publieke Schermtitel</Label>
+                          <Input 
+                            key={`displayTitle-${editingId}`}
+                            defaultValue={editingArtwork?.displayTitle || ''} 
+                            onBlur={(e) => updateArtworkField(editingId!, 'displayTitle', e.target.value)} 
+                            className="font-bold border-accent/20 focus:border-accent"
+                            placeholder="Bijv. Maannacht in Groet"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[10px] font-black uppercase opacity-60">Interne Titel / Bestandsnaam</Label>
+                          <Input 
+                            key={`title-${editingId}`}
+                            defaultValue={editingArtwork?.title || ''} 
+                            onBlur={(e) => updateArtworkField(editingId!, 'title', e.target.value)} 
+                            className="text-[11px] opacity-70 bg-white/50" 
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[10px] font-black uppercase opacity-60">Jaartal / Periode</Label>
+                          <div className="relative">
+                            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 opacity-30" />
+                            <Input 
+                              key={`year-${editingId}`}
+                              defaultValue={editingArtwork?.year || ''} 
+                              onBlur={(e) => updateArtworkField(editingId!, 'year', e.target.value)} 
+                              className="pl-10"
+                              placeholder="Bijv. 1954"
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[10px] font-black uppercase opacity-60">Afmetingen</Label>
+                          <div className="relative">
+                            <Maximize className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 opacity-30" />
+                            <Input 
+                              key={`dimensions-${editingId}`}
+                              defaultValue={editingArtwork?.dimensions || ''} 
+                              onBlur={(e) => updateArtworkField(editingId!, 'dimensions', e.target.value)} 
+                              className="pl-10"
+                              placeholder="Bijv. 50 x 75 cm"
+                            />
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <div className="space-y-6">
-                      <div className="space-y-2">
-                        <Label className="text-[10px] font-black uppercase opacity-60">Publieke Schermtitel</Label>
-                        <Input 
-                          key={`displayTitle-${editingId}`}
-                          defaultValue={editingArtwork?.displayTitle || ''} 
-                          onBlur={(e) => updateArtworkField(editingId!, 'displayTitle', e.target.value)} 
-                          className="font-bold border-accent/20 focus:border-accent"
-                          placeholder="Bijv. Maannacht in Groet"
-                        />
+
+                    <div className="md:col-span-2 space-y-8 bg-black/[0.02] p-6 rounded-2xl border border-black/5">
+                      <div className="flex items-center gap-3 border-b border-border/50 pb-3">
+                        <Tag className="w-4 h-4 text-accent" />
+                        <h3 className="text-[11px] font-black uppercase tracking-widest text-accent">Kenmerken & Tags</h3>
                       </div>
-                      <div className="space-y-2">
-                        <Label className="text-[10px] font-black uppercase opacity-60">Interne Titel / Bestandsnaam</Label>
-                        <Input 
-                          key={`title-${editingId}`}
-                          defaultValue={editingArtwork?.title || ''} 
-                          onBlur={(e) => updateArtworkField(editingId!, 'title', e.target.value)} 
-                          className="text-[11px] opacity-70 bg-white/50" 
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-[10px] font-black uppercase opacity-60">Jaartal / Periode</Label>
-                        <div className="relative">
-                          <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 opacity-30" />
-                          <Input 
-                            key={`year-${editingId}`}
-                            defaultValue={editingArtwork?.year || ''} 
-                            onBlur={(e) => updateArtworkField(editingId!, 'year', e.target.value)} 
-                            className="pl-10"
-                            placeholder="Bijv. 1954"
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-[10px] font-black uppercase opacity-60">Afmetingen</Label>
-                        <div className="relative">
-                          <Maximize className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 opacity-30" />
-                          <Input 
-                            key={`dimensions-${editingId}`}
-                            defaultValue={editingArtwork?.dimensions || ''} 
-                            onBlur={(e) => updateArtworkField(editingId!, 'dimensions', e.target.value)} 
-                            className="pl-10"
-                            placeholder="Bijv. 50 x 75 cm"
-                          />
-                        </div>
+                      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                         {Object.entries(TAG_CATEGORIES).map(([category, tags]) => (
+                           <div key={category} className="space-y-3">
+                              <Label className="text-[9px] font-black uppercase tracking-tighter opacity-40 border-l-2 border-accent/30 pl-2">{category}</Label>
+                              <div className="flex flex-wrap gap-1">
+                                 {tags.map(tag => {
+                                   const hasTag = editingArtwork?.tags?.includes(tag);
+                                   return (
+                                     <button
+                                       key={tag}
+                                       onClick={() => {
+                                         const current = editingArtwork?.tags || [];
+                                         const next = hasTag ? current.filter((t: string) => t !== tag) : [...current, tag];
+                                         updateArtworkField(editingId!, 'tags', next);
+                                       }}
+                                       className={cn(
+                                         "px-2 py-1 rounded text-[9px] font-black uppercase tracking-widest transition-all border",
+                                         hasTag 
+                                           ? "bg-accent text-accent-foreground border-accent shadow-sm" 
+                                           : "bg-background text-muted-foreground border-border opacity-40 hover:opacity-100 hover:border-accent/40"
+                                       )}
+                                     >
+                                       {tag}
+                                     </button>
+                                   )
+                                 })}
+                              </div>
+                           </div>
+                         ))}
                       </div>
                     </div>
                   </div>
 
-                  <div className="md:col-span-2 space-y-8 bg-black/[0.02] p-6 rounded-2xl border border-black/5">
-                    <div className="flex items-center gap-3 border-b border-border/50 pb-3">
-                      <Tag className="w-4 h-4 text-accent" />
-                      <h3 className="text-[11px] font-black uppercase tracking-widest text-accent">Kenmerken & Tags</h3>
-                    </div>
-                    <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                       {Object.entries(TAG_CATEGORIES).map(([category, tags]) => (
-                         <div key={category} className="space-y-3">
-                            <Label className="text-[9px] font-black uppercase tracking-tighter opacity-40 border-l-2 border-accent/30 pl-2">{category}</Label>
-                            <div className="flex flex-wrap gap-1">
-                               {tags.map(tag => {
-                                 const hasTag = editingArtwork?.tags?.includes(tag);
-                                 return (
-                                   <button
-                                     key={tag}
-                                     onClick={() => {
-                                       const current = editingArtwork?.tags || [];
-                                       const next = hasTag ? current.filter((t: string) => t !== tag) : [...current, tag];
-                                       updateArtworkField(editingId!, 'tags', next);
-                                     }}
-                                     className={cn(
-                                       "px-2 py-1 rounded text-[9px] font-black uppercase tracking-widest transition-all border",
-                                       hasTag 
-                                         ? "bg-accent text-accent-foreground border-accent shadow-sm" 
-                                         : "bg-background text-muted-foreground border-border opacity-40 hover:opacity-100 hover:border-accent/40"
-                                     )}
-                                   >
-                                     {tag}
-                                   </button>
-                                 )
-                               })}
-                            </div>
-                         </div>
-                       ))}
-                    </div>
+                  <div className="grid md:grid-cols-3 gap-8 pt-8 border-t border-border/10">
+                     <div className="space-y-2">
+                        <Label className="text-[10px] font-black uppercase opacity-60">Zaal / Serie</Label>
+                        <Input 
+                          key={`series-${editingId}`}
+                          defaultValue={editingArtwork?.series || ''} 
+                          onBlur={(e) => updateArtworkField(editingId!, 'series', e.target.value)} 
+                          className="bg-white"
+                        />
+                     </div>
+                     <div className="flex items-center gap-4 p-4 bg-accent/5 rounded-xl border border-accent/10">
+                        <input 
+                          type="checkbox" 
+                          id="featured-check"
+                          checked={editingArtwork?.featured || false} 
+                          onChange={(e) => updateArtworkField(editingId!, 'featured', e.target.checked)}
+                          className="w-5 h-5 accent-accent"
+                        />
+                        <Label htmlFor="featured-check" className="text-[11px] font-black uppercase cursor-pointer">Toon op homepagina (Meester Selectie)</Label>
+                     </div>
+                     <div className="flex items-center justify-end gap-2 text-[9px] font-black uppercase opacity-30">
+                        <ChevronLeft className="w-3 h-3" /> Gebruik pijltjestoetsen om te bladeren <ChevronRight className="w-3 h-3" />
+                     </div>
                   </div>
-                </div>
-
-                <div className="grid md:grid-cols-3 gap-8 pt-8 border-t border-border/10">
-                   <div className="space-y-2">
-                      <Label className="text-[10px] font-black uppercase opacity-60">Zaal / Serie</Label>
-                      <Input 
-                        key={`series-${editingId}`}
-                        defaultValue={editingArtwork?.series || ''} 
-                        onBlur={(e) => updateArtworkField(editingId!, 'series', e.target.value)} 
-                        className="bg-white"
-                      />
-                   </div>
-                   <div className="flex items-center gap-4 p-4 bg-accent/5 rounded-xl border border-accent/10">
-                      <input 
-                        type="checkbox" 
-                        id="featured-check"
-                        checked={editingArtwork?.featured || false} 
-                        onChange={(e) => updateArtworkField(editingId!, 'featured', e.target.checked)}
-                        className="w-5 h-5 accent-accent"
-                      />
-                      <Label htmlFor="featured-check" className="text-[11px] font-black uppercase cursor-pointer">Toon op homepagina (Meester Selectie)</Label>
-                   </div>
-                   <div className="flex items-center justify-end gap-2 text-[9px] font-black uppercase opacity-30">
-                      <ChevronLeft className="w-3 h-3" /> Gebruik pijltjestoetsen om te bladeren <ChevronRight className="w-3 h-3" />
-                   </div>
-                </div>
-             </div>
+               </div>
+             )}
           </div>
         </DialogContent>
       </Dialog>

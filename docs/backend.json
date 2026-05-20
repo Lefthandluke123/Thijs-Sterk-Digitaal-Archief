@@ -42,6 +42,14 @@
           "type": "string",
           "description": "Keywords voor zoekmachines"
         },
+        "fileSize": {
+          "type": "number",
+          "description": "Grootte van het bestand in bytes"
+        },
+        "fileType": {
+          "type": "string",
+          "description": "MIME-type van het bestand (bijv. image/jpeg)"
+        },
         "tags": {
           "type": "array",
           "items": {
