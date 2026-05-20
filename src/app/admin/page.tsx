@@ -67,7 +67,7 @@ export default function AdminPage() {
     if (!rawArtworks) return [];
     const seen = new Set();
     return rawArtworks.filter(art => {
-      const url = art.imageUrl;
+      const url = (art as any).imageUrl;
       if (!url || seen.has(url)) return false;
       seen.add(url);
       return true;
@@ -81,13 +81,19 @@ export default function AdminPage() {
   const { data: siteSettings } = useDoc(siteSettingsRef);
 
   const filteredArtworks = useMemo(() => {
-    return artworks.filter(art => {
+    return artworks.filter((art: any) => {
       const displayTitle = art.displayTitle || art.title || "";
       const matchesSearch = displayTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           (art.series?.toLowerCase() || "").includes(searchQuery.toLowerCase());
       return matchesSearch;
     });
   }, [artworks, searchQuery]);
+
+  // Oplossing voor de ReferenceError: bepaal het kunstwerk dat momenteel bewerkt wordt
+  const editingArtwork = useMemo(() => {
+    if (!editingId) return null;
+    return artworks.find((art: any) => art.id === editingId);
+  }, [artworks, editingId]);
 
   const updateArtworkField = (id: string, field: string, value: any) => {
     if (!firestore || !id) return;
