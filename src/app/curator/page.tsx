@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { ArtworkViewer } from '@/components/artwork-viewer';
+import { useLanguage } from '@/components/language-provider';
 
 const TAG_CATEGORIES = {
   "Periode": ["Vroeg werk", "45-50", "50-60", "70-82"],
@@ -25,6 +26,7 @@ export default function CuratorPage() {
   const [selectedArtwork, setSelectedArtwork] = useState<any | null>(null);
   const [visitorId, setVisitorId] = useState<string>("");
   const firestore = useFirestore();
+  const { t } = useLanguage();
   
   useEffect(() => {
     let vid = typeof window !== 'undefined' ? localStorage.getItem('ts_visitor_id') : null;
@@ -108,9 +110,11 @@ export default function CuratorPage() {
       <div className="w-full bg-secondary/10 border-b border-border/20 py-10 md:py-16">
         <div className="container mx-auto px-6 max-w-5xl text-center space-y-4">
           <h1 className="font-headline text-3xl md:text-5xl font-light text-foreground tracking-tight leading-tight uppercase">
-            Uw Eigen <span className="italic">Zaal</span>
+            {t('curator_title').split(' ').map((word, i, arr) => 
+              i === arr.length - 1 ? <span key={i} className="italic">{word}</span> : word + ' '
+            )}
           </h1>
-          <p className="text-[10px] md:text-[12px] font-black uppercase tracking-[0.4em] text-accent/80">Stel uw persoonlijke selectie samen uit het oeuvre</p>
+          <p className="text-[10px] md:text-[12px] font-black uppercase tracking-[0.4em] text-accent/80">{t('curator_subtitle')}</p>
         </div>
       </div>
 
@@ -182,19 +186,19 @@ export default function CuratorPage() {
                 variant="outline" 
                 className="rounded-full h-12 px-8 text-[10px] font-black uppercase tracking-[0.2em] border-2 border-border hover:bg-accent/5 transition-all"
               >
-                <Eraser className="w-3 h-3 mr-3" /> Wis Selectie
+                <Eraser className="w-3 h-3 mr-3" /> {t('curator_clear')}
               </Button>
               <Button 
                 onClick={() => { setShowResults(true); logInteraction('filter_tags', { tags: activeTags }); }} 
                 disabled={activeTags.length === 0} 
                 className="rounded-full h-12 px-12 bg-primary text-primary-foreground text-[10px] font-black uppercase tracking-[0.2em] border-2 border-primary shadow-xl hover:scale-[1.03] active:scale-[0.97] transition-all disabled:opacity-20"
               >
-                <Play className="w-3 h-3 mr-3" /> Open Uw Zaal
+                <Play className="w-3 h-3 mr-3" /> {t('curator_open')}
               </Button>
             </div>
             {activeTags.length > 0 && !showResults && (
               <p className="text-[9px] uppercase tracking-[0.25em] font-bold text-accent animate-pulse">
-                Klik op &quot;Open Uw Zaal&quot; om {filteredArtworks.length} werken te bekijken
+                Klik op "{t('curator_open')}" om {filteredArtworks.length} werken te bekijken
               </p>
             )}
           </div>

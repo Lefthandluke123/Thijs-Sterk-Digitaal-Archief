@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from 'react';
@@ -8,10 +7,12 @@ import { Maximize2, Sparkles, Layout } from 'lucide-react';
 import { useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, where, limit, doc } from 'firebase/firestore';
 import { ArtworkViewer } from '@/components/artwork-viewer';
+import { useLanguage } from '@/components/language-provider';
 
 export function Hero() {
   const [selectedArtwork, setSelectedArtwork] = useState<any | null>(null);
   const firestore = useFirestore();
+  const { t } = useLanguage();
 
   // Haal settings op voor de tekst
   const siteSettingsRef = useMemoFirebase(() => {
@@ -47,7 +48,7 @@ We nodigen u uit om de collectie te verkennen of gebruik te maken van de mogelij
       <div className="container mx-auto z-10 text-center">
         <div className="inline-block animate-fade-in-up">
           <span className="text-accent font-black tracking-[0.4em] uppercase text-[14px] md:text-[16px] mb-6 block border-b border-accent/20 pb-2">
-            Digitale Collectie &bull; Thijs Sterk (1913-1982)
+            {t('hero_subtitle')} &bull; Thijs Sterk (1913-1982)
           </span>
         </div>
         
@@ -67,13 +68,13 @@ We nodigen u uit om de collectie te verkennen of gebruik te maken van de mogelij
           <Button size="lg" className="rounded-full px-10 bg-accent hover:bg-accent/90 text-accent-foreground font-black uppercase tracking-[0.2em] text-[10px] h-12 shadow-xl border-2 border-black/5" asChild>
             <a href="/exhibition">
               <Sparkles className="mr-2 w-4 h-4" />
-              Begin de Wandeling
+              {t('hero_start_walk')}
             </a>
           </Button>
           <Button variant="outline" size="lg" className="rounded-full px-10 border-black/20 text-foreground hover:bg-black/5 font-black uppercase tracking-[0.2em] text-[10px] h-12 group transition-all" asChild>
             <a href="/curator">
               <Layout className="mr-2 w-4 h-4" />
-              Uw Eigen Zaal
+              {t('hero_your_room')}
             </a>
           </Button>
         </div>

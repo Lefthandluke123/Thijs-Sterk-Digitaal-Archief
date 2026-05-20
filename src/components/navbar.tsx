@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useMemo, Suspense } from 'react';
@@ -11,16 +10,19 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuLabel,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, Loader2, Sparkles } from 'lucide-react';
+import { ChevronDown, Loader2, Sparkles, Languages } from 'lucide-react';
 import { useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, doc } from 'firebase/firestore';
+import { useLanguage } from '@/components/language-provider';
 
 function NavbarContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [mounted, setMounted] = useState(false);
   const firestore = useFirestore();
+  const { language, setLanguage, t } = useLanguage();
 
   const artworksQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -96,10 +98,10 @@ function NavbarContent() {
         </Link>
         
         <div className="flex items-center gap-1 overflow-x-auto no-scrollbar max-w-[85%]">
-          <NavLink href="/" active={pathname === "/"}>Home</NavLink>
+          <NavLink href="/" active={pathname === "/"}>{t('nav_home')}</NavLink>
 
           <NavLink href="/exhibition" active={pathname === "/exhibition"} important>
-            <Sparkles className="w-3 h-3" /> Tour
+            <Sparkles className="w-3 h-3" /> {t('nav_tour')}
           </NavLink>
 
           <DropdownMenu>
@@ -112,11 +114,11 @@ function NavbarContent() {
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                Zalen <ChevronDown className="w-3 h-3 opacity-50" />
+                {t('nav_galleries')} <ChevronDown className="w-3 h-3 opacity-50" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="bg-background/98 backdrop-blur-xl border-border/40 rounded-2xl min-w-[220px] p-2 shadow-2xl">
-              <DropdownMenuLabel className="text-[9px] uppercase tracking-[0.2em] opacity-40 px-3 py-2">Collecties</DropdownMenuLabel>
+              <DropdownMenuLabel className="text-[9px] uppercase tracking-[0.2em] opacity-40 px-3 py-2">{t('nav_collections')}</DropdownMenuLabel>
               {seriesWithCounts.length > 0 ? (
                 seriesWithCounts.map((s) => (
                   <DropdownMenuItem key={s.name} asChild className="text-[10px] uppercase font-black tracking-[0.15em] focus:bg-accent focus:text-accent-foreground rounded-xl cursor-pointer p-3 mb-1">
@@ -131,7 +133,7 @@ function NavbarContent() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <NavLink href="/curator" active={pathname === "/curator"}>Uw Zaal</NavLink>
+          <NavLink href="/curator" active={pathname === "/curator"}>{t('nav_your_room')}</NavLink>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -143,7 +145,7 @@ function NavbarContent() {
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                Over <ChevronDown className="w-3 h-3 opacity-50" />
+                {t('nav_about')} <ChevronDown className="w-3 h-3 opacity-50" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="bg-background/98 backdrop-blur-xl border-border/40 rounded-2xl min-w-[180px] p-2 shadow-2xl">
@@ -162,7 +164,28 @@ function NavbarContent() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <NavLink href="/#contact" active={false}>Contact</NavLink>
+          <NavLink href="/#contact" active={false}>{t('nav_contact')}</NavLink>
+
+          <div className="h-6 w-px bg-border/20 mx-2" />
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/30 text-[10px] font-black uppercase tracking-widest hover:bg-secondary/50 transition-colors">
+                <Languages className="w-3 h-3" />
+                {language.toUpperCase()}
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="bg-background/98 backdrop-blur-xl border-border/40 rounded-xl p-1 min-w-[120px]">
+              <DropdownMenuItem onClick={() => setLanguage('nl')} className="flex items-center gap-3 text-[10px] uppercase font-black tracking-widest rounded-lg p-3 cursor-pointer">
+                <span className="text-base">🇳🇱</span> Nederlands
+                {language === 'nl' && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-accent" />}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setLanguage('en')} className="flex items-center gap-3 text-[10px] uppercase font-black tracking-widest rounded-lg p-3 cursor-pointer">
+                <span className="text-base">🇬🇧</span> English
+                {language === 'en' && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-accent" />}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </nav>

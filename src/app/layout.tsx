@@ -1,10 +1,10 @@
-
 import type { Metadata } from 'next';
 import './globals.css';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/sections/footer';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { CookieConsent } from '@/components/cookie-consent';
+import { LanguageProvider } from '@/components/language-provider';
 import { Suspense } from 'react';
 import { Loader2 } from 'lucide-react';
 
@@ -29,10 +29,12 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased selection:bg-accent/20 selection:text-accent">
         <FirebaseClientProvider>
-          <Navbar />
-          {children}
-          <CookieConsent />
-          <Footer />
+          <LanguageProvider>
+            <Navbar />
+            {children}
+            <CookieConsent />
+            <Footer />
+          </LanguageProvider>
         </FirebaseClientProvider>
       </body>
     </html>
