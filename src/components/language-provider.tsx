@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-type Language = 'nl' | 'en';
+type Language = 'nl' | 'en' | 'de' | 'fr';
 
 interface LanguageContextType {
   language: Language;
@@ -58,6 +58,52 @@ const translations: Record<Language, Record<string, string>> = {
     gallery_closed: 'This gallery is currently closed',
     viewer_room: 'Gallery',
     viewer_unknown: 'Unknown',
+  },
+  de: {
+    nav_home: 'Home',
+    nav_tour: 'Tour',
+    nav_galleries: 'Galerien',
+    nav_your_room: 'Ihr Saal',
+    nav_about: 'Über',
+    nav_contact: 'Kontakt',
+    nav_admin: 'Verwaltung',
+    nav_privacy: 'Datenschutz',
+    nav_collections: 'Sammlungen',
+    footer_rights: 'Alle Rechte vorbehalten.',
+    hero_start_walk: 'Wanderung beginnen',
+    hero_your_room: 'Ihr eigener Saal',
+    hero_subtitle: 'Digitale Sammlung',
+    curator_title: 'Ihr eigener Saal',
+    curator_subtitle: 'Stellen Sie Ihre persönliche Auswahl aus dem Oeuvre zusammen',
+    curator_clear: 'Auswahl löschen',
+    curator_open: 'Ihren Saal öffnen',
+    gallery_select: 'Wählen Sie einen Saal',
+    gallery_closed: 'Dieser Saal ist derzeit geschlossen',
+    viewer_room: 'Saal',
+    viewer_unknown: 'Unbekannt',
+  },
+  fr: {
+    nav_home: 'Accueil',
+    nav_tour: 'Visite',
+    nav_galleries: 'Salles',
+    nav_your_room: 'Votre Salle',
+    nav_about: 'À propos',
+    nav_contact: 'Contact',
+    nav_admin: 'Administration',
+    nav_privacy: 'Confidentialité',
+    nav_collections: 'Collections',
+    footer_rights: 'Tous droits réservés.',
+    hero_start_walk: 'Commencer la visite',
+    hero_your_room: 'Votre propre salle',
+    hero_subtitle: 'Collection numérique',
+    curator_title: 'Votre propre salle',
+    curator_subtitle: 'Composez votre sélection personnelle de l\'œuvre',
+    curator_clear: 'Effacer la sélection',
+    curator_open: 'Ouvrir votre salle',
+    gallery_select: 'Sélectionnez une salle',
+    gallery_closed: 'Cette salle est actuellement fermée',
+    viewer_room: 'Salle',
+    viewer_unknown: 'Inconnu',
   }
 };
 
@@ -66,7 +112,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   useEffect(() => {
     const saved = localStorage.getItem('app-lang') as Language;
-    if (saved && (saved === 'nl' || saved === 'en')) {
+    if (saved && (saved === 'nl' || saved === 'en' || saved === 'de' || saved === 'fr')) {
       setLanguageState(saved);
     }
   }, []);
