@@ -179,6 +179,21 @@
         "leoDuppenBio_fr": { "type": "string" },
         "leoDuppenBio_es": { "type": "string" },
         "leoDuppenBioImages": { "type": "array", "items": { "type": "string" } },
+        "contactTitle": { "type": "string" },
+        "contactTitle_en": { "type": "string" },
+        "contactTitle_de": { "type": "string" },
+        "contactTitle_fr": { "type": "string" },
+        "contactTitle_es": { "type": "string" },
+        "contactIntro": { "type": "string" },
+        "contactIntro_en": { "type": "string" },
+        "contactIntro_de": { "type": "string" },
+        "contactIntro_fr": { "type": "string" },
+        "contactIntro_es": { "type": "string" },
+        "contactQuote": { "type": "string" },
+        "contactQuote_en": { "type": "string" },
+        "contactQuote_de": { "type": "string" },
+        "contactQuote_fr": { "type": "string" },
+        "contactQuote_es": { "type": "string" },
         "hiddenSeries": { "type": "array", "items": { "type": "string" } }
       }
     }

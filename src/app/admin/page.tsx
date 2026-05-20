@@ -33,7 +33,8 @@ import {
   ChevronLeft,
   ChevronRight,
   FileImage,
-  Globe2
+  Globe2,
+  Mail
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -51,7 +52,6 @@ const TAG_CATEGORIES = {
   "Onderwerp": ["Havens", "Stillevens", "Bloemen", "Dieren", "Water", "Mensen", "Polder"]
 };
 
-// Romeinse cijfer naar waarde mapping voor sortering
 const ROMAN_VALUES: Record<string, number> = {
   'I': 1, 'II': 2, 'III': 3, 'IV': 4, 'V': 5, 'VI': 6, 'VII': 7, 'VIII': 8, 'IX': 9, 'X': 10, 
   'XI': 11, 'XII': 12, 'XIII': 13, 'XIV': 14, 'XV': 15, 'XVI': 16, 'XVII': 17, 'XVIII': 18, 'XIX': 19, 'XX': 20
@@ -69,7 +69,6 @@ export default function AdminPage() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState('');
-  const [isTranslating, setIsTranslating] = useState<string | null>(null);
 
   const artworksQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -80,12 +79,8 @@ export default function AdminPage() {
 
   const parseTitleForSort = (title: string) => {
     if (!title) return { romanVal: 999, num: 999, suffix: '' };
-    
-    // Zoek naar Romeins cijfer (I t/m XX)
     const romanMatch = title.match(/\b(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII|XIV|XV|XVI|XVII|XVIII|XIX|XX)\b/i);
-    // Zoek naar het eerste getal in de string
     const numMatch = title.match(/(\d+)([a-z]*)?/i);
-    
     return {
       romanVal: romanMatch ? (ROMAN_VALUES[romanMatch[1].toUpperCase()] || 999) : 999,
       num: numMatch ? parseInt(numMatch[1], 10) : 999,
@@ -95,8 +90,6 @@ export default function AdminPage() {
 
   const artworks = useMemo(() => {
     if (!rawArtworks) return [];
-    
-    // Unieke afbeeldingen filteren op basis van URL
     const seen = new Set();
     const unique = rawArtworks.filter(art => {
       const url = (art as any).imageUrl;
@@ -104,12 +97,9 @@ export default function AdminPage() {
       seen.add(url);
       return true;
     });
-
-    // Sorteren: eerst op Romeinse groep, dan op volgnummer
     return [...unique].sort((a: any, b: any) => {
       const pA = parseTitleForSort(a.title || '');
       const pB = parseTitleForSort(b.title || '');
-
       if (pA.romanVal !== pB.romanVal) return pA.romanVal - pB.romanVal;
       if (pA.num !== pB.num) return pA.num - pB.num;
       return pA.suffix.localeCompare(pB.suffix);
@@ -141,28 +131,21 @@ export default function AdminPage() {
     if (!editingId || !filteredArtworks.length) return;
     const currentIndex = filteredArtworks.findIndex((art: any) => art.id === editingId);
     if (currentIndex === -1) return;
-    
     let nextIndex = direction === 'next' 
       ? (currentIndex + 1) % filteredArtworks.length 
       : (currentIndex - 1 + filteredArtworks.length) % filteredArtworks.length;
-    
     setEditingId(filteredArtworks[nextIndex].id);
   }, [editingId, filteredArtworks]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!editingId) return;
-      
       const target = e.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
-        return;
-      }
-
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
       if (e.key === 'ArrowRight') navigateEditor('next');
       if (e.key === 'ArrowLeft') navigateEditor('prev');
       if (e.key === 'Escape') setEditingId(null);
     };
-
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [editingId, navigateEditor]);
@@ -170,36 +153,17 @@ export default function AdminPage() {
   const updateArtworkField = (id: string, field: string, value: any) => {
     if (!firestore || !id) return;
     const artRef = doc(firestore, 'artworks', id);
-    updateDoc(artRef, { [field]: value })
-      .catch(async () => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: artRef.path, operation: 'update' }));
-      });
+    updateDoc(artRef, { [field]: value }).catch(async () => {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({ path: artRef.path, operation: 'update' }));
+    });
   };
 
   const updateSettingsField = (field: string, value: any) => {
     if (!firestore) return;
     const settingsRef = doc(firestore, 'settings', 'site');
-    setDoc(settingsRef, { [field]: value }, { merge: true })
-      .catch(async () => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: settingsRef.path, operation: 'update' })));
-  };
-
-  const handleTranslate = async (field: string, currentText: string, context: string) => {
-    if (!currentText || isTranslating) return;
-    setIsTranslating(field);
-    try {
-      const result = await translateMuseumText({ text: currentText, context });
-      updateSettingsField(field, result.translatedText);
-      toast({ title: "Vertaling voltooid", description: "De tekst is bijgewerkt." });
-    } catch (e: any) {
-      console.error(e);
-      toast({ 
-        variant: "destructive", 
-        title: "AI Vertaling mislukt", 
-        description: e.message || "Er is een fout opgetreden bij het aanroepen van de AI." 
-      });
-    } finally {
-      setIsTranslating(null);
-    }
+    setDoc(settingsRef, { [field]: value }, { merge: true }).catch(async () => 
+      errorEmitter.emit('permission-error', new FirestorePermissionError({ path: settingsRef.path, operation: 'update' }))
+    );
   };
 
   const handleBatchProcess = async (files: FileList | null) => {
@@ -216,11 +180,9 @@ export default function AdminPage() {
         const timestamp = Date.now();
         const safeName = file.name.replace(/[^a-z0-9.]/gi, '_');
         const fileNameNoExt = file.name.split('.')[0] || "Naamloos";
-        
         const storageRef = ref(storage, `artworks/${timestamp}_${safeName}`);
         const snapshot = await uploadBytes(storageRef, file);
         const downloadUrl = await getDownloadURL(snapshot.ref);
-        
         await addDoc(collection(firestore, 'artworks'), {
           title: fileNameNoExt,
           displayTitle: fileNameNoExt,
@@ -230,14 +192,12 @@ export default function AdminPage() {
           fileType: file.type,
           createdAt: serverTimestamp(),
           cropTop: 0, cropBottom: 0, cropLeft: 0, cropRight: 0, brightness: 1,
-          year: "", 
-          dimensions: ""
+          year: "", dimensions: ""
         });
         processedCount++;
         setUploadProgress((processedCount / totalFiles) * 100);
       } catch (e) { console.error(e); }
     }
-
     setIsUploading(false);
     setUploadStatus('');
     toast({ title: "Upload voltooid" });
@@ -245,7 +205,7 @@ export default function AdminPage() {
 
   const handleExportBackup = () => {
     const exportData = {
-      version: "3.0",
+      version: "3.1",
       exportedAt: new Date().toISOString(),
       artworks: artworks,
       settings: siteSettings || {}
@@ -267,7 +227,6 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-background flex flex-col pt-14">
       <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={(e) => handleBatchProcess(e.target.files)} accept="image/*" multiple />
-      
       <header className="h-16 border-b border-border bg-background/95 backdrop-blur-sm sticky top-14 z-40 px-8 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <img src="/logo.png" className="h-10 w-auto" alt="Logo" />
@@ -282,7 +241,7 @@ export default function AdminPage() {
       </header>
 
       <main className="flex-1 p-8 max-w-7xl mx-auto w-full">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
+        <Tabs defaultValue="archive" className="space-y-8">
           <TabsList className="bg-muted/50 p-1 rounded-full w-fit mx-auto flex flex-wrap justify-center h-auto">
             <TabsTrigger value="archive" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Archief [{artworks.length}]</TabsTrigger>
             <TabsTrigger value="upload" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Upload</TabsTrigger>
@@ -303,7 +262,6 @@ export default function AdminPage() {
                </div>
                <div className="text-[9px] font-black uppercase opacity-40">Groepering op Romeinse Cijfers (I, II, III...)</div>
             </div>
-
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
               {filteredArtworks.map((art: any) => (
                 <Card key={art.id} className="overflow-hidden cursor-pointer hover:ring-2 hover:ring-accent transition-all" onClick={() => setEditingId(art.id)}>
@@ -345,7 +303,6 @@ export default function AdminPage() {
                   <PenTool className="w-8 h-8 mx-auto text-accent mb-4" />
                   <h2 className="text-2xl font-headline font-light">Website Teksten</h2>
                   <p className="text-[10px] uppercase font-black tracking-[0.2em] opacity-40">Beheer hier alle biografieën en het openingswoord</p>
-                  
                   <Link href="/admin/translate">
                     <Button variant="outline" className="mt-6 rounded-full border-accent text-accent hover:bg-accent hover:text-accent-foreground">
                       <Globe2 className="w-4 h-4 mr-2" /> Naar het Vertaal Station
@@ -355,105 +312,58 @@ export default function AdminPage() {
 
               <div className="grid gap-12">
                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                         <Home className="w-4 h-4 text-accent" />
-                         <Label className="text-[11px] font-black uppercase text-accent border-l-4 border-accent pl-4 block">Introductie Tekst (Bovenaan Homepagina)</Label>
-                      </div>
+                    <div className="flex items-center gap-3">
+                       <Home className="w-4 h-4 text-accent" />
+                       <Label className="text-[11px] font-black uppercase text-accent border-l-4 border-accent pl-4 block">Introductie Tekst (Bovenaan Homepagina)</Label>
                     </div>
                     <div className="space-y-4 bg-black/5 p-6 rounded-2xl">
                       <div className="space-y-2">
                         <Label className="text-[9px] uppercase opacity-50">Kopregel (Groot)</Label>
-                        <Input 
-                          defaultValue={siteSettings?.homeHeroTitle || 'Een leven gewijd aan Licht, Ruimte en Water'} 
-                          onBlur={(e) => updateSettingsField('homeHeroTitle', e.target.value)}
-                          className="bg-white border-none font-headline text-xl"
-                        />
+                        <Input defaultValue={siteSettings?.homeHeroTitle || ''} onBlur={(e) => updateSettingsField('homeHeroTitle', e.target.value)} className="bg-white border-none font-headline text-xl" />
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-[9px] uppercase opacity-50">Openingswoord / Introductie</Label>
-                        <Textarea 
-                          key={siteSettings?.homeHeroIntro}
-                          defaultValue={siteSettings?.homeHeroIntro || ''} 
-                          onBlur={(e) => updateSettingsField('homeHeroIntro', e.target.value)} 
-                          className="min-h-[200px] bg-white border-none p-6 text-base leading-relaxed font-light" 
-                          placeholder="De tekst die direct bovenaan de homepagina verschijnt..." 
-                        />
+                        <Label className="text-[9px] uppercase opacity-50">Openingswoord</Label>
+                        <Textarea key={siteSettings?.homeHeroIntro} defaultValue={siteSettings?.homeHeroIntro || ''} onBlur={(e) => updateSettingsField('homeHeroIntro', e.target.value)} className="min-h-[150px] bg-white border-none p-6 text-base font-light" />
                       </div>
                     </div>
                  </div>
 
                  <div className="space-y-4 pt-8 border-t border-border/10">
-                    <div className="flex items-center justify-between">
-                       <div className="flex items-center gap-3">
-                          <Quote className="w-4 h-4 text-accent" />
-                          <Label className="text-[11px] font-black uppercase text-accent border-l-4 border-accent pl-4 block">Biografie Thijs Sterk (Onderaan Homepagina)</Label>
-                       </div>
+                    <div className="flex items-center gap-3">
+                       <Quote className="w-4 h-4 text-accent" />
+                       <Label className="text-[11px] font-black uppercase text-accent border-l-4 border-accent pl-4 block">Biografie Thijs Sterk</Label>
                     </div>
                     <div className="space-y-4 bg-black/5 p-6 rounded-2xl">
                       <div className="space-y-2">
-                        <Label className="text-[9px] uppercase opacity-50">Biografie Titel / Kopregel</Label>
-                        <Input 
-                          defaultValue={siteSettings?.homeBioTitle || 'Een leven gewijd aan de Essentie'} 
-                          onBlur={(e) => updateSettingsField('homeBioTitle', e.target.value)}
-                          className="bg-white border-none font-headline text-xl"
-                        />
+                        <Label className="text-[9px] uppercase opacity-50">Biografie Titel</Label>
+                        <Input defaultValue={siteSettings?.homeBioTitle || ''} onBlur={(e) => updateSettingsField('homeBioTitle', e.target.value)} className="bg-white border-none font-headline text-xl" />
                       </div>
                       <div className="space-y-2">
                         <Label className="text-[9px] uppercase opacity-50">Biografische Tekst</Label>
-                        <Textarea 
-                          key={siteSettings?.homeBio}
-                          defaultValue={siteSettings?.homeBio || ''} 
-                          onBlur={(e) => updateSettingsField('homeBio', e.target.value)} 
-                          className="min-h-[250px] bg-white border-none p-6 text-base leading-relaxed font-light" 
-                          placeholder="De hoofdtekst over Thijs Sterk die onderaan de homepagina verschijnt..." 
-                        />
+                        <Textarea key={siteSettings?.homeBio} defaultValue={siteSettings?.homeBio || ''} onBlur={(e) => updateSettingsField('homeBio', e.target.value)} className="min-h-[200px] bg-white border-none p-6 text-base font-light" />
                       </div>
                     </div>
                  </div>
 
                  <div className="space-y-4 pt-8 border-t border-border/10">
-                    <div className="flex items-center justify-between">
-                       <div className="flex items-center gap-3">
-                          <User className="w-4 h-4 opacity-40" />
-                          <Label className="text-[11px] font-black uppercase opacity-60 block">Leo Duppen (Kunsthistoricus)</Label>
-                       </div>
+                    <div className="flex items-center gap-3">
+                       <Mail className="w-4 h-4 text-accent" />
+                       <Label className="text-[11px] font-black uppercase text-accent border-l-4 border-accent pl-4 block">Contact Sectie Teksten</Label>
                     </div>
-                    <Textarea 
-                      key={siteSettings?.leoDuppenBio}
-                      defaultValue={siteSettings?.leoDuppenBio || ''} 
-                      onBlur={(e) => updateSettingsField('leoDuppenBio', e.target.value)} 
-                      className="min-h-[150px] bg-black/5 border-none rounded-xl p-4 text-sm" 
-                      placeholder="Biografie Leo Duppen..." 
-                    />
-                 </div>
-
-                 <div className="grid md:grid-cols-2 gap-12 pt-8 border-t border-border/10">
-                    <div className="space-y-4">
-                        <Label className="text-[10px] font-black uppercase opacity-60">Hanneke Sterk (Dochter)</Label>
-                        <Textarea 
-                          defaultValue={siteSettings?.hannekeBio || ''} 
-                          onBlur={(e) => updateSettingsField('hannekeBio', e.target.value)} 
-                          className="min-h-[120px] bg-black/5 border-none text-xs rounded-xl p-4" 
-                        />
+                    <div className="space-y-4 bg-black/5 p-6 rounded-2xl">
+                      <div className="space-y-2">
+                        <Label className="text-[9px] uppercase opacity-50">Contact Titel</Label>
+                        <Input defaultValue={siteSettings?.contactTitle || 'Informatie & Uw Verhalen'} onBlur={(e) => updateSettingsField('contactTitle', e.target.value)} className="bg-white border-none font-headline text-xl" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-[9px] uppercase opacity-50">Contact Introductie</Label>
+                        <Textarea defaultValue={siteSettings?.contactIntro || ''} onBlur={(e) => updateSettingsField('contactIntro', e.target.value)} className="min-h-[100px] bg-white border-none p-4 text-sm" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-[9px] uppercase opacity-50">Contact Quote (Italic)</Label>
+                        <Textarea defaultValue={siteSettings?.contactQuote || ''} onBlur={(e) => updateSettingsField('contactQuote', e.target.value)} className="min-h-[100px] bg-white border-none p-4 text-sm italic" />
+                      </div>
                     </div>
-                    <div className="space-y-4">
-                        <Label className="text-[10px] font-black uppercase opacity-60">Beatrijs Sterk (Dochter)</Label>
-                        <Textarea 
-                          defaultValue={siteSettings?.beatrijsBio || ''} 
-                          onBlur={(e) => updateSettingsField('beatrijsBio', e.target.value)} 
-                          className="min-h-[120px] bg-black/5 border-none text-xs rounded-xl p-4" 
-                        />
-                    </div>
-                 </div>
-
-                 <div className="space-y-4 pt-8 border-t border-border/10">
-                    <Label className="text-[10px] font-black uppercase opacity-60">Peter Bes (Leerling)</Label>
-                    <Textarea 
-                      defaultValue={siteSettings?.peterBesBio || ''} 
-                      onBlur={(e) => updateSettingsField('peterBesBio', e.target.value)} 
-                      className="min-h-[120px] bg-black/5 border-none text-xs rounded-xl p-4" 
-                    />
                  </div>
               </div>
             </Card>
@@ -461,18 +371,10 @@ export default function AdminPage() {
 
           <TabsContent value="bulk">
             <Card className="p-12 text-center space-y-8">
-              <div className="space-y-2">
-                 <FileJson className="w-12 h-12 mx-auto opacity-20" />
-                 <h2 className="text-xl font-headline font-light">Master Backup</h2>
-                 <p className="text-sm text-muted-foreground">Download een volledig overzicht van alle schermtitels, tags en uitsnedes als veiligheidsnet.</p>
-              </div>
+              <FileJson className="w-12 h-12 mx-auto opacity-20" />
+              <h2 className="text-xl font-headline font-light">Master Backup</h2>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Button onClick={handleExportBackup} size="lg" className="rounded-full px-12"><Download className="mr-2" /> Download Master Backup</Button>
-                <Link href="/admin/translate">
-                  <Button variant="outline" size="lg" className="rounded-full px-12 border-accent text-accent hover:bg-accent/5">
-                    <Languages className="mr-2 w-4 h-4" /> Vertaal Station Openen
-                  </Button>
-                </Link>
+                <Button onClick={handleExportBackup} size="lg" className="rounded-full px-12"><Download className="mr-2" /> Download Backup</Button>
               </div>
             </Card>
           </TabsContent>
@@ -482,135 +384,43 @@ export default function AdminPage() {
       <Dialog open={!!editingId} onOpenChange={() => setEditingId(null)}>
         <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background border-none">
           <DialogTitle className="sr-only">Editor</DialogTitle>
-          
           <div className="flex-1 bg-black/5 flex items-center justify-center p-4 relative group">
              {editingArtwork && (
                <>
-                  {/* Navigatieknoppen Over de afbeelding */}
-                  <button 
-                    onClick={() => navigateEditor('prev')}
-                    className="absolute left-8 z-10 p-4 rounded-full bg-white/20 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all hover:bg-white/40"
-                  >
-                    <ChevronLeft className="w-8 h-8" />
-                  </button>
-
-                  <div className="relative max-h-full">
-                    <img 
-                      src={editingArtwork.imageUrl} 
-                      className="max-h-[60vh] object-contain shadow-2xl transition-all duration-300" 
-                      alt="Preview" 
-                      style={{ filter: `brightness(${editingArtwork.brightness || 1})` }}
-                    />
-                    <div className="absolute top-4 right-4 flex gap-2">
-                       <Button variant="destructive" size="icon" onClick={() => { if(confirm('Zeker weten?')) { deleteDoc(doc(firestore!, 'artworks', editingId!)); setEditingId(null); }}} className="rounded-full shadow-xl"><Trash2 className="w-4 h-4" /></Button>
-                    </div>
-                  </div>
-
-                  <button 
-                    onClick={() => navigateEditor('next')}
-                    className="absolute right-8 z-10 p-4 rounded-full bg-white/20 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all hover:bg-white/40"
-                  >
-                    <ChevronRight className="w-8 h-8" />
-                  </button>
+                  <button onClick={() => navigateEditor('prev')} className="absolute left-8 z-10 p-4 rounded-full bg-white/20 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all"><ChevronLeft className="w-8 h-8" /></button>
+                  <img src={editingArtwork.imageUrl} className="max-h-[60vh] object-contain shadow-2xl" alt="Preview" style={{ filter: `brightness(${editingArtwork.brightness || 1})` }} />
+                  <div className="absolute top-4 right-4"><Button variant="destructive" size="icon" onClick={() => { if(confirm('Zeker weten?')) { deleteDoc(doc(firestore!, 'artworks', editingId!)); setEditingId(null); }}} className="rounded-full"><Trash2 className="w-4 h-4" /></Button></div>
+                  <button onClick={() => navigateEditor('next')} className="absolute right-8 z-10 p-4 rounded-full bg-white/20 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all"><ChevronRight className="w-8 h-8" /></button>
                </>
              )}
           </div>
-
           <div className="h-[45vh] border-t p-8 bg-background overflow-y-auto">
              {editingArtwork && (
-               <div className="max-w-7xl mx-auto space-y-12 pb-12">
-                  <div className="grid md:grid-cols-3 gap-12">
-                    <div className="space-y-8 bg-muted/20 p-6 rounded-2xl">
-                      <div className="flex items-center justify-between border-b border-border/50 pb-3">
-                        <div className="flex items-center gap-3">
-                          <Info className="w-4 h-4 text-accent" />
-                          <h3 className="text-[11px] font-black uppercase tracking-widest text-accent">Identificatie</h3>
-                        </div>
-                        {editingArtwork.fileSize && (
-                          <div className="flex items-center gap-1.5 opacity-40">
-                            <FileImage className="w-3 h-3" />
-                            <span className="text-[8px] font-black uppercase tracking-widest">{formatFileSize(editingArtwork.fileSize)} &bull; {editingArtwork.fileType?.split('/')[1].toUpperCase()}</span>
-                          </div>
-                        )}
-                      </div>
-                      <div className="space-y-6">
-                        <div className="space-y-2">
-                          <Label className="text-[10px] font-black uppercase opacity-60">Publieke Schermtitel</Label>
-                          <Input 
-                            key={`displayTitle-${editingId}`}
-                            defaultValue={editingArtwork?.displayTitle || ''} 
-                            onBlur={(e) => updateArtworkField(editingId!, 'displayTitle', e.target.value)} 
-                            className="font-bold border-accent/20 focus:border-accent"
-                            placeholder="Bijv. Maannacht in Groet"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-[10px] font-black uppercase opacity-60">Interne Titel / Bestandsnaam</Label>
-                          <Input 
-                            key={`title-${editingId}`}
-                            defaultValue={editingArtwork?.title || ''} 
-                            onBlur={(e) => updateArtworkField(editingId!, 'title', e.target.value)} 
-                            className="text-[11px] opacity-70 bg-white/50" 
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-[10px] font-black uppercase opacity-60">Jaartal / Periode</Label>
-                          <div className="relative">
-                            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 opacity-30" />
-                            <Input 
-                              key={`year-${editingId}`}
-                              defaultValue={editingArtwork?.year || ''} 
-                              onBlur={(e) => updateArtworkField(editingId!, 'year', e.target.value)} 
-                              className="pl-10"
-                              placeholder="Bijv. 1954"
-                            />
-                          </div>
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-[10px] font-black uppercase opacity-60">Afmetingen</Label>
-                          <div className="relative">
-                            <Maximize className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 opacity-30" />
-                            <Input 
-                              key={`dimensions-${editingId}`}
-                              defaultValue={editingArtwork?.dimensions || ''} 
-                              onBlur={(e) => updateArtworkField(editingId!, 'dimensions', e.target.value)} 
-                              className="pl-10"
-                              placeholder="Bijv. 50 x 75 cm"
-                            />
-                          </div>
-                        </div>
-                      </div>
+               <div className="max-w-7xl mx-auto space-y-8">
+                  <div className="grid md:grid-cols-3 gap-8">
+                    <div className="space-y-4 bg-muted/20 p-6 rounded-2xl">
+                      <Label className="text-[10px] font-black uppercase opacity-60">Publieke Titel</Label>
+                      <Input key={`displayTitle-${editingId}`} defaultValue={editingArtwork?.displayTitle || ''} onBlur={(e) => updateArtworkField(editingId!, 'displayTitle', e.target.value)} />
+                      <Label className="text-[10px] font-black uppercase opacity-60">Jaartal</Label>
+                      <Input key={`year-${editingId}`} defaultValue={editingArtwork?.year || ''} onBlur={(e) => updateArtworkField(editingId!, 'year', e.target.value)} />
+                      <Label className="text-[10px] font-black uppercase opacity-60">Zaal / Serie</Label>
+                      <Input key={`series-${editingId}`} defaultValue={editingArtwork?.series || ''} onBlur={(e) => updateArtworkField(editingId!, 'series', e.target.value)} />
                     </div>
-
-                    <div className="md:col-span-2 space-y-8 bg-black/[0.02] p-6 rounded-2xl border border-black/5">
-                      <div className="flex items-center gap-3 border-b border-border/50 pb-3">
-                        <Tag className="w-4 h-4 text-accent" />
-                        <h3 className="text-[11px] font-black uppercase tracking-widest text-accent">Kenmerken & Tags</h3>
-                      </div>
-                      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <div className="md:col-span-2 space-y-4 bg-black/[0.02] p-6 rounded-2xl border border-black/5">
+                      <Label className="text-[11px] font-black uppercase tracking-widest text-accent">Tags</Label>
+                      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
                          {Object.entries(TAG_CATEGORIES).map(([category, tags]) => (
-                           <div key={category} className="space-y-3">
-                              <Label className="text-[9px] font-black uppercase tracking-tighter opacity-40 border-l-2 border-accent/30 pl-2">{category}</Label>
+                           <div key={category} className="space-y-2">
+                              <Label className="text-[9px] font-black uppercase opacity-40">{category}</Label>
                               <div className="flex flex-wrap gap-1">
                                  {tags.map(tag => {
                                    const hasTag = editingArtwork?.tags?.includes(tag);
                                    return (
-                                     <button
-                                       key={tag}
-                                       onClick={() => {
-                                         const current = editingArtwork?.tags || [];
-                                         const next = hasTag ? current.filter((t: string) => t !== tag) : [...current, tag];
-                                         updateArtworkField(editingId!, 'tags', next);
-                                       }}
-                                       className={cn(
-                                         "px-2 py-1 rounded text-[9px] font-black uppercase tracking-widest transition-all border",
-                                         hasTag 
-                                           ? "bg-accent text-accent-foreground border-accent shadow-sm" 
-                                           : "bg-background text-muted-foreground border-border opacity-40 hover:opacity-100 hover:border-accent/40"
-                                       )}
-                                     >
-                                       {tag}
-                                     </button>
+                                     <button key={tag} onClick={() => {
+                                       const current = editingArtwork?.tags || [];
+                                       const next = hasTag ? current.filter((t: string) => t !== tag) : [...current, tag];
+                                       updateArtworkField(editingId!, 'tags', next);
+                                     }} className={cn("px-2 py-1 rounded text-[9px] font-black uppercase border", hasTag ? "bg-accent text-accent-foreground border-accent" : "bg-background text-muted-foreground")}>{tag}</button>
                                    )
                                  })}
                               </div>
@@ -618,31 +428,6 @@ export default function AdminPage() {
                          ))}
                       </div>
                     </div>
-                  </div>
-
-                  <div className="grid md:grid-cols-3 gap-8 pt-8 border-t border-border/10">
-                     <div className="space-y-2">
-                        <Label className="text-[10px] font-black uppercase opacity-60">Zaal / Serie</Label>
-                        <Input 
-                          key={`series-${editingId}`}
-                          defaultValue={editingArtwork?.series || ''} 
-                          onBlur={(e) => updateArtworkField(editingId!, 'series', e.target.value)} 
-                          className="bg-white"
-                        />
-                     </div>
-                     <div className="flex items-center gap-4 p-4 bg-accent/5 rounded-xl border border-accent/10">
-                        <input 
-                          type="checkbox" 
-                          id="featured-check"
-                          checked={editingArtwork?.featured || false} 
-                          onChange={(e) => updateArtworkField(editingId!, 'featured', e.target.checked)}
-                          className="w-5 h-5 accent-accent"
-                        />
-                        <Label htmlFor="featured-check" className="text-[11px] font-black uppercase cursor-pointer">Toon op homepagina (Meester Selectie)</Label>
-                     </div>
-                     <div className="flex items-center justify-end gap-2 text-[9px] font-black uppercase opacity-30">
-                        <ChevronLeft className="w-3 h-3" /> Gebruik pijltjestoetsen om te bladeren <ChevronRight className="w-3 h-3" />
-                     </div>
                   </div>
                </div>
              )}
@@ -652,4 +437,3 @@ export default function AdminPage() {
     </div>
   );
 }
-

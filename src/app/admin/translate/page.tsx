@@ -42,6 +42,9 @@ const FIELDS_TO_TRANSLATE = [
   { id: 'beatrijsBio', label: 'Beatrijs Sterk Biografie', type: 'textarea' },
   { id: 'peterBesBio', label: 'Peter Bes Biografie', type: 'textarea' },
   { id: 'leoDuppenBio', label: 'Leo Duppen Biografie', type: 'textarea' },
+  { id: 'contactTitle', label: 'Contact Sectie Titel', type: 'input' },
+  { id: 'contactIntro', label: 'Contact Intro Tekst', type: 'textarea' },
+  { id: 'contactQuote', label: 'Contact Quote', type: 'textarea' },
 ];
 
 export default function TranslatePage() {
