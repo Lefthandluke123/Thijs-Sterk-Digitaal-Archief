@@ -38,6 +38,9 @@ export default function PeterBesPage() {
   const images = siteSettings?.peterBesBioImages || [];
   const hasMultipleImages = images.length > 1;
 
+  // Gebruik een archief-afbeelding uit eigen storage als er geen specifieke foto is ingesteld
+  const defaultArchiveImageUrl = "https://firebasestorage.googleapis.com/v0/b/studio-7311695883-2090f.firebasestorage.app/o/artworks%2F1778851761925_vh0ad_2_I.jpg?alt=media";
+
   const handlePortraitClick = (url: string, index: number) => {
     setActiveArtwork({
       imageUrl: url,
@@ -104,13 +107,13 @@ export default function PeterBesPage() {
             ) : (
               <div 
                 className="relative aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl bg-secondary/20 cursor-pointer group"
-                onClick={() => handlePortraitClick("https://picsum.photos/seed/peterbes/800/1000", 0)}
+                onClick={() => handlePortraitClick(defaultArchiveImageUrl, 0)}
               >
                 <Image 
-                  src="https://picsum.photos/seed/peterbes/800/1000" 
-                  alt="Peter Bes Default" 
+                  src={defaultArchiveImageUrl} 
+                  alt="Peter Bes Archief" 
                   fill 
-                  className="object-cover transition-transform duration-1000 group-hover:scale-[1.02]" 
+                  className="object-cover transition-transform duration-1000 group-hover:scale-[1.02] grayscale" 
                   data-ai-hint="portrait artist man"
                 />
                 <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
