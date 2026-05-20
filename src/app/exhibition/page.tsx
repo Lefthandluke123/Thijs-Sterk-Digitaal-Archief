@@ -110,15 +110,32 @@ function ExhibitionContent() {
     setScrollX(prev => Math.max(0, prev + delta));
   }, []);
 
+  const navigateViewer = useCallback((direction: 'next' | 'prev') => {
+    if (!selectedArtwork || !artworks.length) return;
+    const idx = artworks.findIndex(art => art.id === selectedArtwork.id);
+    if (idx === -1) return;
+    
+    let nextIdx = direction === 'next' 
+      ? (idx + 1) % artworks.length 
+      : (idx - 1 + artworks.length) % artworks.length;
+    
+    setSelectedArtwork(artworks[nextIdx]);
+  }, [selectedArtwork, artworks]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (selectedArtwork) return;
-      if (e.key === 'ArrowRight') handleStep(600);
-      if (e.key === 'ArrowLeft') handleStep(-600);
+      if (selectedArtwork) {
+        if (e.key === 'ArrowRight') navigateViewer('next');
+        if (e.key === 'ArrowLeft') navigateViewer('prev');
+        if (e.key === 'Escape') setSelectedArtwork(null);
+      } else {
+        if (e.key === 'ArrowRight') handleStep(600);
+        if (e.key === 'ArrowLeft') handleStep(-600);
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedArtwork, handleStep]);
+  }, [selectedArtwork, handleStep, navigateViewer]);
 
   useEffect(() => {
     const handleScroll = (e: WheelEvent) => {
@@ -314,6 +331,8 @@ function ExhibitionContent() {
       <ArtworkViewer 
         artwork={selectedArtwork} 
         onClose={() => setSelectedArtwork(null)} 
+        onPrev={() => navigateViewer('prev')}
+        onNext={() => navigateViewer('next')}
       />
     </main>
   );
