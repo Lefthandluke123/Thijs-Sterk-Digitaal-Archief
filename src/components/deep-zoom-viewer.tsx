@@ -1,8 +1,10 @@
+
 "use client";
 
-import React, { useEffect, useRef, useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { Loader2, Search, Minimize2, ZoomIn, ZoomOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 interface DeepZoomViewerProps {
   imageUrl: string;
@@ -13,19 +15,35 @@ interface DeepZoomViewerProps {
 
 export function DeepZoomViewer({ imageUrl, title, brightness = 1, className }: DeepZoomViewerProps) {
   const viewerRef = useRef<HTMLDivElement>(null);
+  const osdRef = useRef<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isZoomedIn, setIsZoomedIn] = useState(false);
+
+  const toggleZoom = useCallback(() => {
+    if (!osdRef.current) return;
+    const viewport = osdRef.current.viewport;
+    const currentZoom = viewport.getZoom();
+    const homeZoom = viewport.getHomeZoom();
+    
+    // Als we dicht bij de "home" zoom zijn (volledig beeld), zoom dan 5x in.
+    // Anders, ga terug naar home.
+    if (currentZoom <= homeZoom * 1.2) {
+      viewport.zoomTo(homeZoom * 5, null, false);
+      setIsZoomedIn(true);
+    } else {
+      viewport.goHome(false);
+      setIsZoomedIn(false);
+    }
+  }, []);
 
   useEffect(() => {
-    // OpenSeadragon alleen laden en initialiseren in de browser
     let osdInstance: any = null;
 
     const initOpenSeadragon = async () => {
       if (!viewerRef.current) return;
 
       try {
-        // Dynamische import om SSR fouten te voorkomen
         const OpenSeadragon = (await import('openseadragon')).default;
-
         const isDzi = imageUrl.toLowerCase().endsWith('.dzi');
         
         osdInstance = OpenSeadragon({
@@ -60,12 +78,22 @@ export function DeepZoomViewer({ imageUrl, title, brightness = 1, className }: D
           }
         });
 
+        osdRef.current = osdInstance;
+
         osdInstance.addHandler('open', () => {
           setIsLoading(false);
           const canvas = osdInstance.canvas as HTMLCanvasElement;
           if (canvas) {
             canvas.style.filter = `brightness(${brightness})`;
           }
+        });
+
+        // Update de zoom-state als de gebruiker handmatig zoomt
+        osdInstance.addHandler('zoom', () => {
+          const viewport = osdInstance.viewport;
+          const currentZoom = viewport.getZoom();
+          const homeZoom = viewport.getHomeZoom();
+          setIsZoomedIn(currentZoom > homeZoom * 1.2);
         });
 
         osdInstance.addHandler('open-failed', () => {
@@ -83,6 +111,7 @@ export function DeepZoomViewer({ imageUrl, title, brightness = 1, className }: D
     return () => {
       if (osdInstance) {
         osdInstance.destroy();
+        osdRef.current = null;
       }
     };
   }, [imageUrl, brightness]);
@@ -101,7 +130,6 @@ export function DeepZoomViewer({ imageUrl, title, brightness = 1, className }: D
         aria-label={`Deep Zoom viewer voor ${title}`}
       />
 
-      {/* Navigator Styling via globale style tag (React safe) */}
       <style dangerouslySetInnerHTML={{ __html: `
         .navigator {
           border: 1px solid rgba(255,255,255,0.1) !important;
@@ -111,16 +139,34 @@ export function DeepZoomViewer({ imageUrl, title, brightness = 1, className }: D
           overflow: hidden !important;
         }
         .displayregion {
-          border: 1px solid #d4af37 !important; /* accent kleur fallback */
+          border: 1px solid #d4af37 !important;
         }
       `}} />
 
       {/* Custom Controls Overlay */}
-      <div className="absolute top-8 left-8 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
-        <div className="bg-black/40 backdrop-blur-xl border border-white/10 p-4 rounded-2xl pointer-events-auto">
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-1">Deep Zoom</p>
+      <div className="absolute top-8 left-8 flex flex-col gap-4 z-30">
+        <div className="bg-black/40 backdrop-blur-xl border border-white/10 p-4 rounded-2xl shadow-2xl transition-all duration-500">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-1">Collectie Thijs Sterk</p>
           <p className="text-white text-xs font-medium truncate max-w-[200px]">{title}</p>
         </div>
+
+        {/* De nieuwe Toggle Zoom knop */}
+        <button 
+          onClick={toggleZoom}
+          className="w-14 h-14 bg-accent/90 hover:bg-accent text-accent-foreground rounded-2xl flex items-center justify-center shadow-2xl border border-white/10 transition-all hover:scale-105 active:scale-95 group/zoom"
+          title={isZoomedIn ? "Terug naar overzicht" : "Zoom in op details (5x)"}
+        >
+          {isZoomedIn ? (
+            <Minimize2 className="w-6 h-6 transition-transform group-hover/zoom:scale-110" />
+          ) : (
+            <Search className="w-6 h-6 transition-transform group-hover/zoom:scale-110" />
+          )}
+        </button>
+      </div>
+
+      {/* Touch/Mouse Hint bij hover */}
+      <div className="absolute bottom-8 left-8 bg-black/20 backdrop-blur-md px-4 py-2 rounded-full border border-white/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+        <p className="text-[9px] font-black uppercase tracking-widest text-white/60">Gebruik muiswiel of dubbelklik voor handmatige zoom</p>
       </div>
     </div>
   );
