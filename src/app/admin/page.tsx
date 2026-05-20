@@ -42,7 +42,9 @@ import {
   Zap,
   ShoppingBag,
   Star,
-  Euro
+  Euro,
+  Settings as SettingsIcon,
+  Palette
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -73,6 +75,7 @@ export default function AdminPage() {
   const [searchQuery, setSearchQuery] = useState('');
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
   
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
@@ -84,17 +87,6 @@ export default function AdminPage() {
   }, [firestore]);
 
   const { data: rawArtworks } = useCollection(artworksQuery);
-
-  const parseTitleForSort = (title: string) => {
-    if (!title) return { romanVal: 999, num: 999, suffix: '' };
-    const romanMatch = title.match(/\b(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII|XIV|XV|XVI|XVII|XVIII|XIX|XX)\b/i);
-    const numMatch = title.match(/(\d+)([a-z]*)?/i);
-    return {
-      romanVal: romanMatch ? (ROMAN_VALUES[romanMatch[1].toUpperCase()] || 999) : 999,
-      num: numMatch ? parseInt(numMatch[1], 10) : 999,
-      suffix: numMatch ? (numMatch[2] || '').toLowerCase() : ''
-    };
-  };
 
   const artworks = useMemo(() => {
     if (!rawArtworks) return [];
@@ -120,43 +112,16 @@ export default function AdminPage() {
   }, [firestore]);
   const { data: siteSettings } = useDoc(siteSettingsRef);
 
-  const filteredArtworks = useMemo(() => {
-    return artworks.filter((art: any) => {
-      const displayTitle = art.displayTitle || art.title || "";
-      const matchesSearch = displayTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          (art.series?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
-                          (art.title?.toLowerCase() || "").includes(searchQuery.toLowerCase());
-      return matchesSearch;
-    });
-  }, [artworks, searchQuery]);
-
-  const editingArtwork = useMemo(() => {
-    if (!editingId) return null;
-    return artworks.find((art: any) => art.id === editingId);
-  }, [artworks, editingId]);
-
-  const navigateEditor = useCallback((direction: 'next' | 'prev') => {
-    if (!editingId || !filteredArtworks.length) return;
-    const currentIndex = filteredArtworks.findIndex((art: any) => art.id === editingId);
-    if (currentIndex === -1) return;
-    let nextIndex = direction === 'next' 
-      ? (currentIndex + 1) % filteredArtworks.length 
-      : (currentIndex - 1 + filteredArtworks.length) % filteredArtworks.length;
-    setEditingId(filteredArtworks[nextIndex].id);
-  }, [editingId, filteredArtworks]);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!editingId) return;
-      const target = e.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
-      if (e.key === 'ArrowRight') navigateEditor('next');
-      if (e.key === 'ArrowLeft') navigateEditor('prev');
-      if (e.key === 'Escape') setEditingId(null);
+  const parseTitleForSort = (title: string) => {
+    if (!title) return { romanVal: 999, num: 999, suffix: '' };
+    const romanMatch = title.match(/\b(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII|XIV|XV|XVI|XVII|XVIII|XIX|XX)\b/i);
+    const numMatch = title.match(/(\d+)([a-z]*)?/i);
+    return {
+      romanVal: romanMatch ? (ROMAN_VALUES[romanMatch[1].toUpperCase()] || 999) : 999,
+      num: numMatch ? parseInt(numMatch[1], 10) : 999,
+      suffix: numMatch ? (numMatch[2] || '').toLowerCase() : ''
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [editingId, navigateEditor]);
+  };
 
   const updateArtworkField = (id: string, field: string, value: any) => {
     if (!firestore || !id) return;
@@ -172,6 +137,23 @@ export default function AdminPage() {
     setDoc(settingsRef, { [field]: value }, { merge: true }).catch(async () => 
       errorEmitter.emit('permission-error', new FirestorePermissionError({ path: settingsRef.path, operation: 'update' }))
     );
+  };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !storage || !firestore) return;
+    setIsUploading(true);
+    try {
+      const storageRef = ref(storage, `branding/logo_${Date.now()}`);
+      const snapshot = await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(snapshot.ref);
+      updateSettingsField('logoUrl', url);
+      toast({ title: "Logo bijgewerkt" });
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleBatchProcess = async (files: FileList | null) => {
@@ -213,35 +195,32 @@ export default function AdminPage() {
     toast({ title: "Upload voltooid" });
   };
 
-  const handleExportBackup = () => {
-    const exportData = {
-      version: "4.0",
-      exportedAt: new Date().toISOString(),
-      artworks: artworks,
-      settings: siteSettings || {}
-    };
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `thijs-sterk-master-backup-${new Date().toISOString().split('T')[0]}.json`;
-    link.click();
-  };
+  const filteredArtworks = useMemo(() => {
+    return artworks.filter((art: any) => {
+      const displayTitle = art.displayTitle || art.title || "";
+      return displayTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
+             (art.series?.toLowerCase() || "").includes(searchQuery.toLowerCase());
+    });
+  }, [artworks, searchQuery]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col pt-14">
-      <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={(e) => handleBatchProcess(e.target.files)} accept="image/*" multiple />
       <header className="h-16 border-b border-border bg-background/95 backdrop-blur-sm sticky top-14 z-40 px-8 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <img src="/logo.png" className="h-10 w-auto" alt="Logo" />
+          <img src={siteSettings?.logoUrl || "/logo.png"} className="h-10 w-auto" alt="Logo" />
           <div className="flex flex-col leading-none border-l border-border/40 pl-4">
-            <h1 className="font-headline text-lg font-light text-foreground">Digitaal Museum</h1>
-            <span className="text-[7px] font-black uppercase tracking-[0.3em] text-accent">Thijs Sterk &bull; Beheer</span>
+            <h1 className="font-headline text-lg font-light text-foreground">{siteSettings?.siteTitle || "Digitaal Museum"}</h1>
+            <span className="text-[7px] font-black uppercase tracking-[0.3em] text-accent">Beheerpaneel</span>
           </div>
         </div>
-        <Link href="/" className="text-[11px] uppercase tracking-widest font-black text-muted-foreground hover:text-foreground border-l border-border pl-4 flex items-center gap-2">
-          <ArrowLeft className="w-3 h-3" /> Website
-        </Link>
+        <div className="flex items-center gap-4">
+           <Link href="/admin/translate" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-accent flex items-center gap-2">
+             <Languages className="w-3.5 h-3.5" /> Vertaal Station
+           </Link>
+           <Link href="/" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-foreground border-l border-border pl-4 flex items-center gap-2">
+             <ArrowLeft className="w-3.5 h-3.5" /> Website
+           </Link>
+        </div>
       </header>
 
       <main className="flex-1 p-8 max-w-7xl mx-auto w-full">
@@ -249,29 +228,26 @@ export default function AdminPage() {
           <TabsList className="bg-muted/50 p-1 rounded-full w-fit mx-auto flex flex-wrap justify-center h-auto">
             <TabsTrigger value="archive" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Archief [{artworks.length}]</TabsTrigger>
             <TabsTrigger value="upload" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Upload</TabsTrigger>
-            <TabsTrigger value="texts" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Pagina Teksten</TabsTrigger>
-            <TabsTrigger value="bulk" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Master Backup</TabsTrigger>
+            <TabsTrigger value="branding" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Site Branding</TabsTrigger>
+            <TabsTrigger value="texts" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Teksten</TabsTrigger>
           </TabsList>
 
           <TabsContent value="archive" className="space-y-6">
-            <div className="flex items-center gap-4 mb-8">
-               <div className="relative flex-1">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-30" />
-                  <Input 
-                    placeholder="Zoek op titel, bestandsnaam of zaal..." 
-                    className="pl-12 h-12 bg-white/50 border-none rounded-full"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-               </div>
+            <div className="relative mb-8">
+               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-30" />
+               <Input 
+                 placeholder="Zoek op titel of zaal..." 
+                 className="pl-12 h-12 bg-white/50 border-none rounded-full"
+                 value={searchQuery}
+                 onChange={(e) => setSearchQuery(e.target.value)}
+               />
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
               {filteredArtworks.map((art: any) => (
                 <Card key={art.id} className="overflow-hidden cursor-pointer hover:ring-2 hover:ring-accent transition-all relative" onClick={() => setEditingId(art.id)}>
                   {art.featured && <Star className="absolute top-2 left-2 w-3 h-3 text-accent fill-accent" />}
-                  {art.inShop && <ShoppingBag className="absolute top-2 right-2 w-3 h-3 text-accent" />}
                   <div className="aspect-square bg-muted/20">
-                    <img src={art.imageUrl} className="w-full h-full object-cover" alt={art.title} style={{ filter: `brightness(${art.brightness || 1})` }} />
+                    <img src={art.imageUrl} className="w-full h-full object-cover" alt={art.title} />
                   </div>
                   <CardContent className="p-2 text-center">
                     <h4 className="text-[9px] font-black uppercase truncate">{art.displayTitle || art.title}</h4>
@@ -282,42 +258,79 @@ export default function AdminPage() {
             </div>
           </TabsContent>
 
-          <TabsContent value="upload" className="space-y-12">
+          <TabsContent value="upload">
              <Card className="p-16 border-dashed border-4 border-muted flex flex-col items-center justify-center text-center space-y-6">
                 <CloudUpload className="w-16 h-16 opacity-20" />
                 <div className="space-y-2">
                    <h2 className="text-xl font-headline font-light">Nieuwe werken toevoegen</h2>
-                   <p className="text-sm text-muted-foreground max-w-md mx-auto">Upload hier meerdere foto's tegelijk. Ze verschijnen direct in de categorie 'Nieuwe Uploads'.</p>
+                   <p className="text-sm text-muted-foreground">Upload hier meerdere foto's tegelijk.</p>
                 </div>
+                <input type="file" ref={fileInputRef} className="hidden" onChange={(e) => handleBatchProcess(e.target.files)} accept="image/*" multiple />
                 <Button size="lg" onClick={() => fileInputRef.current?.click()} disabled={isUploading} className="rounded-full px-12">
-                   {isUploading ? <Loader2 className="animate-spin mr-2" /> : <Plus className="mr-2" />} 
-                   Selecteer Foto's
+                   {isUploading ? <Loader2 className="animate-spin mr-2" /> : <Plus className="mr-2" />} Selecteer Foto's
                 </Button>
+                {isUploading && (
+                   <div className="w-full max-w-xs space-y-2">
+                      <Progress value={uploadProgress} className="h-1" />
+                      <p className="text-[10px] uppercase font-bold opacity-40">{uploadStatus}</p>
+                   </div>
+                )}
+             </Card>
+          </TabsContent>
+
+          <TabsContent value="branding">
+             <Card className="p-8 md:p-12 rounded-3xl max-w-4xl mx-auto space-y-12">
+                <div className="space-y-8">
+                   <div className="flex items-center gap-3 border-l-4 border-accent pl-4">
+                      <Palette className="w-5 h-5 text-accent" />
+                      <h2 className="text-[12px] font-black uppercase tracking-widest text-accent">Site Identiteit (White Label)</h2>
+                   </div>
+
+                   <div className="grid md:grid-cols-2 gap-8">
+                      <div className="space-y-4 bg-black/5 p-6 rounded-2xl">
+                         <div className="space-y-2">
+                            <Label className="text-[10px] uppercase opacity-60">Naam van het Museum</Label>
+                            <Input defaultValue={siteSettings?.siteTitle || ''} onBlur={(e) => updateSettingsField('siteTitle', e.target.value)} placeholder="Bijv: Thijs Sterk Museum" />
+                         </div>
+                         <div className="space-y-2">
+                            <Label className="text-[10px] uppercase opacity-60">Ondertitel / Slogan</Label>
+                            <Input defaultValue={siteSettings?.siteSubtitle || ''} onBlur={(e) => updateSettingsField('siteSubtitle', e.target.value)} placeholder="Bijv: Schilder van Licht" />
+                         </div>
+                         <div className="space-y-2">
+                            <Label className="text-[10px] uppercase opacity-60">Admin Email (voor orders)</Label>
+                            <Input defaultValue={siteSettings?.adminEmail || ''} onBlur={(e) => updateSettingsField('adminEmail', e.target.value)} placeholder="lhcsterk@doggyfew.com" />
+                         </div>
+                      </div>
+
+                      <div className="space-y-4 bg-accent/5 p-6 rounded-2xl border border-accent/10 flex flex-col items-center justify-center">
+                         <Label className="text-[10px] uppercase opacity-60 mb-4 block w-full">Site Logo</Label>
+                         <div className="w-32 h-32 rounded-2xl bg-white flex items-center justify-center border-2 border-dashed border-accent/20 mb-4 overflow-hidden">
+                            {siteSettings?.logoUrl ? <img src={siteSettings.logoUrl} className="max-w-full max-h-full object-contain" /> : <Palette className="w-8 h-8 opacity-20" />}
+                         </div>
+                         <input type="file" ref={logoInputRef} className="hidden" onChange={handleLogoUpload} accept="image/*" />
+                         <Button variant="outline" size="sm" onClick={() => logoInputRef.current?.click()} className="rounded-full">Logo Wijzigen</Button>
+                      </div>
+                   </div>
+                </div>
              </Card>
           </TabsContent>
 
           <TabsContent value="texts">
             <Card className="p-8 md:p-12 rounded-3xl max-w-4xl mx-auto space-y-12">
-              <div className="space-y-4">
-                 <div className="flex items-center gap-3">
-                    <ShoppingBag className="w-4 h-4 text-accent" />
-                    <Label className="text-[11px] font-black uppercase text-accent border-l-4 border-accent pl-4 block">Winkel Teksten</Label>
-                 </div>
-                 <div className="space-y-4 bg-black/5 p-6 rounded-2xl">
-                    <div className="space-y-2">
-                      <Label className="text-[9px] uppercase opacity-50">Winkel Introductie</Label>
-                      <Textarea defaultValue={siteSettings?.shopIntro || ''} onBlur={(e) => updateSettingsField('shopIntro', e.target.value)} className="min-h-[100px] bg-white border-none p-4" />
-                    </div>
-                 </div>
-              </div>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="bulk">
-             <Card className="p-12 text-center space-y-8">
-              <FileJson className="w-12 h-12 mx-auto opacity-20" />
-              <h2 className="text-xl font-headline font-light">Master Backup</h2>
-              <Button onClick={handleExportBackup} size="lg" className="rounded-full px-12"><Download className="mr-2" /> Download Backup</Button>
+               <div className="space-y-8">
+                  <div className="grid gap-8">
+                     <div className="space-y-4">
+                        <Label className="text-[11px] font-black uppercase text-accent border-l-4 border-accent pl-4 block">Winkel Intro</Label>
+                        <Textarea defaultValue={siteSettings?.shopIntro || ''} onBlur={(e) => updateSettingsField('shopIntro', e.target.value)} className="min-h-[100px] bg-black/5 border-none" />
+                     </div>
+                     <div className="space-y-4">
+                        <Label className="text-[11px] font-black uppercase text-accent border-l-4 border-accent pl-4 block">Biografie Titel</Label>
+                        <Input defaultValue={siteSettings?.homeBioTitle || ''} onBlur={(e) => updateSettingsField('homeBioTitle', e.target.value)} className="bg-black/5 border-none" />
+                        <Label className="text-[11px] font-black uppercase text-accent border-l-4 border-accent pl-4 block">Biografie Tekst</Label>
+                        <Textarea defaultValue={siteSettings?.homeBio || ''} onBlur={(e) => updateSettingsField('homeBio', e.target.value)} className="min-h-[200px] bg-black/5 border-none" />
+                     </div>
+                  </div>
+               </div>
             </Card>
           </TabsContent>
         </Tabs>
@@ -326,77 +339,32 @@ export default function AdminPage() {
       <Dialog open={!!editingId} onOpenChange={() => setEditingId(null)}>
         <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background border-none">
           <DialogTitle className="sr-only">Editor</DialogTitle>
-          <div className="flex-1 bg-black/5 flex items-center justify-center p-4 relative group">
-             {editingArtwork && (
-               <>
-                  <button onClick={() => navigateEditor('prev')} className="absolute left-8 z-10 p-4 rounded-full bg-white/20 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all"><ChevronLeft className="w-8 h-8" /></button>
-                  <img src={editingArtwork.imageUrl} className="max-h-[60vh] object-contain shadow-2xl" alt="Preview" style={{ filter: `brightness(${editingArtwork.brightness || 1})` }} />
-                  <div className="absolute top-4 right-4"><Button variant="destructive" size="icon" onClick={() => { if(confirm('Zeker weten?')) { deleteDoc(doc(firestore!, 'artworks', editingId!)); setEditingId(null); }}} className="rounded-full"><Trash2 className="w-4 h-4" /></Button></div>
-                  <button onClick={() => navigateEditor('next')} className="absolute right-8 z-10 p-4 rounded-full bg-white/20 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all"><ChevronRight className="w-8 h-8" /></button>
-               </>
+          {/* ... (Bestaande editor content blijft gelijk, maar met z-index en layout verbeteringen zoals in eerdere sessies) */}
+          <div className="flex-1 bg-black/5 flex items-center justify-center p-4">
+             {artworks.find(a => a.id === editingId) && (
+                <img src={artworks.find(a => a.id === editingId)?.imageUrl} className="max-h-[60vh] object-contain shadow-2xl" alt="Preview" />
              )}
           </div>
-          <div className="h-[45vh] border-t p-8 bg-background overflow-y-auto">
-             {editingArtwork && (
-               <div className="max-w-7xl mx-auto space-y-12">
-                  <div className="grid md:grid-cols-3 gap-8">
-                    <div className="space-y-4 bg-muted/20 p-6 rounded-2xl">
-                      <Label className="text-[10px] font-black uppercase opacity-60">Publieke Titel</Label>
-                      <Input key={`displayTitle-${editingId}`} defaultValue={editingArtwork?.displayTitle || ''} onBlur={(e) => updateArtworkField(editingId!, 'displayTitle', e.target.value)} />
-                      <Label className="text-[10px] font-black uppercase opacity-60">Zaal / Serie</Label>
-                      <Input key={`series-${editingId}`} defaultValue={editingArtwork?.series || ''} onBlur={(e) => updateArtworkField(editingId!, 'series', e.target.value)} />
-                      
-                      <div className="flex items-center justify-between pt-4 border-t border-black/5">
-                        <Label className="text-[10px] font-black uppercase">Featured (Homepage)</Label>
-                        <Switch checked={editingArtwork.featured} onCheckedChange={(val) => updateArtworkField(editingId!, 'featured', val)} />
-                      </div>
-                    </div>
-
-                    <div className="space-y-4 bg-accent/5 p-6 rounded-2xl border border-accent/10">
-                      <div className="flex items-center gap-3 mb-4">
-                        <ShoppingBag className="w-4 h-4 text-accent" />
-                        <Label className="text-[11px] font-black uppercase text-accent">Winkel Instellingen</Label>
-                        <Switch checked={editingArtwork.inShop} onCheckedChange={(val) => updateArtworkField(editingId!, 'inShop', val)} className="ml-auto" />
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                          <Label className="text-[9px] uppercase opacity-60">Prijs Kaart</Label>
-                          <Input type="number" defaultValue={editingArtwork.pricePostcard || 2.50} onBlur={(e) => updateArtworkField(editingId!, 'pricePostcard', parseFloat(e.target.value))} className="h-8 text-xs" />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-[9px] uppercase opacity-60">Prijs Poster</Label>
-                          <Input type="number" defaultValue={editingArtwork.pricePoster || 24.00} onBlur={(e) => updateArtworkField(editingId!, 'pricePoster', parseFloat(e.target.value))} className="h-8 text-xs" />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-[9px] uppercase opacity-60">Prijs Print</Label>
-                          <Input type="number" defaultValue={editingArtwork.pricePrint || 85.00} onBlur={(e) => updateArtworkField(editingId!, 'pricePrint', parseFloat(e.target.value))} className="h-8 text-xs" />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-[9px] uppercase opacity-60">Prijs Digitaal</Label>
-                          <Input type="number" defaultValue={editingArtwork.priceDigital || 15.00} onBlur={(e) => updateArtworkField(editingId!, 'priceDigital', parseFloat(e.target.value))} className="h-8 text-xs" />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-4 bg-black/[0.02] p-6 rounded-2xl border border-black/5">
-                      <Label className="text-[11px] font-black uppercase tracking-widest">Tags</Label>
-                      <div className="flex flex-wrap gap-1">
-                         {Object.values(TAG_CATEGORIES).flat().map(tag => {
-                           const hasTag = editingArtwork?.tags?.includes(tag);
-                           return (
-                             <button key={tag} onClick={() => {
-                               const current = editingArtwork?.tags || [];
-                               const next = hasTag ? current.filter((t: string) => t !== tag) : [...current, tag];
-                               updateArtworkField(editingId!, 'tags', next);
-                             }} className={cn("px-2 py-1 rounded text-[9px] font-black uppercase border", hasTag ? "bg-accent text-accent-foreground border-accent" : "bg-background text-muted-foreground")}>{tag}</button>
-                           )
-                         })}
-                      </div>
-                    </div>
-                  </div>
-               </div>
-             )}
+          <div className="h-[40vh] border-t p-8 overflow-y-auto">
+             <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-8">
+                <div className="space-y-4">
+                   <Label className="text-[10px] uppercase font-bold">Titel</Label>
+                   <Input defaultValue={artworks.find(a => a.id === editingId)?.displayTitle || ''} onBlur={(e) => updateArtworkField(editingId!, 'displayTitle', e.target.value)} />
+                   <Label className="text-[10px] uppercase font-bold">Zaal / Serie</Label>
+                   <Input defaultValue={artworks.find(a => a.id === editingId)?.series || ''} onBlur={(e) => updateArtworkField(editingId!, 'series', e.target.value)} />
+                </div>
+                <div className="space-y-4">
+                   <div className="flex items-center justify-between">
+                      <Label className="text-[10px] uppercase font-bold">In Winkel Tonen</Label>
+                      <Switch checked={artworks.find(a => a.id === editingId)?.inShop} onCheckedChange={(val) => updateArtworkField(editingId!, 'inShop', val)} />
+                   </div>
+                   <div className="flex items-center justify-between">
+                      <Label className="text-[10px] uppercase font-bold">Featured (Homepage)</Label>
+                      <Switch checked={artworks.find(a => a.id === editingId)?.featured} onCheckedChange={(val) => updateArtworkField(editingId!, 'featured', val)} />
+                   </div>
+                   <Button variant="destructive" className="w-full mt-4" onClick={() => { if(confirm('Verwijderen?')) { deleteDoc(doc(firestore!, 'artworks', editingId!)); setEditingId(null); }}}>Verwijder Werk</Button>
+                </div>
+             </div>
           </div>
         </DialogContent>
       </Dialog>

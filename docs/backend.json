@@ -78,17 +78,22 @@
     },
     "Settings": {
       "title": "Settings",
-      "description": "Algemene website instellingen en teksten.",
+      "description": "Algemene website instellingen en teksten voor White Label branding.",
       "type": "object",
       "properties": {
+        "siteTitle": { "type": "string", "description": "De naam van het museum (bijv. Thijs Sterk Museum)" },
+        "siteSubtitle": { "type": "string", "description": "Ondertitel (bijv. Schilder van Licht)" },
         "logoUrl": { "type": "string" },
-        "siteTitle": { "type": "string" },
+        "adminEmail": { "type": "string", "description": "Ontvanger voor bestellingen en contact" },
         "shopIntro": { "type": "string" },
-        "shopIntro_en": { "type": "string" },
-        "shopIntro_de": { "type": "string" },
-        "shopIntro_fr": { "type": "string" },
-        "shopIntro_es": { "type": "string" },
-        "hiddenSeries": { "type": "array", "items": { "type": "string" } }
+        "homeBioTitle": { "type": "string" },
+        "homeBio": { "type": "string" },
+        "homeBioImageUrl": { "type": "string" },
+        "contactTitle": { "type": "string" },
+        "contactIntro": { "type": "string" },
+        "hiddenSeries": { "type": "array", "items": { "type": "string" } },
+        "seriesTranslations": { "type": "object" },
+        "tagTranslations": { "type": "object" }
       }
     }
   },
@@ -98,6 +103,6 @@
     "/orders/{orderId}": { "schema": "Order", "description": "Bestellingen uit de winkel" },
     "/interactions/{interactionId}": { "schema": "Interaction", "description": "Log van bezoekersinteracties" },
     "/mail/{mailId}": { "schema": "Mail", "description": "Wachtrij voor e-mails" },
-    "/settings/site": { "schema": "Settings", "description": "Website configuratie" }
+    "/settings/site": { "schema": "Settings", "description": "Website configuratie en branding" }
   }
 }
