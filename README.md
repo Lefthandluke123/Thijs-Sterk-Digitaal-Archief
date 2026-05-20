@@ -19,19 +19,23 @@ Heeft u het archief op dia? Houd bij het scannen rekening met het volgende:
 *   **Scan-resolutie**: Om 4000 pixels te halen uit een standaard 35mm dia, moet u scannen op minimaal **3000 DPI tot 4000 DPI**.
 *   **Kleurdiepte**: Scan in 24-bit of 48-bit voor maximale kleurnuances in de schaduwen.
 *   **Stof & Krassen**: Gebruik bij voorkeur een scanner met 'Digital ICE' technologie om stofjes op de dia automatisch te verwijderen.
-*   **Nawerking**: Sla uw scans eerst op als TIF (ongecomprimeerd) voor u ze bewerkt, en exporteer ze pas als laatste stap naar **WebP** voor de website.
 
-### 3. Hoe publiceer ik mijn wijzigingen?
+### 3. E-mail Instellen (Contactformulier)
+Om berichten direct in uw mailbox te ontvangen, moet de e-mail service geactiveerd worden:
+1.  Ga naar de **Firebase Console**.
+2.  Installeer de extensie **"Trigger Email from Firestore"**.
+3.  Configureer de extensie met de collectie: `mail`.
+4.  Voer uw SMTP-gegevens in (bijv. van SendGrid of uw hosting provider).
+5.  Vanaf dat moment worden alle inzendingen doorgestuurd naar `lhcsterk@doggyfew.com`.
+
+### 4. Hoe publiceer ik mijn wijzigingen?
 *   **Inhoud (Foto's, Tags, Bio's)**: Wijzigingen in het beheerpaneel (`/admin`) zijn **direct live**.
 *   **Layout & Techniek (Code)**: Klik in uw dashboard op **'Deploy'**. Zodra dit klaar is, zijn nieuwe functies of sorteerlogica zichtbaar.
 
-### 4. Sortering van het Archief
+### 5. Sortering van het Archief
 De collectie wordt automatisch gesorteerd op:
 1.  **Romeinse Cijfergroep** (I, II, III... t/m XX)
 2.  **Volgnummer** binnen die groep (1, 2, 3...)
 
-### 5. Back-up & Herstel
+### 6. Back-up & Herstel
 Onder **'Master Backup'** kunt u een JSON-bestand downloaden. Dit bevat alle titels, jaartallen en zaal-indelingen. Doe dit altijd na een grote bewerksessie.
-
-### 6. Meertaligheid
-De menu's en interface zijn beschikbaar in NL, EN, DE en FR. De biografieën kunnen via de AI-knoppen in het tabblad **Pagina Teksten** per taal worden geoptimaliseerd.
