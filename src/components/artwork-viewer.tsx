@@ -53,13 +53,13 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
 
   return (
     <Dialog open={!!artwork} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background border-none rounded-none overflow-hidden outline-none">
+      <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background border-none rounded-none overflow-hidden outline-none shadow-none">
         <DialogTitle className="sr-only">Artwork Viewer</DialogTitle>
         
         <div 
           className={cn(
-            "relative w-full flex items-center justify-center overflow-hidden bg-black/5 group transition-all duration-500",
-            isFullScreen ? "h-[100vh]" : "h-[82vh]",
+            "relative w-full flex items-center justify-center overflow-hidden bg-black/[0.03] group transition-all duration-500",
+            isFullScreen ? "h-[100vh]" : "h-[88vh]",
             showMagnifier ? (isOverUI ? "cursor-default" : "cursor-none") : "cursor-pointer"
           )}
           onClick={handleToggleFullScreen}
@@ -70,7 +70,7 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
               ref={imgRef}
               src={artwork.imageUrl} 
               alt={artwork.displayTitle || artwork.title} 
-              className="max-w-full max-h-[96%] object-contain p-2 md:p-6 shadow-2xl transition-all duration-700 pointer-events-none" 
+              className="max-w-[99%] max-h-[98%] object-contain p-1 md:p-2 shadow-2xl transition-all duration-700 pointer-events-none" 
               style={{ 
                 clipPath: artwork.cropTop !== undefined ? `inset(${artwork.cropTop || 0}% ${artwork.cropRight || 0}% ${artwork.cropBottom || 0}% ${artwork.cropLeft || 0}%)` : undefined, 
                 filter: `brightness(${artwork.brightness || 1})` 
@@ -162,21 +162,21 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
 
         <div className={cn(
           "w-full bg-background/95 backdrop-blur-md py-4 px-12 border-t border-border/10 flex flex-col items-center justify-center overflow-y-auto text-center transition-all duration-500",
-          isFullScreen ? "h-0 opacity-0 pointer-events-none py-0 px-0" : "h-[18vh] opacity-100"
+          isFullScreen ? "h-0 opacity-0 pointer-events-none py-0 px-0" : "h-[12vh] opacity-100"
         )}>
           <div className="max-w-4xl mx-auto">
-            <h2 className="text-[10px] md:text-[11px] font-black tracking-[0.4em] uppercase text-foreground/40 mb-3">{artwork?.displayTitle || artwork?.title}</h2>
-            <div className="text-[11px] md:text-[13px] uppercase font-black tracking-[0.4em] text-accent flex flex-wrap gap-x-10 gap-y-3 justify-center items-center">
-              <span className="bg-accent/10 px-5 py-1 rounded-sm">Zaal: {artwork?.series}</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-accent/30 self-center hidden md:inline" />
+            <h2 className="text-[9px] md:text-[10px] font-black tracking-[0.4em] uppercase text-foreground/40 mb-2">{artwork?.displayTitle || artwork?.title}</h2>
+            <div className="text-[10px] md:text-[12px] uppercase font-black tracking-[0.3em] text-accent flex flex-wrap gap-x-8 gap-y-2 justify-center items-center">
+              <span className="opacity-80">Zaal: {artwork?.series}</span>
+              <span className="w-1 h-1 rounded-full bg-accent/30 self-center hidden md:inline" />
               <span>{artwork?.year || 'Onbekend'}</span>
               {artwork?.dimensions && (
                 <>
-                  <span className="w-1.5 h-1.5 rounded-full bg-accent/30 self-center hidden md:inline" />
+                  <span className="w-1 h-1 rounded-full bg-accent/30 self-center hidden md:inline" />
                   <span>{artwork?.dimensions}</span>
                 </>
               )}
-              <span className="w-1.5 h-1.5 rounded-full bg-accent/30 self-center hidden md:inline" />
+              <span className="w-1 h-1 rounded-full bg-accent/30 self-center hidden md:inline" />
               <span>{artwork?.medium}</span>
             </div>
           </div>
