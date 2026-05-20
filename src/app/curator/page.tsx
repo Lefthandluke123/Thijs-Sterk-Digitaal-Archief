@@ -12,7 +12,7 @@ import { ArtworkViewer } from '@/components/artwork-viewer';
 
 const TAG_CATEGORIES = {
   "Periode": ["Vroeg werk", "45-50", "50-60", "70-82"],
-  "Techniek": ["Olieverf", "Aquarel", "Monumentaal", "Glas in lood"],
+  "Techniek": ["Olieverf", "Aquarel", "Gouache", "Monumentaal", "Glas in lood"],
   "Plaats": ["Groet", "Schoorl", "Hargen", "Camperduin", "Holland", "Amsterdam", "Frankrijk", "Bretagne", "Griekenland"],
   "Onderwerp": ["Havens", "Stillevens", "Bloemen", "Dieren", "Water", "Mensen", "Polder"]
 };
