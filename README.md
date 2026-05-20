@@ -1,36 +1,30 @@
 
-# Thijs Sterk Framework - Commerciële Distributie Gids
+# Safe Harbor Museum Framework - The Entrepreneur's Blueprint
 
-Dit document is de blauwdruk voor het uitrollen van dit museum-platform naar andere kunstenaars (SaaS-Light model).
+Welkom bij de **Curator Edition**. Dit platform is niet zomaar een website; het is een schaalbare museum-infrastructuur bedoeld voor digitale conservatoren die kunstenaars helpen hun werk op het hoogste niveau te ontsluiten.
 
-## 1. Zakelijk Model (Advies)
-Als beheerder (Digitaal Conservator) hanteer je een uurtarief van minimaal **€50,- ex BTW**.
+## 1. Het Verdienmodel (The Razor-Sharp Edge)
+Als beheerder hanteer je een professioneel tarief van minimaal **€50,- ex BTW per uur**. Dit is jouw blauwdruk voor de 20 vrienden en vriendinnen:
 
-*   **Setup Fee**: Eenmalig €150 - €250 (3 tot 5 uur werk).
-    *   Configuratie Firebase & Stripe.
-    *   Domeinkoppeling.
-    *   Training in Deep Zoom workflow.
-*   **Service Fee**: €20 - €30 p/m.
-    *   Hosting (Blaze plan).
-    *   Technisch onderhoud & support.
-*   **Transactie Provisie**: 5% - 10% bovenop de Stripe kosten.
+*   **De Kickstart (Setup Fee)**: Eénmalig **€250,-**. 
+    *   *Wat je doet:* Inrichting Firebase, koppelen Stripe, DNS configuratie en de eerste 10 'Master Files' (4000px+) verwerken.
+    *   *Value:* De kunstenaar heeft binnen 24 uur een internationaal museum-platform.
+*   **De Beschermengel (Monthly Service Fee)**: **€25,- tot €35,- per maand**.
+    *   *Wat je doet:* Hosting-beheer, back-ups, en technische support. Je bent hun 'Digital Guard'.
+*   **De Succes-Fee (Commission)**: **10% van de omzet**.
+    *   *Waarom:* Jij onderhoudt de winkel. Als zij verkopen, word jij beloond voor de feilloze techniek.
 
-## 2. Aanleverspecificaties (Wat de kunstenaar levert)
-Om de museale kwaliteit te waarborgen, moet de kunstenaar de volgende zaken aanleveren:
+## 2. Aanleverspecificaties (Museale Kwaliteit)
+Om de Deep Zoom beleving te garanderen, accepteer je alleen het beste:
+*   **Beeld**: JPEG/WebP, minimaal **4000px** aan de langste zijde.
+*   **Kleur**: sRGB profiel.
+*   **Data**: Titel, Jaar, Medium en Afmetingen (in een overzichtelijke lijst).
 
-*   **Foto's**: JPEG of WebP, minimaal **4000px** aan de langste zijde. Kleurprofiel sRGB.
-*   **Metadata**: Een lijst met Titels, Jaartallen, Medium en Afmetingen.
-*   **Branding**: Een logo (PNG met transparante achtergrond) en een biografie-tekst.
-*   **Stripe**: API Keys (Publishable & Secret) van hun eigen Stripe-account.
-*   **Domein**: Toegang tot de DNS-instellingen van hun gewenste URL.
+## 3. Technisch Uitrolplan
+1.  **Project Clone**: Gebruik dit framework als GitHub Template.
+2.  **Firebase Setup**: Maak een nieuw project aan per artiest.
+3.  **Branding**: Vul de `Settings` collectie via het `/admin` paneel.
+4.  **Stripe**: Activeer 'Direct Checkout' door de API keys van de klant in te voeren.
 
-## 3. Technisch Uitrolplan (per nieuwe klant)
-1.  **Clone Repository**: Gebruik deze code als GitHub Template.
-2.  **Firebase Setup**: 
-    *   Maak een nieuw Firebase project aan.
-    *   Activeer Firestore, Authentication (Google), Storage en App Hosting.
-3.  **Branding**: Vul de `Settings` collectie in Firestore of via het `/admin` paneel.
-4.  **Stripe**: Voer de keys in onder het tabblad "Betalingen".
-
-## 4. Onderhoud & Schaalbaarheid
-*   **Updates**: Push updates naar de 'master' branch om alle aangesloten musea tegelijk te verbeteren.
+## 4. De Toon
+Wees scherp op de cijfers, maar warm in de begeleiding. Je bent hun partner in het bouwen van een blijvende digitale nalatenschap.

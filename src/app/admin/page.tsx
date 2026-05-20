@@ -32,7 +32,9 @@ import {
   Camera,
   HelpCircle,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Zap,
+  Gem
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -138,7 +140,7 @@ export default function AdminPage() {
       const snapshot = await uploadBytes(storageRef, file);
       const url = await getDownloadURL(snapshot.ref);
       updateSettingsField('logoUrl', url);
-      toast({ title: "Logo bijgewerkt" });
+      toast({ title: "Site identiteit bijgewerkt" });
     } catch (err) { console.error(err); }
     finally { setIsUploading(false); }
   };
@@ -153,7 +155,7 @@ export default function AdminPage() {
 
     for (const file of filesArray) {
       try {
-        setUploadStatus(`Uploaden: ${file.name} (${processedCount + 1}/${totalFiles})`);
+        setUploadStatus(`Digitaliseren: ${file.name} (${processedCount + 1}/${totalFiles})`);
         const timestamp = Date.now();
         const safeName = file.name.replace(/[^a-z0-9.]/gi, '_');
         const fileNameNoExt = file.name.split('.')[0] || "Naamloos";
@@ -179,7 +181,7 @@ export default function AdminPage() {
     }
     setIsUploading(false);
     setUploadStatus('');
-    toast({ title: "Upload voltooid" });
+    toast({ title: "Master Files succesvol verwerkt" });
   };
 
   const filteredArtworks = useMemo(() => {
@@ -197,7 +199,7 @@ export default function AdminPage() {
           <img src={siteSettings?.logoUrl || "/logo.png"} className="h-10 w-auto" alt="Logo" />
           <div className="flex flex-col leading-none border-l border-border/40 pl-4">
             <h1 className="font-headline text-lg font-light text-foreground">{siteSettings?.siteTitle || "Digitaal Museum"}</h1>
-            <span className="text-[7px] font-black uppercase tracking-[0.3em] text-accent">SaaS Framework Dashboard</span>
+            <span className="text-[7px] font-black uppercase tracking-[0.3em] text-accent">Safe Harbor Framework &bull; Curator Edition</span>
           </div>
         </div>
         <div className="flex items-center gap-4">
@@ -214,18 +216,18 @@ export default function AdminPage() {
         <Tabs defaultValue="archive" className="space-y-8">
           <TabsList className="bg-muted/50 p-1 rounded-full w-fit mx-auto flex flex-wrap justify-center h-auto border border-black/5">
             <TabsTrigger value="archive" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Archief [{artworks.length}]</TabsTrigger>
-            <TabsTrigger value="orders" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Orders [{orders?.length || 0}]</TabsTrigger>
-            <TabsTrigger value="upload" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Upload</TabsTrigger>
-            <TabsTrigger value="branding" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Site Branding</TabsTrigger>
-            <TabsTrigger value="payments" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Betalingen</TabsTrigger>
-            <TabsTrigger value="help" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest bg-accent/10"><LifeBuoy className="w-3 h-3 mr-2" /> Help & Gids</TabsTrigger>
+            <TabsTrigger value="orders" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Bestellingen [{orders?.length || 0}]</TabsTrigger>
+            <TabsTrigger value="upload" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Digitaliseren</TabsTrigger>
+            <TabsTrigger value="branding" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Identiteit</TabsTrigger>
+            <TabsTrigger value="payments" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Commercieel</TabsTrigger>
+            <TabsTrigger value="help" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest bg-primary text-primary-foreground hover:bg-primary/90 shadow-xl"><LifeBuoy className="w-3 h-3 mr-2" /> Gids & Cijfers</TabsTrigger>
           </TabsList>
 
           <TabsContent value="archive" className="space-y-6">
             <div className="relative mb-8">
                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-30" />
                <Input 
-                 placeholder="Zoek op titel of zaal..." 
+                 placeholder="Doorzoek de collectie..." 
                  className="pl-12 h-12 bg-white/50 border-none rounded-full shadow-sm"
                  value={searchQuery}
                  onChange={(e) => setSearchQuery(e.target.value)}
@@ -251,7 +253,7 @@ export default function AdminPage() {
              <Card className="p-6 rounded-3xl border-none shadow-xl bg-white/50 backdrop-blur-md">
                 <div className="flex items-center gap-3 mb-8 border-l-4 border-accent pl-4">
                    <TrendingUp className="w-5 h-5 text-accent" />
-                   <h2 className="text-[12px] font-black uppercase tracking-widest text-accent">Order Historie</h2>
+                   <h2 className="text-[12px] font-black uppercase tracking-widest text-accent">Omzet & Historie</h2>
                 </div>
                 
                 <Table>
@@ -285,7 +287,7 @@ export default function AdminPage() {
                       </TableRow>
                     )) : (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center py-12 opacity-30 uppercase font-black tracking-widest">Nog geen bestellingen</TableCell>
+                        <TableCell colSpan={5} className="text-center py-12 opacity-30 uppercase font-black tracking-widest italic">Nog geen transacties geregistreerd</TableCell>
                       </TableRow>
                     )}
                   </TableBody>
@@ -298,32 +300,32 @@ export default function AdminPage() {
                 <div className="space-y-8">
                    <div className="flex items-center gap-3 border-l-4 border-accent pl-4">
                       <Palette className="w-5 h-5 text-accent" />
-                      <h2 className="text-[12px] font-black uppercase tracking-widest text-accent">Site Identiteit (White Label)</h2>
+                      <h2 className="text-[12px] font-black uppercase tracking-widest text-accent">White Label Configuratie</h2>
                    </div>
 
                    <div className="grid md:grid-cols-2 gap-8">
                       <div className="space-y-4 bg-black/5 p-6 rounded-2xl">
                          <div className="space-y-2">
-                            <Label className="text-[10px] uppercase opacity-60">Naam van het Museum</Label>
-                            <Input defaultValue={siteSettings?.siteTitle || ''} onBlur={(e) => updateSettingsField('siteTitle', e.target.value)} placeholder="Bijv: Thijs Sterk Museum" />
+                            <Label className="text-[10px] uppercase opacity-60">Museum Naam</Label>
+                            <Input defaultValue={siteSettings?.siteTitle || ''} onBlur={(e) => updateSettingsField('siteTitle', e.target.value)} placeholder="Bijv: Studio Sophie" />
                          </div>
                          <div className="space-y-2">
-                            <Label className="text-[10px] uppercase opacity-60">Ondertitel / Slogan</Label>
-                            <Input defaultValue={siteSettings?.siteSubtitle || ''} onBlur={(e) => updateSettingsField('siteSubtitle', e.target.value)} placeholder="Bijv: Schilder van Licht" />
+                            <Label className="text-[10px] uppercase opacity-60">Slogan / Artist Quote</Label>
+                            <Input defaultValue={siteSettings?.siteSubtitle || ''} onBlur={(e) => updateSettingsField('siteSubtitle', e.target.value)} placeholder="Bijv: Meester in Atmosfeer" />
                          </div>
                          <div className="space-y-2">
-                            <Label className="text-[10px] uppercase opacity-60">Admin Email (voor orders)</Label>
-                            <Input defaultValue={siteSettings?.adminEmail || ''} onBlur={(e) => updateSettingsField('adminEmail', e.target.value)} placeholder="jouw@email.com" />
+                            <Label className="text-[10px] uppercase opacity-60">Notificatie Email (Orders)</Label>
+                            <Input defaultValue={siteSettings?.adminEmail || ''} onBlur={(e) => updateSettingsField('adminEmail', e.target.value)} placeholder="artist@email.com" />
                          </div>
                       </div>
 
                       <div className="space-y-4 bg-accent/5 p-6 rounded-2xl border border-accent/10 flex flex-col items-center justify-center">
-                         <Label className="text-[10px] uppercase opacity-60 mb-4 block w-full">Site Logo</Label>
-                         <div className="w-32 h-32 rounded-2xl bg-white flex items-center justify-center border-2 border-dashed border-accent/20 mb-4 overflow-hidden">
-                            {siteSettings?.logoUrl ? <img src={siteSettings.logoUrl} className="max-w-full max-h-full object-contain p-2" /> : <Palette className="w-8 h-8 opacity-20" />}
+                         <Label className="text-[10px] uppercase opacity-60 mb-4 block w-full text-center">Artist Logo</Label>
+                         <div className="w-32 h-32 rounded-2xl bg-white flex items-center justify-center border-2 border-dashed border-accent/20 mb-4 overflow-hidden shadow-inner">
+                            {siteSettings?.logoUrl ? <img src={siteSettings.logoUrl} className="max-w-full max-h-full object-contain p-2" /> : <ImageIcon className="w-8 h-8 opacity-20" />}
                          </div>
                          <input type="file" ref={logoInputRef} className="hidden" onChange={handleLogoUpload} accept="image/*" />
-                         <Button variant="outline" size="sm" onClick={() => logoInputRef.current?.click()} className="rounded-full border-accent/40 text-accent">Logo Wijzigen</Button>
+                         <Button variant="outline" size="sm" onClick={() => logoInputRef.current?.click()} className="rounded-full border-accent/40 text-accent font-black uppercase text-[9px] px-6">Upload Merklogo</Button>
                       </div>
                    </div>
                 </div>
@@ -334,14 +336,14 @@ export default function AdminPage() {
              <Card className="p-8 md:p-12 rounded-3xl max-w-4xl mx-auto space-y-8 shadow-2xl border-none bg-white">
                 <div className="flex items-center gap-3 border-l-4 border-primary pl-4">
                    <CreditCard className="w-5 h-5 text-primary" />
-                   <h2 className="text-[12px] font-black uppercase tracking-widest text-primary">Commerciële Instellingen (Stripe)</h2>
+                   <h2 className="text-[12px] font-black uppercase tracking-widest text-primary">Betaalmodule (Stripe)</h2>
                 </div>
 
                 <div className="bg-primary/5 p-8 rounded-2xl space-y-6 border border-primary/10">
                    <div className="flex items-center justify-between border-b border-primary/10 pb-6">
                       <div className="space-y-1">
-                         <h4 className="font-bold text-sm">Directe betalingen inschakelen</h4>
-                         <p className="text-xs text-muted-foreground">Koppel Stripe om direct gecertificeerde prints en downloads te verkopen.</p>
+                         <h4 className="font-bold text-sm">Directe verkoop inschakelen</h4>
+                         <p className="text-xs text-muted-foreground italic">Zodra ingeschakeld, kunnen bezoekers direct afrekenen via iDEAL of Creditcard.</p>
                       </div>
                       <Switch 
                         checked={siteSettings?.stripeEnabled} 
@@ -359,14 +361,14 @@ export default function AdminPage() {
                          />
                       </div>
                       <div className="space-y-2">
-                         <Label className="text-[10px] uppercase font-black opacity-40">Stripe Secret Key (SaaS-Light)</Label>
+                         <Label className="text-[10px] uppercase font-black opacity-40">Stripe Secret Key</Label>
                          <Input 
                            type="password"
                            defaultValue={siteSettings?.stripeSecretKey || ''} 
                            onBlur={(e) => updateSettingsField('stripeSecretKey', e.target.value)} 
                            placeholder="sk_test_..." 
                          />
-                         <p className="text-[9px] text-muted-foreground italic">Let op: Deze sleutel is essentieel voor het afhandelen van betalingen.</p>
+                         <p className="text-[9px] text-muted-foreground italic">Alleen zichtbaar voor jou als beheerder. Veilig opgeslagen in de Cloud.</p>
                       </div>
                    </div>
                 </div>
@@ -377,25 +379,25 @@ export default function AdminPage() {
              <div className="max-w-4xl mx-auto space-y-12 pb-24">
                {/* Business Guide Card */}
                <Card className="p-8 md:p-12 rounded-3xl shadow-2xl border-none bg-primary text-primary-foreground relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-12 opacity-10 rotate-12"><ShieldCheck className="w-64 h-64" /></div>
+                  <div className="absolute top-0 right-0 p-12 opacity-10 rotate-12"><Gem className="w-64 h-64" /></div>
                   <div className="relative z-10 space-y-12">
                      <div className="space-y-2">
-                        <h2 className="text-3xl font-headline font-light italic">Business Management Guide</h2>
-                        <p className="text-primary-foreground/70 text-sm">Beheer uw museum en klanten op professioneel niveau.</p>
+                        <h2 className="text-3xl font-headline font-light italic">De Digital Conservator Gids</h2>
+                        <p className="text-primary-foreground/70 text-sm">Hoe jij waarde toevoegt aan de artiest.</p>
                      </div>
                      
                      <div className="grid md:grid-cols-2 gap-8">
                         <div className="p-6 rounded-2xl bg-white/10 border border-white/20 space-y-4">
                            <h4 className="font-black uppercase text-[10px] tracking-widest text-accent flex items-center gap-2">
-                             <TrendingUp className="w-3 h-3" /> Business Model
+                             <Zap className="w-3 h-3" /> Verdiensten
                            </h4>
-                           <p className="text-xs leading-relaxed">Factureer minimaal 3-5 uur (@€50/u) voor de initiële setup. Hanteer daarna een vaste maandelijkse fee voor hosting en support. Dit rechtvaardigt uw expertise en constante bereikbaarheid.</p>
+                           <p className="text-xs leading-relaxed">Hanteer een vaste setup-fee van €250,- per kunstenaar. De maandelijkse fee van €25,- dekt jouw technische waakzaamheid. De 10% provisie motiveert je om hun werk commercieel te optimaliseren.</p>
                         </div>
                         <div className="p-6 rounded-2xl bg-white/10 border border-white/20 space-y-4">
                            <h4 className="font-black uppercase text-[10px] tracking-widest text-accent flex items-center gap-2">
-                             <ImageIcon className="w-3 h-3" /> Uw Rol
+                             <ShieldCheck className="w-3 h-3" /> Jouw Rol
                            </h4>
-                           <p className="text-xs leading-relaxed">U bent de <strong>Digitaal Conservator</strong>. U waarborgt de kwaliteit van het archief, beheert de Deep Zoom infrastructuur en zorgt dat de verkoop van gecertificeerde prints vlekkeloos verloopt.</p>
+                           <p className="text-xs leading-relaxed">Jij bent de <strong>Digitaal Conservator</strong>. Jij garandeert dat hun levenswerk in de hoogste resolutie (Deep Zoom) bewaard blijft voor de toekomst, terwijl zij zich kunnen focussen op creatie.</p>
                         </div>
                      </div>
                   </div>
@@ -420,7 +422,7 @@ export default function AdminPage() {
                           <CheckCircle className="w-3 h-3" /> {t('asset_specs_title')}
                         </h4>
                         <ul className="space-y-3 text-sm">
-                           <li className="flex gap-3 items-start"><span className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 shrink-0" /> {t('asset_specs_pixels')}</li>
+                           <li className="flex gap-3 items-start font-bold"><span className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 shrink-0" /> {t('asset_specs_pixels')}</li>
                            <li className="flex gap-3 items-start"><span className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 shrink-0" /> {t('asset_specs_format')}</li>
                            <li className="flex gap-3 items-start"><span className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 shrink-0" /> {t('asset_specs_color')}</li>
                         </ul>
@@ -474,15 +476,15 @@ export default function AdminPage() {
              <Card className="p-16 border-dashed border-4 border-muted flex flex-col items-center justify-center text-center space-y-6 bg-white shadow-inner">
                 <CloudUpload className="w-16 h-16 opacity-20" />
                 <div className="space-y-2">
-                   <h2 className="text-xl font-headline font-light">Nieuwe werken toevoegen</h2>
-                   <p className="text-sm text-muted-foreground">Sleep hier foto's naartoe of klik op de knop.</p>
+                   <h2 className="text-xl font-headline font-light italic">Onthul nieuw werk</h2>
+                   <p className="text-sm text-muted-foreground">Sleep hier de Master Files (min. 4000px) naar binnen.</p>
                    <div className="flex items-center justify-center gap-2 mt-4 text-accent">
                       <AlertCircle className="w-4 h-4" />
                       <p className="text-[10px] uppercase font-black tracking-widest italic">{t('asset_specs_pixels')}</p>
                    </div>
                 </div>
                 <input type="file" ref={fileInputRef} className="hidden" onChange={(e) => handleBatchProcess(e.target.files)} accept="image/*" multiple />
-                <Button size="lg" onClick={() => fileInputRef.current?.click()} disabled={isUploading} className="rounded-full px-12 h-14">
+                <Button size="lg" onClick={() => fileInputRef.current?.click()} disabled={isUploading} className="rounded-full px-12 h-14 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest text-[11px] shadow-2xl transition-all">
                    {isUploading ? <Loader2 className="animate-spin mr-2" /> : <Plus className="mr-2" />} Selecteer Bestanden
                 </Button>
                 {isUploading && (
@@ -507,21 +509,21 @@ export default function AdminPage() {
           <div className="h-[40vh] border-t p-8 overflow-y-auto bg-white">
              <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-8">
                 <div className="space-y-4">
-                   <Label className="text-[10px] uppercase font-bold">Titel</Label>
+                   <Label className="text-[10px] uppercase font-bold opacity-40 tracking-widest">Publieke Titel</Label>
                    <Input defaultValue={artworks.find(a => a.id === editingId)?.displayTitle || ''} onBlur={(e) => updateArtworkField(editingId!, 'displayTitle', e.target.value)} />
-                   <Label className="text-[10px] uppercase font-bold">Zaal / Serie</Label>
+                   <Label className="text-[10px] uppercase font-bold opacity-40 tracking-widest">Expositieruimte / Collectie</Label>
                    <Input defaultValue={artworks.find(a => a.id === editingId)?.series || ''} onBlur={(e) => updateArtworkField(editingId!, 'series', e.target.value)} />
                 </div>
                 <div className="space-y-4">
-                   <div className="flex items-center justify-between">
-                      <Label className="text-[10px] uppercase font-bold">In Winkel Tonen</Label>
+                   <div className="flex items-center justify-between p-4 bg-accent/5 rounded-xl border border-accent/10">
+                      <Label className="text-[10px] uppercase font-black tracking-widest text-accent">In Museumwinkel Tonen</Label>
                       <Switch checked={artworks.find(a => a.id === editingId)?.inShop} onCheckedChange={(val) => updateArtworkField(editingId!, 'inShop', val)} />
                    </div>
-                   <div className="flex items-center justify-between">
-                      <Label className="text-[10px] uppercase font-bold">Featured (Homepage)</Label>
+                   <div className="flex items-center justify-between p-4 bg-black/5 rounded-xl border border-black/5">
+                      <Label className="text-[10px] uppercase font-black tracking-widest opacity-60">Featured (Homepage)</Label>
                       <Switch checked={artworks.find(a => a.id === editingId)?.featured} onCheckedChange={(val) => updateArtworkField(editingId!, 'featured', val)} />
                    </div>
-                   <Button variant="destructive" className="w-full mt-4" onClick={() => { if(confirm('Verwijderen?')) { deleteDoc(doc(firestore!, 'artworks', editingId!)); setEditingId(null); }}}>Verwijder Werk</Button>
+                   <Button variant="destructive" className="w-full mt-4 h-12 rounded-xl uppercase font-black tracking-widest text-[10px]" onClick={() => { if(confirm('Dit werk permanent uit het archief verwijderen?')) { deleteDoc(doc(firestore!, 'artworks', editingId!)); setEditingId(null); }}}>Verwijder uit Collectie</Button>
                 </div>
              </div>
           </div>
