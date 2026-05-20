@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useEffect, Suspense, useCallback } from 'react';
@@ -6,8 +5,9 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, where, doc } from 'firebase/firestore';
 import { ArtworkViewer } from '@/components/artwork-viewer';
-import { Loader2, MousePointer2, ChevronLeft, ChevronRight, Layers } from 'lucide-react';
+import { Loader2, MousePointer2, ChevronLeft, ChevronRight, Layers, ArrowRight, ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/components/language-provider';
 
 const ROMAN_VALUES: Record<string, number> = {
   'I': 1, 'II': 2, 'III': 3, 'IV': 4, 'V': 5, 'VI': 6, 'VII': 7, 'VIII': 8, 'IX': 9, 'X': 10, 
@@ -17,6 +17,7 @@ const ROMAN_VALUES: Record<string, number> = {
 function ExhibitionContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { t } = useLanguage();
   const seriesParam = searchParams.get('series');
   
   const [selectedArtwork, setSelectedArtwork] = useState<any | null>(null);
@@ -60,6 +61,14 @@ function ExhibitionContent() {
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [allArtworks, hiddenSeries]);
+
+  const currentIndex = useMemo(() => {
+    if (!seriesParam) return -1;
+    return availableSeries.findIndex(s => s.name === seriesParam);
+  }, [seriesParam, availableSeries]);
+
+  const prevSeries = currentIndex > 0 ? availableSeries[currentIndex - 1] : (currentIndex === 0 ? { name: "Alles" } : null);
+  const nextSeries = currentIndex === -1 ? (availableSeries[0] || null) : (currentIndex < availableSeries.length - 1 ? availableSeries[currentIndex + 1] : null);
 
   const artworksQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -143,40 +152,63 @@ function ExhibitionContent() {
     <main className="h-screen w-full bg-white overflow-hidden flex flex-col relative pt-14">
       <div className="absolute inset-0 bg-[#fafafa] pointer-events-none" />
       
+      {/* Room Selector with Prev/Next buttons */}
       <div className="absolute top-20 left-0 right-0 z-40 flex justify-center px-6">
-        <div className="bg-white/60 backdrop-blur-md border border-black/5 rounded-full px-6 py-1.5 flex items-center gap-6 shadow-sm hover:shadow-md transition-shadow max-w-full overflow-x-auto no-scrollbar">
-          <div className="flex items-center gap-2 border-r border-black/5 pr-4 mr-2 hidden md:flex">
-            <Layers className="w-3 h-3 text-accent" />
-            <span className="text-[8px] font-black uppercase tracking-[0.2em] opacity-40">Zaal</span>
-          </div>
-          <button 
-            onClick={() => handleSeriesChange("Alles")}
-            className={cn(
-              "text-[8px] font-black uppercase tracking-[0.2em] whitespace-nowrap transition-colors",
-              !seriesParam ? "text-accent" : "text-black/40 hover:text-black"
-            )}
-          >
-            Alle Werken
-          </button>
-          {availableSeries.map(s => (
+        <div className="flex items-center gap-2">
+          {prevSeries && (
             <button 
-              key={s.name}
-              onClick={() => handleSeriesChange(s.name)}
+              onClick={() => handleSeriesChange(prevSeries.name)}
+              className="p-2 rounded-full bg-white/60 backdrop-blur-md border border-black/5 hover:bg-white transition-all shadow-sm"
+              title={t('prev_room')}
+            >
+              <ArrowLeft className="w-4 h-4 text-accent" />
+            </button>
+          )}
+
+          <div className="bg-white/60 backdrop-blur-md border border-black/5 rounded-full px-6 py-1.5 flex items-center gap-6 shadow-sm hover:shadow-md transition-shadow max-w-full overflow-x-auto no-scrollbar">
+            <div className="flex items-center gap-2 border-r border-black/5 pr-4 mr-2 hidden md:flex">
+              <Layers className="w-3 h-3 text-accent" />
+              <span className="text-[8px] font-black uppercase tracking-[0.2em] opacity-40">{t('viewer_room')}</span>
+            </div>
+            <button 
+              onClick={() => handleSeriesChange("Alles")}
               className={cn(
                 "text-[8px] font-black uppercase tracking-[0.2em] whitespace-nowrap transition-colors",
-                seriesParam === s.name ? "text-accent" : "text-black/40 hover:text-black"
+                !seriesParam ? "text-accent" : "text-black/40 hover:text-black"
               )}
             >
-              {s.name} <span className="opacity-20 text-[7px] ml-1">[{s.count}]</span>
+              {t('all_works')}
             </button>
-          ))}
+            {availableSeries.map(s => (
+              <button 
+                key={s.name}
+                onClick={() => handleSeriesChange(s.name)}
+                className={cn(
+                  "text-[8px] font-black uppercase tracking-[0.2em] whitespace-nowrap transition-colors",
+                  seriesParam === s.name ? "text-accent" : "text-black/40 hover:text-black"
+                )}
+              >
+                {s.name} <span className="opacity-20 text-[7px] ml-1">[{s.count}]</span>
+              </button>
+            ))}
+          </div>
+
+          {nextSeries && (
+            <button 
+              onClick={() => handleSeriesChange(nextSeries.name)}
+              className="p-2 rounded-full bg-white/60 backdrop-blur-md border border-black/5 hover:bg-white transition-all shadow-sm"
+              title={t('next_room')}
+            >
+              <ArrowRight className="w-4 h-4 text-accent" />
+            </button>
+          )}
         </div>
       </div>
 
       <div className="absolute top-32 left-1/2 -translate-x-1/2 z-20 text-center pointer-events-none opacity-80">
-        <span className="text-accent font-black tracking-[0.4em] uppercase text-[9px] block mb-1">Virtuele Tour</span>
+        <span className="text-accent font-black tracking-[0.4em] uppercase text-[9px] block mb-1">{t('hero_subtitle')}</span>
         <h1 className="text-black/60 font-headline text-2xl md:text-4xl font-light italic">
-          {seriesParam || "De Grote Zaal"}
+          {seriesParam || t('all_works')}
         </h1>
       </div>
 
@@ -229,10 +261,19 @@ function ExhibitionContent() {
               </div>
             ))}
 
-            <div className="shrink-0 w-[50vw] flex flex-col items-center justify-center text-center opacity-20">
+            <div className="shrink-0 w-[50vw] flex flex-col items-center justify-center text-center opacity-40 group hover:opacity-100 transition-opacity">
                <div className="w-px h-24 bg-black/10 mb-6" />
-               <h4 className="text-[11px] font-black uppercase tracking-[0.5em]">Einde</h4>
-               <p className="text-[8px] mt-2 uppercase tracking-widest">Dank voor uw bezoek</p>
+               <h4 className="text-[11px] font-black uppercase tracking-[0.5em]">{t('end_of_room')}</h4>
+               <p className="text-[8px] mt-2 uppercase tracking-widest">{t('footer_rights')}</p>
+               
+               {nextSeries && (
+                 <button 
+                  onClick={() => handleSeriesChange(nextSeries.name)}
+                  className="mt-12 px-10 py-4 rounded-full bg-accent text-accent-foreground text-[10px] font-black uppercase tracking-[0.25em] shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-4"
+                 >
+                   {t('next_room')}: {nextSeries.name} <ArrowRight className="w-4 h-4" />
+                 </button>
+               )}
             </div>
           </div>
         </div>
@@ -250,7 +291,7 @@ function ExhibitionContent() {
           <div className="flex flex-col items-center gap-2">
              <div className="flex items-center gap-2 text-black/20">
                 <MousePointer2 className="w-3 h-3" />
-                <span className="text-[8px] font-black uppercase tracking-[0.4em]">Scroll of gebruik knoppen</span>
+                <span className="text-[8px] font-black uppercase tracking-[0.4em]">{t('viewer_unknown')}</span>
              </div>
              <div className="w-48 h-0.5 bg-black/5 relative overflow-hidden rounded-full">
                 <div 

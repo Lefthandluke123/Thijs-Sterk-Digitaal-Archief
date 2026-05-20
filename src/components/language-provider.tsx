@@ -35,6 +35,10 @@ const translations: Record<Language, Record<string, string>> = {
     gallery_closed: 'Deze zaal is momenteel gesloten',
     viewer_room: 'Zaal',
     viewer_unknown: 'Onbekend',
+    next_room: 'Volgende Zaal',
+    prev_room: 'Vorige Zaal',
+    all_works: 'Alle Werken',
+    end_of_room: 'Einde van deze zaal',
   },
   en: {
     nav_home: 'Home',
@@ -58,6 +62,10 @@ const translations: Record<Language, Record<string, string>> = {
     gallery_closed: 'This gallery is currently closed',
     viewer_room: 'Gallery',
     viewer_unknown: 'Unknown',
+    next_room: 'Next Gallery',
+    prev_room: 'Previous Gallery',
+    all_works: 'All Works',
+    end_of_room: 'End of this gallery',
   },
   de: {
     nav_home: 'Home',
@@ -81,6 +89,10 @@ const translations: Record<Language, Record<string, string>> = {
     gallery_closed: 'Dieser Saal ist derzeit geschlossen',
     viewer_room: 'Saal',
     viewer_unknown: 'Unbekannt',
+    next_room: 'Nächster Saal',
+    prev_room: 'Voriger Saal',
+    all_works: 'Alle Werke',
+    end_of_room: 'Ende dieses Saals',
   },
   fr: {
     nav_home: 'Accueil',
@@ -104,6 +116,10 @@ const translations: Record<Language, Record<string, string>> = {
     gallery_closed: 'Cette salle est actuellement fermée',
     viewer_room: 'Salle',
     viewer_unknown: 'Inconnu',
+    next_room: 'Salle Suivante',
+    prev_room: 'Salle Précédente',
+    all_works: 'Toutes les œuvres',
+    end_of_room: 'Fin de cette salle',
   }
 };
 

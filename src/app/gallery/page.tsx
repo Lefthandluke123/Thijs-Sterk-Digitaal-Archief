@@ -1,13 +1,13 @@
-
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, doc } from 'firebase/firestore';
 import { ArtworkViewer } from '@/components/artwork-viewer';
-import { Maximize2, Loader2 } from 'lucide-react';
+import { Maximize2, Loader2, ArrowLeft, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/components/language-provider';
 
 const ROMAN_VALUES: Record<string, number> = {
   'I': 1, 'II': 2, 'III': 3, 'IV': 4, 'V': 5, 'VI': 6, 'VII': 7, 'VIII': 8, 'IX': 9, 'X': 10, 
@@ -16,6 +16,8 @@ const ROMAN_VALUES: Record<string, number> = {
 
 function GalleryContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const { t } = useLanguage();
   const initialSeriesFromUrl = searchParams.get('series');
   
   const [selectedArtwork, setSelectedArtwork] = useState<any | null>(null);
@@ -72,7 +74,7 @@ function GalleryContent() {
     const counts: Record<string, number> = {};
     artworks.forEach(art => {
       const name = art.series || "Geen zaal";
-      if (!hiddenSeries.includes(name)) {
+      if (!hiddenSeries.includes(name) && name !== "Nieuwe Uploads") {
         counts[name] = (counts[name] || 0) + 1;
       }
     });
@@ -108,6 +110,13 @@ function GalleryContent() {
     setSelectedArtwork(filteredArtworks[nextIndex]);
   }, [selectedArtwork, filteredArtworks]);
 
+  const currentIndex = useMemo(() => {
+    return seriesWithCounts.findIndex(s => s.name === activeSeries);
+  }, [activeSeries, seriesWithCounts]);
+
+  const prevSeries = currentIndex > 0 ? seriesWithCounts[currentIndex - 1] : null;
+  const nextSeries = currentIndex < seriesWithCounts.length - 1 ? seriesWithCounts[currentIndex + 1] : null;
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!selectedArtwork) return;
@@ -119,12 +128,17 @@ function GalleryContent() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedArtwork, navigateGallery]);
 
+  const handleSeriesChange = (name: string) => {
+    setActiveSeries(name);
+    router.push(`/gallery?series=${encodeURIComponent(name)}`);
+  };
+
   return (
     <main className="min-h-screen bg-background pt-14">
       <div className="w-full bg-secondary/5 border-b border-border/10 py-12 md:py-16">
         <div className="container mx-auto px-6 max-w-7xl">
-          <h1 className="font-headline text-[14px] md:text-[16px] font-light text-foreground text-center tracking-tight uppercase">
-            <span className="italic">{activeSeries || (loading ? "Laden..." : "Selecteer een zaal")}</span>
+          <h1 className="font-headline text-[18px] md:text-[24px] font-light text-foreground text-center tracking-tight uppercase">
+            <span className="italic">{activeSeries || (loading ? "Laden..." : t('gallery_select'))}</span>
           </h1>
         </div>
       </div>
@@ -135,21 +149,42 @@ function GalleryContent() {
         ) : (
           <>
             <div className="bg-background/80 backdrop-blur-md sticky top-14 z-30 border-b border-border/10 py-6 mb-12">
-              <div className="flex flex-col md:flex-row items-center justify-center gap-10">
-                <div className="flex gap-10 overflow-x-auto no-scrollbar w-full md:w-auto pb-2 justify-center">
+              <div className="flex flex-row items-center justify-center gap-4 md:gap-10">
+                
+                {prevSeries && (
+                  <button 
+                    onClick={() => handleSeriesChange(prevSeries.name)}
+                    className="p-2 rounded-full hover:bg-black/5 text-accent transition-colors"
+                    title={t('prev_room')}
+                  >
+                    <ArrowLeft className="w-5 h-5" />
+                  </button>
+                )}
+
+                <div className="flex gap-6 md:gap-10 overflow-x-auto no-scrollbar pb-2 justify-center flex-1 max-w-3xl">
                   {seriesWithCounts.map((s) => (
                     <button
                       key={s.name}
-                      onClick={() => setActiveSeries(s.name)}
+                      onClick={() => handleSeriesChange(s.name)}
                       className={cn(
-                        "text-[9px] font-black uppercase tracking-[0.3em] transition-all whitespace-nowrap pb-2 border-b-2 flex items-center gap-2",
+                        "text-[9px] md:text-[11px] font-black uppercase tracking-[0.3em] transition-all whitespace-nowrap pb-2 border-b-2 flex items-center gap-2",
                         activeSeries === s.name ? "border-accent text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"
                       )}
                     >
-                      {s.name} <span className="opacity-30 text-[7px]">[{s.count}]</span>
+                      {s.name} <span className="opacity-30 text-[7px] md:text-[9px]">[{s.count}]</span>
                     </button>
                   ))}
                 </div>
+
+                {nextSeries && (
+                  <button 
+                    onClick={() => handleSeriesChange(nextSeries.name)}
+                    className="p-2 rounded-full hover:bg-black/5 text-accent transition-colors"
+                    title={t('next_room')}
+                  >
+                    <ArrowRight className="w-5 h-5" />
+                  </button>
+                )}
               </div>
             </div>
 
@@ -178,7 +213,7 @@ function GalleryContent() {
               ))}
             </div>
             {filteredArtworks.length === 0 && !loading && (
-              <div className="text-center py-32 opacity-20 uppercase font-black text-[11px] tracking-widest">Deze zaal is momenteel gesloten</div>
+              <div className="text-center py-32 opacity-20 uppercase font-black text-[11px] tracking-widest">{t('gallery_closed')}</div>
             )}
           </>
         )}
