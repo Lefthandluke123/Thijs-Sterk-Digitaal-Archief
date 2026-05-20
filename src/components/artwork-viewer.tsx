@@ -53,12 +53,12 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
 
   return (
     <Dialog open={!!artwork} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background border-none rounded-none overflow-hidden outline-none shadow-none">
+      <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-black border-none rounded-none overflow-hidden outline-none shadow-none fixed inset-0 translate-x-0 translate-y-0 left-0 top-0">
         <DialogTitle className="sr-only">Artwork Viewer</DialogTitle>
         
         <div 
           className={cn(
-            "relative w-full flex items-center justify-center overflow-hidden bg-black/[0.03] group transition-all duration-500",
+            "relative w-full flex items-center justify-center overflow-hidden bg-black group transition-all duration-500",
             isFullScreen ? "h-[100vh]" : "h-[88vh]",
             showMagnifier ? (isOverUI ? "cursor-default" : "cursor-none") : "cursor-pointer"
           )}
@@ -70,7 +70,7 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
               ref={imgRef}
               src={artwork.imageUrl} 
               alt={artwork.displayTitle || artwork.title} 
-              className="max-w-[99%] max-h-[98%] object-contain p-1 md:p-2 shadow-2xl transition-all duration-700 pointer-events-none" 
+              className="w-full h-full object-contain transition-all duration-700 pointer-events-none" 
               style={{ 
                 clipPath: artwork.cropTop !== undefined ? `inset(${artwork.cropTop || 0}% ${artwork.cropRight || 0}% ${artwork.cropBottom || 0}% ${artwork.cropLeft || 0}%)` : undefined, 
                 filter: `brightness(${artwork.brightness || 1})` 
@@ -102,17 +102,17 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
             {onPrev && (
               <button 
                 onClick={(e) => { e.stopPropagation(); onPrev(); }} 
-                className="p-4 rounded-full bg-background/20 backdrop-blur-md pointer-events-auto hover:bg-background/40 transition-all shadow-xl border border-white/10"
+                className="p-4 rounded-full bg-black/20 backdrop-blur-md pointer-events-auto hover:bg-black/40 transition-all shadow-xl border border-white/10"
               >
-                <ChevronLeft className="w-8 h-8 text-foreground" />
+                <ChevronLeft className="w-8 h-8 text-white" />
               </button>
             )}
             {onNext && (
               <button 
                 onClick={(e) => { e.stopPropagation(); onNext(); }} 
-                className="p-4 rounded-full bg-background/20 backdrop-blur-md pointer-events-auto hover:bg-background/40 transition-all shadow-xl border border-white/10"
+                className="p-4 rounded-full bg-black/20 backdrop-blur-md pointer-events-auto hover:bg-black/40 transition-all shadow-xl border border-white/10"
               >
-                <ChevronRight className="w-8 h-8 text-foreground" />
+                <ChevronRight className="w-8 h-8 text-white" />
               </button>
             )}
           </div>
@@ -124,20 +124,20 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
             onMouseMove={(e) => e.stopPropagation()}
           >
              <div 
-              className="flex items-center gap-2 bg-background/80 backdrop-blur-xl p-1.5 rounded-full border border-border shadow-2xl"
+              className="flex items-center gap-2 bg-black/40 backdrop-blur-xl p-1.5 rounded-full border border-white/10 shadow-2xl"
               onClick={(e) => e.stopPropagation()}
              >
                <Button 
                  variant="ghost" 
                  size="icon" 
                  onClick={(e) => { e.stopPropagation(); setShowMagnifier(!showMagnifier); }}
-                 className={cn("h-10 w-10 rounded-full transition-all", showMagnifier && "bg-accent text-accent-foreground")}
+                 className={cn("h-10 w-10 rounded-full transition-all text-white hover:bg-white/20", showMagnifier && "bg-accent text-accent-foreground hover:bg-accent/80")}
                >
                  <Search className="w-5 h-5" />
                </Button>
                {showMagnifier && (
                  <div className="flex items-center gap-3 px-4 w-48 animate-in fade-in slide-in-from-right-4 duration-300">
-                   <ZoomOut className="w-3 h-3 opacity-40" />
+                   <ZoomOut className="w-3 h-3 text-white/40" />
                    <Slider 
                     value={[zoomLevel]} 
                     min={1.5} 
@@ -146,13 +146,13 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
                     onValueChange={([val]) => setZoomLevel(val)} 
                     className="flex-1"
                    />
-                   <ZoomIn className="w-3 h-3 opacity-40" />
+                   <ZoomIn className="w-3 h-3 text-white/40" />
                  </div>
                )}
              </div>
              
              <DialogClose 
-               className="p-3 bg-background/80 backdrop-blur-xl rounded-full hover:bg-accent hover:text-accent-foreground transition-all shadow-2xl border border-border" 
+               className="p-3 bg-black/40 backdrop-blur-xl rounded-full text-white hover:bg-accent hover:text-accent-foreground transition-all shadow-2xl border border-white/10" 
                onClick={(e) => e.stopPropagation()}
              >
                <X className="w-6 h-6 opacity-60" />
