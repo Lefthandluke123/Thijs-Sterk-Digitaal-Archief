@@ -1,10 +1,9 @@
-
 "use client";
 
-import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { useFirestore, useCollection, useMemoFirebase, useDoc, useStorage } from '@/firebase';
-import { collection, doc, serverTimestamp, deleteDoc, addDoc, query, orderBy, updateDoc, setDoc } from 'firebase/firestore';
+import { collection, doc, serverTimestamp, deleteDoc, addDoc, query, updateDoc, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -18,49 +17,20 @@ import {
   Plus,
   Search,
   CloudUpload,
-  Download,
-  FileJson,
-  PenTool,
-  Home,
-  User,
-  Quote,
   Languages,
-  Sparkles,
-  Tag,
-  Info,
-  Calendar,
-  Maximize,
-  ChevronLeft,
-  ChevronRight,
-  FileImage,
-  Globe2,
-  Mail,
-  ListTodo,
-  CheckCircle2,
-  Scan,
-  ShieldCheck,
-  Zap,
-  ShoppingBag,
-  Star,
-  Euro,
+  Palette,
+  CreditCard,
   Settings as SettingsIcon,
-  Palette
+  Star,
+  Globe2
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
-import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-
-const TAG_CATEGORIES = {
-  "Periode": ["Vroeg werk", "45-50", "50-60", "70-82"],
-  "Techniek": ["Olieverf", "Aquarel", "Gouache", "Monumentaal", "Glas in lood"],
-  "Plaats": ["Groet", "Schoorl", "Hargen", "Camperduin", "Holland", "Amsterdam", "Frankrijk", "Bretagne", "Griekenland"],
-  "Onderwerp": ["Havens", "Stillevens", "Bloemen", "Dieren", "Water", "Mensen", "Polder"]
-};
 
 const ROMAN_VALUES: Record<string, number> = {
   'I': 1, 'II': 2, 'III': 3, 'IV': 4, 'V': 5, 'VI': 6, 'VII': 7, 'VIII': 8, 'IX': 9, 'X': 10, 
@@ -149,11 +119,8 @@ export default function AdminPage() {
       const url = await getDownloadURL(snapshot.ref);
       updateSettingsField('logoUrl', url);
       toast({ title: "Logo bijgewerkt" });
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsUploading(false);
-    }
+    } catch (err) { console.error(err); }
+    finally { setIsUploading(false); }
   };
 
   const handleBatchProcess = async (files: FileList | null) => {
@@ -229,7 +196,7 @@ export default function AdminPage() {
             <TabsTrigger value="archive" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Archief [{artworks.length}]</TabsTrigger>
             <TabsTrigger value="upload" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Upload</TabsTrigger>
             <TabsTrigger value="branding" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Site Branding</TabsTrigger>
-            <TabsTrigger value="texts" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Teksten</TabsTrigger>
+            <TabsTrigger value="payments" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Betalingen (Stripe)</TabsTrigger>
           </TabsList>
 
           <TabsContent value="archive" className="space-y-6">
@@ -315,23 +282,47 @@ export default function AdminPage() {
              </Card>
           </TabsContent>
 
-          <TabsContent value="texts">
-            <Card className="p-8 md:p-12 rounded-3xl max-w-4xl mx-auto space-y-12">
-               <div className="space-y-8">
-                  <div className="grid gap-8">
-                     <div className="space-y-4">
-                        <Label className="text-[11px] font-black uppercase text-accent border-l-4 border-accent pl-4 block">Winkel Intro</Label>
-                        <Textarea defaultValue={siteSettings?.shopIntro || ''} onBlur={(e) => updateSettingsField('shopIntro', e.target.value)} className="min-h-[100px] bg-black/5 border-none" />
-                     </div>
-                     <div className="space-y-4">
-                        <Label className="text-[11px] font-black uppercase text-accent border-l-4 border-accent pl-4 block">Biografie Titel</Label>
-                        <Input defaultValue={siteSettings?.homeBioTitle || ''} onBlur={(e) => updateSettingsField('homeBioTitle', e.target.value)} className="bg-black/5 border-none" />
-                        <Label className="text-[11px] font-black uppercase text-accent border-l-4 border-accent pl-4 block">Biografie Tekst</Label>
-                        <Textarea defaultValue={siteSettings?.homeBio || ''} onBlur={(e) => updateSettingsField('homeBio', e.target.value)} className="min-h-[200px] bg-black/5 border-none" />
-                     </div>
-                  </div>
-               </div>
-            </Card>
+          <TabsContent value="payments">
+             <Card className="p-8 md:p-12 rounded-3xl max-w-4xl mx-auto space-y-8">
+                <div className="flex items-center gap-3 border-l-4 border-primary pl-4">
+                   <CreditCard className="w-5 h-5 text-primary" />
+                   <h2 className="text-[12px] font-black uppercase tracking-widest text-primary">Commerciële Instellingen (Stripe)</h2>
+                </div>
+
+                <div className="bg-primary/5 p-8 rounded-2xl space-y-6">
+                   <div className="flex items-center justify-between border-b border-primary/10 pb-6">
+                      <div className="space-y-1">
+                         <h4 className="font-bold text-sm">Directe betalingen inschakelen</h4>
+                         <p className="text-xs text-muted-foreground">Koppel Stripe om direct gecertificeerde prints en downloads te verkopen.</p>
+                      </div>
+                      <Switch 
+                        checked={siteSettings?.stripeEnabled} 
+                        onCheckedChange={(val) => updateSettingsField('stripeEnabled', val)} 
+                      />
+                   </div>
+
+                   <div className="grid gap-6">
+                      <div className="space-y-2">
+                         <Label className="text-[10px] uppercase font-black opacity-40">Stripe Public Key</Label>
+                         <Input 
+                           defaultValue={siteSettings?.stripePublicKey || ''} 
+                           onBlur={(e) => updateSettingsField('stripePublicKey', e.target.value)} 
+                           placeholder="pk_test_..." 
+                         />
+                      </div>
+                      <div className="space-y-2">
+                         <Label className="text-[10px] uppercase font-black opacity-40">Stripe Secret Key (SaaS-Light)</Label>
+                         <Input 
+                           type="password"
+                           defaultValue={siteSettings?.stripeSecretKey || ''} 
+                           onBlur={(e) => updateSettingsField('stripeSecretKey', e.target.value)} 
+                           placeholder="sk_test_..." 
+                         />
+                         <p className="text-[9px] text-muted-foreground italic">Let op: Voor een productieomgeving raden we aan deze sleutels in de Server Environment te plaatsen.</p>
+                      </div>
+                   </div>
+                </div>
+             </Card>
           </TabsContent>
         </Tabs>
       </main>
@@ -339,7 +330,6 @@ export default function AdminPage() {
       <Dialog open={!!editingId} onOpenChange={() => setEditingId(null)}>
         <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background border-none">
           <DialogTitle className="sr-only">Editor</DialogTitle>
-          {/* ... (Bestaande editor content blijft gelijk, maar met z-index en layout verbeteringen zoals in eerdere sessies) */}
           <div className="flex-1 bg-black/5 flex items-center justify-center p-4">
              {artworks.find(a => a.id === editingId) && (
                 <img src={artworks.find(a => a.id === editingId)?.imageUrl} className="max-h-[60vh] object-contain shadow-2xl" alt="Preview" />

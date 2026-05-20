@@ -1,11 +1,10 @@
-
 "use client";
 
 import React, { useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { ShoppingBag, ArrowLeft, CheckCircle2, Loader2, Info, Mail } from 'lucide-react';
+import { ShoppingBag, ArrowLeft, CheckCircle2, Loader2, Info, Mail, CreditCard } from 'lucide-react';
 import { useLanguage } from '@/components/language-provider';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -15,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { createCheckoutSession } from '@/lib/stripe-actions';
 
 export default function ProductDetailPage() {
   const { id } = useParams();
@@ -25,6 +25,12 @@ export default function ProductDetailPage() {
   const [selectedProduct, setSelectedProduct] = useState('postcard');
   const [isOrdering, setIsOrdering] = useState(false);
   const [orderComplete, setOrderSuccess] = useState(false);
+
+  const siteSettingsRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, 'settings', 'site');
+  }, [firestore]);
+  const { data: settings } = useDoc(siteSettingsRef);
 
   const artworkRef = useMemoFirebase(() => {
     if (!firestore || !id) return null;
@@ -39,6 +45,29 @@ export default function ProductDetailPage() {
     { id: 'fine-art', label: t('shop_print'), price: artwork?.pricePrint || 85.00, desc: 'Giclée print.' },
     { id: 'digital', label: t('shop_digital'), price: artwork?.priceDigital || 15.00, desc: 'Digital file (300dpi).' }
   ], [artwork, t]);
+
+  const currentPrice = useMemo(() => {
+    return PRODUCTS.find(p => p.id === selectedProduct)?.price || 0;
+  }, [selectedProduct, PRODUCTS]);
+
+  const handleStripeCheckout = async () => {
+    if (!settings?.stripeSecretKey || !artwork) return;
+    setIsOrdering(true);
+    try {
+      const { url } = await createCheckoutSession({
+        artworkId: id as string,
+        artworkTitle: artwork.displayTitle || artwork.title,
+        productType: selectedProduct,
+        price: currentPrice,
+        stripeSecretKey: settings.stripeSecretKey
+      });
+      if (url) window.location.href = url;
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Betaalfout", description: err.message });
+    } finally {
+      setIsOrdering(false);
+    }
+  };
 
   const handleOrder = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -62,27 +91,18 @@ export default function ProductDetailPage() {
       await addDoc(collection(firestore, 'orders'), orderData);
       
       await addDoc(collection(firestore, 'mail'), {
-        to: 'lhcsterk@doggyfew.com',
+        to: settings?.adminEmail || 'lhcsterk@doggyfew.com',
         message: {
           subject: `[NIEUWE BESTELLING] ${orderData.artworkTitle} - ${selectedProduct}`,
-          html: `
-            <h2>Nieuwe bestelling uit de Museumwinkel</h2>
-            <p><strong>Werk:</strong> ${orderData.artworkTitle}</p>
-            <p><strong>Product:</strong> ${selectedProduct}</p>
-            <p><strong>Klant:</strong> ${orderData.customerName} (${orderData.customerEmail})</p>
-            <p><strong>Adres:</strong> ${orderData.customerAddress}</p>
-          `
+          html: `<h2>Nieuwe bestelling uit de Museumwinkel</h2><p><strong>Werk:</strong> ${orderData.artworkTitle}</p><p><strong>Product:</strong> ${selectedProduct}</p>`
         },
         createdAt: serverTimestamp()
       });
 
       setOrderSuccess(true);
-      toast({ title: t('shop_order_success'), description: t('shop_order_desc') });
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsOrdering(false);
-    }
+      toast({ title: t('shop_order_success') });
+    } catch (err) { console.error(err); }
+    finally { setIsOrdering(false); }
   };
 
   if (loading || !artwork) {
@@ -130,9 +150,7 @@ export default function ProductDetailPage() {
             <div className="p-8 bg-secondary/5 rounded-3xl space-y-4">
                <div className="flex items-start gap-4">
                   <Info className="w-5 h-5 text-accent shrink-0 mt-1" />
-                  <p className="text-sm text-muted-foreground leading-relaxed italic">
-                    {t('shop_quality_notice')}
-                  </p>
+                  <p className="text-sm text-muted-foreground leading-relaxed italic">{t('shop_quality_notice')}</p>
                </div>
             </div>
           </div>
@@ -171,34 +189,49 @@ export default function ProductDetailPage() {
               </RadioGroup>
             </div>
 
-            <Card className="p-8 rounded-3xl border-none shadow-xl bg-secondary/10 space-y-8">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center text-white"><Mail className="w-5 h-5" /></div>
-                <h3 className="font-black uppercase tracking-widest text-sm">{t('shop_order_form')}</h3>
-              </div>
-              
-              <form onSubmit={handleOrder} className="space-y-6">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label className="text-[10px] uppercase tracking-widest opacity-60 pl-2">{t('order_label_name')}</Label>
-                    <Input name="name" required className="bg-white border-none h-12 rounded-xl" placeholder={t('shop_placeholder_name')} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-[10px] uppercase tracking-widest opacity-60 pl-2">{t('order_label_email')}</Label>
-                    <Input name="email" type="email" required className="bg-white border-none h-12 rounded-xl" placeholder={t('shop_placeholder_email')} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-[10px] uppercase tracking-widest opacity-60 pl-2">{t('order_label_address')}</Label>
-                    <Textarea name="address" required className="bg-white border-none rounded-xl min-h-[100px]" placeholder={t('shop_placeholder_address')} />
-                  </div>
-                </div>
-
-                <Button type="submit" disabled={isOrdering} className="w-full rounded-full h-16 bg-accent text-accent-foreground font-black uppercase tracking-[0.2em] shadow-2xl hover:scale-[1.02] transition-all">
-                  {isOrdering ? <Loader2 className="w-6 h-6 animate-spin" /> : <>{t('order_button_confirm')}</>}
+            {settings?.stripeEnabled ? (
+              <div className="space-y-6">
+                <Button 
+                  onClick={handleStripeCheckout} 
+                  disabled={isOrdering} 
+                  className="w-full h-20 rounded-3xl bg-primary text-primary-foreground text-lg font-black uppercase tracking-widest shadow-2xl hover:scale-[1.02] transition-all group"
+                >
+                  {isOrdering ? <Loader2 className="animate-spin" /> : (
+                    <div className="flex items-center justify-center gap-4">
+                      <CreditCard className="w-6 h-6 group-hover:rotate-12 transition-transform" />
+                      Direct Afrekenen (€{currentPrice.toFixed(2)})
+                    </div>
+                  )}
                 </Button>
-                <p className="text-[9px] text-center text-muted-foreground uppercase tracking-widest">{t('shop_payment_notice')}</p>
-              </form>
-            </Card>
+                <p className="text-[10px] text-center text-muted-foreground uppercase tracking-widest opacity-60">Beveiligde betaling via Stripe</p>
+              </div>
+            ) : (
+              <Card className="p-8 rounded-3xl border-none shadow-xl bg-secondary/10 space-y-8">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center text-white"><Mail className="w-5 h-5" /></div>
+                  <h3 className="font-black uppercase tracking-widest text-sm">{t('shop_order_form')}</h3>
+                </div>
+                <form onSubmit={handleOrder} className="space-y-6">
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-[10px] uppercase tracking-widest opacity-60 pl-2">{t('order_label_name')}</Label>
+                      <Input name="name" required className="bg-white border-none h-12 rounded-xl" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-[10px] uppercase tracking-widest opacity-60 pl-2">{t('order_label_email')}</Label>
+                      <Input name="email" type="email" required className="bg-white border-none h-12 rounded-xl" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-[10px] uppercase tracking-widest opacity-60 pl-2">{t('order_label_address')}</Label>
+                      <Textarea name="address" required className="bg-white border-none rounded-xl" />
+                    </div>
+                  </div>
+                  <Button type="submit" disabled={isOrdering} className="w-full rounded-full h-16 bg-accent text-accent-foreground font-black uppercase tracking-[0.2em]">
+                    {isOrdering ? <Loader2 className="animate-spin" /> : t('order_button_confirm')}
+                  </Button>
+                </form>
+              </Card>
+            )}
           </div>
         </div>
       </div>

@@ -1,4 +1,3 @@
-
 {
   "entities": {
     "Artwork": {
@@ -25,10 +24,10 @@
         "brightness": { "type": "number" },
         "featured": { "type": "boolean" },
         "inShop": { "type": "boolean", "description": "Of dit werk in de winkel te koop is" },
-        "pricePostcard": { "type": "number", "description": "Prijs voor een ansichtkaart" },
-        "pricePoster": { "type": "number", "description": "Prijs voor een poster" },
-        "pricePrint": { "type": "number", "description": "Prijs voor een Fine Art print" },
-        "priceDigital": { "type": "number", "description": "Prijs voor een digitale download" },
+        "pricePostcard": { "type": "number" },
+        "pricePoster": { "type": "number" },
+        "pricePrint": { "type": "number" },
+        "priceDigital": { "type": "number" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["title", "series", "imageUrl"]
@@ -44,36 +43,9 @@
         "artworkId": { "type": "string" },
         "artworkTitle": { "type": "string" },
         "productType": { "type": "string", "enum": ["postcard", "poster", "fine-art", "digital"] },
-        "status": { "type": "string", "enum": ["new", "pending", "shipped"] },
+        "status": { "type": "string", "enum": ["new", "pending", "shipped", "paid"] },
+        "stripeSessionId": { "type": "string" },
         "timestamp": { "type": "string", "format": "date-time" }
-      }
-    },
-    "Interaction": {
-      "title": "Interaction",
-      "description": "Een interactie van een bezoeker.",
-      "type": "object",
-      "properties": {
-        "visitorId": { "type": "string" },
-        "type": { "type": "string", "enum": ["view_artwork", "filter_tags", "shop_view"] },
-        "artworkId": { "type": "string" },
-        "timestamp": { "type": "string", "format": "date-time" }
-      }
-    },
-    "Mail": {
-      "title": "Mail",
-      "description": "Een uitgaand e-mail bericht voor de Trigger Email extensie.",
-      "type": "object",
-      "properties": {
-        "to": { "type": "string" },
-        "message": {
-          "type": "object",
-          "properties": {
-            "subject": { "type": "string" },
-            "text": { "type": "string" },
-            "html": { "type": "string" }
-          }
-        },
-        "createdAt": { "type": "string", "format": "date-time" }
       }
     },
     "Settings": {
@@ -81,16 +53,16 @@
       "description": "Algemene website instellingen en teksten voor White Label branding.",
       "type": "object",
       "properties": {
-        "siteTitle": { "type": "string", "description": "De naam van het museum (bijv. Thijs Sterk Museum)" },
-        "siteSubtitle": { "type": "string", "description": "Ondertitel (bijv. Schilder van Licht)" },
+        "siteTitle": { "type": "string" },
+        "siteSubtitle": { "type": "string" },
         "logoUrl": { "type": "string" },
-        "adminEmail": { "type": "string", "description": "Ontvanger voor bestellingen en contact" },
+        "adminEmail": { "type": "string" },
+        "stripeEnabled": { "type": "boolean" },
+        "stripePublicKey": { "type": "string" },
+        "stripeSecretKey": { "type": "string" },
         "shopIntro": { "type": "string" },
         "homeBioTitle": { "type": "string" },
         "homeBio": { "type": "string" },
-        "homeBioImageUrl": { "type": "string" },
-        "contactTitle": { "type": "string" },
-        "contactIntro": { "type": "string" },
         "hiddenSeries": { "type": "array", "items": { "type": "string" } },
         "seriesTranslations": { "type": "object" },
         "tagTranslations": { "type": "object" }
@@ -101,8 +73,6 @@
   "firestore": {
     "/artworks/{artworkId}": { "schema": "Artwork", "description": "Collectie van alle kunstwerken" },
     "/orders/{orderId}": { "schema": "Order", "description": "Bestellingen uit de winkel" },
-    "/interactions/{interactionId}": { "schema": "Interaction", "description": "Log van bezoekersinteracties" },
-    "/mail/{mailId}": { "schema": "Mail", "description": "Wachtrij voor e-mails" },
     "/settings/site": { "schema": "Settings", "description": "Website configuratie en branding" }
   }
 }
