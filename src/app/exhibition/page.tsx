@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useEffect, Suspense, useCallback } from 'react';
@@ -280,12 +281,12 @@ function ExhibitionContent() {
       </div>
 
       <div className="absolute bottom-12 left-0 right-0 z-30 flex flex-col items-center gap-6 pointer-events-none">
-        <div className="flex items-center gap-20 pointer-events-auto">
+        <div className="flex items-center gap-12 md:gap-24 pointer-events-auto">
           <button 
             onClick={() => handleStep(-1000)}
-            className="p-3 rounded-full bg-white/40 backdrop-blur-md border border-black/5 text-black/30 hover:text-accent hover:border-accent/20 transition-all active:scale-90 group"
+            className="p-6 md:p-10 rounded-full bg-white/40 backdrop-blur-md border border-black/5 text-black/30 hover:text-accent hover:border-accent/20 transition-all active:scale-90 shadow-xl group"
           >
-            <ChevronLeft className="w-8 h-8 transition-transform group-hover:-translate-x-1" />
+            <ChevronLeft className="w-12 h-12 md:w-20 md:h-20 transition-transform group-hover:-translate-x-1" />
           </button>
           
           <div className="flex flex-col items-center gap-2">
@@ -303,9 +304,9 @@ function ExhibitionContent() {
 
           <button 
             onClick={() => handleStep(1000)}
-            className="p-3 rounded-full bg-white/40 backdrop-blur-md border border-black/5 text-black/30 hover:text-accent hover:border-accent/20 transition-all active:scale-90 group"
+            className="p-6 md:p-10 rounded-full bg-white/40 backdrop-blur-md border border-black/5 text-black/30 hover:text-accent hover:border-accent/20 transition-all active:scale-90 shadow-xl group"
           >
-            <ChevronRight className="w-8 h-8 transition-transform group-hover:translate-x-1" />
+            <ChevronRight className="w-12 h-12 md:w-20 md:h-20 transition-transform group-hover:translate-x-1" />
           </button>
         </div>
       </div>
