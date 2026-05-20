@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Loader2, Search, Minimize2 } from 'lucide-react';
+import { Loader2, ZoomIn, ZoomOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface DeepZoomViewerProps {
@@ -18,7 +18,7 @@ export function DeepZoomViewer({ imageUrl, title, brightness = 1, className }: D
   const [isLoading, setIsLoading] = useState(true);
   const [isZoomedIn, setIsZoomedIn] = useState(false);
 
-  // De verbeterde toggle functie
+  // De verbeterde toggle functie die direct de viewport aanstuurt
   const handleToggleZoom = useCallback(() => {
     if (!osdRef.current) return;
     
@@ -26,9 +26,9 @@ export function DeepZoomViewer({ imageUrl, title, brightness = 1, className }: D
     const currentZoom = viewport.getZoom();
     const homeZoom = viewport.getHomeZoom();
     
-    // Als we dicht bij home zoom zijn, zoom dan 5x in op het midden.
+    // Logica: als we dicht bij de start-zoom zijn, zoom dan flink in.
     // Anders, ga terug naar het volledige overzicht.
-    if (currentZoom <= homeZoom * 1.5) {
+    if (currentZoom <= homeZoom * 1.2) {
       viewport.zoomTo(homeZoom * 5, viewport.getCenter(), false);
     } else {
       viewport.goHome(false);
@@ -53,13 +53,13 @@ export function DeepZoomViewer({ imageUrl, title, brightness = 1, className }: D
             url: imageUrl,
             buildPyramid: true
           },
-          animationTime: 1.2,
+          animationTime: 1.5,
           blendTime: 0.1,
           constrainDuringPan: true,
-          maxZoomPixelRatio: 2,
+          maxZoomPixelRatio: 2.5,
           minZoomLevel: 0.5,
           visibilityRatio: 1,
-          zoomPerScroll: 1.5,
+          zoomPerScroll: 1.8,
           showNavigationControl: false,
           showNavigator: true,
           navigatorPosition: "BOTTOM_RIGHT",
@@ -87,12 +87,13 @@ export function DeepZoomViewer({ imageUrl, title, brightness = 1, className }: D
           }
         });
 
-        // Update de visuele staat van de knop op basis van werkelijke zoom
+        // Update de visuele staat van de knop op basis van werkelijke zoom (ook bij muiswiel-gebruik)
         osdInstance.addHandler('zoom', () => {
           const viewport = osdInstance.viewport;
+          if (!viewport) return;
           const currentZoom = viewport.getZoom();
           const homeZoom = viewport.getHomeZoom();
-          setIsZoomedIn(currentZoom > homeZoom * 1.5);
+          setIsZoomedIn(currentZoom > homeZoom * 1.2);
         });
 
         osdInstance.addHandler('open-failed', () => {
@@ -143,29 +144,33 @@ export function DeepZoomViewer({ imageUrl, title, brightness = 1, className }: D
       `}} />
 
       {/* Custom Controls Overlay */}
-      <div className="absolute top-8 left-8 flex flex-col gap-4 z-[120]">
-        <div className="bg-black/40 backdrop-blur-xl border border-white/10 p-4 rounded-2xl shadow-2xl transition-all duration-500">
+      <div className="absolute top-8 left-8 flex flex-col gap-4 z-[120] pointer-events-none">
+        <div className="bg-black/60 backdrop-blur-xl border border-white/10 p-4 rounded-2xl shadow-2xl transition-all duration-500 pointer-events-auto">
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-1">Collectie Thijs Sterk</p>
           <p className="text-white text-xs font-medium truncate max-w-[200px]">{title}</p>
         </div>
 
-        {/* De herstelde Zoom Knop */}
+        {/* De herstelde Zoom Knop (+/-) */}
         <button 
-          onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleToggleZoom(); }}
-          className="w-14 h-14 bg-accent/90 hover:bg-accent text-accent-foreground rounded-2xl flex items-center justify-center shadow-2xl border border-white/10 transition-all hover:scale-105 active:scale-95 group/zoom"
-          title={isZoomedIn ? "Terug naar overzicht" : "Zoom in op details (5x)"}
+          onClick={(e) => { 
+            e.preventDefault(); 
+            e.stopPropagation(); 
+            handleToggleZoom(); 
+          }}
+          className="w-16 h-16 bg-accent hover:bg-accent/90 text-accent-foreground rounded-2xl flex items-center justify-center shadow-2xl border-2 border-white/20 transition-all hover:scale-105 active:scale-95 group/zoom pointer-events-auto"
+          title={isZoomedIn ? "Terug naar overzicht (-)" : "Zoom in op details (+)"}
         >
           {isZoomedIn ? (
-            <Minimize2 className="w-6 h-6 transition-transform group-hover/zoom:scale-110" />
+            <ZoomOut className="w-8 h-8 transition-transform group-hover/zoom:scale-110" />
           ) : (
-            <Search className="w-6 h-6 transition-transform group-hover/zoom:scale-110" />
+            <ZoomIn className="w-8 h-8 transition-transform group-hover/zoom:scale-110" />
           )}
         </button>
       </div>
 
       {/* Touch/Mouse Hint bij hover */}
-      <div className="absolute bottom-8 left-8 bg-black/20 backdrop-blur-md px-4 py-2 rounded-full border border-white/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
-        <p className="text-[9px] font-black uppercase tracking-widest text-white/60">Gebruik muiswiel of dubbelklik voor handmatige zoom</p>
+      <div className="absolute bottom-8 left-8 bg-black/40 backdrop-blur-md px-5 py-2.5 rounded-full border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+        <p className="text-[10px] font-black uppercase tracking-widest text-white/80">Scroll of dubbelklik voor vrije zoom</p>
       </div>
     </div>
   );
