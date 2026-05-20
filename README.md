@@ -3,32 +3,31 @@
 
 Dit document bevat de essentiële instructies voor het beheren, bewaren en delen van de digitale collectie (325+ werken).
 
-## Versie: 10-5/14.40 BASIS (Stabiel)
+## Versie: 10-5/16.15 (Gecategoriseerde Tags & Layout Update)
 
-### 1. Hoe deel ik de collectie met vrienden?
-Uw website is publiek toegankelijk. 
-*   **De URL**: Deel de link die u van Firebase heeft gekregen (bijv. `thijssterk.nl` of de `.web.app` variant).
-*   **Controle**: Open de site zelf eens in een 'Incognito' venster. Wat u daar ziet, ziet het publiek ook.
-*   **Zalen**: U kunt direct naar een specifieke zaal linken door de URL te kopiëren terwijl u in die zaal bent (bijv. `/gallery?series=Groet`).
+### 1. Hoe publiceer ik mijn wijzigingen naar de hele wereld?
+Er zijn twee soorten wijzigingen op uw site:
 
-### 2. Hoe bewaar ik mijn bewerkingen (Back-up)?
-U heeft in het beheerpaneel onder **'Master Backup'** een JSON-bestand gedownload.
-*   **Wat zit erin?**: Alle Schermtitels, jaartallen, tags en uw live-bewerkingen (uitsnedes en helderheid).
-*   **Wat zit er NIET in?**: De daadwerkelijke fotobestanden (pixels). 
-*   **Advies**: Bewaar de Master Backup altijd in dezelfde map als uw originele foto's op uw harde schijf of NAS. Dit is uw "receptenboek".
+*   **Inhoud (Foto's, Tags, Bio's)**: Wijzigingen die u maakt in het beheerpaneel (`/admin`) zijn **direct live**. Iedereen met de link ziet dit meteen.
+*   **Layout & Techniek (Code)**: Wijzigingen die de AI (ik) maakt aan de vormgeving of knoppen, moeten worden "gedeployed". 
+    *   **Stap**: Klik in uw Firebase Studio dashboard op de knop **'Deploy'** (meestal rechtsboven of via de Github-koppeling). Zodra de balk klaar is, zijn de nieuwe knoppen en indelingen voor iedereen zichtbaar op uw domeinnaam.
 
-### 3. Wat als er iets misgaat? (Herstel)
+### 2. Hoe deel ik de collectie?
+Uw website is publiek toegankelijk op uw eigen URL (bijv. `thijssterk.nl`).
+*   **Directe link naar zaal**: Kopieer de URL uit de browserbalk terwijl u in een zaal bent (bijv. `/gallery?series=Groet`) om mensen direct naar die plek te sturen.
+
+### 3. Hoe bewaar ik mijn bewerkingen (Back-up)?
+In het beheerpaneel onder **'Master Backup'** kunt u een JSON-bestand downloaden.
+*   **Wat zit erin?**: Alle Schermtitels, jaartallen, categorieën (Techniek/Plaats/Onderwerp) en uitsnedes.
+*   **Advies**: Download na een grote sessie bewerken altijd een nieuwe Master Backup en bewaar deze bij de originele foto's op uw computer. Dit is uw veiligheidsnet.
+
+### 4. Wat als er iets misgaat? (Herstel)
 Mocht u per ongeluk een zaal wissen of de database beschadigen:
 1.  Ga naar `/admin` > **Master Backup**.
 2.  Kies **'Backup Bestand Herstellen'**.
-3.  Upload uw laatste JSON-bestand.
-4.  De app herstelt direct alle titels en bewerkingen bij de foto's.
+3.  Upload uw laatste JSON-bestand en klik op **'Start Herstel'**.
 
-### 4. De "Gouden Regel" voor Behoud
-**Gooi nooit uw originele foto's weg.** 
-De website is een presentatie van uw foto's in de cloud. De Master Backup bewaart hoe die foto's getoond worden. Samen vormen ze een onverwoestbaar archief.
-
-### 5. Beheerfuncties in deze versie
-*   **Schermtitels**: Titels die u invoert in de editor zijn direct zichtbaar voor het publiek.
-*   **Statusbalk**: Tijdens uploads ziet u bovenin precies de voortgang (bijv. 5 van 325).
-*   **Zalen Verbergen**: In het Depot kunt u met het 'Oog'-icoontje een hele zaal tijdelijk onzichtbaar maken voor publiek.
+### 5. Nieuw in deze versie
+*   **Gecategoriseerde Tags**: Tags zijn nu verdeeld in Periode, Techniek, Plaats en Onderwerp.
+*   **Compacte Curator**: De pagina 'Uw Zaal' is compacter en overzichtelijker voor bezoekers.
+*   **Verbeterde Tour**: De virtuele wandeling heeft een strakkere layout met informatiebordjes die niet meer over de kunst heen vallen.
