@@ -39,7 +39,8 @@ import {
   Coins,
   Users,
   Briefcase,
-  GraduationCap
+  GraduationCap,
+  HardDrive
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -439,7 +440,7 @@ export default function AdminPage() {
                   </div>
                </Card>
 
-               {/* Master Franchise Section */}
+               {/* Master Franchise Section - GEBASEERD OP 100+ UUR DEV */}
                <Card className="p-8 md:p-12 rounded-3xl shadow-2xl border-none bg-accent text-accent-foreground relative overflow-hidden">
                   <div className="absolute top-0 right-0 p-12 opacity-10 -rotate-12"><Briefcase className="w-64 h-64" /></div>
                   <div className="relative z-10 space-y-8">
@@ -447,32 +448,35 @@ export default function AdminPage() {
                        <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center border border-white/20"><GraduationCap className="w-6 h-6" /></div>
                        <h2 className="text-3xl font-headline font-light italic">Master Franchise & Exit Strategie</h2>
                     </div>
-                    <p className="text-sm text-accent-foreground/80 leading-relaxed max-w-3xl">
-                      Wil iemand dit volledige concept overnemen om zelf als Digitaal Conservator een netwerk van 20+ kunstenaars te beheren? 
-                      Dit pakket omvat de volledige codebase, de commerciële blauwdruk en intensieve begeleiding.
-                    </p>
+                    <div className="flex items-start gap-4 p-4 bg-black/10 rounded-2xl border border-black/5 max-w-2xl">
+                       <HardDrive className="w-5 h-5 shrink-0 mt-1" />
+                       <p className="text-xs leading-relaxed">
+                         <strong>Asset Waarde:</strong> Dit platform vertegenwoordigt ruim <strong>100 uur intensieve ontwikkeltijd</strong> (IP). 
+                         De overnameprijs dekt de volledige codebase, de commerciële blauwdruk en 40 uur training.
+                       </p>
+                    </div>
 
                     <div className="grid md:grid-cols-2 gap-8">
                        <div className="p-6 rounded-2xl bg-white/10 border border-white/20 space-y-4">
                           <h4 className="font-black uppercase text-[10px] tracking-widest opacity-70">Partner Overname (Vrienden)</h4>
                           <div className="flex justify-between items-end border-b border-white/10 pb-2">
-                             <span className="text-[10px] uppercase opacity-60">Overname Concept</span>
-                             <span className="font-headline text-2xl">€2.500,-</span>
+                             <span className="text-[10px] uppercase opacity-60">Volledig Concept</span>
+                             <span className="font-headline text-2xl">€7.500,-</span>
                           </div>
                           <ul className="text-[10px] space-y-2 opacity-80">
                              <li className="flex gap-2">✔ 40 uur intensieve training & support</li>
-                             <li className="flex gap-2">✔ Overdracht volledige workflow & codebase</li>
+                             <li className="flex gap-2">✔ Overdracht 100+ uur aan ontwikkelde IP</li>
                           </ul>
                        </div>
 
                        <div className="p-6 rounded-2xl bg-black/10 border border-white/10 space-y-4">
                           <h4 className="font-black uppercase text-[10px] tracking-widest opacity-70">Enterprise Overname (Zakelijk)</h4>
                           <div className="flex justify-between items-end border-b border-white/10 pb-2">
-                             <span className="text-[10px] uppercase opacity-60">Concept Licentie</span>
-                             <span className="font-headline text-2xl">€5.000,-</span>
+                             <span className="text-[10px] uppercase opacity-60">IP & Licentie</span>
+                             <span className="font-headline text-2xl">€15.000,-</span>
                           </div>
                           <ul className="text-[10px] space-y-2 opacity-80">
-                             <li className="flex gap-2">✔ 40 uur professionele implementatie-begeleiding</li>
+                             <li className="flex gap-2">✔ 40 uur professionele implementatie</li>
                              <li className="flex gap-2">✔ Commerciële exploitatie licentie</li>
                           </ul>
                        </div>
