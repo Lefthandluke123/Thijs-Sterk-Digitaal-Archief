@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
@@ -70,16 +71,30 @@ export default function AdminPage() {
 
   const artworksQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    // We halen alles op, sortering doen we in-memory voor complexe Romeinse logica
     return query(collection(firestore, 'artworks'));
   }, [firestore]);
 
   const { data: rawArtworks } = useCollection(artworksQuery);
 
+  const parseTitleForSort = (title: string) => {
+    if (!title) return { romanVal: 999, num: 999, suffix: '' };
+    
+    // Zoek naar Romeins cijfer (I t/m XX)
+    const romanMatch = title.match(/\b(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII|XIV|XV|XVI|XVII|XVIII|XIX|XX)\b/i);
+    // Zoek naar het eerste getal in de string
+    const numMatch = title.match(/(\d+)([a-z]*)?/i);
+    
+    return {
+      romanVal: romanMatch ? (ROMAN_VALUES[romanMatch[1].toUpperCase()] || 999) : 999,
+      num: numMatch ? parseInt(numMatch[1], 10) : 999,
+      suffix: numMatch ? (numMatch[2] || '').toLowerCase() : ''
+    };
+  };
+
   const artworks = useMemo(() => {
     if (!rawArtworks) return [];
     
-    // Unieke afbeeldingen filteren
+    // Unieke afbeeldingen filteren op basis van URL
     const seen = new Set();
     const unique = rawArtworks.filter(art => {
       const url = (art as any).imageUrl;
@@ -88,34 +103,14 @@ export default function AdminPage() {
       return true;
     });
 
-    const parseTitle = (title: string) => {
-      // Regex voor patroon: [Getal][Suffix] [Romeins] (bijv. "12a XIII")
-      const match = title.match(/^(\d+)([a-z]*)?\s+(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII)\b/i);
-      if (match) {
-        return {
-          num: parseInt(match[1], 10),
-          suffix: match[2] || '',
-          romanVal: ROMAN_VALUES[match[3].toUpperCase()] || 0
-        };
-      }
-      return null;
-    };
-
-    // Sorteren op Romeinse cijfers en volgnummer
+    // Sorteren: eerst op Romeinse groep, dan op volgnummer
     return [...unique].sort((a: any, b: any) => {
-      const pA = parseTitle(a.title || '');
-      const pB = parseTitle(b.title || '');
+      const pA = parseTitleForSort(a.title || '');
+      const pB = parseTitleForSort(b.title || '');
 
-      if (pA && pB) {
-        if (pA.romanVal !== pB.romanVal) return pA.romanVal - pB.romanVal;
-        if (pA.num !== pB.num) return pA.num - pB.num;
-        return pA.suffix.localeCompare(pB.suffix);
-      }
-      
-      if (pA) return -1;
-      if (pB) return 1;
-      
-      return (a.title || '').localeCompare(b.title || '');
+      if (pA.romanVal !== pB.romanVal) return pA.romanVal - pB.romanVal;
+      if (pA.num !== pB.num) return pA.num - pB.num;
+      return pA.suffix.localeCompare(pB.suffix);
     });
   }, [rawArtworks]);
 
@@ -246,7 +241,7 @@ export default function AdminPage() {
 
   const handleExportBackup = () => {
     const exportData = {
-      version: "2.8",
+      version: "2.9",
       exportedAt: new Date().toISOString(),
       artworks: artworks,
       settings: siteSettings || {}
@@ -296,7 +291,7 @@ export default function AdminPage() {
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                </div>
-               <div className="text-[9px] font-black uppercase opacity-40">Gesorteerd op Romeinse Cijfers</div>
+               <div className="text-[9px] font-black uppercase opacity-40">Groepering op Romeinse Cijfers (I, II, III...)</div>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">

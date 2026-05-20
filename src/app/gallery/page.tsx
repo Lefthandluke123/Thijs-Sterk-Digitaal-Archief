@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
@@ -36,6 +37,17 @@ function GalleryContent() {
 
   const hiddenSeries = useMemo(() => siteSettings?.hiddenSeries || [], [siteSettings]);
 
+  const parseTitleForSort = (title: string) => {
+    if (!title) return { romanVal: 999, num: 999, suffix: '' };
+    const romanMatch = title.match(/\b(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII|XIV|XV|XVI|XVII|XVIII|XIX|XX)\b/i);
+    const numMatch = title.match(/(\d+)([a-z]*)?/i);
+    return {
+      romanVal: romanMatch ? (ROMAN_VALUES[romanMatch[1].toUpperCase()] || 999) : 999,
+      num: numMatch ? parseInt(numMatch[1], 10) : 999,
+      suffix: numMatch ? (numMatch[2] || '').toLowerCase() : ''
+    };
+  };
+
   const artworks = useMemo(() => {
     if (!dbArtworks) return [];
     
@@ -47,29 +59,12 @@ function GalleryContent() {
       return true;
     });
 
-    const parseTitle = (title: string) => {
-      const match = title.match(/^(\d+)([a-z]*)?\s+(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII)\b/i);
-      if (match) {
-        return {
-          num: parseInt(match[1], 10),
-          suffix: match[2] || '',
-          romanVal: ROMAN_VALUES[match[3].toUpperCase()] || 0
-        };
-      }
-      return null;
-    };
-
     return [...unique].sort((a: any, b: any) => {
-      const pA = parseTitle(a.title || '');
-      const pB = parseTitle(b.title || '');
-      if (pA && pB) {
-        if (pA.romanVal !== pB.romanVal) return pA.romanVal - pB.romanVal;
-        if (pA.num !== pB.num) return pA.num - pB.num;
-        return pA.suffix.localeCompare(pB.suffix);
-      }
-      if (pA) return -1;
-      if (pB) return 1;
-      return (a.title || '').localeCompare(b.title || '');
+      const pA = parseTitleForSort(a.title || '');
+      const pB = parseTitleForSort(b.title || '');
+      if (pA.romanVal !== pB.romanVal) return pA.romanVal - pB.romanVal;
+      if (pA.num !== pB.num) return pA.num - pB.num;
+      return pA.suffix.localeCompare(pB.suffix);
     });
   }, [dbArtworks]);
 
