@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
@@ -23,7 +22,9 @@ import {
   PenTool,
   Home,
   User,
-  Quote
+  Quote,
+  Languages,
+  Sparkles
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -32,6 +33,7 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
+import { translateMuseumText } from '@/ai/flows/translate-flow';
 
 const TAG_CATEGORIES = {
   "Periode": ["Vroeg werk", "45-50", "50-60", "70-82"],
@@ -52,6 +54,7 @@ export default function AdminPage() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState('');
+  const [isTranslating, setIsTranslating] = useState<string | null>(null);
 
   const artworksQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -86,10 +89,6 @@ export default function AdminPage() {
     });
   }, [artworks, searchQuery]);
 
-  const editingArtwork = useMemo(() => {
-    return artworks.find(art => art.id === editingId) || null;
-  }, [artworks, editingId]);
-
   const updateArtworkField = (id: string, field: string, value: any) => {
     if (!firestore || !id) return;
     const artRef = doc(firestore, 'artworks', id);
@@ -104,6 +103,21 @@ export default function AdminPage() {
     const settingsRef = doc(firestore, 'settings', 'site');
     setDoc(settingsRef, { [field]: value }, { merge: true })
       .catch(async () => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: settingsRef.path, operation: 'update' })));
+  };
+
+  const handleTranslate = async (field: string, currentText: string, context: string) => {
+    if (!currentText || isTranslating) return;
+    setIsTranslating(field);
+    try {
+      const result = await translateMuseumText({ text: currentText, context });
+      updateSettingsField(field, result.translatedText);
+      toast({ title: "Vertaling voltooid", description: "De tekst is bijgewerkt." });
+    } catch (e) {
+      console.error(e);
+      toast({ variant: "destructive", title: "Vertaling mislukt", description: "Probeer het later opnieuw." });
+    } finally {
+      setIsTranslating(null);
+    }
   };
 
   const handleBatchProcess = async (files: FileList | null) => {
@@ -240,9 +254,21 @@ export default function AdminPage() {
               <div className="grid gap-12">
                  {/* Introductie Tekst (Bovenaan Homepagina) */}
                  <div className="space-y-4">
-                    <div className="flex items-center gap-3">
-                       <Home className="w-4 h-4 text-accent" />
-                       <Label className="text-[11px] font-black uppercase text-accent border-l-4 border-accent pl-4 block">Introductie Tekst (Bovenaan Homepagina)</Label>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                         <Home className="w-4 h-4 text-accent" />
+                         <Label className="text-[11px] font-black uppercase text-accent border-l-4 border-accent pl-4 block">Introductie Tekst (Bovenaan Homepagina)</Label>
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-[9px] uppercase font-black tracking-widest text-accent hover:text-accent/70"
+                        onClick={() => handleTranslate('homeHeroIntro', siteSettings?.homeHeroIntro || '', 'Introductietekst bovenaan de homepagina')}
+                        disabled={!!isTranslating}
+                      >
+                        {isTranslating === 'homeHeroIntro' ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : <Sparkles className="w-3 h-3 mr-2" />}
+                        Vertaal naar Engels (AI)
+                      </Button>
                     </div>
                     <div className="space-y-4 bg-black/5 p-6 rounded-2xl">
                       <div className="space-y-2">
@@ -256,6 +282,7 @@ export default function AdminPage() {
                       <div className="space-y-2">
                         <Label className="text-[9px] uppercase opacity-50">Openingswoord / Introductie</Label>
                         <Textarea 
+                          key={siteSettings?.homeHeroIntro}
                           defaultValue={siteSettings?.homeHeroIntro || ''} 
                           onBlur={(e) => updateSettingsField('homeHeroIntro', e.target.value)} 
                           className="min-h-[200px] bg-white border-none p-6 text-base leading-relaxed font-light" 
@@ -267,9 +294,21 @@ export default function AdminPage() {
 
                  {/* Thijs Sterk Hoofd Bio (Onderaan Homepagina) */}
                  <div className="space-y-4 pt-8 border-t border-border/10">
-                    <div className="flex items-center gap-3">
-                       <Quote className="w-4 h-4 text-accent" />
-                       <Label className="text-[11px] font-black uppercase text-accent border-l-4 border-accent pl-4 block">Biografie Thijs Sterk (Onderaan Homepagina)</Label>
+                    <div className="flex items-center justify-between">
+                       <div className="flex items-center gap-3">
+                          <Quote className="w-4 h-4 text-accent" />
+                          <Label className="text-[11px] font-black uppercase text-accent border-l-4 border-accent pl-4 block">Biografie Thijs Sterk (Onderaan Homepagina)</Label>
+                       </div>
+                       <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-[9px] uppercase font-black tracking-widest text-accent hover:text-accent/70"
+                        onClick={() => handleTranslate('homeBio', siteSettings?.homeBio || '', 'Hoofdbiografie van de artiest Thijs Sterk')}
+                        disabled={!!isTranslating}
+                      >
+                        {isTranslating === 'homeBio' ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : <Sparkles className="w-3 h-3 mr-2" />}
+                        Vertaal naar Engels (AI)
+                      </Button>
                     </div>
                     <div className="space-y-4 bg-black/5 p-6 rounded-2xl">
                       <div className="space-y-2">
@@ -283,6 +322,7 @@ export default function AdminPage() {
                       <div className="space-y-2">
                         <Label className="text-[9px] uppercase opacity-50">Biografische Tekst</Label>
                         <Textarea 
+                          key={siteSettings?.homeBio}
                           defaultValue={siteSettings?.homeBio || ''} 
                           onBlur={(e) => updateSettingsField('homeBio', e.target.value)} 
                           className="min-h-[250px] bg-white border-none p-6 text-base leading-relaxed font-light" 
@@ -294,11 +334,24 @@ export default function AdminPage() {
 
                  {/* Leo Duppen Bio */}
                  <div className="space-y-4 pt-8 border-t border-border/10">
-                    <div className="flex items-center gap-3">
-                       <User className="w-4 h-4 opacity-40" />
-                       <Label className="text-[11px] font-black uppercase opacity-60 block">Leo Duppen (Kunsthistoricus)</Label>
+                    <div className="flex items-center justify-between">
+                       <div className="flex items-center gap-3">
+                          <User className="w-4 h-4 opacity-40" />
+                          <Label className="text-[11px] font-black uppercase opacity-60 block">Leo Duppen (Kunsthistoricus)</Label>
+                       </div>
+                       <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-[9px] uppercase font-black tracking-widest opacity-40 hover:opacity-100"
+                        onClick={() => handleTranslate('leoDuppenBio', siteSettings?.leoDuppenBio || '', 'Biografie van kunsthistoricus Leo Duppen')}
+                        disabled={!!isTranslating}
+                      >
+                        {isTranslating === 'leoDuppenBio' ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : <Sparkles className="w-3 h-3 mr-2" />}
+                        Vertaal naar Engels (AI)
+                      </Button>
                     </div>
                     <Textarea 
+                      key={siteSettings?.leoDuppenBio}
                       defaultValue={siteSettings?.leoDuppenBio || ''} 
                       onBlur={(e) => updateSettingsField('leoDuppenBio', e.target.value)} 
                       className="min-h-[150px] bg-black/5 border-none rounded-xl p-4 text-sm" 
@@ -344,7 +397,12 @@ export default function AdminPage() {
                  <h2 className="text-xl font-headline font-light">Master Backup</h2>
                  <p className="text-sm text-muted-foreground">Download een volledig overzicht van alle schermtitels, tags en uitsnedes als veiligheidsnet.</p>
               </div>
-              <Button onClick={handleExportBackup} size="lg" className="rounded-full px-12"><Download className="mr-2" /> Download Master Backup</Button>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <Button onClick={handleExportBackup} size="lg" className="rounded-full px-12"><Download className="mr-2" /> Download Master Backup</Button>
+                <Button variant="outline" size="lg" className="rounded-full px-12 border-accent text-accent hover:bg-accent/5">
+                  <Languages className="mr-2 w-4 h-4" /> Batch Vertaling Starten
+                </Button>
+              </div>
             </Card>
           </TabsContent>
         </Tabs>
