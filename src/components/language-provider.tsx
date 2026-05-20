@@ -1,8 +1,9 @@
+
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-type Language = 'nl' | 'en' | 'de' | 'fr';
+type Language = 'nl' | 'en' | 'de' | 'fr' | 'es';
 
 interface LanguageContextType {
   language: Language;
@@ -120,6 +121,33 @@ const translations: Record<Language, Record<string, string>> = {
     prev_room: 'Salle Précédente',
     all_works: 'Toutes les œuvres',
     end_of_room: 'Fin de cette salle',
+  },
+  es: {
+    nav_home: 'Inicio',
+    nav_tour: 'Visita',
+    nav_galleries: 'Galerías',
+    nav_your_room: 'Su Sala',
+    nav_about: 'Acerca de',
+    nav_contact: 'Contacto',
+    nav_admin: 'Admin',
+    nav_privacy: 'Privacidad',
+    nav_collections: 'Colecciones',
+    footer_rights: 'Todos los derechos reservados.',
+    hero_start_walk: 'Iniciar la Visita',
+    hero_your_room: 'Su Propia Sala',
+    hero_subtitle: 'Colección Digital',
+    curator_title: 'Su Propia Sala',
+    curator_subtitle: 'Cree su selección personal de la obra',
+    curator_clear: 'Borrar Selección',
+    curator_open: 'Abrir Su Sala',
+    gallery_select: 'Seleccione una galería',
+    gallery_closed: 'Esta galería está cerrada actualmente',
+    viewer_room: 'Sala',
+    viewer_unknown: 'Desconocido',
+    next_room: 'Siguiente Sala',
+    prev_room: 'Sala Anterior',
+    all_works: 'Todas las Obras',
+    end_of_room: 'Fin de esta sala',
   }
 };
 
@@ -128,7 +156,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   useEffect(() => {
     const saved = localStorage.getItem('app-lang') as Language;
-    if (saved && (saved === 'nl' || saved === 'en' || saved === 'de' || saved === 'fr')) {
+    if (saved && (saved === 'nl' || saved === 'en' || saved === 'de' || saved === 'fr' || saved === 'es')) {
       setLanguageState(saved);
     }
   }, []);

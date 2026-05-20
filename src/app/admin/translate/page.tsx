@@ -24,12 +24,13 @@ import {
 import { translateMuseumText } from '@/ai/flows/translate-flow';
 import { cn } from '@/lib/utils';
 
-type TargetLang = 'en' | 'de' | 'fr';
+type TargetLang = 'en' | 'de' | 'fr' | 'es';
 
 const LANG_LABELS: Record<TargetLang, string> = {
   en: 'Engels (English)',
   de: 'Duits (Deutsch)',
-  fr: 'Frans (Français)'
+  fr: 'Frans (Français)',
+  es: 'Spaans (Español)'
 };
 
 const FIELDS_TO_TRANSLATE = [
@@ -102,7 +103,7 @@ export default function TranslatePage() {
         </div>
         <div className="flex items-center gap-6">
           <div className="flex bg-muted rounded-full p-1">
-            {(['en', 'de', 'fr'] as TargetLang[]).map((lang) => (
+            {(['en', 'de', 'fr', 'es'] as TargetLang[]).map((lang) => (
               <button
                 key={lang}
                 onClick={() => setTargetLang(lang)}
@@ -197,7 +198,7 @@ export default function TranslatePage() {
       <footer className="fixed bottom-0 left-0 right-0 h-16 bg-background/80 backdrop-blur-xl border-t border-border flex items-center justify-center z-50">
         <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] opacity-40">
           <Globe2 className="w-3 h-3" />
-          Ondersteunt: NL &bull; EN &bull; DE &bull; FR
+          Ondersteunt: NL &bull; EN &bull; DE &bull; FR &bull; ES
         </div>
       </footer>
     </div>

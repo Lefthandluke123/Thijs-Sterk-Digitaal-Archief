@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useMemo, Suspense } from 'react';
@@ -194,6 +195,10 @@ function NavbarContent() {
               <DropdownMenuItem onClick={() => setLanguage('fr')} className="flex items-center gap-4 text-[12px] uppercase font-black tracking-widest rounded-xl p-4 cursor-pointer transition-colors focus:bg-accent focus:text-accent-foreground">
                 <span className="text-xl">🇫🇷</span> FR
                 {language === 'fr' && <div className="ml-auto w-2.5 h-2.5 rounded-full bg-accent" />}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setLanguage('es')} className="flex items-center gap-4 text-[12px] uppercase font-black tracking-widest rounded-xl p-4 cursor-pointer transition-colors focus:bg-accent focus:text-accent-foreground">
+                <span className="text-xl">🇪🇸</span> ES
+                {language === 'es' && <div className="ml-auto w-2.5 h-2.5 rounded-full bg-accent" />}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
