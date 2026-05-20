@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
@@ -17,7 +18,7 @@ const ROMAN_VALUES: Record<string, number> = {
 function GalleryContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const initialSeriesFromUrl = searchParams.get('series');
   
   const [selectedArtwork, setSelectedArtwork] = useState<any | null>(null);
@@ -38,6 +39,12 @@ function GalleryContent() {
   const { data: siteSettings } = useDoc(siteSettingsRef);
 
   const hiddenSeries = useMemo(() => siteSettings?.hiddenSeries || [], [siteSettings]);
+
+  const translateTerm = (text: string, category: 'series' | 'tag') => {
+    if (language === 'nl' || !siteSettings) return text;
+    const map = category === 'series' ? siteSettings.seriesTranslations : siteSettings.tagTranslations;
+    return map?.[language]?.[text] || text;
+  };
 
   const parseTitleForSort = (title: string) => {
     if (!title) return { romanVal: 999, num: 999, suffix: '' };
@@ -79,9 +86,13 @@ function GalleryContent() {
       }
     });
     return Object.entries(counts)
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => a.name.localeCompare(b.name));
-  }, [artworks, hiddenSeries]);
+      .map(([name, count]) => ({ 
+        name, 
+        count,
+        translatedName: translateTerm(name, 'series')
+      }))
+      .sort((a, b) => a.translatedName.localeCompare(b.translatedName));
+  }, [artworks, hiddenSeries, language, siteSettings]);
 
   useEffect(() => {
     const s = searchParams.get('series');
@@ -138,7 +149,7 @@ function GalleryContent() {
       <div className="w-full bg-secondary/5 border-b border-border/10 py-12 md:py-16">
         <div className="container mx-auto px-6 max-w-7xl">
           <h1 className="font-headline text-[18px] md:text-[24px] font-light text-foreground text-center tracking-tight uppercase">
-            <span className="italic">{activeSeries || (loading ? "Laden..." : t('gallery_select'))}</span>
+            <span className="italic">{activeSeries ? translateTerm(activeSeries, 'series') : (loading ? "Laden..." : t('gallery_select'))}</span>
           </h1>
         </div>
       </div>
@@ -171,7 +182,7 @@ function GalleryContent() {
                         activeSeries === s.name ? "border-accent text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"
                       )}
                     >
-                      {s.name} <span className="opacity-30 text-[7px] md:text-[9px]">[{s.count}]</span>
+                      {s.translatedName} <span className="opacity-30 text-[7px] md:text-[9px]">[{s.count}]</span>
                     </button>
                   ))}
                 </div>

@@ -18,7 +18,7 @@ const ROMAN_VALUES: Record<string, number> = {
 function ExhibitionContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const seriesParam = searchParams.get('series');
   
   const [selectedArtwork, setSelectedArtwork] = useState<any | null>(null);
@@ -31,6 +31,12 @@ function ExhibitionContent() {
   }, [firestore]);
   const { data: siteSettings } = useDoc(siteSettingsRef);
   const hiddenSeries = useMemo(() => siteSettings?.hiddenSeries || [], [siteSettings]);
+
+  const translateTerm = (text: string, category: 'series' | 'tag') => {
+    if (language === 'nl' || !siteSettings) return text;
+    const map = category === 'series' ? siteSettings.seriesTranslations : siteSettings.tagTranslations;
+    return map?.[language]?.[text] || text;
+  };
 
   const allArtworksQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -59,16 +65,20 @@ function ExhibitionContent() {
       }
     });
     return Object.entries(counts)
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => a.name.localeCompare(b.name));
-  }, [allArtworks, hiddenSeries]);
+      .map(([name, count]) => ({ 
+        name, 
+        count,
+        translatedName: translateTerm(name, 'series')
+      }))
+      .sort((a, b) => a.translatedName.localeCompare(b.translatedName));
+  }, [allArtworks, hiddenSeries, language, siteSettings]);
 
   const currentIndex = useMemo(() => {
     if (!seriesParam) return -1;
     return availableSeries.findIndex(s => s.name === seriesParam);
   }, [seriesParam, availableSeries]);
 
-  const prevSeries = currentIndex > 0 ? availableSeries[currentIndex - 1] : (currentIndex === 0 ? { name: "Alles" } : null);
+  const prevSeries = currentIndex > 0 ? availableSeries[currentIndex - 1] : (currentIndex === 0 ? { name: "Alles", translatedName: t('all_works') } : null);
   const nextSeries = currentIndex === -1 ? (availableSeries[0] || null) : (currentIndex < availableSeries.length - 1 ? availableSeries[currentIndex + 1] : null);
 
   const artworksQuery = useMemoFirebase(() => {
@@ -206,7 +216,7 @@ function ExhibitionContent() {
                   seriesParam === s.name ? "text-accent" : "text-black/40 hover:text-black"
                 )}
               >
-                {s.name} <span className="opacity-20 text-[7px] ml-1">[{s.count}]</span>
+                {s.translatedName} <span className="opacity-20 text-[7px] ml-1">[{s.count}]</span>
               </button>
             ))}
           </div>
@@ -226,7 +236,7 @@ function ExhibitionContent() {
       <div className="absolute top-32 left-1/2 -translate-x-1/2 z-20 text-center pointer-events-none opacity-80">
         <span className="text-accent font-black tracking-[0.4em] uppercase text-[9px] block mb-1">{t('hero_subtitle')}</span>
         <h1 className="text-black/60 font-headline text-2xl md:text-4xl font-light italic">
-          {seriesParam || t('all_works')}
+          {seriesParam ? translateTerm(seriesParam, 'series') : t('all_works')}
         </h1>
       </div>
 
@@ -289,7 +299,7 @@ function ExhibitionContent() {
                   onClick={() => handleSeriesChange(nextSeries.name)}
                   className="mt-12 px-10 py-4 rounded-full bg-accent text-accent-foreground text-[10px] font-black uppercase tracking-[0.25em] shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-4"
                  >
-                   {t('next_room')}: {nextSeries.name} <ArrowRight className="w-4 h-4" />
+                   {t('next_room')}: {nextSeries.translatedName} <ArrowRight className="w-4 h-4" />
                  </button>
                )}
             </div>

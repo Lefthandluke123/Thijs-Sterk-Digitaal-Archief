@@ -3,8 +3,8 @@
 
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
+import { doc, setDoc, collection, query } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -18,7 +18,9 @@ import {
   Loader2, 
   CheckCircle2,
   Globe2,
-  Info
+  Info,
+  Layers,
+  Tag
 } from 'lucide-react';
 import { translateMuseumText } from '@/ai/flows/translate-flow';
 import { cn } from '@/lib/utils';
@@ -73,31 +75,67 @@ export default function TranslatePage() {
     return doc(firestore, 'settings', 'site');
   }, [firestore]);
 
-  const { data: settings, loading } = useDoc(settingsRef);
+  const { data: settings, loading: settingsLoading } = useDoc(settingsRef);
 
-  const updateTranslation = (field: string, value: string) => {
+  const artworksQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'artworks'));
+  }, [firestore]);
+  const { data: artworks, loading: artworksLoading } = useCollection(artworksQuery);
+
+  const uniqueSeries = useMemo(() => {
+    if (!artworks) return [];
+    const series = new Set<string>();
+    artworks.forEach((art: any) => {
+      if (art.series && art.series !== 'Nieuwe Uploads') series.add(art.series);
+    });
+    return Array.from(series).sort();
+  }, [artworks]);
+
+  const uniqueTags = useMemo(() => {
+    if (!artworks) return [];
+    const tags = new Set<string>();
+    artworks.forEach((art: any) => {
+      art.tags?.forEach((tag: string) => tags.add(tag));
+    });
+    return Array.from(tags).sort();
+  }, [artworks]);
+
+  const updateTranslation = (field: string, value: string, category: 'field' | 'series' | 'tag' = 'field') => {
     if (!firestore || !settingsRef) return;
-    const langField = `${field}_${targetLang}`;
-    setDoc(settingsRef, { [langField]: value }, { merge: true });
+    
+    if (category === 'field') {
+      const langField = `${field}_${targetLang}`;
+      setDoc(settingsRef, { [langField]: value }, { merge: true });
+    } else {
+      const mapField = category === 'series' ? 'seriesTranslations' : 'tagTranslations';
+      const currentMap = settings?.[mapField] || {};
+      const langMap = currentMap[targetLang] || {};
+      
+      setDoc(settingsRef, {
+        [mapField]: {
+          ...currentMap,
+          [targetLang]: {
+            ...langMap,
+            [field]: value
+          }
+        }
+      }, { merge: true });
+    }
   };
 
-  const handleAiTranslate = async (field: string) => {
+  const handleAiTranslate = async (text: string, id: string, category: 'field' | 'series' | 'tag' = 'field') => {
     if (!settings || isTranslating) return;
-    const sourceText = settings[field] || DEFAULT_SOURCE_VALS[field];
-    if (!sourceText) {
-      toast({ variant: "destructive", title: "Geen brontekst", description: "Er is geen Nederlandse tekst om te vertalen." });
-      return;
-    }
-
-    setIsTranslating(field);
+    
+    setIsTranslating(id);
     try {
       const result = await translateMuseumText({ 
-        text: sourceText, 
+        text, 
         targetLanguage: LANG_LABELS[targetLang],
-        context: `Vertaal dit veld voor de website van de kunstenaar Thijs Sterk. Veld type: ${field}`
+        context: `Vertaal deze term voor een kunstportfolio. Categorie: ${category}`
       });
-      updateTranslation(field, result.translatedText);
-      toast({ title: "AI Vertaling voltooid", description: `Tekst vertaald naar het ${LANG_LABELS[targetLang]}.` });
+      updateTranslation(id, result.translatedText, category);
+      toast({ title: "AI Vertaling voltooid" });
     } catch (e: any) {
       toast({ variant: "destructive", title: "AI Fout", description: e.message });
     } finally {
@@ -105,7 +143,7 @@ export default function TranslatePage() {
     }
   };
 
-  if (loading) {
+  if (settingsLoading || artworksLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-12 h-12 animate-spin text-accent" />
@@ -141,83 +179,118 @@ export default function TranslatePage() {
         </div>
       </header>
 
-      <main className="flex-1 p-8 max-w-7xl mx-auto w-full">
-        <div className="bg-accent/5 border border-accent/10 rounded-2xl p-6 mb-8 flex items-start gap-4">
+      <main className="flex-1 p-8 max-w-7xl mx-auto w-full pb-32">
+        <div className="bg-accent/5 border border-accent/10 rounded-2xl p-6 mb-12 flex items-start gap-4">
           <Info className="w-5 h-5 text-accent shrink-0 mt-0.5" />
           <div className="space-y-1">
             <h4 className="text-[11px] font-black uppercase tracking-widest text-accent">Hoe werkt het?</h4>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Links ziet u de originele Nederlandse teksten die op de website staan. Rechts kunt u de vertalingen voor <strong>{LANG_LABELS[targetLang]}</strong> invoeren. 
-              Gebruik de <Sparkles className="inline w-3 h-3 mx-1" /> knop om AI te laten vertalen. Wijzigingen worden direct opgeslagen.
+              Vertaal hier alle teksten, zaalnamen en tags naar het <strong>{LANG_LABELS[targetLang]}</strong>. 
+              Gebruik de <Sparkles className="inline w-3 h-3 mx-1" /> knop voor AI hulp.
             </p>
           </div>
         </div>
 
-        <div className="space-y-12 pb-32">
-          {FIELDS_TO_TRANSLATE.map((field) => (
-            <div key={field.id} className="grid lg:grid-cols-2 gap-8 items-start animate-in fade-in slide-in-from-bottom-4 duration-500">
-              {/* Links: Bron (NL) */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between px-2">
-                  <Label className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Origineel (Nederlands)</Label>
-                  <span className="text-[9px] font-bold text-accent px-2 py-0.5 bg-accent/10 rounded-sm">VELD: {field.label}</span>
-                </div>
-                <Card className="p-6 bg-muted/20 border-none shadow-none min-h-[100px] flex flex-col justify-center">
-                  {field.type === 'input' ? (
-                    <p className="font-headline text-lg">{settings?.[field.id] || DEFAULT_SOURCE_VALS[field.id] || '(Leeg)'}</p>
-                  ) : (
-                    <p className="text-sm leading-relaxed whitespace-pre-line font-light opacity-80">{settings?.[field.id] || DEFAULT_SOURCE_VALS[field.id] || '(Geen tekst aanwezig)'}</p>
-                  )}
-                </Card>
-              </div>
-
-              {/* Rechts: Vertaling */}
-              <div className="space-y-3 relative group">
-                <div className="flex items-center justify-between px-2">
-                  <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-accent">Vertaling naar {LANG_LABELS[targetLang]}</Label>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="h-7 text-[9px] uppercase font-black tracking-widest text-accent hover:bg-accent/10"
-                    onClick={() => handleAiTranslate(field.id)}
-                    disabled={!!isTranslating}
-                  >
-                    {isTranslating === field.id ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : <Sparkles className="w-3 h-3 mr-2" />}
-                    AI Vertalen
-                  </Button>
-                </div>
-                <div className="relative">
-                  {field.type === 'input' ? (
-                    <Input 
-                      key={`${field.id}_${targetLang}`}
-                      defaultValue={settings?.[`${field.id}_${targetLang}`] || ''} 
-                      onBlur={(e) => updateTranslation(field.id, e.target.value)}
-                      className="h-14 font-headline text-lg border-accent/20 focus:border-accent bg-white/50"
-                      placeholder={`Voer de ${LANG_LABELS[targetLang]} vertaling in...`}
-                    />
-                  ) : (
-                    <Textarea 
-                      key={`${field.id}_${targetLang}`}
-                      defaultValue={settings?.[`${field.id}_${targetLang}`] || ''} 
-                      onBlur={(e) => updateTranslation(field.id, e.target.value)}
-                      className="min-h-[160px] p-6 text-sm leading-relaxed font-light border-accent/20 focus:border-accent bg-white/50 resize-none"
-                      placeholder={`Schrijf de ${LANG_LABELS[targetLang]} vertaling hier...`}
-                    />
-                  )}
-                  <div className="absolute -right-10 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <CheckCircle2 className="w-5 h-5 text-green-500/40" />
+        <div className="space-y-24">
+          {/* Pagina Teksten */}
+          <section className="space-y-8">
+            <div className="flex items-center gap-4 border-b border-accent/20 pb-4">
+               <Globe2 className="w-5 h-5 text-accent" />
+               <h2 className="text-xl font-headline font-light uppercase tracking-widest">Pagina Teksten</h2>
+            </div>
+            <div className="grid gap-12">
+              {FIELDS_TO_TRANSLATE.map((field) => (
+                <div key={field.id} className="grid lg:grid-cols-2 gap-8 items-start">
+                  <div className="space-y-3">
+                    <Label className="text-[10px] font-black uppercase opacity-40">{field.label} (NL)</Label>
+                    <Card className="p-4 bg-muted/20 border-none">
+                       <p className={cn("text-sm", field.type === 'input' && "font-bold")}>
+                         {settings?.[field.id] || DEFAULT_SOURCE_VALS[field.id] || '(Leeg)'}
+                       </p>
+                    </Card>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <Label className="text-[10px] font-black uppercase text-accent">Vertaling ({targetLang})</Label>
+                      <Button variant="ghost" size="sm" className="h-6 text-[9px] uppercase font-black" onClick={() => handleAiTranslate(settings?.[field.id] || DEFAULT_SOURCE_VALS[field.id], field.id)}>
+                        {isTranslating === field.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3 mr-2" />} AI
+                      </Button>
+                    </div>
+                    {field.type === 'input' ? (
+                      <Input 
+                        defaultValue={settings?.[`${field.id}_${targetLang}`] || ''} 
+                        onBlur={(e) => updateTranslation(field.id, e.target.value)}
+                      />
+                    ) : (
+                      <Textarea 
+                        defaultValue={settings?.[`${field.id}_${targetLang}`] || ''} 
+                        onBlur={(e) => updateTranslation(field.id, e.target.value)}
+                        className="min-h-[100px]"
+                      />
+                    )}
                   </div>
                 </div>
-              </div>
+              ))}
             </div>
-          ))}
+          </section>
+
+          {/* Zalen (Series) */}
+          <section className="space-y-8">
+            <div className="flex items-center gap-4 border-b border-accent/20 pb-4">
+               <Layers className="w-5 h-5 text-accent" />
+               <h2 className="text-xl font-headline font-light uppercase tracking-widest">Namen van de Zalen</h2>
+            </div>
+            <div className="grid md:grid-cols-2 gap-x-12 gap-y-6">
+              {uniqueSeries.map((s) => (
+                <div key={s} className="space-y-2 group">
+                   <div className="flex justify-between items-center px-1">
+                      <span className="text-[10px] font-black uppercase opacity-40 truncate flex-1">{s}</span>
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleAiTranslate(s, s, 'series')}>
+                        {isTranslating === s ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3 text-accent" />}
+                      </Button>
+                   </div>
+                   <Input 
+                     placeholder={`${s} vertaling...`}
+                     defaultValue={settings?.seriesTranslations?.[targetLang]?.[s] || ''}
+                     onBlur={(e) => updateTranslation(s, e.target.value, 'series')}
+                     className="bg-accent/5 border-accent/10 focus:border-accent"
+                   />
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Tags */}
+          <section className="space-y-8">
+            <div className="flex items-center gap-4 border-b border-accent/20 pb-4">
+               <Tag className="w-5 h-5 text-accent" />
+               <h2 className="text-xl font-headline font-light uppercase tracking-widest">Schilderij Tags</h2>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {uniqueTags.map((t) => (
+                <div key={t} className="space-y-2">
+                   <div className="flex justify-between items-center px-1">
+                      <span className="text-[9px] font-black uppercase opacity-30 truncate flex-1">{t}</span>
+                      <button onClick={() => handleAiTranslate(t, t, 'tag')} className="hover:text-accent transition-colors">
+                        {isTranslating === t ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <Sparkles className="w-2.5 h-2.5" />}
+                      </button>
+                   </div>
+                   <Input 
+                     placeholder={`${t}...`}
+                     defaultValue={settings?.tagTranslations?.[targetLang]?.[t] || ''}
+                     onBlur={(e) => updateTranslation(t, e.target.value, 'tag')}
+                     className="h-8 text-xs"
+                   />
+                </div>
+              ))}
+            </div>
+          </section>
         </div>
       </main>
 
-      <footer className="fixed bottom-0 left-0 right-0 h-16 bg-background/80 backdrop-blur-xl border-t border-border flex items-center justify-center z-50">
-        <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] opacity-40">
-          <Globe2 className="w-3 h-3" />
-          Ondersteunt: NL &bull; EN &bull; DE &bull; FR &bull; ES
+      <footer className="fixed bottom-0 left-0 right-0 h-12 bg-background/80 backdrop-blur-xl border-t border-border flex items-center justify-center z-50">
+        <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] opacity-40">
+          <Globe2 className="w-3 h-3" /> Ondersteunt: NL &bull; EN &bull; DE &bull; FR &bull; ES
         </div>
       </footer>
     </div>

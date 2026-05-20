@@ -1,8 +1,9 @@
+
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { useCollection, useFirestore } from '@/firebase';
-import { collection, query, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
+import { useCollection, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy, addDoc, serverTimestamp, doc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Loader2, Maximize2, Play, Eraser } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -26,8 +27,22 @@ export default function CuratorPage() {
   const [selectedArtwork, setSelectedArtwork] = useState<any | null>(null);
   const [visitorId, setVisitorId] = useState<string>("");
   const firestore = useFirestore();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   
+  const siteSettingsRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, 'settings', 'site');
+  }, [firestore]);
+  const { data: siteSettings } = useDoc(siteSettingsRef);
+
+  const translateTerm = (text: string, category: 'tag' | 'tagcat' | 'series') => {
+    if (language === 'nl' || !siteSettings) return text;
+    const mapField = category === 'series' ? 'seriesTranslations' : (category === 'tag' ? 'tagTranslations' : 'tagCatTranslations');
+    // Voor categorieën gebruiken we momenteel de tagTranslations map of een fallback naar t()
+    const map = siteSettings[mapField];
+    return map?.[language]?.[text] || text;
+  };
+
   useEffect(() => {
     let vid = typeof window !== 'undefined' ? localStorage.getItem('ts_visitor_id') : null;
     if (!vid) {
@@ -125,7 +140,7 @@ export default function CuratorPage() {
             {Object.entries(TAG_CATEGORIES).map(([category, tags]) => (
               <div key={category} className="space-y-4">
                 <div className="flex items-center gap-6">
-                  <h2 className="text-xs font-black uppercase tracking-[0.3em] text-accent whitespace-nowrap">{category}</h2>
+                  <h2 className="text-xs font-black uppercase tracking-[0.3em] text-accent whitespace-nowrap">{translateTerm(category, 'tag')}</h2>
                   <div className="h-px bg-border flex-1 opacity-40" />
                 </div>
                 <div className="flex flex-wrap justify-center gap-2">
@@ -142,7 +157,7 @@ export default function CuratorPage() {
                             : "bg-background text-foreground border-border hover:border-accent hover:bg-accent/5"
                         )}
                       >
-                        {tag}
+                        {translateTerm(tag, 'tag')}
                       </button>
                     );
                   })}
@@ -153,7 +168,7 @@ export default function CuratorPage() {
             {otherTags.length > 0 && (
               <div className="space-y-4">
                 <div className="flex items-center gap-6">
-                  <h2 className="text-xs font-black uppercase tracking-[0.3em] opacity-40 whitespace-nowrap">Overig</h2>
+                  <h2 className="text-xs font-black uppercase tracking-[0.3em] opacity-40 whitespace-nowrap">{t('curator_other')}</h2>
                   <div className="h-px bg-border flex-1 opacity-20" />
                 </div>
                 <div className="flex flex-wrap justify-center gap-2">
@@ -170,7 +185,7 @@ export default function CuratorPage() {
                             : "bg-background text-foreground border-border hover:border-accent"
                         )}
                       >
-                        {tag}
+                        {translateTerm(tag, 'tag')}
                       </button>
                     );
                   })}
@@ -237,7 +252,7 @@ export default function CuratorPage() {
               </div>
             ) : (
               <div className="py-24 text-center uppercase tracking-[0.4em] opacity-30 text-[11px] font-bold">
-                Geen werken gevonden voor deze unieke combinatie.
+                {t('curator_no_results')}
               </div>
             )}
           </div>

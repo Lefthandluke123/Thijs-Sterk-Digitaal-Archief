@@ -10,8 +10,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { ChevronDown, Loader2, Sparkles, Languages, ShoppingBag } from 'lucide-react';
 import { useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
@@ -20,7 +18,6 @@ import { useLanguage } from '@/components/language-provider';
 
 function NavbarContent() {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const [mounted, setMounted] = useState(false);
   const firestore = useFirestore();
   const { language, setLanguage, t } = useLanguage();
@@ -40,6 +37,12 @@ function NavbarContent() {
 
   const hiddenSeries = useMemo(() => siteSettings?.hiddenSeries || [], [siteSettings]);
 
+  const translateTerm = (text: string, category: 'series' | 'tag') => {
+    if (language === 'nl' || !siteSettings) return text;
+    const map = category === 'series' ? siteSettings.seriesTranslations : siteSettings.tagTranslations;
+    return map?.[language]?.[text] || text;
+  };
+
   const seriesWithCounts = useMemo(() => {
     if (!dbArtworks) return [];
     const seen = new Set();
@@ -55,9 +58,13 @@ function NavbarContent() {
     });
     return Object.entries(counts)
       .filter(([name]) => name !== "Nieuwe Uploads" && name !== "Geen zaal" && !hiddenSeries.includes(name))
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => a.name.localeCompare(b.name));
-  }, [dbArtworks, hiddenSeries]);
+      .map(([name, count]) => ({ 
+        name, 
+        count,
+        translatedName: translateTerm(name, 'series')
+      }))
+      .sort((a, b) => a.translatedName.localeCompare(b.translatedName));
+  }, [dbArtworks, hiddenSeries, language, siteSettings]);
 
   useEffect(() => {
     setMounted(true);
@@ -103,7 +110,7 @@ function NavbarContent() {
               {seriesWithCounts.map((s) => (
                 <DropdownMenuItem key={s.name} asChild className="text-[12px] uppercase font-black tracking-[0.12em] focus:bg-accent focus:text-accent-foreground rounded-xl cursor-pointer p-4 mb-1">
                   <Link href={`/gallery?series=${encodeURIComponent(s.name)}`} className="flex w-full items-center">
-                    {s.name} <span className="ml-auto opacity-30 text-[10px] font-bold">[{s.count}]</span>
+                    {s.translatedName} <span className="ml-auto opacity-30 text-[10px] font-bold">[{s.count}]</span>
                   </Link>
                 </DropdownMenuItem>
               ))}
