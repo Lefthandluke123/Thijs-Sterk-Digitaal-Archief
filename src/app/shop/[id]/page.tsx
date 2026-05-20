@@ -14,6 +14,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 export default function ProductDetailPage() {
   const { id } = useParams();
@@ -33,10 +34,10 @@ export default function ProductDetailPage() {
   const { data: artwork, loading } = useDoc(artworkRef);
 
   const PRODUCTS = useMemo(() => [
-    { id: 'postcard', label: t('shop_postcard'), price: artwork?.pricePostcard || 2.50, desc: 'A6 formaat, hoogglans afwerking.' },
-    { id: 'poster', label: t('shop_poster'), price: artwork?.pricePoster || 24.00, desc: '50x70 cm, 200g mat papier.' },
-    { id: 'fine-art', label: t('shop_print'), price: artwork?.pricePrint || 85.00, desc: 'Giclée print op Hahnemühle papier, genummerd.' },
-    { id: 'digital', label: t('shop_digital'), price: artwork?.priceDigital || 15.00, desc: 'Hoge resolutie bestand (300dpi).' }
+    { id: 'postcard', label: t('shop_postcard'), price: artwork?.pricePostcard || 2.50, desc: 'A6 format.' },
+    { id: 'poster', label: t('shop_poster'), price: artwork?.pricePoster || 24.00, desc: '50x70 cm.' },
+    { id: 'fine-art', label: t('shop_print'), price: artwork?.pricePrint || 85.00, desc: 'Giclée print.' },
+    { id: 'digital', label: t('shop_digital'), price: artwork?.priceDigital || 15.00, desc: 'Digital file (300dpi).' }
   ], [artwork, t]);
 
   const handleOrder = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -60,7 +61,6 @@ export default function ProductDetailPage() {
     try {
       await addDoc(collection(firestore, 'orders'), orderData);
       
-      // Ook een mail triggeren voor de beheerder
       await addDoc(collection(firestore, 'mail'), {
         to: 'lhcsterk@doggyfew.com',
         message: {
@@ -104,7 +104,7 @@ export default function ProductDetailPage() {
           <p className="text-muted-foreground leading-relaxed">{t('shop_order_desc')}</p>
         </div>
         <Button onClick={() => router.push('/shop')} variant="outline" className="rounded-full px-12 h-14 uppercase tracking-widest font-black text-[11px]">
-          Terug naar de winkel
+          {t('shop_back_to_shop')}
         </Button>
       </main>
     );
@@ -131,7 +131,7 @@ export default function ProductDetailPage() {
                <div className="flex items-start gap-4">
                   <Info className="w-5 h-5 text-accent shrink-0 mt-1" />
                   <p className="text-sm text-muted-foreground leading-relaxed italic">
-                    Elke reproductie wordt met uiterste zorg vervaardigd. Voor Fine Art prints gebruiken we museum-gekwalificeerd papier dat de kleurechtheid tientallen jaren garandeert.
+                    {t('shop_quality_notice')}
                   </p>
                </div>
             </div>
@@ -181,22 +181,22 @@ export default function ProductDetailPage() {
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label className="text-[10px] uppercase tracking-widest opacity-60 pl-2">{t('order_label_name')}</Label>
-                    <Input name="name" required className="bg-white border-none h-12 rounded-xl" placeholder="Uw volledige naam" />
+                    <Input name="name" required className="bg-white border-none h-12 rounded-xl" placeholder={t('shop_placeholder_name')} />
                   </div>
                   <div className="space-y-2">
                     <Label className="text-[10px] uppercase tracking-widest opacity-60 pl-2">{t('order_label_email')}</Label>
-                    <Input name="email" type="email" required className="bg-white border-none h-12 rounded-xl" placeholder="uw@email.nl" />
+                    <Input name="email" type="email" required className="bg-white border-none h-12 rounded-xl" placeholder={t('shop_placeholder_email')} />
                   </div>
                   <div className="space-y-2">
                     <Label className="text-[10px] uppercase tracking-widest opacity-60 pl-2">{t('order_label_address')}</Label>
-                    <Textarea name="address" required className="bg-white border-none rounded-xl min-h-[100px]" placeholder="Straat, huisnummer, postcode en stad" />
+                    <Textarea name="address" required className="bg-white border-none rounded-xl min-h-[100px]" placeholder={t('shop_placeholder_address')} />
                   </div>
                 </div>
 
                 <Button type="submit" disabled={isOrdering} className="w-full rounded-full h-16 bg-accent text-accent-foreground font-black uppercase tracking-[0.2em] shadow-2xl hover:scale-[1.02] transition-all">
                   {isOrdering ? <Loader2 className="w-6 h-6 animate-spin" /> : <>{t('order_button_confirm')}</>}
                 </Button>
-                <p className="text-[9px] text-center text-muted-foreground uppercase tracking-widest">Betaling vindt plaats via factuur na bevestiging.</p>
+                <p className="text-[9px] text-center text-muted-foreground uppercase tracking-widest">{t('shop_payment_notice')}</p>
               </form>
             </Card>
           </div>
@@ -204,8 +204,4 @@ export default function ProductDetailPage() {
       </div>
     </main>
   );
-}
-
-function cn(...classes: any[]) {
-  return classes.filter(Boolean).join(' ');
 }
