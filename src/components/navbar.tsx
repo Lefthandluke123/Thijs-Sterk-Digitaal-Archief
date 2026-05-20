@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useMemo, Suspense } from 'react';
@@ -21,8 +22,6 @@ import {
   X,
   Home,
   Layers,
-  User,
-  Mail,
   Info
 } from 'lucide-react';
 import { useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
@@ -135,7 +134,9 @@ function NavbarContent() {
             <img src="/logo.png" alt="Logo" className="h-8 md:h-12 w-auto object-contain transition-transform duration-500 group-hover:rotate-12 group-hover:scale-110" />
             <div className="flex flex-col leading-tight border-l border-border/40 pl-3 md:pl-5 transition-all group-hover:border-accent">
                <div className="flex items-center gap-2">
-                 <span className="font-headline font-light text-base md:text-xl tracking-tight text-foreground transition-colors group-hover:text-accent">{t('nav_museum_title')}</span>
+                 <span className="font-headline font-light text-base md:text-xl tracking-tight text-foreground transition-colors group-hover:text-accent">
+                   {t('nav_museum_title')}
+                 </span>
                  <BookOpen className="w-3 h-3 text-accent opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-x-[-10px] group-hover:translate-x-0 hidden md:inline" />
                </div>
                <span className="text-[7px] md:text-[9px] font-black uppercase tracking-[0.3em] text-accent/80 hidden sm:block">Thijs Sterk (1913-1982)</span>
@@ -207,7 +208,7 @@ function NavbarContent() {
             </DropdownMenu>
           </div>
 
-          {/* Mobile Menu Trigger */}
+          {/* Mobile Menu Trigger - Visible only on mobile/tablet */}
           <div className="lg:hidden flex items-center gap-4">
             <button 
               onClick={() => setGuideOpen(true)}
@@ -227,7 +228,7 @@ function NavbarContent() {
                 <div className="flex flex-col h-full">
                   <div className="p-8 border-b border-border/10 flex items-center justify-between bg-primary text-primary-foreground">
                     <div className="flex flex-col">
-                      <span className="font-headline text-2xl font-light italic">Menu</span>
+                      <span className="font-headline text-2xl font-light italic">{t('nav_museum_title')}</span>
                       <span className="text-[9px] font-black uppercase tracking-[0.3em] opacity-60">Thijs Sterk Retrospectief</span>
                     </div>
                     <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(false)} className="text-white hover:bg-white/10 rounded-full">
