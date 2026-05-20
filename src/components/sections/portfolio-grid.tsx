@@ -79,7 +79,12 @@ export function PortfolioGrid() {
         ) : displayArtworks.length > 0 ? (
           <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-4 md:gap-6">
             {displayArtworks.map(art => (
-              <div key={art.id} className="group relative cursor-pointer" onClick={() => setSelectedArtwork(art)}>
+              <article 
+                key={art.id} 
+                className="group relative cursor-pointer" 
+                onClick={() => setSelectedArtwork(art)}
+                aria-label={`Bekijk ${art.displayTitle || art.title}`}
+              >
                 <div className="relative aspect-square overflow-hidden rounded-sm bg-muted/30 transition-all duration-700 group-hover:shadow-xl">
                   <img 
                     src={art.imageUrl} 
@@ -88,7 +93,7 @@ export function PortfolioGrid() {
                       clipPath: `inset(${art.cropTop || 0}% ${art.cropRight || 0}% ${art.cropBottom || 0}% ${art.cropLeft || 0}%)`, 
                       filter: `brightness(${art.brightness || 1})` 
                     }} 
-                    alt={art.displayTitle || art.title}
+                    alt={`Schilderij: ${art.displayTitle || art.title} - Thijs Sterk`}
                   />
                   {art.featured && <Star className="absolute top-2 left-2 w-3 h-3 text-accent fill-accent opacity-0 group-hover:opacity-100 transition-opacity" />}
                   <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
@@ -100,7 +105,7 @@ export function PortfolioGrid() {
                     {art.displayTitle || art.title}
                   </h3>
                 </div>
-              </div>
+              </article>
             ))}
           </div>
         ) : (

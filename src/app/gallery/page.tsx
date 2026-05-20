@@ -190,11 +190,16 @@ function GalleryContent() {
 
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-10">
               {filteredArtworks.map((item) => (
-                <div key={item.id} className="group relative cursor-pointer" onClick={() => setSelectedArtwork(item)}>
+                <article 
+                  key={item.id} 
+                  className="group relative cursor-pointer" 
+                  onClick={() => setSelectedArtwork(item)}
+                  aria-label={`Bekijk kunstwerk ${item.displayTitle || item.title}`}
+                >
                   <div className="relative aspect-[4/5] overflow-hidden rounded-sm bg-muted/20 shadow-md">
                     <img 
                       src={item.imageUrl} 
-                      alt={item.displayTitle || item.title} 
+                      alt={`Schilderij: ${item.displayTitle || item.title} - Thijs Sterk`} 
                       className="w-full h-full object-cover transition-all duration-1000 ease-out group-hover:scale-[1.05]"
                       style={{
                         clipPath: `inset(${item.cropTop || 0}% ${item.cropRight || 0}% ${item.cropBottom || 0}% ${item.cropLeft || 0}%)`,
@@ -207,9 +212,9 @@ function GalleryContent() {
                   </div>
                   <div className="mt-4 text-center">
                     <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground group-hover:text-foreground transition-colors truncate">{item.displayTitle || item.title}</h3>
-                    <p className="text-[7px] uppercase opacity-20 tracking-widest mt-1">{item.title}</p>
+                    <p className="text-[7px] uppercase opacity-20 tracking-widest mt-1">{item.year || 'Zonder jaartal'}</p>
                   </div>
-                </div>
+                </article>
               ))}
             </div>
             {filteredArtworks.length === 0 && !loading && (
@@ -231,7 +236,7 @@ function GalleryContent() {
 
 export default function GalleryPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="w-10 h-10 animate-spin" /></div>}>
+    <Suspense fallback={<div className="min-screen flex items-center justify-center"><Loader2 className="w-10 h-10 animate-spin" /></div>}>
       <GalleryContent />
     </Suspense>
   );
