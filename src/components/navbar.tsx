@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import Link from 'next/link';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
@@ -94,7 +94,7 @@ function NavbarContent() {
           <div 
             className="flex items-center gap-5 group shrink-0 transition-all hover:scale-[1.02] cursor-pointer"
             onClick={() => setGuideOpen(true)}
-            title="Klik voor de Museum Gids"
+            title={t('nav_guide_click')}
           >
             <img src="/logo.png" alt="Logo" className="h-12 w-auto object-contain transition-transform group-hover:rotate-6" />
             <div className="flex flex-col leading-tight border-l border-border/40 pl-5">
@@ -102,7 +102,7 @@ function NavbarContent() {
                  <span className="font-headline font-light text-xl tracking-tight text-foreground">Digitaal Museum</span>
                  <BookOpen className="w-3 h-3 text-accent opacity-0 group-hover:opacity-100 transition-opacity" />
                </div>
-               <span className="text-[9px] font-black uppercase tracking-[0.3em] text-accent/80">Thijs Sterk (1913-1982) &bull; Klik voor Gids</span>
+               <span className="text-[9px] font-black uppercase tracking-[0.3em] text-accent/80">Thijs Sterk (1913-1982) &bull; {t('nav_guide_click')}</span>
             </div>
           </div>
           
