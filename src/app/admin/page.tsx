@@ -27,7 +27,9 @@ import {
   TrendingUp,
   History,
   ShieldCheck,
-  LifeBuoy
+  LifeBuoy,
+  FileText,
+  Image as ImageIcon
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -367,9 +369,9 @@ export default function AdminPage() {
           </TabsContent>
 
           <TabsContent value="help">
-             <Card className="p-12 rounded-3xl max-w-4xl mx-auto space-y-12 shadow-2xl border-none bg-primary text-primary-foreground relative overflow-hidden">
+             <Card className="p-8 md:p-12 rounded-3xl max-w-4xl mx-auto space-y-12 shadow-2xl border-none bg-primary text-primary-foreground relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-12 opacity-10 rotate-12"><ShieldCheck className="w-64 h-64" /></div>
-                <div className="relative z-10 space-y-8">
+                <div className="relative z-10 space-y-12">
                    <div className="space-y-2">
                       <h2 className="text-3xl font-headline font-light italic">Business Management Guide</h2>
                       <p className="text-primary-foreground/70 text-sm">Hulp bij het beheren van jouw museum klanten.</p>
@@ -377,17 +379,26 @@ export default function AdminPage() {
                    
                    <div className="grid md:grid-cols-2 gap-8">
                       <div className="p-6 rounded-2xl bg-white/10 border border-white/20 space-y-4">
-                         <h4 className="font-black uppercase text-[10px] tracking-widest text-accent">Opstarten</h4>
-                         <p className="text-xs leading-relaxed">Factureer minimaal 3-5 uur (@€50/u) voor de initiële setup. Dit omvat domeinkoppeling, Stripe-configuratie en de eerste batch uploads.</p>
+                         <h4 className="font-black uppercase text-[10px] tracking-widest text-accent flex items-center gap-2">
+                           <TrendingUp className="w-3 h-3" /> Business Model
+                         </h4>
+                         <p className="text-xs leading-relaxed">Factureer minimaal 3-5 uur (@€50/u) voor de initiële setup. Hanteer daarna een vaste maandelijkse fee voor hosting en support. Dit rechtvaardigt jouw uurtarief door constante bereikbaarheid.</p>
                       </div>
                       <div className="p-6 rounded-2xl bg-white/10 border border-white/20 space-y-4">
-                         <h4 className="font-black uppercase text-[10px] tracking-widest text-accent">Onderhoud</h4>
-                         <p className="text-xs leading-relaxed">Hanteer een vaste maandelijkse fee voor hosting en support. Dit rechtvaardigt jouw uurtarief door constante bereikbaarheid voor de kunstenaar.</p>
+                         <h4 className="font-black uppercase text-[10px] tracking-widest text-accent flex items-center gap-2">
+                           <ImageIcon className="w-3 h-3" /> Aanleverspecificaties
+                         </h4>
+                         <ul className="text-xs space-y-2 opacity-80">
+                           <li className="flex gap-2"><strong>Foto's:</strong> JPEG/WebP, min. 4000px breed.</li>
+                           <li className="flex gap-2"><strong>Metadata:</strong> Titel, jaar, medium, afmetingen.</li>
+                           <li className="flex gap-2"><strong>Branding:</strong> Logo (PNG transparant).</li>
+                           <li className="flex gap-2"><strong>Stripe:</strong> Eigen API keys van de artiest.</li>
+                         </ul>
                       </div>
                    </div>
                    
                    <div className="pt-8 border-t border-white/10">
-                      <p className="text-[10px] uppercase tracking-widest font-black opacity-40">Safe Harbor Architecture v2.1 &bull; SaaS Edition</p>
+                      <p className="text-[10px] uppercase tracking-widest font-black opacity-40">Safe Harbor Architecture v2.2 &bull; SaaS Edition</p>
                    </div>
                 </div>
              </Card>
@@ -399,6 +410,7 @@ export default function AdminPage() {
                 <div className="space-y-2">
                    <h2 className="text-xl font-headline font-light">Nieuwe werken toevoegen</h2>
                    <p className="text-sm text-muted-foreground">Sleep hier foto's naartoe of klik op de knop.</p>
+                   <p className="text-[10px] text-accent uppercase font-black mt-2 tracking-widest italic">Tip: gebruik foto's van minstens 4000px voor optimale Deep Zoom</p>
                 </div>
                 <input type="file" ref={fileInputRef} className="hidden" onChange={(e) => handleBatchProcess(e.target.files)} accept="image/*" multiple />
                 <Button size="lg" onClick={() => fileInputRef.current?.click()} disabled={isUploading} className="rounded-full px-12 h-14">

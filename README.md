@@ -15,22 +15,22 @@ Als beheerder (Digitaal Conservator) hanteer je een uurtarief van minimaal **€
     *   Technisch onderhoud & support.
 *   **Transactie Provisie**: 5% - 10% bovenop de Stripe kosten.
 
-## 2. Technisch Uitrolplan (per nieuwe klant)
+## 2. Aanleverspecificaties (Wat de kunstenaar levert)
+Om de museale kwaliteit te waarborgen, moet de kunstenaar de volgende zaken aanleveren:
+
+*   **Foto's**: JPEG of WebP, minimaal **4000px** aan de langste zijde. Kleurprofiel sRGB.
+*   **Metadata**: Een lijst met Titels, Jaartallen, Medium en Afmetingen.
+*   **Branding**: Een logo (PNG met transparante achtergrond) en een biografie-tekst.
+*   **Stripe**: API Keys (Publishable & Secret) van hun eigen Stripe-account.
+*   **Domein**: Toegang tot de DNS-instellingen van hun gewenste URL.
+
+## 3. Technisch Uitrolplan (per nieuwe klant)
 1.  **Clone Repository**: Gebruik deze code als GitHub Template.
 2.  **Firebase Setup**: 
     *   Maak een nieuw Firebase project aan.
-    *   Activeer Firestore, Authentication (Google) en Storage.
-    *   Koppel de nieuwe `firebaseConfig` in `src/firebase/config.ts`.
-3.  **Branding**:
-    *   Log in op het nieuwe `/admin` paneel.
-    *   Stel de `siteTitle`, `adminEmail` en het logo in.
-4.  **Stripe**: 
-    *   Vraag de kunstenaar om hun Stripe API keys.
-    *   Voer deze in onder het tabblad "Betalingen".
+    *   Activeer Firestore, Authentication (Google), Storage en App Hosting.
+3.  **Branding**: Vul de `Settings` collectie in Firestore of via het `/admin` paneel.
+4.  **Stripe**: Voer de keys in onder het tabblad "Betalingen".
 
-## 3. Onderhoud & Schaalbaarheid
+## 4. Onderhoud & Schaalbaarheid
 *   **Updates**: Push updates naar de 'master' branch om alle aangesloten musea tegelijk te verbeteren.
-*   **Hosting**: Firebase 'Blaze' plan is aanbevolen. De kosten zijn schaalbaar en blijven laag bij kleine portfolio's.
-
-## 4. Gebruikershandleiding voor de Kunstenaar
-Verwijs de kunstenaar naar de **interactieve gids** in de navigatiebalk (klik op de titel van het museum) voor instructies over het gebruik van de Deep Zoom viewer en de curator tools.
