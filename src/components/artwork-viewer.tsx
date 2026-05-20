@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -35,7 +36,7 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
         <div 
           className={cn(
             "relative w-full flex items-center justify-center overflow-hidden bg-black group transition-all duration-500",
-            isFullScreen ? "h-[100vh]" : "h-[88vh]",
+            isFullScreen ? "h-[100vh]" : "h-[85vh]",
             "cursor-pointer"
           )}
           onClick={handleToggleFullScreen}
@@ -90,15 +91,17 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
         </div>
 
         <div className={cn(
-          "w-full bg-background/95 backdrop-blur-md py-4 px-12 border-t border-border/10 flex flex-col items-center justify-center overflow-y-auto text-center transition-all duration-500",
-          isFullScreen ? "h-0 opacity-0 pointer-events-none py-0 px-0" : "h-[12vh] opacity-100"
+          "w-full bg-background/95 backdrop-blur-md py-6 px-12 border-t border-border/10 flex flex-col items-center justify-center overflow-y-auto text-center transition-all duration-500",
+          isFullScreen ? "h-0 opacity-0 pointer-events-none py-0 px-0" : "h-[15vh] opacity-100"
         )}>
-          <div className="max-w-4xl mx-auto">
-            <h2 className="text-[9px] md:text-[10px] font-black tracking-[0.4em] uppercase text-foreground/40 mb-2">{artwork?.displayTitle || artwork?.title}</h2>
-            <div className="text-[10px] md:text-[12px] uppercase font-black tracking-[0.3em] text-accent flex flex-wrap gap-x-8 gap-y-2 justify-center items-center">
-              <span className="opacity-80">Zaal: {artwork?.series}</span>
+          <div className="max-w-4xl mx-auto space-y-2">
+            <h2 className="text-xl md:text-2xl font-headline font-light italic text-foreground tracking-tight">
+              {artwork?.displayTitle || artwork?.title}
+            </h2>
+            <div className="text-[12px] md:text-[14px] font-bold tracking-[0.1em] text-accent flex flex-wrap gap-x-6 gap-y-2 justify-center items-center">
+              <span className="uppercase opacity-70">Zaal: {artwork?.series}</span>
               <span className="w-1 h-1 rounded-full bg-accent/30 self-center hidden md:inline" />
-              <span>{artwork?.year || 'Onbekend'}</span>
+              <span className="italic">{artwork?.year || 'Jaartal onbekend'}</span>
               {artwork?.dimensions && (
                 <>
                   <span className="w-1 h-1 rounded-full bg-accent/30 self-center hidden md:inline" />
@@ -106,7 +109,7 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
                 </>
               )}
               <span className="w-1 h-1 rounded-full bg-accent/30 self-center hidden md:inline" />
-              <span>{artwork?.medium}</span>
+              <span className="uppercase tracking-widest">{artwork?.medium}</span>
             </div>
           </div>
         </div>
