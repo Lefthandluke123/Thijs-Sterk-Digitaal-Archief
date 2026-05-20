@@ -98,8 +98,8 @@ function NavbarContent() {
     <Link 
       href={href}
       className={cn(
-        "px-4 py-2 rounded-full text-[13px] font-black tracking-[0.1em] uppercase transition-all duration-300 flex items-center gap-2",
-        active ? "bg-accent text-accent-foreground shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-black/5",
+        "px-4 py-2 rounded-full text-[13px] font-black tracking-[0.1em] uppercase transition-all duration-500 flex items-center gap-2 hover:scale-105 active:scale-95",
+        active ? "bg-accent text-accent-foreground shadow-lg" : "text-muted-foreground hover:text-foreground hover:bg-black/5",
         important && !active && "text-accent border border-accent/20",
         className
       )}
@@ -112,8 +112,8 @@ function NavbarContent() {
     <Link 
       href={href}
       className={cn(
-        "flex items-center gap-4 p-4 rounded-2xl text-[14px] font-black uppercase tracking-widest transition-all",
-        active ? "bg-accent text-accent-foreground" : "bg-black/5 text-muted-foreground active:bg-black/10"
+        "flex items-center gap-4 p-4 rounded-2xl text-[14px] font-black uppercase tracking-widest transition-all duration-300 active:scale-95",
+        active ? "bg-accent text-accent-foreground shadow-md" : "bg-black/5 text-muted-foreground active:bg-black/10"
       )}
     >
       <Icon className="w-5 h-5" />
@@ -132,11 +132,11 @@ function NavbarContent() {
             onClick={() => setGuideOpen(true)}
             title={t('nav_guide_click')}
           >
-            <img src="/logo.png" alt="Logo" className="h-8 md:h-12 w-auto object-contain transition-transform group-hover:rotate-6" />
-            <div className="flex flex-col leading-tight border-l border-border/40 pl-3 md:pl-5">
+            <img src="/logo.png" alt="Logo" className="h-8 md:h-12 w-auto object-contain transition-transform duration-500 group-hover:rotate-12 group-hover:scale-110" />
+            <div className="flex flex-col leading-tight border-l border-border/40 pl-3 md:pl-5 transition-all group-hover:border-accent">
                <div className="flex items-center gap-2">
-                 <span className="font-headline font-light text-base md:text-xl tracking-tight text-foreground">Digitaal Museum</span>
-                 <BookOpen className="w-3 h-3 text-accent opacity-0 group-hover:opacity-100 transition-opacity hidden md:inline" />
+                 <span className="font-headline font-light text-base md:text-xl tracking-tight text-foreground transition-colors group-hover:text-accent">{t('nav_museum_title')}</span>
+                 <BookOpen className="w-3 h-3 text-accent opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-x-[-10px] group-hover:translate-x-0 hidden md:inline" />
                </div>
                <span className="text-[7px] md:text-[9px] font-black uppercase tracking-[0.3em] text-accent/80 hidden sm:block">Thijs Sterk (1913-1982)</span>
             </div>
@@ -145,17 +145,17 @@ function NavbarContent() {
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center gap-1 xl:gap-3">
             <NavLink href="/" active={pathname === "/"}>{t('nav_home')}</NavLink>
-            <NavLink href="/exhibition" active={pathname === "/exhibition"} important><Sparkles className="w-3.5 h-3.5" /> {t('nav_tour')}</NavLink>
+            <NavLink href="/exhibition" active={pathname === "/exhibition"} important><Sparkles className="w-3.5 h-3.5 animate-pulse" /> {t('nav_tour')}</NavLink>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className={cn("px-4 py-2 rounded-full text-[13px] font-black tracking-[0.1em] uppercase transition-all duration-300 flex items-center gap-1 outline-none", pathname.includes('/gallery') ? "bg-accent text-accent-foreground shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-black/5")}>
-                  {t('nav_galleries')} <ChevronDown className="w-3.5 h-3.5 opacity-60" />
+                <button className={cn("px-4 py-2 rounded-full text-[13px] font-black tracking-[0.1em] uppercase transition-all duration-500 flex items-center gap-1 outline-none hover:scale-105", pathname.includes('/gallery') ? "bg-accent text-accent-foreground shadow-lg" : "text-muted-foreground hover:text-foreground hover:bg-black/5")}>
+                  {t('nav_galleries')} <ChevronDown className="w-3.5 h-3.5 opacity-60 transition-transform duration-300 group-data-[state=open]:rotate-180" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="bg-background/98 backdrop-blur-2xl border-border/40 rounded-2xl min-w-[240px] p-2 shadow-2xl">
+              <DropdownMenuContent align="start" className="bg-background/98 backdrop-blur-2xl border-border/40 rounded-2xl min-w-[240px] p-2 shadow-2xl animate-in fade-in zoom-in-95 duration-300">
                 {seriesWithCounts.map((s) => (
-                  <DropdownMenuItem key={s.name} asChild className="text-[11px] uppercase font-black tracking-[0.1em] focus:bg-accent focus:text-accent-foreground rounded-xl cursor-pointer p-3 mb-1">
+                  <DropdownMenuItem key={s.name} asChild className="text-[11px] uppercase font-black tracking-[0.1em] focus:bg-accent focus:text-accent-foreground rounded-xl cursor-pointer p-3 mb-1 transition-all">
                     <Link href={`/gallery?series=${encodeURIComponent(s.name)}`} className="flex w-full items-center">
                       {s.translatedName} <span className="ml-auto opacity-30 text-[9px] font-bold">[{s.count}]</span>
                     </Link>
@@ -169,21 +169,21 @@ function NavbarContent() {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className={cn("px-4 py-2 rounded-full text-[13px] font-black tracking-[0.1em] uppercase transition-all duration-300 flex items-center gap-1 outline-none", (pathname.includes('hanneke') || pathname.includes('beatrijs')) ? "bg-secondary text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-black/5")}>
-                  {t('nav_about')} <ChevronDown className="w-3.5 h-3.5 opacity-60" />
+                <button className={cn("px-4 py-2 rounded-full text-[13px] font-black tracking-[0.1em] uppercase transition-all duration-500 flex items-center gap-1 outline-none hover:scale-105", (pathname.includes('hanneke') || pathname.includes('beatrijs')) ? "bg-secondary text-foreground shadow-lg" : "text-muted-foreground hover:text-foreground hover:bg-black/5")}>
+                  {t('nav_about')} <ChevronDown className="w-3.5 h-3.5 opacity-60 transition-transform duration-300 group-data-[state=open]:rotate-180" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-background/98 backdrop-blur-2xl border-border/40 rounded-2xl min-w-[200px] p-2 shadow-2xl">
-                <DropdownMenuItem asChild className="text-[11px] uppercase font-black tracking-[0.1em] focus:bg-accent focus:text-accent-foreground rounded-xl p-3 mb-1">
+              <DropdownMenuContent align="end" className="bg-background/98 backdrop-blur-2xl border-border/40 rounded-2xl min-w-[200px] p-2 shadow-2xl animate-in fade-in zoom-in-95 duration-300">
+                <DropdownMenuItem asChild className="text-[11px] uppercase font-black tracking-[0.1em] focus:bg-accent focus:text-accent-foreground rounded-xl p-3 mb-1 transition-all">
                   <Link href="/hanneke">Hanneke Sterk</Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild className="text-[11px] uppercase font-black tracking-[0.1em] focus:bg-accent focus:text-accent-foreground rounded-xl p-3 mb-1">
+                <DropdownMenuItem asChild className="text-[11px] uppercase font-black tracking-[0.1em] focus:bg-accent focus:text-accent-foreground rounded-xl p-3 mb-1 transition-all">
                   <Link href="/beatrijs">Beatrijs Sterk</Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild className="text-[11px] uppercase font-black tracking-[0.1em] focus:bg-accent focus:text-accent-foreground rounded-xl p-3 mb-1">
+                <DropdownMenuItem asChild className="text-[11px] uppercase font-black tracking-[0.1em] focus:bg-accent focus:text-accent-foreground rounded-xl p-3 mb-1 transition-all">
                   <Link href="/peter-bes">Peter Bes</Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild className="text-[11px] uppercase font-black tracking-[0.1em] focus:bg-accent focus:text-accent-foreground rounded-xl p-3">
+                <DropdownMenuItem asChild className="text-[11px] uppercase font-black tracking-[0.1em] focus:bg-accent focus:text-accent-foreground rounded-xl p-3 transition-all">
                   <Link href="/leo-duppen">Leo Duppen</Link>
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -193,14 +193,14 @@ function NavbarContent() {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-2 px-4 py-2 rounded-full bg-secondary/30 text-[11px] font-black uppercase tracking-widest hover:bg-secondary/50 transition-all border border-black/5">
+                <button className="flex items-center gap-2 px-4 py-2 rounded-full bg-secondary/30 text-[11px] font-black uppercase tracking-widest hover:bg-secondary/50 transition-all duration-300 border border-black/5 hover:scale-105 active:scale-95">
                   <Languages className="w-3.5 h-3.5 text-accent" /> {language.toUpperCase()}
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-background/98 backdrop-blur-2xl border-border/40 rounded-2xl p-1.5 min-w-[140px] shadow-2xl">
+              <DropdownMenuContent align="end" className="bg-background/98 backdrop-blur-2xl border-border/40 rounded-2xl p-1.5 min-w-[140px] shadow-2xl animate-in fade-in zoom-in-95 duration-300">
                 {['nl', 'en', 'de', 'fr', 'es'].map((lang) => (
-                  <DropdownMenuItem key={lang} onClick={() => setLanguage(lang as any)} className="flex items-center gap-3 text-[11px] uppercase font-black tracking-widest rounded-xl p-3 cursor-pointer focus:bg-accent focus:text-accent-foreground">
-                    {lang.toUpperCase()} {language === lang && <div className="ml-auto w-2 h-2 rounded-full bg-accent" />}
+                  <DropdownMenuItem key={lang} onClick={() => setLanguage(lang as any)} className="flex items-center gap-3 text-[11px] uppercase font-black tracking-widest rounded-xl p-3 cursor-pointer focus:bg-accent focus:text-accent-foreground transition-all">
+                    {lang.toUpperCase()} {language === lang && <div className="ml-auto w-2 h-2 rounded-full bg-accent animate-pulse" />}
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
@@ -211,18 +211,18 @@ function NavbarContent() {
           <div className="lg:hidden flex items-center gap-4">
             <button 
               onClick={() => setGuideOpen(true)}
-              className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center text-accent"
+              className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center text-accent hover:bg-accent hover:text-white transition-all duration-300 active:scale-90"
             >
               <Info className="w-5 h-5" />
             </button>
             
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="w-10 h-10 rounded-full bg-black/5">
+                <Button variant="ghost" size="icon" className="w-10 h-10 rounded-full bg-black/5 active:scale-90 transition-all">
                   <Menu className="w-5 h-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-[85vw] max-w-sm p-0 border-none bg-background">
+              <SheetContent side="right" className="w-[85vw] max-w-sm p-0 border-none bg-background animate-in slide-in-from-right duration-500">
                 <SheetTitle className="sr-only">Navigatie Menu</SheetTitle>
                 <div className="flex flex-col h-full">
                   <div className="p-8 border-b border-border/10 flex items-center justify-between bg-primary text-primary-foreground">
@@ -243,13 +243,13 @@ function NavbarContent() {
                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-accent pl-4 mb-2 block">{t('nav_galleries')}</span>
                        <div className="grid grid-cols-1 gap-2">
                          {seriesWithCounts.slice(0, 6).map(s => (
-                           <Link key={s.name} href={`/gallery?series=${encodeURIComponent(s.name)}`} className="px-4 py-3 rounded-xl bg-black/[0.03] text-[12px] font-bold uppercase tracking-widest flex justify-between items-center">
+                           <Link key={s.name} href={`/gallery?series=${encodeURIComponent(s.name)}`} className="px-4 py-3 rounded-xl bg-black/[0.03] text-[12px] font-bold uppercase tracking-widest flex justify-between items-center hover:bg-accent/10 transition-all active:scale-95">
                              {s.translatedName}
                              <span className="opacity-30 text-[9px]">[{s.count}]</span>
                            </Link>
                          ))}
                          {seriesWithCounts.length > 6 && (
-                           <Link href="/gallery" className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-accent text-center">{t('all_works')}...</Link>
+                           <Link href="/gallery" className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-accent text-center hover:bg-accent/5 transition-all">{t('all_works')}...</Link>
                          )}
                        </div>
                     </div>
@@ -260,10 +260,10 @@ function NavbarContent() {
                     <div className="pt-4 pb-2">
                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground pl-4 mb-2 block">{t('nav_about')}</span>
                        <div className="grid grid-cols-2 gap-2">
-                         <Link href="/hanneke" className="p-4 rounded-xl bg-black/[0.03] text-[10px] font-bold uppercase tracking-widest text-center">Hanneke</Link>
-                         <Link href="/beatrijs" className="p-4 rounded-xl bg-black/[0.03] text-[10px] font-bold uppercase tracking-widest text-center">Beatrijs</Link>
-                         <Link href="/peter-bes" className="p-4 rounded-xl bg-black/[0.03] text-[10px] font-bold uppercase tracking-widest text-center">Peter Bes</Link>
-                         <Link href="/leo-duppen" className="p-4 rounded-xl bg-black/[0.03] text-[10px] font-bold uppercase tracking-widest text-center">Leo Duppen</Link>
+                         <Link href="/hanneke" className="p-4 rounded-xl bg-black/[0.03] text-[10px] font-bold uppercase tracking-widest text-center active:bg-accent/10 transition-all">Hanneke</Link>
+                         <Link href="/beatrijs" className="p-4 rounded-xl bg-black/[0.03] text-[10px] font-bold uppercase tracking-widest text-center active:bg-accent/10 transition-all">Beatrijs</Link>
+                         <Link href="/peter-bes" className="p-4 rounded-xl bg-black/[0.03] text-[10px] font-bold uppercase tracking-widest text-center active:bg-accent/10 transition-all">Peter Bes</Link>
+                         <Link href="/leo-duppen" className="p-4 rounded-xl bg-black/[0.03] text-[10px] font-bold uppercase tracking-widest text-center active:bg-accent/10 transition-all">Leo Duppen</Link>
                        </div>
                     </div>
                   </div>
@@ -279,8 +279,8 @@ function NavbarContent() {
                           key={lang}
                           onClick={() => setLanguage(lang as any)}
                           className={cn(
-                            "flex-1 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all",
-                            language === lang ? "bg-accent text-accent-foreground" : "bg-white text-muted-foreground border border-black/5"
+                            "flex-1 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all active:scale-95 duration-300",
+                            language === lang ? "bg-accent text-accent-foreground shadow-md" : "bg-white text-muted-foreground border border-black/5 hover:border-accent/20"
                           )}
                         >
                           {lang}
