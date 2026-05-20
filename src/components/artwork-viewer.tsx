@@ -1,11 +1,9 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogTitle, DialogClose } from '@/components/ui/dialog';
-import { X, ChevronLeft, ChevronRight, Search, ZoomIn, ZoomOut } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
 
 interface ArtworkViewerProps {
   artwork: any | null;
@@ -16,38 +14,16 @@ interface ArtworkViewerProps {
 
 export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewerProps) {
   const [isFullScreen, setIsFullScreen] = useState(false);
-  const [showMagnifier, setShowMagnifier] = useState(false);
-  const [zoomLevel, setZoomLevel] = useState(3.0);
   const [isOverUI, setIsOverUI] = useState(false);
-  const [magnifierPos, setMagnifierPos] = useState({ x: 0, y: 0, mouseX: 0, mouseY: 0 });
-  const imgRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
     if (!artwork) {
       setIsFullScreen(false);
-      setShowMagnifier(false);
       setIsOverUI(false);
     }
   }, [artwork]);
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!showMagnifier || !imgRef.current) return;
-    const rect = imgRef.current.getBoundingClientRect();
-    
-    // Bereken positie relatief aan de afbeelding (0-100%)
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    
-    setMagnifierPos({ 
-      x, 
-      y, 
-      mouseX: e.clientX, 
-      mouseY: e.clientY 
-    });
-  };
-
-  const handleToggleFullScreen = (e: React.MouseEvent) => {
-    if (showMagnifier) return;
+  const handleToggleFullScreen = () => {
     setIsFullScreen(!isFullScreen);
   };
 
@@ -60,14 +36,12 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
           className={cn(
             "relative w-full flex items-center justify-center overflow-hidden bg-black group transition-all duration-500",
             isFullScreen ? "h-[100vh]" : "h-[88vh]",
-            showMagnifier ? (isOverUI ? "cursor-default" : "cursor-none") : "cursor-pointer"
+            "cursor-pointer"
           )}
           onClick={handleToggleFullScreen}
-          onMouseMove={handleMouseMove}
         >
           {artwork && (
             <img 
-              ref={imgRef}
               src={artwork.imageUrl} 
               alt={artwork.displayTitle || artwork.title} 
               className="w-full h-full object-contain transition-all duration-700 pointer-events-none" 
@@ -75,22 +49,6 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
                 clipPath: artwork.cropTop !== undefined ? `inset(${artwork.cropTop || 0}% ${artwork.cropRight || 0}% ${artwork.cropBottom || 0}% ${artwork.cropLeft || 0}%)` : undefined, 
                 filter: `brightness(${artwork.brightness || 1})` 
               }} 
-            />
-          )}
-
-          {showMagnifier && artwork && !isOverUI && (
-            <div 
-              className="fixed pointer-events-none border-4 border-white shadow-[0_0_60px_rgba(0,0,0,0.4)] rounded-full z-[100] overflow-hidden bg-background"
-              style={{
-                width: '350px',
-                height: '350px',
-                left: `${magnifierPos.mouseX - 175}px`,
-                top: `${magnifierPos.mouseY - 175}px`,
-                backgroundImage: `url(${artwork.imageUrl})`,
-                backgroundRepeat: 'no-repeat',
-                backgroundSize: `${zoomLevel * 100}% auto`,
-                backgroundPosition: `${magnifierPos.x}% ${magnifierPos.y}%`,
-              }}
             />
           )}
 
@@ -118,39 +76,10 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
           </div>
 
           <div 
-            className="absolute top-8 right-8 z-[110] flex items-center gap-4"
+            className="absolute top-8 right-8 z-[110]"
             onMouseEnter={() => setIsOverUI(true)}
             onMouseLeave={() => setIsOverUI(false)}
-            onMouseMove={(e) => e.stopPropagation()}
           >
-             <div 
-              className="flex items-center gap-2 bg-black/40 backdrop-blur-xl p-1.5 rounded-full border border-white/10 shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-             >
-               <Button 
-                 variant="ghost" 
-                 size="icon" 
-                 onClick={(e) => { e.stopPropagation(); setShowMagnifier(!showMagnifier); }}
-                 className={cn("h-10 w-10 rounded-full transition-all text-white hover:bg-white/20", showMagnifier && "bg-accent text-accent-foreground hover:bg-accent/80")}
-               >
-                 <Search className="w-5 h-5" />
-               </Button>
-               {showMagnifier && (
-                 <div className="flex items-center gap-3 px-4 w-48 animate-in fade-in slide-in-from-right-4 duration-300">
-                   <ZoomOut className="w-3 h-3 text-white/40" />
-                   <Slider 
-                    value={[zoomLevel]} 
-                    min={1.5} 
-                    max={10} 
-                    step={0.1} 
-                    onValueChange={([val]) => setZoomLevel(val)} 
-                    className="flex-1"
-                   />
-                   <ZoomIn className="w-3 h-3 text-white/40" />
-                 </div>
-               )}
-             </div>
-             
              <DialogClose 
                className="p-3 bg-black/40 backdrop-blur-xl rounded-full text-white hover:bg-accent hover:text-accent-foreground transition-all shadow-2xl border border-white/10" 
                onClick={(e) => e.stopPropagation()}

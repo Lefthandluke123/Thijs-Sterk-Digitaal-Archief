@@ -6,7 +6,7 @@ Dit document bevat de essentiële instructies voor het beheren, bewaren en delen
 ## Versie: 10-5/17.00 (Sorteerlogica & Foto Richtlijnen)
 
 ### 1. Richtlijnen voor Foto-uploads (Kwaliteit vs. Snelheid)
-Om de loep-functie (zoom) optimaal te laten werken zonder de site traag te maken, adviseren wij:
+Om de kunstwerken optimaal groot te kunnen tonen zonder de site traag te maken, adviseren wij:
 *   **Resolutie**: 2500px tot 3500px aan de langste zijde.
 *   **Bestandsgrootte**: Richt op 1MB tot 3MB per foto.
 *   **Formaat**: JPG (kwaliteit 80-90%) in sRGB kleurprofiel.
