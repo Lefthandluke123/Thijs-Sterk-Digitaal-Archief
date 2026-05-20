@@ -26,6 +26,10 @@
           "type": "string",
           "description": "Het gebruikte materiaal (bijv. Olieverf, Digitaal)"
         },
+        "dimensions": {
+          "type": "string",
+          "description": "De afmetingen van het werk (bijv. 50x60 cm)"
+        },
         "description": {
           "type": "string",
           "description": "Een beschrijving van het werk"

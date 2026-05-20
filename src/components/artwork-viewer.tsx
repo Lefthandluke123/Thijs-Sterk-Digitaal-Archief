@@ -171,6 +171,12 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
               <span className="bg-accent/10 px-6 py-1.5 rounded-sm">Zaal: {artwork?.series}</span>
               <span className="w-2 h-2 rounded-full bg-accent/30 self-center hidden md:inline" />
               <span>{artwork?.year}</span>
+              {artwork?.dimensions && (
+                <>
+                  <span className="w-2 h-2 rounded-full bg-accent/30 self-center hidden md:inline" />
+                  <span>{artwork?.dimensions}</span>
+                </>
+              )}
               <span className="w-2 h-2 rounded-full bg-accent/30 self-center hidden md:inline" />
               <span>{artwork?.medium}</span>
             </div>

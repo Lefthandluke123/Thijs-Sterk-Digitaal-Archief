@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
@@ -27,7 +28,8 @@ import {
   Sparkles,
   Tag,
   Info,
-  Calendar
+  Calendar,
+  Maximize
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -146,16 +148,20 @@ export default function AdminPage() {
         setUploadStatus(`Uploaden: ${file.name} (${processedCount + 1}/${totalFiles})`);
         const timestamp = Date.now();
         const safeName = file.name.replace(/[^a-z0-9.]/gi, '_');
+        const fileNameNoExt = file.name.split('.')[0] || "Naamloos";
+        
         const storageRef = ref(storage, `artworks/${timestamp}_${safeName}`);
         const snapshot = await uploadBytes(storageRef, file);
         const downloadUrl = await getDownloadURL(snapshot.ref);
         
         await addDoc(collection(firestore, 'artworks'), {
-          title: file.name.split('.')[0] || "Naamloos",
+          title: fileNameNoExt,
+          displayTitle: fileNameNoExt, // Gebruik interne titel als start schermtitel
           series: "Nieuwe Uploads",
           imageUrl: downloadUrl,
           createdAt: serverTimestamp(),
-          cropTop: 0, cropBottom: 0, cropLeft: 0, cropRight: 0, brightness: 1
+          cropTop: 0, cropBottom: 0, cropLeft: 0, cropRight: 0, brightness: 1,
+          year: "" // Geen jaartal standaard invullen
         });
         processedCount++;
         setUploadProgress((processedCount / totalFiles) * 100);
@@ -169,7 +175,7 @@ export default function AdminPage() {
 
   const handleExportBackup = () => {
     const exportData = {
-      version: "2.5",
+      version: "2.6",
       exportedAt: new Date().toISOString(),
       artworks: artworks,
       settings: siteSettings || {}
@@ -470,6 +476,18 @@ export default function AdminPage() {
                             onBlur={(e) => updateArtworkField(editingId!, 'year', e.target.value)} 
                             className="pl-10"
                             placeholder="Bijv. 1954"
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-[10px] font-black uppercase opacity-60">Afmetingen</Label>
+                        <div className="relative">
+                          <Maximize className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 opacity-30" />
+                          <Input 
+                            defaultValue={editingArtwork?.dimensions || ''} 
+                            onBlur={(e) => updateArtworkField(editingId!, 'dimensions', e.target.value)} 
+                            className="pl-10"
+                            placeholder="Bijv. 50 x 75 cm"
                           />
                         </div>
                       </div>
