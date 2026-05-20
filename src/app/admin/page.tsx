@@ -226,7 +226,7 @@ export default function AdminPage() {
           imageUrl: downloadUrl,
           createdAt: serverTimestamp(),
           cropTop: 0, cropBottom: 0, cropLeft: 0, cropRight: 0, brightness: 1,
-          year: "",
+          year: "", // Jaartal standaard leeglaten
           dimensions: ""
         });
         processedCount++;
