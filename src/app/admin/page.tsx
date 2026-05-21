@@ -39,7 +39,10 @@ import {
   Users,
   Briefcase,
   GraduationCap,
-  HardDrive
+  HardDrive,
+  Maximize2,
+  Tags,
+  Info
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -176,7 +179,7 @@ export default function AdminPage() {
           fileType: file.type,
           createdAt: serverTimestamp(),
           cropTop: 0, cropBottom: 0, cropLeft: 0, cropRight: 0, brightness: 1,
-          year: "", dimensions: "",
+          year: "", dimensions: "", medium: "Olieverf op doek",
           featured: false, inShop: false,
           pricePostcard: 2.50, pricePoster: 24.00, pricePrint: 85.00, priceDigital: 15.00
         });
@@ -196,6 +199,10 @@ export default function AdminPage() {
              (art.series?.toLowerCase() || "").includes(searchQuery.toLowerCase());
     });
   }, [artworks, searchQuery]);
+
+  const editingArtwork = useMemo(() => {
+    return artworks.find(a => a.id === editingId);
+  }, [artworks, editingId]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col pt-14">
@@ -579,33 +586,163 @@ export default function AdminPage() {
       </main>
 
       <Dialog open={!!editingId} onOpenChange={() => setEditingId(null)}>
-        <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background border-none">
-          <DialogTitle className="sr-only">Editor</DialogTitle>
-          <div className="flex-1 bg-black/5 flex items-center justify-center p-4">
-             {artworks.find(a => a.id === editingId) && (
-                <img src={artworks.find(a => a.id === editingId)?.imageUrl} className="max-h-[60vh] object-contain shadow-2xl" alt="Preview" />
-             )}
-          </div>
-          <div className="h-[40vh] border-t p-8 overflow-y-auto bg-white">
-             <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-8">
-                <div className="space-y-4">
-                   <Label className="text-[10px] uppercase font-bold opacity-40 tracking-widest">Publieke Titel</Label>
-                   <Input defaultValue={artworks.find(a => a.id === editingId)?.displayTitle || ''} onBlur={(e) => updateArtworkField(editingId!, 'displayTitle', e.target.value)} />
-                   <Label className="text-[10px] uppercase font-bold opacity-40 tracking-widest">Expositieruimte / Collectie</Label>
-                   <Input defaultValue={artworks.find(a => a.id === editingId)?.series || ''} onBlur={(e) => updateArtworkField(editingId!, 'series', e.target.value)} />
+        <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background border-none rounded-none overflow-hidden fixed inset-0">
+          <DialogTitle className="sr-only">Editor - {editingArtwork?.title}</DialogTitle>
+          
+          <div className="flex flex-col md:flex-row h-full">
+            {/* Linkerkant: Preview */}
+            <div className="flex-1 bg-black/5 flex flex-col">
+              <div className="h-14 border-b border-black/5 bg-white/80 backdrop-blur-md px-8 flex items-center justify-between shrink-0">
+                 <div className="flex items-center gap-4">
+                    <button onClick={() => setEditingId(null)} className="p-2 hover:bg-black/5 rounded-full transition-colors"><ArrowLeft className="w-5 h-5" /></button>
+                    <h2 className="text-sm font-black uppercase tracking-widest truncate">{editingArtwork?.displayTitle || editingArtwork?.title}</h2>
+                 </div>
+                 <div className="flex items-center gap-4">
+                    {editingArtwork?.featured && <Star className="w-4 h-4 text-accent fill-accent" />}
+                    <span className="text-[10px] font-black uppercase tracking-widest opacity-30">{editingArtwork?.series}</span>
+                 </div>
+              </div>
+              <div className="flex-1 flex items-center justify-center p-12 overflow-hidden relative">
+                <div className="relative group max-w-full max-h-full">
+                  <img 
+                    src={editingArtwork?.imageUrl} 
+                    className="max-h-[70vh] object-contain shadow-[0_50px_100px_-20px_rgba(0,0,0,0.3)] bg-white p-2" 
+                    alt="Master Preview" 
+                  />
+                  <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                     <Maximize2 className="text-white w-12 h-12" />
+                  </div>
                 </div>
-                <div className="space-y-4">
-                   <div className="flex items-center justify-between p-4 bg-accent/5 rounded-xl border border-accent/10">
-                      <Label className="text-[10px] uppercase font-black tracking-widest text-accent">In Museumwinkel Tonen</Label>
-                      <Switch checked={artworks.find(a => a.id === editingId)?.inShop} onCheckedChange={(val) => updateArtworkField(editingId!, 'inShop', val)} />
-                   </div>
-                   <div className="flex items-center justify-between p-4 bg-black/5 rounded-xl border border-black/5">
-                      <Label className="text-[10px] uppercase font-black tracking-widest opacity-60">Featured (Homepage)</Label>
-                      <Switch checked={artworks.find(a => a.id === editingId)?.featured} onCheckedChange={(val) => updateArtworkField(editingId!, 'featured', val)} />
-                   </div>
-                   <Button variant="destructive" className="w-full mt-4 h-12 rounded-xl uppercase font-black tracking-widest text-[10px]" onClick={() => { if(confirm('Dit werk permanent uit het archief verwijderen?')) { deleteDoc(doc(firestore!, 'artworks', editingId!)); setEditingId(null); }}}>Verwijder uit Collectie</Button>
+              </div>
+            </div>
+
+            {/* Rechterkant: Formulier */}
+            <div className="w-full md:w-[450px] lg:w-[550px] shrink-0 bg-white border-l border-black/5 flex flex-col overflow-y-auto shadow-2xl z-10">
+              <div className="p-8 space-y-12 pb-32">
+                
+                {/* Groep 1: Publieke Identiteit */}
+                <div className="space-y-6">
+                  <div className="flex items-center gap-3 border-l-4 border-accent pl-4">
+                     <Palette className="w-4 h-4 text-accent" />
+                     <h3 className="text-[11px] font-black uppercase tracking-widest text-accent">Identiteit & Locatie</h3>
+                  </div>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                       <Label className="text-[10px] uppercase font-bold opacity-40 tracking-widest">Publieke Titel</Label>
+                       <Input 
+                         defaultValue={editingArtwork?.displayTitle || ''} 
+                         onBlur={(e) => updateArtworkField(editingId!, 'displayTitle', e.target.value)} 
+                         placeholder="De naam zoals bezoekers hem zien"
+                         className="h-12 border-black/10 focus:border-accent"
+                       />
+                    </div>
+                    <div className="space-y-2">
+                       <Label className="text-[10px] uppercase font-bold opacity-40 tracking-widest">Expositieruimte / Collectie</Label>
+                       <Input 
+                         defaultValue={editingArtwork?.series || ''} 
+                         onBlur={(e) => updateArtworkField(editingId!, 'series', e.target.value)} 
+                         placeholder="Zaalnaam"
+                         className="h-12 border-black/10 focus:border-accent"
+                       />
+                    </div>
+                  </div>
                 </div>
-             </div>
+
+                {/* Groep 2: Specificaties */}
+                <div className="space-y-6">
+                  <div className="flex items-center gap-3 border-l-4 border-primary pl-4">
+                     <Info className="w-4 h-4 text-primary" />
+                     <h3 className="text-[11px] font-black uppercase tracking-widest text-primary">Specificaties</h3>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                       <Label className="text-[10px] uppercase font-bold opacity-40 tracking-widest">Jaartal</Label>
+                       <Input defaultValue={editingArtwork?.year || ''} onBlur={(e) => updateArtworkField(editingId!, 'year', e.target.value)} placeholder="bijv. 1954" />
+                    </div>
+                    <div className="space-y-2">
+                       <Label className="text-[10px] uppercase font-bold opacity-40 tracking-widest">Afmetingen</Label>
+                       <Input defaultValue={editingArtwork?.dimensions || ''} onBlur={(e) => updateArtworkField(editingId!, 'dimensions', e.target.value)} placeholder="bijv. 45x50 cm" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                     <Label className="text-[10px] uppercase font-bold opacity-40 tracking-widest">Techniek / Medium</Label>
+                     <Input defaultValue={editingArtwork?.medium || ''} onBlur={(e) => updateArtworkField(editingId!, 'medium', e.target.value)} placeholder="bijv. Olieverf op doek" />
+                  </div>
+                  <div className="space-y-2">
+                     <Label className="text-[10px] uppercase font-bold opacity-40 tracking-widest">Tags (Curator Filters)</Label>
+                     <div className="flex items-center gap-3 bg-black/5 p-3 rounded-xl">
+                        <Tags className="w-4 h-4 opacity-30" />
+                        <Input 
+                          defaultValue={editingArtwork?.tags?.join(', ') || ''} 
+                          onBlur={(e) => updateArtworkField(editingId!, 'tags', e.target.value.split(',').map(t => t.trim()).filter(Boolean))} 
+                          placeholder="zee, groet, licht"
+                          className="bg-transparent border-none p-0 focus-visible:ring-0"
+                        />
+                     </div>
+                  </div>
+                </div>
+
+                {/* Groep 3: Commercieel */}
+                <div className="space-y-6 bg-accent/5 p-6 rounded-3xl border border-accent/10">
+                  <div className="flex items-center justify-between mb-4">
+                     <div className="flex items-center gap-3 border-l-4 border-accent pl-4">
+                        <ShoppingBag className="w-4 h-4 text-accent" />
+                        <h3 className="text-[11px] font-black uppercase tracking-widest text-accent">Commercieel</h3>
+                     </div>
+                     <Switch checked={editingArtwork?.inShop} onCheckedChange={(val) => updateArtworkField(editingId!, 'inShop', val)} />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                       <Label className="text-[9px] uppercase font-black opacity-40">Kaart (€)</Label>
+                       <Input type="number" step="0.10" defaultValue={editingArtwork?.pricePostcard || 2.50} onBlur={(e) => updateArtworkField(editingId!, 'pricePostcard', parseFloat(e.target.value))} />
+                    </div>
+                    <div className="space-y-2">
+                       <Label className="text-[9px] uppercase font-black opacity-40">Poster (€)</Label>
+                       <Input type="number" step="1" defaultValue={editingArtwork?.pricePoster || 24.00} onBlur={(e) => updateArtworkField(editingId!, 'pricePoster', parseFloat(e.target.value))} />
+                    </div>
+                    <div className="space-y-2">
+                       <Label className="text-[9px] uppercase font-black opacity-40">Art Print (€)</Label>
+                       <Input type="number" step="1" defaultValue={editingArtwork?.pricePrint || 85.00} onBlur={(e) => updateArtworkField(editingId!, 'pricePrint', parseFloat(e.target.value))} />
+                    </div>
+                    <div className="space-y-2">
+                       <Label className="text-[9px] uppercase font-black opacity-40">Digitaal (€)</Label>
+                       <Input type="number" step="1" defaultValue={editingArtwork?.priceDigital || 15.00} onBlur={(e) => updateArtworkField(editingId!, 'priceDigital', parseFloat(e.target.value))} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Groep 4: Beschrijving */}
+                <div className="space-y-4">
+                  <Label className="text-[10px] uppercase font-bold opacity-40 tracking-widest flex items-center gap-2"><FileText className="w-3 h-3" /> Verhaal bij het werk</Label>
+                  <Textarea 
+                    defaultValue={editingArtwork?.description || ''} 
+                    onBlur={(e) => updateArtworkField(editingId!, 'description', e.target.value)} 
+                    placeholder="Vertel hier meer over de context of historie van dit werk..."
+                    className="min-h-[150px] border-black/10 focus:border-accent resize-none rounded-2xl p-6"
+                  />
+                </div>
+
+                {/* Groep 5: Acties */}
+                <div className="pt-8 border-t border-black/5 space-y-4">
+                   <div className="flex items-center justify-between p-4 bg-black/5 rounded-2xl border border-black/5">
+                      <div className="flex items-center gap-3">
+                         <Star className={cn("w-4 h-4", editingArtwork?.featured ? "text-accent fill-accent" : "opacity-20")} />
+                         <Label className="text-[10px] uppercase font-black tracking-widest opacity-60">Featured (Homepage)</Label>
+                      </div>
+                      <Switch checked={editingArtwork?.featured} onCheckedChange={(val) => updateArtworkField(editingId!, 'featured', val)} />
+                   </div>
+                   
+                   <Button 
+                     variant="destructive" 
+                     className="w-full h-14 rounded-2xl uppercase font-black tracking-widest text-[10px] flex items-center gap-3" 
+                     onClick={() => { if(confirm('Dit werk permanent uit het archief verwijderen?')) { deleteDoc(doc(firestore!, 'artworks', editingId!)); setEditingId(null); }}}
+                   >
+                     <Trash2 className="w-4 h-4" /> Verwijder uit Collectie
+                   </Button>
+                </div>
+              </div>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
