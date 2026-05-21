@@ -1,7 +1,6 @@
-
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { doc, setDoc, collection, query } from 'firebase/firestore';
@@ -20,7 +19,8 @@ import {
   Globe2,
   Info,
   Layers,
-  Tag
+  Tag,
+  Lock
 } from 'lucide-react';
 import { translateMuseumText } from '@/ai/flows/translate-flow';
 import { cn } from '@/lib/utils';
@@ -70,17 +70,41 @@ export default function TranslatePage() {
   const [targetLang, setTargetLang] = useState<TargetLang>('en');
   const [isTranslating, setIsTranslating] = useState<string | null>(null);
 
+  // Auth state
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [password, setPassword] = useState('');
+  const [authError, setAuthError] = useState(false);
+
+  useEffect(() => {
+    const auth = sessionStorage.getItem('admin_auth');
+    if (auth === 'true') {
+      setIsAuthorized(true);
+    }
+  }, []);
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password === 'gabbes') {
+      setIsAuthorized(true);
+      sessionStorage.setItem('admin_auth', 'true');
+      setAuthError(false);
+    } else {
+      setAuthError(true);
+      toast({ variant: "destructive", title: "Onjuist wachtwoord", description: "Toegang geweigerd." });
+    }
+  };
+
   const settingsRef = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !isAuthorized) return null;
     return doc(firestore, 'settings', 'site');
-  }, [firestore]);
+  }, [firestore, isAuthorized]);
 
   const { data: settings, loading: settingsLoading } = useDoc(settingsRef);
 
   const artworksQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !isAuthorized) return null;
     return query(collection(firestore, 'artworks'));
-  }, [firestore]);
+  }, [firestore, isAuthorized]);
   const { data: artworks, loading: artworksLoading } = useCollection(artworksQuery);
 
   const uniqueSeries = useMemo(() => {
@@ -142,6 +166,40 @@ export default function TranslatePage() {
       setIsTranslating(null);
     }
   };
+
+  if (!isAuthorized) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
+        <Card className="max-w-md w-full p-12 rounded-[2.5rem] shadow-2xl border-none space-y-8 animate-in fade-in zoom-in duration-500">
+           <div className="text-center space-y-4">
+              <div className="w-20 h-20 bg-accent/10 rounded-full flex items-center justify-center mx-auto">
+                 <Lock className="w-10 h-10 text-accent" />
+              </div>
+              <h1 className="font-headline text-3xl font-light italic">Vertaal Station Toegang</h1>
+              <p className="text-xs text-muted-foreground uppercase tracking-widest font-black opacity-40">Voer het wachtwoord in om door te gaan</p>
+           </div>
+           <form onSubmit={handleLogin} className="space-y-6">
+              <div className="space-y-2">
+                 <Label className="text-[10px] uppercase tracking-widest font-black opacity-60 ml-2">Wachtwoord</Label>
+                 <Input 
+                   type="password" 
+                   value={password} 
+                   onChange={(e) => setPassword(e.target.value)}
+                   className={cn("h-14 rounded-2xl bg-black/5 border-none text-center text-lg tracking-[0.5em]", authError && "ring-2 ring-destructive")}
+                   autoFocus
+                 />
+              </div>
+              <Button type="submit" className="w-full h-14 rounded-2xl bg-primary text-primary-foreground font-black uppercase tracking-widest text-[11px] shadow-xl hover:scale-[1.02] transition-all">
+                 Ontgrendel Vertalingen
+              </Button>
+           </form>
+           <Link href="/admin" className="block text-center text-[10px] font-black uppercase tracking-widest opacity-40 hover:opacity-100 transition-opacity">
+              <ArrowLeft className="w-3 h-3 inline mr-2" /> Terug naar beheer
+           </Link>
+        </Card>
+      </div>
+    );
+  }
 
   if (settingsLoading || artworksLoading) {
     return (

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useFirestore, useCollection, useMemoFirebase, useDoc, useStorage } from '@/firebase';
 import { collection, doc, serverTimestamp, deleteDoc, addDoc, query, updateDoc, setDoc, writeBatch } from 'firebase/firestore';
@@ -47,7 +47,8 @@ import {
   CheckSquare,
   Square,
   FolderInput,
-  X
+  X,
+  Lock
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -80,6 +81,12 @@ export default function AdminPage() {
   const firestore = useFirestore();
   const storage = useStorage();
   const { t } = useLanguage();
+  
+  // Auth state
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [password, setPassword] = useState('');
+  const [authError, setAuthError] = useState(false);
+
   const [activeTab, setActiveTab] = useState('archive');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -96,15 +103,34 @@ export default function AdminPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState('');
 
+  useEffect(() => {
+    const auth = sessionStorage.getItem('admin_auth');
+    if (auth === 'true') {
+      setIsAuthorized(true);
+    }
+  }, []);
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password === 'gabbes') {
+      setIsAuthorized(true);
+      sessionStorage.setItem('admin_auth', 'true');
+      setAuthError(false);
+    } else {
+      setAuthError(true);
+      toast({ variant: "destructive", title: "Onjuist wachtwoord", description: "Toegang geweigerd." });
+    }
+  };
+
   const artworksQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !isAuthorized) return null;
     return query(collection(firestore, 'artworks'));
-  }, [firestore]);
+  }, [firestore, isAuthorized]);
 
   const ordersQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !isAuthorized) return null;
     return query(collection(firestore, 'orders'));
-  }, [firestore]);
+  }, [firestore, isAuthorized]);
 
   const { data: rawArtworks } = useCollection(artworksQuery);
   const { data: orders } = useCollection(ordersQuery);
@@ -128,9 +154,9 @@ export default function AdminPage() {
   }, [rawArtworks]);
 
   const siteSettingsRef = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !isAuthorized) return null;
     return doc(firestore, 'settings', 'site');
-  }, [firestore]);
+  }, [firestore, isAuthorized]);
   const { data: siteSettings } = useDoc(siteSettingsRef);
 
   const updateArtworkField = (id: string, field: string, value: any) => {
@@ -252,6 +278,40 @@ export default function AdminPage() {
   const editingArtwork = useMemo(() => {
     return artworks.find(a => a.id === editingId);
   }, [artworks, editingId]);
+
+  if (!isAuthorized) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
+        <Card className="max-w-md w-full p-12 rounded-[2.5rem] shadow-2xl border-none space-y-8 animate-in fade-in zoom-in duration-500">
+           <div className="text-center space-y-4">
+              <div className="w-20 h-20 bg-accent/10 rounded-full flex items-center justify-center mx-auto">
+                 <Lock className="w-10 h-10 text-accent" />
+              </div>
+              <h1 className="font-headline text-3xl font-light italic">Beheer Toegang</h1>
+              <p className="text-xs text-muted-foreground uppercase tracking-widest font-black opacity-40">Voer het wachtwoord in om door te gaan</p>
+           </div>
+           <form onSubmit={handleLogin} className="space-y-6">
+              <div className="space-y-2">
+                 <Label className="text-[10px] uppercase tracking-widest font-black opacity-60 ml-2">Wachtwoord</Label>
+                 <Input 
+                   type="password" 
+                   value={password} 
+                   onChange={(e) => setPassword(e.target.value)}
+                   className={cn("h-14 rounded-2xl bg-black/5 border-none text-center text-lg tracking-[0.5em]", authError && "ring-2 ring-destructive")}
+                   autoFocus
+                 />
+              </div>
+              <Button type="submit" className="w-full h-14 rounded-2xl bg-primary text-primary-foreground font-black uppercase tracking-widest text-[11px] shadow-xl hover:scale-[1.02] transition-all">
+                 Ontgrendel Archief
+              </Button>
+           </form>
+           <Link href="/" className="block text-center text-[10px] font-black uppercase tracking-widest opacity-40 hover:opacity-100 transition-opacity">
+              <ArrowLeft className="w-3 h-3 inline mr-2" /> Terug naar website
+           </Link>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col pt-14">
@@ -573,7 +633,7 @@ export default function AdminPage() {
                   <div className="relative z-10 space-y-8">
                     <div className="flex items-center gap-4">
                        <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center border border-white/20"><GraduationCap className="w-6 h-6" /></div>
-                       <h2 className="text-3xl font-headline font-light italic">Master Franchise & Exit Strategie</h2>
+                       <h2 className="text-3xl font-headline text-3xl md:text-3xl font-light italic">Master Franchise & Exit Strategie</h2>
                     </div>
                     <div className="flex items-start gap-4 p-4 bg-black/10 rounded-2xl border border-black/5 max-w-2xl">
                        <HardDrive className="w-5 h-5 shrink-0 mt-1" />
