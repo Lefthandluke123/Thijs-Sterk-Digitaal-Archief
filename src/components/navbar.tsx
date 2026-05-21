@@ -124,23 +124,23 @@ function NavbarContent() {
         <div className="container mx-auto px-4 md:px-6 h-full flex items-center justify-between">
           
           <div 
-            className="flex items-center gap-3 md:gap-5 group shrink-0 transition-all hover:scale-[1.02] cursor-pointer"
+            className="flex items-center gap-3 md:gap-5 group shrink-0 cursor-pointer"
             onClick={() => setGuideOpen(true)}
             title={t('nav_guide_click')}
           >
             <img 
               src={siteSettings?.logoUrl || "/logo.png"} 
               alt="Logo" 
-              className="h-8 md:h-12 w-auto object-contain transition-transform duration-700 group-hover:rotate-[15deg] group-hover:scale-110" 
+              className="h-8 md:h-12 w-auto object-contain" 
             />
-            <div className="flex flex-col leading-tight border-l border-border/40 pl-3 md:pl-5 transition-all group-hover:border-accent">
+            <div className="flex flex-col leading-tight border-l border-border/40 pl-3 md:pl-5">
                <div className="flex items-center gap-2">
-                 <span className="font-headline font-light text-base md:text-xl tracking-tight text-foreground transition-colors group-hover:text-accent">
+                 <span className="font-headline font-light text-base md:text-xl tracking-tight text-foreground">
                    {siteTitle}
                  </span>
-                 <BookOpen className="w-3.5 h-3.5 text-accent opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-x-[-10px] group-hover:translate-x-0 hidden md:inline animate-pulse" />
+                 <BookOpen className="w-3.5 h-3.5 text-accent hidden md:inline opacity-40" />
                </div>
-               <span className="text-[7px] md:text-[9px] font-black uppercase tracking-[0.3em] text-accent/80 transition-all group-hover:tracking-[0.4em] block">
+               <span className="text-[7px] md:text-[9px] font-black uppercase tracking-[0.3em] text-accent/80 block">
                  {siteSubtitle}
                </span>
             </div>
