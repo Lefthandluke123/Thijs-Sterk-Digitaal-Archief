@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { useFirestore, useCollection, useMemoFirebase, useDoc, useStorage } from '@/firebase';
-import { collection, doc, serverTimestamp, deleteDoc, addDoc, query, updateDoc, setDoc } from 'firebase/firestore';
+import { collection, doc, serverTimestamp, deleteDoc, addDoc, query, updateDoc, setDoc, writeBatch } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -43,7 +43,11 @@ import {
   Maximize2,
   Tags,
   Info,
-  ShoppingBag
+  ShoppingBag,
+  CheckSquare,
+  Square,
+  FolderInput,
+  X
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -80,6 +84,11 @@ export default function AdminPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   
+  // Multi-select state
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [batchSeriesName, setBatchSeriesName] = useState('');
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
   
@@ -130,6 +139,45 @@ export default function AdminPage() {
     updateDoc(artRef, { [field]: value }).catch(async () => {
       errorEmitter.emit('permission-error', new FirestorePermissionError({ path: artRef.path, operation: 'update' }));
     });
+  };
+
+  const handleBatchMove = async () => {
+    if (!firestore || selectedIds.length === 0 || !batchSeriesName) return;
+    const batch = writeBatch(firestore);
+    selectedIds.forEach(id => {
+      const ref = doc(firestore, 'artworks', id);
+      batch.update(ref, { series: batchSeriesName });
+    });
+    try {
+      await batch.commit();
+      toast({ title: `${selectedIds.length} werken verplaatst naar "${batchSeriesName}"` });
+      setSelectedIds([]);
+      setIsSelectionMode(false);
+      setBatchSeriesName('');
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleBatchDelete = async () => {
+    if (!firestore || selectedIds.length === 0) return;
+    if (!confirm(`Weet je zeker dat je deze ${selectedIds.length} werken wilt verwijderen?`)) return;
+    const batch = writeBatch(firestore);
+    selectedIds.forEach(id => {
+      batch.delete(doc(firestore, 'artworks', id));
+    });
+    try {
+      await batch.commit();
+      toast({ title: `${selectedIds.length} werken verwijderd` });
+      setSelectedIds([]);
+      setIsSelectionMode(false);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const toggleSelection = (id: string) => {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
   };
 
   const updateSettingsField = (field: string, value: any) => {
@@ -225,7 +273,7 @@ export default function AdminPage() {
         </div>
       </header>
 
-      <main className="flex-1 p-8 max-w-7xl mx-auto w-full">
+      <main className="flex-1 p-8 max-w-7xl mx-auto w-full relative">
         <Tabs defaultValue="archive" className="space-y-8">
           <TabsList className="bg-muted/50 p-1 rounded-full w-fit mx-auto flex flex-wrap justify-center h-auto border border-black/5">
             <TabsTrigger value="archive" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Archief [{artworks.length}]</TabsTrigger>
@@ -237,29 +285,101 @@ export default function AdminPage() {
           </TabsList>
 
           <TabsContent value="archive" className="space-y-6">
-            <div className="relative mb-8">
-               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-30" />
-               <Input 
-                 placeholder="Doorzoek de collectie..." 
-                 className="pl-12 h-12 bg-white/50 border-none rounded-full shadow-sm"
-                 value={searchQuery}
-                 onChange={(e) => setSearchQuery(e.target.value)}
-               />
+            <div className="flex flex-col md:flex-row gap-4 items-center mb-8">
+               <div className="relative flex-1">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-30" />
+                  <Input 
+                    placeholder="Doorzoek de collectie..." 
+                    className="pl-12 h-12 bg-white/50 border-none rounded-full shadow-sm"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+               </div>
+               <Button 
+                variant={isSelectionMode ? "accent" : "outline"} 
+                onClick={() => { setIsSelectionMode(!isSelectionMode); setSelectedIds([]); }}
+                className="rounded-full h-12 px-6 uppercase font-black tracking-widest text-[10px]"
+               >
+                 {isSelectionMode ? <X className="w-4 h-4 mr-2" /> : <CheckSquare className="w-4 h-4 mr-2" />} 
+                 {isSelectionMode ? "Annuleer Selectie" : "Selectie-modus"}
+               </Button>
             </div>
+
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {filteredArtworks.map((art: any) => (
-                <Card key={art.id} className="overflow-hidden cursor-pointer hover:ring-2 hover:ring-accent transition-all relative border-none shadow-md group" onClick={() => setEditingId(art.id)}>
-                  {art.featured && <Star className="absolute top-2 left-2 w-3 h-3 text-accent fill-accent" />}
-                  <div className="aspect-square bg-muted/20">
-                    <img src={art.imageUrl} className="w-full h-full object-cover transition-transform group-hover:scale-105" alt={art.title} />
-                  </div>
-                  <CardContent className="p-2 text-center bg-white">
-                    <h4 className="text-[9px] font-black uppercase truncate">{art.displayTitle || art.title}</h4>
-                    <p className="text-[7px] opacity-40 uppercase font-bold mt-1">{art.series}</p>
-                  </CardContent>
-                </Card>
-              ))}
+              {filteredArtworks.map((art: any) => {
+                const isSelected = selectedIds.includes(art.id);
+                return (
+                  <Card 
+                    key={art.id} 
+                    className={cn(
+                      "overflow-hidden cursor-pointer transition-all relative border-none shadow-md group",
+                      isSelected ? "ring-4 ring-accent" : "hover:ring-2 hover:ring-accent/50",
+                      isSelectionMode && "scale-95"
+                    )} 
+                    onClick={() => isSelectionMode ? toggleSelection(art.id) : setEditingId(art.id)}
+                  >
+                    {art.featured && <Star className="absolute top-2 left-2 w-3 h-3 text-accent fill-accent z-10" />}
+                    
+                    {isSelectionMode && (
+                      <div className="absolute top-2 right-2 z-20">
+                        {isSelected ? <CheckSquare className="w-5 h-5 text-accent fill-white" /> : <Square className="w-5 h-5 text-white/50" />}
+                      </div>
+                    )}
+
+                    <div className="aspect-square bg-muted/20">
+                      <img src={art.imageUrl} className="w-full h-full object-cover transition-transform group-hover:scale-105" alt={art.title} />
+                    </div>
+                    <CardContent className="p-2 text-center bg-white">
+                      <h4 className="text-[9px] font-black uppercase truncate">{art.displayTitle || art.title}</h4>
+                      <p className="text-[7px] opacity-40 uppercase font-bold mt-1">{art.series}</p>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
+
+            {/* Batch Action Toolbar */}
+            {isSelectionMode && selectedIds.length > 0 && (
+              <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-8 py-4 rounded-3xl shadow-2xl flex items-center gap-8 z-[100] animate-in slide-in-from-bottom-10 border border-white/10 backdrop-blur-xl">
+                 <div className="flex flex-col">
+                    <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Geselecteerd</span>
+                    <span className="font-headline text-xl">{selectedIds.length} werken</span>
+                 </div>
+                 
+                 <div className="h-10 w-px bg-white/20" />
+
+                 <div className="flex items-center gap-3">
+                    <div className="space-y-1">
+                       <Label className="text-[9px] uppercase font-bold tracking-widest opacity-60 ml-2">Verplaats naar Zaal</Label>
+                       <div className="flex items-center gap-2">
+                          <Input 
+                            placeholder="Zaalnaam..." 
+                            className="h-10 bg-white/10 border-none text-white placeholder:text-white/30 text-xs w-48 rounded-xl"
+                            value={batchSeriesName}
+                            onChange={(e) => setBatchSeriesName(e.target.value)}
+                          />
+                          <Button 
+                            size="sm" 
+                            disabled={!batchSeriesName}
+                            onClick={handleBatchMove}
+                            className="bg-accent text-accent-foreground rounded-xl"
+                          >
+                            <FolderInput className="w-4 h-4" />
+                          </Button>
+                       </div>
+                    </div>
+                 </div>
+
+                 <Button 
+                   variant="destructive" 
+                   size="icon" 
+                   onClick={handleBatchDelete}
+                   className="rounded-xl h-10 w-10"
+                 >
+                   <Trash2 className="w-4 h-4" />
+                 </Button>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="orders" className="space-y-6">
