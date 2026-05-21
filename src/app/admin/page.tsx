@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
@@ -54,7 +53,8 @@ import {
   Type,
   BookOpen,
   ArrowRight,
-  Filter
+  Filter,
+  HelpCircle
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -493,6 +493,14 @@ export default function AdminPage() {
                       <h2 className="text-[12px] font-bold uppercase tracking-widest text-accent">Zalenbeheer & Status</h2>
                       <p className="text-xs text-muted-foreground mt-1">Beheer de zichtbaarheid van collecties op de website.</p>
                    </div>
+                   <Button 
+                     variant="outline" 
+                     size="sm" 
+                     onClick={() => document.getElementById('manual-section')?.scrollIntoView({ behavior: 'smooth' })}
+                     className="rounded-full px-4 text-[9px] uppercase font-bold tracking-widest h-9 border-accent/20 text-accent hover:bg-accent hover:text-white"
+                   >
+                     <HelpCircle className="w-3.5 h-3.5 mr-2" /> Hoe werkt dit?
+                   </Button>
                 </div>
 
                 <div className="grid gap-4">
@@ -589,7 +597,7 @@ export default function AdminPage() {
                 </div>
              </Card>
 
-             <Card className="p-8 md:p-16 rounded-[3rem] shadow-2xl border-none bg-white space-y-16">
+             <Card id="manual-section" className="p-8 md:p-16 rounded-[3rem] shadow-2xl border-none bg-white space-y-16">
                   <div className="space-y-4 text-center border-b border-black/5 pb-12">
                     <div className="w-20 h-20 rounded-full bg-primary text-primary-foreground flex items-center justify-center mx-auto mb-6 shadow-xl">
                        <BookOpen className="w-10 h-10" />
