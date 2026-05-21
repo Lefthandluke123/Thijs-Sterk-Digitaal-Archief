@@ -57,6 +57,17 @@ const ROMAN_VALUES: Record<string, number> = {
   'XI': 11, 'XII': 12, 'XIII': 13, 'XIV': 14, 'XV': 15, 'XVI': 16, 'XVII': 17, 'XVIII': 18, 'XIX': 19, 'XX': 20
 };
 
+const parseTitleForSort = (title: string) => {
+  if (!title) return { romanVal: 999, num: 999, suffix: '' };
+  const romanMatch = title.match(/\b(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII|XIV|XV|XVI|XVII|XVIII|XIX|XX)\b/i);
+  const numMatch = title.match(/(\d+)([a-z]*)?/i);
+  return {
+    romanVal: romanMatch ? (ROMAN_VALUES[romanMatch[1].toUpperCase()] || 999) : 999,
+    num: numMatch ? parseInt(numMatch[1], 10) : 999,
+    suffix: numMatch ? (numMatch[2] || '').toLowerCase() : ''
+  };
+};
+
 export default function AdminPage() {
   const firestore = useFirestore();
   const storage = useStorage();
@@ -108,17 +119,6 @@ export default function AdminPage() {
     return doc(firestore, 'settings', 'site');
   }, [firestore]);
   const { data: siteSettings } = useDoc(siteSettingsRef);
-
-  const parseTitleForSort = (title: string) => {
-    if (!title) return { romanVal: 999, num: 999, suffix: '' };
-    const romanMatch = title.match(/\b(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII|XIV|XV|XVI|XVII|XVIII|XIX|XX)\b/i);
-    const numMatch = title.match(/(\d+)([a-z]*)?/i);
-    return {
-      romanVal: romanMatch ? (ROMAN_VALUES[romanMatch[1].toUpperCase()] || 999) : 999,
-      num: numMatch ? parseInt(numMatch[1], 10) : 999,
-      suffix: numMatch ? (numMatch[2] || '').toLowerCase() : ''
-    };
-  };
 
   const updateArtworkField = (id: string, field: string, value: any) => {
     if (!firestore || !id) return;

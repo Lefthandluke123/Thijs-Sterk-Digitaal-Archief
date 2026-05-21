@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
@@ -13,6 +12,17 @@ import { useLanguage } from '@/components/language-provider';
 const ROMAN_VALUES: Record<string, number> = {
   'I': 1, 'II': 2, 'III': 3, 'IV': 4, 'V': 5, 'VI': 6, 'VII': 7, 'VIII': 8, 'IX': 9, 'X': 10, 
   'XI': 11, 'XII': 12, 'XIII': 13, 'XIV': 14, 'XV': 15, 'XVI': 16, 'XVII': 17, 'XVIII': 18, 'XIX': 19, 'XX': 20
+};
+
+const parseTitleForSort = (title: string) => {
+  if (!title) return { romanVal: 999, num: 999, suffix: '' };
+  const romanMatch = title.match(/\b(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII|XIV|XV|XVI|XVII|XVIII|XIX|XX)\b/i);
+  const numMatch = title.match(/(\d+)([a-z]*)?/i);
+  return {
+    romanVal: romanMatch ? (ROMAN_VALUES[romanMatch[1].toUpperCase()] || 999) : 999,
+    num: numMatch ? parseInt(numMatch[1], 10) : 999,
+    suffix: numMatch ? (numMatch[2] || '').toLowerCase() : ''
+  };
 };
 
 function GalleryContent() {
@@ -44,17 +54,6 @@ function GalleryContent() {
     if (language === 'nl' || !siteSettings) return text;
     const map = category === 'series' ? siteSettings.seriesTranslations : siteSettings.tagTranslations;
     return map?.[language]?.[text] || text;
-  };
-
-  const parseTitleForSort = (title: string) => {
-    if (!title) return { romanVal: 999, num: 999, suffix: '' };
-    const romanMatch = title.match(/\b(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII|XIV|XV|XVI|XVII|XVIII|XIX|XX)\b/i);
-    const numMatch = title.match(/(\d+)([a-z]*)?/i);
-    return {
-      romanVal: romanMatch ? (ROMAN_VALUES[romanMatch[1].toUpperCase()] || 999) : 999,
-      num: numMatch ? parseInt(numMatch[1], 10) : 999,
-      suffix: numMatch ? (numMatch[2] || '').toLowerCase() : ''
-    };
   };
 
   const artworks = useMemo(() => {
