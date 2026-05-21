@@ -124,14 +124,14 @@ export default function CuratorPage() {
 
   return (
     <main className="min-h-screen bg-background pt-16 md:pt-32">
-      <div className="w-full bg-secondary/10 border-b border-border/20 py-12 md:py-24">
+      <div className="w-full bg-secondary/10 border-b border-border/20 py-12 md:py-20">
         <div className="container mx-auto px-6 max-w-5xl text-center space-y-4">
-          <h1 className="font-headline text-5xl md:text-8xl font-light text-foreground tracking-tight leading-none uppercase">
+          <h1 className="font-headline text-4xl md:text-6xl font-medium text-foreground tracking-tight leading-none uppercase">
             {t('curator_title').split(' ').map((word, i, arr) => 
-              i === arr.length - 1 ? <span key={i} className="italic">{word}</span> : word + ' '
+              i === arr.length - 1 ? <span key={i} className="italic text-accent">{word}</span> : word + ' '
             )}
           </h1>
-          <p className="text-[10px] md:text-[14px] font-black uppercase tracking-[0.4em] text-accent/80 pt-4">{t('curator_subtitle')}</p>
+          <p className="text-[10px] md:text-[13px] font-bold uppercase tracking-[0.4em] text-accent/60 pt-4">{t('curator_subtitle')}</p>
         </div>
       </div>
 
@@ -153,7 +153,7 @@ export default function CuratorPage() {
                         key={tag}
                         onClick={() => toggleTag(tag)}
                         className={cn(
-                          "px-5 py-2.5 rounded-lg text-[12px] md:text-[14px] font-bold uppercase tracking-wider transition-all border-2",
+                          "px-5 py-2.5 rounded-lg text-[13px] md:text-[15px] font-bold uppercase tracking-wider transition-all border-2",
                           isActive 
                             ? "bg-primary text-primary-foreground border-primary shadow-md scale-105" 
                             : "bg-background text-foreground border-border hover:border-accent hover:bg-accent/5"
@@ -181,7 +181,7 @@ export default function CuratorPage() {
                         key={tag}
                         onClick={() => toggleTag(tag)}
                         className={cn(
-                          "px-5 py-2.5 rounded-lg text-[12px] md:text-[14px] font-bold uppercase tracking-wider transition-all border-2",
+                          "px-5 py-2.5 rounded-lg text-[13px] md:text-[15px] font-bold uppercase tracking-wider transition-all border-2",
                           isActive 
                             ? "bg-primary text-primary-foreground border-primary shadow-md" 
                             : "bg-background text-foreground border-border hover:border-accent"
@@ -201,20 +201,20 @@ export default function CuratorPage() {
               <Button 
                 onClick={() => setActiveTags([])} 
                 variant="outline" 
-                className="rounded-full h-12 px-8 text-[10px] font-black uppercase tracking-[0.2em] border-2 border-border hover:bg-accent/5 transition-all"
+                className="rounded-full h-12 px-8 text-[11px] font-bold uppercase tracking-[0.2em] border-2 border-border hover:bg-accent/5 transition-all"
               >
                 <Eraser className="w-3 h-3 mr-3" /> {t('curator_clear')}
               </Button>
               <Button 
                 onClick={() => { setShowResults(true); logInteraction('filter_tags', { tags: activeTags }); }} 
                 disabled={activeTags.length === 0} 
-                className="rounded-full h-12 px-12 bg-primary text-primary-foreground text-[10px] font-black uppercase tracking-[0.2em] border-2 border-primary shadow-xl hover:scale-[1.03] active:scale-[0.97] transition-all disabled:opacity-20"
+                className="rounded-full h-12 px-12 bg-primary text-primary-foreground text-[11px] font-bold uppercase tracking-[0.2em] border-2 border-primary shadow-xl hover:scale-[1.03] active:scale-[0.97] transition-all disabled:opacity-20"
               >
                 <Play className="w-3 h-3 mr-3" /> {t('curator_open')}
               </Button>
             </div>
             {activeTags.length > 0 && !showResults && (
-              <p className="text-[9px] uppercase tracking-[0.25em] font-bold text-accent animate-pulse">
+              <p className="text-[10px] uppercase tracking-[0.25em] font-bold text-accent animate-pulse">
                 Klik op "{t('curator_open')}" om {filteredArtworks.length} werken te bekijken
               </p>
             )}

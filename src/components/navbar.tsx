@@ -106,7 +106,7 @@ function NavbarContent() {
     <Link 
       href={href}
       className={cn(
-        "px-5 py-2.5 rounded-full text-[14px] font-bold tracking-wider uppercase transition-all duration-300 flex items-center gap-2 hover:scale-105 active:scale-95",
+        "px-5 py-2.5 rounded-full text-[15px] font-bold tracking-wider uppercase transition-all duration-300 flex items-center gap-2 hover:scale-105 active:scale-95",
         active ? "bg-primary text-primary-foreground shadow-xl" : "text-foreground hover:text-primary hover:bg-black/5",
         important && !active && "text-accent border-2 border-accent/40",
         className
@@ -144,19 +144,19 @@ function NavbarContent() {
             </div>
           </div>
           
-          <div className="hidden lg:flex items-center gap-2 xl:gap-4">
+          <div className="hidden lg:flex items-center gap-1 xl:gap-2">
             <NavLink href="/" active={pathname === "/"}>{t('nav_home')}</NavLink>
             <NavLink href="/exhibition" active={pathname === "/exhibition"} important><Sparkles className="w-3.5 h-3.5" /> {t('nav_tour')}</NavLink>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className={cn("px-5 py-2.5 rounded-full text-[14px] font-bold tracking-wider uppercase transition-all duration-300 flex items-center gap-1 outline-none hover:bg-black/5", pathname.includes('/gallery') ? "bg-primary text-primary-foreground shadow-xl" : "text-foreground")}>
+                <button className={cn("px-5 py-2.5 rounded-full text-[15px] font-bold tracking-wider uppercase transition-all duration-300 flex items-center gap-1 outline-none hover:bg-black/5", pathname.includes('/gallery') ? "bg-primary text-primary-foreground shadow-xl" : "text-foreground")}>
                   {t('nav_galleries')} <ChevronDown className="w-4 h-4 opacity-50" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="bg-background/98 backdrop-blur-2xl border-border/40 rounded-2xl min-w-[260px] p-2 shadow-2xl">
                 {seriesWithCounts.map((s) => (
-                  <DropdownMenuItem key={s.name} asChild className="text-[12px] uppercase font-bold tracking-wide focus:bg-accent focus:text-accent-foreground rounded-xl cursor-pointer p-4 mb-1 transition-all">
+                  <DropdownMenuItem key={s.name} asChild className="text-[13px] uppercase font-bold tracking-wide focus:bg-accent focus:text-accent-foreground rounded-xl cursor-pointer p-4 mb-1 transition-all">
                     <Link href={`/gallery?series=${encodeURIComponent(s.name)}`} className="flex w-full items-center">
                       {s.translatedName} <span className="ml-auto opacity-50 text-[10px]">[{s.count}]</span>
                     </Link>
@@ -166,6 +166,7 @@ function NavbarContent() {
             </DropdownMenu>
 
             <NavLink href="/curator" active={pathname === "/curator"}>{t('nav_your_room')}</NavLink>
+            <NavLink href="/#about" active={pathname.includes('#about')}>{t('nav_about')}</NavLink>
             <NavLink href="/shop" active={pathname === "/shop"}><ShoppingBag className="w-3.5 h-3.5" /> {t('nav_shop')}</NavLink>
 
             <div className="h-10 w-px bg-border/30 mx-2" />
@@ -202,6 +203,7 @@ function NavbarContent() {
                      <Link href="/exhibition" className="flex items-center gap-4 p-5 rounded-2xl bg-accent text-accent-foreground text-[14px] font-bold uppercase tracking-wider shadow-lg">{t('nav_tour')}</Link>
                      <Link href="/gallery" className="flex items-center gap-4 p-5 rounded-2xl bg-black/5 text-[14px] font-bold uppercase tracking-wider">{t('nav_galleries')}</Link>
                      <Link href="/curator" className="flex items-center gap-4 p-5 rounded-2xl bg-black/5 text-[14px] font-bold uppercase tracking-wider">{t('nav_your_room')}</Link>
+                     <Link href="/#about" className="flex items-center gap-4 p-5 rounded-2xl bg-black/5 text-[14px] font-bold uppercase tracking-wider">{t('nav_about')}</Link>
                      <Link href="/shop" className="flex items-center gap-4 p-5 rounded-2xl bg-black/5 text-[14px] font-bold uppercase tracking-wider">{t('nav_shop')}</Link>
 
                      <div className="pt-8 border-t border-border/20 mt-4">

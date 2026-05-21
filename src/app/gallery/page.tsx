@@ -122,10 +122,10 @@ function GalleryContent() {
 
   return (
     <main className="min-h-screen bg-background pt-16 md:pt-32">
-      <div className="w-full bg-secondary/5 border-b border-border/10 py-12 md:py-24">
+      <div className="w-full bg-secondary/5 border-b border-border/10 py-12 md:py-20">
         <div className="container mx-auto px-6 max-w-7xl">
-          <h1 className="font-headline text-4xl md:text-7xl lg:text-8xl font-light text-foreground text-center tracking-tight uppercase leading-none">
-            <span className="italic">{activeSeries ? translateTerm(activeSeries, 'series') : (loading ? "Laden..." : t('gallery_select'))}</span>
+          <h1 className="font-headline text-3xl md:text-5xl lg:text-6xl font-medium text-foreground text-center tracking-tight uppercase leading-none italic opacity-80">
+            {activeSeries ? translateTerm(activeSeries, 'series') : (loading ? "Laden..." : t('gallery_select'))}
           </h1>
         </div>
       </div>
@@ -135,30 +135,30 @@ function GalleryContent() {
           <div className="flex flex-col items-center justify-center py-32"><Loader2 className="w-8 h-8 animate-spin text-accent/40" /></div>
         ) : (
           <>
-            <div className="bg-background/80 backdrop-blur-md sticky top-16 md:top-32 z-30 border-b border-border/10 py-6 mb-12">
-              <div className="flex flex-row items-center justify-center gap-4 md:gap-10">
+            <div className="bg-background/90 backdrop-blur-xl sticky top-16 md:top-32 z-30 border-b border-border/20 py-8 mb-12 shadow-sm">
+              <div className="flex flex-row items-center justify-center gap-6 md:gap-12">
                 
                 {prevSeries && (
                   <button 
                     onClick={() => handleSeriesChange(prevSeries.name)}
-                    className="p-2 rounded-full hover:bg-black/5 text-accent transition-colors"
+                    className="p-3 rounded-full hover:bg-black/5 text-accent transition-all hover:scale-110"
                     title={t('prev_room')}
                   >
-                    <ArrowLeft className="w-5 h-5" />
+                    <ArrowLeft className="w-6 h-6" />
                   </button>
                 )}
 
-                <div className="flex gap-6 md:gap-10 overflow-x-auto no-scrollbar pb-2 justify-center flex-1 max-w-3xl">
+                <div className="flex gap-8 md:gap-12 overflow-x-auto no-scrollbar pb-2 justify-center flex-1 max-w-4xl">
                   {seriesWithCounts.map((s) => (
                     <button
                       key={s.name}
                       onClick={() => handleSeriesChange(s.name)}
                       className={cn(
-                        "text-[9px] md:text-[11px] font-black uppercase tracking-[0.3em] transition-all whitespace-nowrap pb-2 border-b-2 flex items-center gap-2",
+                        "text-[12px] md:text-[14px] font-bold uppercase tracking-[0.25em] transition-all whitespace-nowrap pb-3 border-b-2 flex items-center gap-2",
                         activeSeries === s.name ? "border-accent text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"
                       )}
                     >
-                      {s.translatedName} <span className="opacity-30 text-[7px] md:text-[9px]">[{s.count}]</span>
+                      {s.translatedName} <span className="opacity-40 text-[10px] md:text-[11px]">[{s.count}]</span>
                     </button>
                   ))}
                 </div>
@@ -166,10 +166,10 @@ function GalleryContent() {
                 {nextSeries && (
                   <button 
                     onClick={() => handleSeriesChange(nextSeries.name)}
-                    className="p-2 rounded-full hover:bg-black/5 text-accent transition-colors"
+                    className="p-3 rounded-full hover:bg-black/5 text-accent transition-all hover:scale-110"
                     title={t('next_room')}
                   >
-                    <ArrowRight className="w-5 h-5" />
+                    <ArrowRight className="w-6 h-6" />
                   </button>
                 )}
               </div>
