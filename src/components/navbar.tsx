@@ -132,13 +132,13 @@ function NavbarContent() {
               className="h-8 md:h-12 w-auto object-contain" 
             />
             <div className="flex flex-col leading-tight border-l border-border/40 pl-3 md:pl-5 overflow-hidden">
-               <div className="flex items-center gap-2 animate-fade-in-up">
-                 <span className="font-headline font-light text-base md:text-xl tracking-tight text-foreground transition-all duration-500 group-hover:text-primary">
+               <div className="flex items-center gap-2">
+                 <span className="font-headline font-light text-base md:text-xl tracking-tight text-foreground transition-all duration-500 group-hover:text-primary animate-fade-in-up">
                    {siteTitle}
                  </span>
-                 <BookOpen className="w-3.5 h-3.5 text-accent hidden md:inline opacity-40 group-hover:opacity-100 transition-opacity" />
+                 <BookOpen className="w-3.5 h-3.5 text-accent hidden md:inline opacity-40 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500" />
                </div>
-               <span className="text-[7px] md:text-[9px] font-black uppercase tracking-[0.3em] text-accent/80 block animate-fade-in-left delay-300 transition-all duration-500 group-hover:translate-x-1 group-hover:text-accent">
+               <span className="text-[7px] md:text-[9px] font-black uppercase tracking-[0.3em] text-accent/80 block animate-fade-in-left delay-300 transition-all duration-700 group-hover:translate-x-4 group-hover:text-accent group-hover:tracking-[0.5em] origin-left">
                  {siteSubtitle}
                </span>
             </div>
