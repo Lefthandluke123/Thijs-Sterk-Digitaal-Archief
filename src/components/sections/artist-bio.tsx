@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from 'react';
@@ -35,7 +34,6 @@ export function ArtistBio() {
     }
   }, [selectedArtwork]);
 
-  // Vertalingen voor bio
   const bioTitle = (language !== 'nl' && siteSettings?.[`homeBioTitle_${language}`])
     ? siteSettings[`homeBioTitle_${language}`]
     : siteSettings?.homeBioTitle || 'Een leven gewijd aan de Essentie';
@@ -79,35 +77,34 @@ export function ArtistBio() {
   };
 
   return (
-    <section className="py-24 bg-secondary/30 px-4" id="about">
+    <section className="py-32 bg-secondary/20 px-4" id="about">
       <div className="container mx-auto max-w-7xl">
-        <div className="grid lg:grid-cols-12 gap-16 items-start">
-          <div className="lg:col-span-5 order-2 lg:order-1 sticky top-24">
+        <div className="grid lg:grid-cols-12 gap-20 items-start">
+          <div className="lg:col-span-5 order-2 lg:order-1 sticky top-32">
             <div className="relative">
-              <div className="absolute -top-6 -left-6 w-24 h-24 border-t-2 border-l-2 border-accent hidden md:block" />
+              <div className="absolute -top-8 -left-8 w-32 h-32 border-t-4 border-l-4 border-accent/60 hidden md:block" />
               <div 
-                className="relative aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl bg-muted/20 cursor-pointer group"
+                className="relative aspect-[3/4] rounded-[2.5rem] overflow-hidden shadow-[0_40px_100px_-20px_rgba(0,0,0,0.3)] bg-muted/20 cursor-pointer group"
                 onClick={handleMainPortraitClick}
               >
                 <Image
                   src={bioImageUrl}
                   alt="Portret van Thijs Sterk"
                   fill
-                  className="object-cover transition-transform duration-1000 group-hover:scale-[1.02]"
+                  className="object-cover transition-transform duration-1000 group-hover:scale-[1.05]"
                   data-ai-hint="vintage artist portrait"
                 />
                 <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <Maximize2 className="text-white w-8 h-8 drop-shadow-2xl" />
+                  <Maximize2 className="text-white w-10 h-10 drop-shadow-2xl" />
                 </div>
               </div>
 
-              {/* Extra sectie voor betrokkenen */}
-              <div className="mt-12 p-8 bg-background/50 backdrop-blur-md rounded-[2rem] border border-border shadow-sm space-y-6">
-                 <div className="flex items-center gap-3 border-b border-border pb-4">
-                    <Users className="w-5 h-5 text-accent" />
-                    <h3 className="font-black uppercase tracking-widest text-[10px]">Nalatenschap & Betrokkenen</h3>
+              <div className="mt-16 p-10 bg-background/60 backdrop-blur-2xl rounded-[3rem] border border-border/40 shadow-xl space-y-8">
+                 <div className="flex items-center gap-4 border-b border-border/40 pb-6">
+                    <Users className="w-6 h-6 text-accent" />
+                    <h3 className="font-black uppercase tracking-[0.3em] text-[12px] text-accent">Nalatenschap</h3>
                  </div>
-                 <div className="grid gap-4">
+                 <div className="grid gap-6">
                     {[
                       { name: "Hanneke Sterk", href: "/hanneke", role: "Archiefbeheer" },
                       { name: "Beatrijs Sterk", href: "/beatrijs", role: "Documentatie" },
@@ -117,13 +114,13 @@ export function ArtistBio() {
                       <Link 
                         key={person.href} 
                         href={person.href}
-                        className="flex items-center justify-between group/link p-2 hover:bg-black/5 rounded-xl transition-all"
+                        className="flex items-center justify-between group/link p-3 hover:bg-white/40 rounded-2xl transition-all"
                       >
                          <div className="flex flex-col">
-                            <span className="text-sm font-bold">{person.name}</span>
-                            <span className="text-[9px] uppercase tracking-widest opacity-40">{person.role}</span>
+                            <span className="text-base font-bold text-foreground">{person.name}</span>
+                            <span className="text-[10px] uppercase tracking-widest text-muted-foreground">{person.role}</span>
                          </div>
-                         <ArrowRight className="w-4 h-4 text-accent opacity-0 group-hover/link:opacity-100 transition-all -translate-x-2 group-hover/link:translate-x-0" />
+                         <ArrowRight className="w-5 h-5 text-accent opacity-0 group-hover/link:opacity-100 transition-all -translate-x-3 group-hover/link:translate-x-0" />
                       </Link>
                     ))}
                  </div>
@@ -131,34 +128,36 @@ export function ArtistBio() {
             </div>
           </div>
           
-          <div className="lg:col-span-7 order-1 lg:order-2">
-            <span className="text-accent font-medium tracking-widest uppercase text-sm mb-4 block">De Biografie</span>
-            <h2 className="font-headline text-4xl md:text-5xl lg:text-6xl font-light mb-8 leading-tight">
-              {bioTitle.split(' ').map((word, i, arr) => 
-                i === arr.length - 1 ? <span key={i} className="italic">{word}</span> : word + ' '
-              )}
-            </h2>
+          <div className="lg:col-span-7 order-1 lg:order-2 space-y-12">
+            <div className="space-y-4">
+              <span className="text-accent font-black tracking-[0.4em] uppercase text-sm block">De Biografie</span>
+              <h2 className="font-headline text-5xl md:text-7xl lg:text-8xl font-medium mb-8 leading-[1.1]">
+                {bioTitle.split(' ').map((word, i, arr) => 
+                  i === arr.length - 1 ? <span key={i} className="italic text-accent">{word}</span> : word + ' '
+                )}
+              </h2>
+            </div>
             
-            <div className="space-y-6 text-xl text-muted-foreground leading-relaxed font-light whitespace-pre-line border-l-4 border-accent/10 pl-8">
+            <div className="space-y-10 text-2xl text-foreground/80 leading-relaxed font-light whitespace-pre-line border-l-4 border-accent/20 pl-10">
               {renderTextWithLinks(bioText)}
             </div>
             
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 mt-16 pt-12 border-t border-border">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-12 mt-20 pt-16 border-t border-border/40">
               <div>
-                <h4 className="font-headline text-2xl font-light text-foreground mb-1">1913</h4>
-                <p className="text-[10px] uppercase tracking-tighter text-muted-foreground">Geboortejaar</p>
+                <h4 className="font-headline text-3xl font-medium text-foreground mb-2">1913</h4>
+                <p className="text-[11px] font-black uppercase tracking-widest text-accent/60">Geboortejaar</p>
               </div>
               <div>
-                <h4 className="font-headline text-2xl font-light text-foreground mb-1">Monumentaal</h4>
-                <p className="text-[10px] uppercase tracking-tighter text-muted-foreground">Wandkunst</p>
+                <h4 className="font-headline text-3xl font-medium text-foreground mb-2">Monumentaal</h4>
+                <p className="text-[11px] font-black uppercase tracking-widest text-accent/60">Wandkunst</p>
               </div>
               <div>
-                <h4 className="font-headline text-2xl font-light text-foreground mb-1">Glas</h4>
-                <p className="text-[10px] uppercase tracking-tighter text-muted-foreground">In lood</p>
+                <h4 className="font-headline text-3xl font-medium text-foreground mb-2">Glas</h4>
+                <p className="text-[11px] font-black uppercase tracking-widest text-accent/60">In lood</p>
               </div>
               <div>
-                <h4 className="font-headline text-2xl font-light text-foreground mb-1">Internationaal</h4>
-                <p className="text-[10px] uppercase tracking-tighter text-muted-foreground">Frankrijk / Griekenland</p>
+                <h4 className="font-headline text-3xl font-medium text-foreground mb-2">Internationaal</h4>
+                <p className="text-[11px] font-black uppercase tracking-widest text-accent/60">Exposities</p>
               </div>
             </div>
           </div>

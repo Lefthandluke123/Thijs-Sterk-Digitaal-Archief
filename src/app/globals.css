@@ -4,23 +4,23 @@
 
 @layer base {
   :root {
-    --background: 66 40% 78%; /* Iets lichter en minder verzadigd voor beter contrast */
-    --foreground: 201 40% 8%; /* Dieper donker voor maximale leesbaarheid */
-    --card: 66 40% 80%;
-    --card-foreground: 201 40% 8%;
-    --popover: 66 40% 80%;
-    --popover-foreground: 201 40% 8%;
-    --primary: 201 40% 15%; /* Donkerder primary */
+    --background: 66 35% 82%; /* Iets lichter voor meer frisheid */
+    --foreground: 201 45% 5%; /* Bijna zwart voor maximaal contrast */
+    --card: 66 35% 84%;
+    --card-foreground: 201 45% 5%;
+    --popover: 66 35% 84%;
+    --popover-foreground: 201 45% 5%;
+    --primary: 201 45% 10%; /* Dieper donkerblauw/zwart */
     --primary-foreground: 66 46% 95%;
-    --secondary: 66 30% 65%;
-    --secondary-foreground: 201 40% 12%;
-    --muted: 66 20% 55%;
-    --muted-foreground: 201 25% 25%; /* Donkerder muted text */
-    --accent: 45 95% 35%; /* Iets dieper goud/oker */
+    --secondary: 66 25% 70%;
+    --secondary-foreground: 201 45% 8%;
+    --muted: 66 15% 60%;
+    --muted-foreground: 201 35% 20%;
+    --accent: 35 90% 22%; /* Rijk, diep brons/oker voor perfect contrast op beige */
     --accent-foreground: 0 0% 100%;
     --border: 66 20% 50%;
     --input: 66 20% 50%;
-    --ring: 45 95% 35%;
+    --ring: 35 90% 22%;
     --radius: 0.5rem;
   }
 }
@@ -33,7 +33,7 @@
     @apply bg-background text-foreground font-body antialiased;
   }
   h1, h2, h3, h4, h5, h6 {
-    @apply font-headline text-foreground;
+    @apply font-headline text-foreground font-medium;
   }
   
   img {

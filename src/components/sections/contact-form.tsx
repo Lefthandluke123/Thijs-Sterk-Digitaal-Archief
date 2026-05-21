@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from 'react';
@@ -103,81 +102,77 @@ export function ContactForm() {
   }
 
   return (
-    <section className="py-24 bg-background px-4" id="contact">
-      <div className="container mx-auto">
-        <div className="grid lg:grid-cols-2 gap-16">
-          <div>
-            <span className="text-accent font-medium tracking-widest uppercase text-sm mb-4 block">{t('nav_collections')} & Archief</span>
-            <h2 className="font-headline text-4xl md:text-5xl font-light mb-8 leading-tight">
-              {contactTitle.split(' ').map((word, i, arr) => 
-                i === arr.length - 1 ? <span key={i} className="italic">{word}</span> : word + ' '
-              )}
-            </h2>
-            <div className="space-y-6 text-muted-foreground text-lg mb-12 leading-relaxed">
-              <p>{contactIntro}</p>
-              <p className="italic font-light text-primary/80">{contactQuote}</p>
+    <section className="py-32 bg-background px-4" id="contact">
+      <div className="container mx-auto max-w-7xl">
+        <div className="grid lg:grid-cols-2 gap-24 items-start">
+          <div className="space-y-10">
+            <div className="space-y-4">
+              <span className="text-accent font-black tracking-[0.4em] uppercase text-sm block">{t('nav_collections')} & Archief</span>
+              <h2 className="font-headline text-5xl md:text-7xl lg:text-8xl font-medium leading-[1.1]">
+                {contactTitle.split(' ').map((word, i, arr) => 
+                  i === arr.length - 1 ? <span key={i} className="italic text-accent">{word}</span> : word + ' '
+                )}
+              </h2>
             </div>
             
-            <div className="space-y-8">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center text-primary"><Mail className="w-5 h-5" /></div>
+            <div className="space-y-8 text-foreground/80 text-2xl leading-relaxed font-light">
+              <p>{contactIntro}</p>
+              <p className="italic font-normal text-accent/80 border-l-4 border-accent/20 pl-8">{contactQuote}</p>
+            </div>
+            
+            <div className="grid sm:grid-cols-2 gap-12 pt-12">
+              <div className="flex items-center gap-6">
+                <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center text-primary shadow-inner"><Mail className="w-6 h-6" /></div>
                 <div>
-                  <h4 className="font-medium text-sm uppercase tracking-widest">E-mail</h4>
-                  <p className="text-muted-foreground">info@thijssterk.nl</p>
+                  <h4 className="font-black text-[11px] uppercase tracking-widest text-accent">E-mail</h4>
+                  <p className="text-lg font-medium">info@thijssterk.nl</p>
                 </div>
               </div>
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center text-primary"><Phone className="w-5 h-5" /></div>
+              <div className="flex items-center gap-6">
+                <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center text-primary shadow-inner"><Phone className="w-6 h-6" /></div>
                 <div>
-                  <h4 className="font-medium text-sm uppercase tracking-widest">{t('contact_phone')}</h4>
-                  <p className="text-muted-foreground">06-53716249</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center text-primary"><MapPin className="w-5 h-5" /></div>
-                <div>
-                  <h4 className="font-medium text-sm uppercase tracking-widest">{t('contact_location')}</h4>
-                  <p className="text-muted-foreground">{t('contact_loc_value')}</p>
+                  <h4 className="font-black text-[11px] uppercase tracking-widest text-accent">{t('contact_phone')}</h4>
+                  <p className="text-lg font-medium">06-53716249</p>
                 </div>
               </div>
             </div>
           </div>
           
-          <div className="bg-secondary/20 p-8 md:p-12 rounded-3xl border border-border shadow-sm">
+          <div className="bg-secondary/30 p-10 md:p-16 rounded-[3rem] border border-border/40 shadow-2xl backdrop-blur-sm">
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <div className="grid sm:grid-cols-2 gap-6">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                <div className="grid sm:grid-cols-2 gap-8">
                   <FormField control={form.control} name="name" render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-[10px] uppercase tracking-widest font-bold">{labelName}</FormLabel>
-                      <FormControl><Input placeholder={t('contact_placeholder_name')} className="bg-background border-none h-12" {...field} /></FormControl>
+                      <FormLabel className="text-[11px] uppercase tracking-[0.2em] font-black text-accent">{labelName}</FormLabel>
+                      <FormControl><Input placeholder="..." className="bg-background/80 border-none h-14 rounded-2xl text-lg px-6" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
                   <FormField control={form.control} name="email" render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-[10px] uppercase tracking-widest font-bold">{labelEmail}</FormLabel>
-                      <FormControl><Input placeholder={t('contact_placeholder_email')} className="bg-background border-none h-12" {...field} /></FormControl>
+                      <FormLabel className="text-[11px] uppercase tracking-[0.2em] font-black text-accent">{labelEmail}</FormLabel>
+                      <FormControl><Input placeholder="..." className="bg-background/80 border-none h-14 rounded-2xl text-lg px-6" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
                 </div>
                 <FormField control={form.control} name="subject" render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-[10px] uppercase tracking-widest font-bold">{labelSubject}</FormLabel>
-                    <FormControl><Input placeholder={t('contact_placeholder_subject')} className="bg-background border-none h-12" {...field} /></FormControl>
+                    <FormLabel className="text-[11px] uppercase tracking-[0.2em] font-black text-accent">{labelSubject}</FormLabel>
+                    <FormControl><Input placeholder="..." className="bg-background/80 border-none h-14 rounded-2xl text-lg px-6" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="message" render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-[10px] uppercase tracking-widest font-bold">{labelMessage}</FormLabel>
-                    <FormControl><Textarea placeholder={t('contact_placeholder_message')} className="min-h-[150px] bg-background border-none resize-none p-4" {...field} /></FormControl>
+                    <FormLabel className="text-[11px] uppercase tracking-[0.2em] font-black text-accent">{labelMessage}</FormLabel>
+                    <FormControl><Textarea placeholder="..." className="min-h-[200px] bg-background/80 border-none resize-none p-8 rounded-[2rem] text-lg" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
-                <Button type="submit" size="lg" disabled={isSubmitting} className="w-full bg-primary hover:bg-primary/90 text-white rounded-full h-14 font-bold uppercase tracking-widest text-xs">
-                  {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Send className="ml-2 w-4 h-4" />}
+                <Button type="submit" size="lg" disabled={isSubmitting} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-full h-20 font-black uppercase tracking-[0.3em] text-[13px] shadow-2xl hover:scale-[1.02] transition-all">
+                  {isSubmitting ? <Loader2 className="w-6 h-6 animate-spin mr-3" /> : <Send className="mr-3 w-6 h-6" />}
                   {buttonSend}
                 </Button>
               </form>
