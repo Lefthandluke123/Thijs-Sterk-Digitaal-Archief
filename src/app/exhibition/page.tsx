@@ -153,10 +153,10 @@ function ExhibitionContent() {
   }
 
   return (
-    <main className="h-screen w-full bg-white overflow-hidden flex flex-col relative pt-14">
+    <main className="h-screen w-full bg-white overflow-hidden flex flex-col relative pt-16 md:pt-32">
       <div className="absolute inset-0 bg-[#fafafa] pointer-events-none" />
       
-      <div className="absolute top-20 left-0 right-0 z-40 flex justify-center px-6">
+      <div className="absolute top-4 md:top-10 left-0 right-0 z-40 flex justify-center px-6">
         <div className="flex items-center gap-2">
           {prevSeries && (
             <button 
@@ -208,9 +208,9 @@ function ExhibitionContent() {
         </div>
       </div>
 
-      <div className="absolute top-32 left-1/2 -translate-x-1/2 z-20 text-center pointer-events-none opacity-80">
-        <span className="text-accent font-black tracking-[0.4em] uppercase text-[9px] block mb-1">{t('hero_subtitle')}</span>
-        <h1 className="text-black/60 font-headline text-2xl md:text-4xl font-light italic">
+      <div className="absolute top-20 md:top-32 left-1/2 -translate-x-1/2 z-20 text-center pointer-events-none opacity-80 w-full px-4">
+        <span className="text-accent font-black tracking-[0.4em] uppercase text-[9px] md:text-[11px] block mb-2">{t('hero_subtitle')}</span>
+        <h1 className="text-black/60 font-headline text-4xl md:text-7xl lg:text-8xl font-light italic leading-tight">
           {seriesParam ? translateTerm(seriesParam, 'series') : t('all_works')}
         </h1>
       </div>
@@ -240,7 +240,7 @@ function ExhibitionContent() {
                     <img 
                       src={art.imageUrl} 
                       alt={art.displayTitle || art.title}
-                      className="max-h-[50vh] w-auto object-contain block mx-auto"
+                      className="max-h-[45vh] md:max-h-[50vh] w-auto object-contain block mx-auto"
                       style={{
                         clipPath: `inset(${art.cropTop || 0}% ${art.cropRight || 0}% ${art.cropBottom || 0}% ${art.cropLeft || 0}%)`,
                         filter: `brightness(${art.brightness || 1})`

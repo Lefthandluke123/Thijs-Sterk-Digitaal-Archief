@@ -124,14 +124,14 @@ export default function CuratorPage() {
 
   return (
     <main className="min-h-screen bg-background pt-16 md:pt-32">
-      <div className="w-full bg-secondary/10 border-b border-border/20 py-10 md:py-16">
+      <div className="w-full bg-secondary/10 border-b border-border/20 py-12 md:py-24">
         <div className="container mx-auto px-6 max-w-5xl text-center space-y-4">
-          <h1 className="font-headline text-3xl md:text-5xl font-light text-foreground tracking-tight leading-tight uppercase">
+          <h1 className="font-headline text-5xl md:text-8xl font-light text-foreground tracking-tight leading-none uppercase">
             {t('curator_title').split(' ').map((word, i, arr) => 
               i === arr.length - 1 ? <span key={i} className="italic">{word}</span> : word + ' '
             )}
           </h1>
-          <p className="text-[10px] md:text-[12px] font-black uppercase tracking-[0.4em] text-accent/80">{t('curator_subtitle')}</p>
+          <p className="text-[10px] md:text-[14px] font-black uppercase tracking-[0.4em] text-accent/80 pt-4">{t('curator_subtitle')}</p>
         </div>
       </div>
 
