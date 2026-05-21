@@ -48,7 +48,12 @@ import {
   Lock,
   EyeOff,
   Eye,
-  Archive
+  Archive,
+  Layers,
+  MousePointer2,
+  Type,
+  BookOpen,
+  ArrowRight
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -78,6 +83,10 @@ export default function AdminPage() {
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [batchSeriesName, setBatchSeriesName] = useState('');
+
+  // Quick Translate State
+  const [quickTranslateSource, setQuickTranslateSource] = useState('');
+  const [quickTranslations, setQuickTranslations] = useState({ en: '', de: '', fr: '', es: '' });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
@@ -198,6 +207,24 @@ export default function AdminPage() {
     setDoc(settingsRef, { [field]: value }, { merge: true }).catch(async () => 
       errorEmitter.emit('permission-error', new FirestorePermissionError({ path: settingsRef.path, operation: 'update' }))
     );
+  };
+
+  const handleQuickTranslateSave = () => {
+    if (!quickTranslateSource || !firestore) return;
+    const currentTranslations = siteSettings?.seriesTranslations || {};
+    
+    const newTranslations = { ...currentTranslations };
+    Object.entries(quickTranslations).forEach(([lang, val]) => {
+      if (val) {
+        if (!newTranslations[lang]) newTranslations[lang] = {};
+        newTranslations[lang][quickTranslateSource] = val;
+      }
+    });
+
+    updateSettingsField('seriesTranslations', newTranslations);
+    toast({ title: `Vertalingen voor "${quickTranslateSource}" opgeslagen` });
+    setQuickTranslateSource('');
+    setQuickTranslations({ en: '', de: '', fr: '', es: '' });
   };
 
   const toggleSeriesVisibility = (name: string) => {
@@ -450,11 +477,11 @@ export default function AdminPage() {
             )}
           </TabsContent>
 
-          <TabsContent value="rooms" className="space-y-6">
+          <TabsContent value="rooms" className="space-y-12">
              <Card className="p-8 rounded-3xl border-none shadow-xl bg-white/50 backdrop-blur-md">
                 <div className="flex items-center justify-between mb-8 border-l-4 border-accent pl-4">
                    <div>
-                      <h2 className="text-[12px] font-bold uppercase tracking-widest text-accent">Zalenbeheer</h2>
+                      <h2 className="text-[12px] font-bold uppercase tracking-widest text-accent">Zalenbeheer & Status</h2>
                       <p className="text-xs text-muted-foreground mt-1">Beheer de zichtbaarheid van collecties op de website.</p>
                    </div>
                 </div>
@@ -475,14 +502,19 @@ export default function AdminPage() {
                               </div>
                            </div>
                            <div className="flex items-center gap-3">
-                              {isHidden && <span className="text-[9px] font-black uppercase text-red-500 bg-red-50 px-3 py-1 rounded-full">Verborgen</span>}
+                              <div className={cn(
+                                "px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-[0.2em] border",
+                                isHidden ? "bg-red-50 text-red-500 border-red-100" : "bg-green-50 text-green-600 border-green-100"
+                              )}>
+                                 {isHidden ? "Gesloten voor Publiek" : "Open in Museum"}
+                              </div>
                               <Button 
                                 variant={isHidden ? "default" : "outline"} 
                                 size="sm" 
                                 onClick={() => toggleSeriesVisibility(name)}
-                                className="rounded-full px-6 text-[10px] uppercase font-bold tracking-widest"
+                                className="rounded-full px-6 text-[10px] uppercase font-bold tracking-widest h-10"
                               >
-                                 {isHidden ? <><Eye className="w-3 h-3 mr-2" /> Toon Zaal</> : <><EyeOff className="w-3 h-3 mr-2" /> Verberg Zaal</>}
+                                 {isHidden ? <><Eye className="w-3 h-3 mr-2" /> Open Zaal</> : <><EyeOff className="w-3 h-3 mr-2" /> Sluit Zaal</>}
                               </Button>
                            </div>
                         </div>
@@ -491,6 +523,52 @@ export default function AdminPage() {
                    {uniqueSeries.length === 0 && (
                       <div className="text-center py-20 opacity-30 uppercase font-bold tracking-[0.2em] italic">Geen zalen gevonden</div>
                    )}
+                </div>
+             </Card>
+
+             <Card className="p-8 rounded-3xl border-none shadow-xl bg-primary text-primary-foreground relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-12 opacity-5"><Languages className="w-64 h-64" /></div>
+                <div className="relative z-10 space-y-8">
+                   <div className="flex items-center gap-3 border-l-4 border-accent pl-4">
+                      <Languages className="w-5 h-5 text-accent" />
+                      <h2 className="text-[12px] font-bold uppercase tracking-widest text-accent">Zaalnaam Vertaal Station</h2>
+                   </div>
+
+                   <div className="grid lg:grid-cols-2 gap-12">
+                      <div className="space-y-6">
+                         <div className="space-y-2">
+                            <Label className="text-[10px] uppercase font-bold opacity-60 tracking-widest">Bron Naam (NL)</Label>
+                            <Input 
+                              placeholder="Bijv: Polders of Havens" 
+                              className="bg-white/10 border-none text-white h-14 rounded-2xl text-lg font-bold"
+                              value={quickTranslateSource}
+                              onChange={(e) => setQuickTranslateSource(e.target.value)}
+                            />
+                            <p className="text-[9px] opacity-40 italic">Gebruik exact dezelfde naam als de 'Expositieruimte' bij de schilderijen.</p>
+                         </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                         {['en', 'de', 'fr', 'es'].map((lang) => (
+                           <div key={lang} className="space-y-2">
+                              <Label className="text-[9px] uppercase font-bold opacity-40">{lang.toUpperCase()}</Label>
+                              <Input 
+                                placeholder={`${lang.toUpperCase()} Vertaling...`}
+                                className="bg-white/5 border-none text-white h-10 rounded-xl text-xs"
+                                value={(quickTranslations as any)[lang]}
+                                onChange={(e) => setQuickTranslations(prev => ({ ...prev, [lang]: e.target.value }))}
+                              />
+                           </div>
+                         ))}
+                         <Button 
+                           className="col-span-2 mt-4 bg-accent text-accent-foreground font-black uppercase tracking-widest text-[11px] h-12 rounded-2xl shadow-xl hover:scale-[1.02] transition-all"
+                           disabled={!quickTranslateSource}
+                           onClick={handleQuickTranslateSave}
+                         >
+                            Sla 4 Vertalingen Op
+                         </Button>
+                      </div>
+                   </div>
                 </div>
              </Card>
           </TabsContent>
@@ -623,58 +701,113 @@ export default function AdminPage() {
 
           <TabsContent value="help">
              <div className="max-w-5xl mx-auto space-y-12 pb-24">
-               <Card className="p-8 md:p-12 rounded-3xl shadow-xl border-none bg-white space-y-12">
-                  <div className="space-y-6">
-                    <div className="flex items-center gap-4">
-                       <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center text-accent"><Info className="w-6 h-6" /></div>
-                       <div>
-                         <h2 className="text-2xl font-headline font-light">Veelgestelde Vragen (Collectiebeheer)</h2>
-                         <p className="text-sm text-muted-foreground">Hoe beheer je de zalen en schilderijen effectief?</p>
-                       </div>
+               <Card className="p-8 md:p-16 rounded-[3rem] shadow-2xl border-none bg-white space-y-16">
+                  <div className="space-y-4 text-center border-b border-black/5 pb-12">
+                    <div className="w-20 h-20 rounded-full bg-primary text-primary-foreground flex items-center justify-center mx-auto mb-6 shadow-xl">
+                       <BookOpen className="w-10 h-10" />
                     </div>
+                    <h2 className="text-4xl font-headline font-light italic">Museum Beheer Handleiding</h2>
+                    <p className="text-muted-foreground uppercase tracking-[0.2em] font-bold text-[10px]">Stap-voor-stap instructies voor de Digitaal Conservator</p>
                   </div>
 
-                  <div className="grid md:grid-cols-2 gap-12">
-                    <div className="space-y-8">
-                      <div className="space-y-4">
-                        <h4 className="text-[11px] font-bold uppercase tracking-widest text-accent flex items-center gap-2">
-                          <Layers className="w-4 h-4" /> Schilderijen uit zalen verwijderen
-                        </h4>
-                        <div className="space-y-4 text-sm text-muted-foreground leading-relaxed">
-                           <p><strong>Optie 1: Verplaatsen.</strong> Klik op een schilderij en verander de "Expositieruimte" naam. Zodra je een nieuwe naam typt, wordt er automatisch een nieuwe zaal aangemaakt en verdwijnt het werk uit de oude zaal.</p>
-                           <p><strong>Optie 2: Archiveren.</strong> Gebruik de selectie-modus in het overzicht, selecteer de werken die je wilt verbergen, en klik op "Naar Archief" in de werkbalk onderaan. Ze zijn dan niet meer zichtbaar voor het publiek.</p>
-                           <p><strong>Optie 3: Permanent verwijderen.</strong> Klik onderaan de editor op de rode knop "Verwijder uit Collectie" om het werk volledig uit de database en opslag te wissen.</p>
-                        </div>
-                      </div>
-
-                      <div className="space-y-4">
-                        <h4 className="text-[11px] font-bold uppercase tracking-widest text-accent flex items-center gap-2">
-                          <EyeOff className="w-4 h-4" /> Hele zalen verwijderen of verbergen
-                        </h4>
-                        <div className="space-y-4 text-sm text-muted-foreground leading-relaxed">
-                           <p>Een zaal bestaat alleen zolang er schilderijen aan gekoppeld zijn. Als je alle schilderijen uit een zaal verplaatst, verdwijnt de zaal automatisch uit de menu's.</p>
-                           <p>Wil je de schilderijen wel bewaren maar de zaal tijdelijk niet tonen? Ga dan naar het tabblad <strong>"Zalen & Beheer"</strong> en klik op "Verberg Zaal". De zaal is dan niet meer bereikbaar via de navigatie op de website.</p>
-                        </div>
-                      </div>
+                  <div className="grid gap-20">
+                    {/* Selecteren */}
+                    <div className="flex flex-col md:flex-row gap-12">
+                       <div className="md:w-1/3 space-y-4">
+                          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent/10 border border-accent/20">
+                             <CheckSquare className="w-3.5 h-3.5 text-accent" />
+                             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-accent">Stap 1</span>
+                          </div>
+                          <h3 className="text-2xl font-headline italic">Schilderijen Selecteren</h3>
+                       </div>
+                       <div className="md:w-2/3 space-y-6 text-muted-foreground leading-relaxed">
+                          <p>Om acties uit te voeren op meerdere schilderijen tegelijk, gebruik je de <strong>Selectie-modus</strong>:</p>
+                          <ul className="space-y-4 list-none p-0">
+                             <li className="flex gap-4">
+                                <div className="w-6 h-6 rounded-full bg-black/5 flex items-center justify-center shrink-0 text-[10px] font-bold">A</div>
+                                <span>Klik op de knop <strong>[Selectie-modus]</strong> rechtsboven in het overzicht. De schilderijen worden iets kleiner en vinkvakjes verschijnen.</span>
+                             </li>
+                             <li className="flex gap-4">
+                                <div className="w-6 h-6 rounded-full bg-black/5 flex items-center justify-center shrink-0 text-[10px] font-bold">B</div>
+                                <span>Klik op de schilderijen die je wilt bewerken. Er verschijnt een vinkje bij de geselecteerde werken.</span>
+                             </li>
+                             <li className="flex gap-4">
+                                <div className="w-6 h-6 rounded-full bg-black/5 flex items-center justify-center shrink-0 text-[10px] font-bold">C</div>
+                                <span>Onderaan het scherm verschijnt nu automatisch de <strong>Batch-werkbalk</strong> met acties.</span>
+                             </li>
+                          </ul>
+                       </div>
                     </div>
 
-                    <div className="bg-secondary/10 p-8 rounded-3xl space-y-6">
-                       <h4 className="text-[10px] font-bold uppercase tracking-widest text-primary flex items-center gap-2">
-                         <CircleCheck className="w-3 h-3" /> Tips voor curatoren
-                       </h4>
-                       <div className="space-y-6">
-                         <div className="space-y-2">
-                           <p className="text-[11px] font-bold uppercase tracking-tight text-foreground">Sorteervolgorde</p>
-                           <p className="text-xs text-muted-foreground leading-relaxed italic">Werken worden in de zalen gesorteerd op titel. Gebruik bijvoorbeeld "01", "02" voor de titel als je een specifieke volgorde wilt afdwingen.</p>
-                         </div>
-                         <div className="space-y-2">
-                           <p className="text-[11px] font-bold uppercase tracking-tight text-foreground">Selecties (Curator)</p>
-                           <p className="text-xs text-muted-foreground leading-relaxed italic">De "Uw Zaal" pagina gebruikt de tags die je aan werken toekent. Hoe specifieker je tags (zoals "Periode" of "Techniek"), hoe leuker het voor bezoekers is om eigen collecties samen te stellen.</p>
-                         </div>
-                         <div className="space-y-2">
-                           <p className="text-[11px] font-bold uppercase tracking-tight text-foreground">Featured Werken</p>
-                           <p className="text-xs text-muted-foreground leading-relaxed italic">Zet de "Featured" switch aan voor je mooiste werken om ze direct op de homepagina te tonen in de 'Meester Selectie'.</p>
-                         </div>
+                    {/* Verplaatsen / Hernoemen */}
+                    <div className="flex flex-col md:flex-row gap-12">
+                       <div className="md:w-1/3 space-y-4">
+                          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent/10 border border-accent/20">
+                             <FolderInput className="w-3.5 h-3.5 text-accent" />
+                             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-accent">Stap 2</span>
+                          </div>
+                          <h3 className="text-2xl font-headline italic">Zalen & Hernoemen</h3>
+                       </div>
+                       <div className="md:w-2/3 space-y-6 text-muted-foreground leading-relaxed">
+                          <p>Je kunt schilderijen op twee manieren verplaatsen of zalen hernoemen:</p>
+                          <div className="bg-accent/5 p-8 rounded-3xl border border-accent/10 space-y-6">
+                             <div className="space-y-2">
+                                <p className="font-bold text-foreground text-sm uppercase tracking-wide">Individueel (Editor):</p>
+                                <p>Klik op een enkel schilderij om de editor te openen. Pas het veld <strong>"Expositieruimte / Collectie (Zaal)"</strong> aan. Zodra je een nieuwe naam typt, wordt de zaal aangemaakt of verplaatst het werk.</p>
+                             </div>
+                             <div className="space-y-2">
+                                <p className="font-bold text-foreground text-sm uppercase tracking-wide">In Bulk (Selectie):</p>
+                                <p>Gebruik de Batch-werkbalk onderaan. Typ de naam van de doalzaal in het tekstveld en klik op de <strong>[Pijl naar map]</strong> knop om alle geselecteerde werken in één keer te verplaatsen.</p>
+                             </div>
+                          </div>
+                       </div>
+                    </div>
+
+                    {/* Verwijderen */}
+                    <div className="flex flex-col md:flex-row gap-12">
+                       <div className="md:w-1/3 space-y-4">
+                          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-red-50 border border-red-100">
+                             <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-red-500">Stap 3</span>
+                          </div>
+                          <h3 className="text-2xl font-headline italic">Verwijderen & Archiveren</h3>
+                       </div>
+                       <div className="md:w-2/3 space-y-6 text-muted-foreground leading-relaxed">
+                          <p>Er is een belangrijk verschil tussen archiveren en permanent verwijderen:</p>
+                          <div className="grid sm:grid-cols-2 gap-8">
+                             <div className="space-y-2">
+                                <div className="flex items-center gap-2 text-foreground font-bold"><Archive className="w-4 h-4" /> Archiveren</div>
+                                <p className="text-xs">Gebruik de knop <strong>[Naar Archief]</strong> in de batch-werkbalk. De werken worden verplaatst naar de zaal 'Archief' en zijn direct onzichtbaar voor bezoekers, maar blijven bewaard in je beheer.</p>
+                             </div>
+                             <div className="space-y-2">
+                                <div className="flex items-center gap-2 text-red-500 font-bold"><Trash2 className="w-4 h-4" /> Permanent Wissen</div>
+                                <p className="text-xs">Klik op de <strong>[Rode Prullenbak]</strong> in de editor of batch-werkbalk. Dit wist het schilderij volledig uit de database en de opslag. Dit kan niet ongedaan worden gemaakt.</p>
+                             </div>
+                          </div>
+                       </div>
+                    </div>
+
+                    {/* Zalen Beheren */}
+                    <div className="flex flex-col md:flex-row gap-12">
+                       <div className="md:w-1/3 space-y-4">
+                          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent/10 border border-accent/20">
+                             <Eye className="w-3.5 h-3.5 text-accent" />
+                             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-accent">Stap 4</span>
+                          </div>
+                          <h3 className="text-2xl font-headline italic">Zalen Openen/Sluiten</h3>
+                       </div>
+                       <div className="md:w-2/3 space-y-6 text-muted-foreground leading-relaxed">
+                          <p>Ga naar het tabblad <strong>"Zalen & Beheer"</strong> bovenaan dit scherm:</p>
+                          <ul className="space-y-4 list-none p-0">
+                             <li className="flex gap-4">
+                                <div className="w-6 h-6 rounded-full bg-black/5 flex items-center justify-center shrink-0"><EyeOff className="w-3 h-3" /></div>
+                                <span><strong>Sluit Zaal:</strong> De zaal verdwijnt uit alle menu's en navigatie op de website. Bezoekers kunnen de werken niet meer zien, maar jij kunt ze in het beheer nog wel bewerken.</span>
+                             </li>
+                             <li className="flex gap-4">
+                                <div className="w-6 h-6 rounded-full bg-black/5 flex items-center justify-center shrink-0"><Languages className="w-3 h-3" /></div>
+                                <span><strong>Vertalen:</strong> Gebruik het "Vertaal Station" onderaan dat tabblad om de naam van de zaal in 4 talen in te vullen. Zo zien buitenlandse bezoekers de juiste namen in hun menu.</span>
+                             </li>
+                          </ul>
                        </div>
                     </div>
                   </div>
@@ -684,53 +817,51 @@ export default function AdminPage() {
                   <div className="absolute top-0 right-0 p-12 opacity-10 rotate-12"><Coins className="w-64 h-64" /></div>
                   <div className="relative z-10 space-y-12">
                      <div className="space-y-2">
-                        <h2 className="text-3xl font-headline font-light italic">De Digital Conservator Bottomline</h2>
-                        <p className="text-primary-foreground/70 text-sm">Jouw vlijmscherpe commerciële strategie voor 20+ kunstenaars.</p>
+                        <h2 className="text-3xl font-headline font-light italic text-accent">De Digitaal Conservator Strategie</h2>
+                        <p className="text-primary-foreground/70 text-sm">Jouw commerciële routekaart voor museumbeheer.</p>
                      </div>
                      
                      <div className="grid md:grid-cols-2 gap-12">
                         <div className="p-8 rounded-3xl bg-white/5 border border-white/10 space-y-6">
                            <div className="flex items-center gap-3">
                               <Users className="w-5 h-5 text-accent" />
-                              <h4 className="font-bold uppercase text-[11px] tracking-widest text-accent">De Vriendenprijs (Wel oké)</h4>
+                              <h4 className="font-bold uppercase text-[11px] tracking-widest text-accent">De Vriendenprijs</h4>
                            </div>
                            <div className="space-y-4">
                               <div className="flex justify-between items-end border-b border-white/10 pb-2">
-                                 <span className="text-[10px] uppercase opacity-60">Per Opstart (Setup)</span>
+                                 <span className="text-[10px] uppercase opacity-60">Setup Fee</span>
                                  <span className="font-headline text-2xl">€250,-</span>
                               </div>
                               <div className="flex justify-between items-end border-b border-white/10 pb-2">
-                                 <span className="text-[10px] uppercase opacity-60">Per Maand (Service)</span>
+                                 <span className="text-[10px] uppercase opacity-60">Service Fee (pm)</span>
                                  <span className="font-headline text-2xl">€25,-</span>
                               </div>
                               <div className="flex justify-between items-end border-b border-white/10 pb-2">
-                                 <span className="text-[10px] uppercase opacity-60">Per Verkoop (Commissie)</span>
+                                 <span className="text-[10px] uppercase opacity-60">Commissie</span>
                                  <span className="font-headline text-2xl">10%</span>
                               </div>
                            </div>
-                           <p className="text-[10px] italic opacity-40">Uurtarief extra werk: €50,- ex BTW</p>
                         </div>
 
                         <div className="p-8 rounded-3xl bg-black/20 border border-white/5 space-y-6">
                            <div className="flex items-center gap-3">
                               <Zap className="w-5 h-5 text-red-400" />
-                              <h4 className="font-bold uppercase text-[11px] tracking-widest text-red-400">Het "Niet zo leuk" Tarief</h4>
+                              <h4 className="font-bold uppercase text-[11px] tracking-widest text-red-400">Zakelijk Tarief</h4>
                            </div>
                            <div className="space-y-4">
                               <div className="flex justify-between items-end border-b border-white/10 pb-2">
-                                 <span className="text-[10px] uppercase opacity-60">Per Opstart (Setup)</span>
+                                 <span className="text-[10px] uppercase opacity-60">Setup Fee</span>
                                  <span className="font-headline text-2xl">€500,-</span>
                               </div>
                               <div className="flex justify-between items-end border-b border-white/10 pb-2">
-                                 <span className="text-[10px] uppercase opacity-60">Per Maand (Service)</span>
+                                 <span className="text-[10px] uppercase opacity-60">Service Fee (pm)</span>
                                  <span className="font-headline text-2xl">€50,-</span>
                               </div>
                               <div className="flex justify-between items-end border-b border-white/10 pb-2">
-                                 <span className="text-[10px] uppercase opacity-60">Per Verkoop (Commissie)</span>
+                                 <span className="text-[10px] uppercase opacity-60">Commissie</span>
                                  <span className="font-headline text-2xl">20%</span>
                               </div>
                            </div>
-                           <p className="text-[10px] italic opacity-40">Uurtarief extra werk: €75,- ex BTW</p>
                         </div>
                      </div>
                   </div>
@@ -820,7 +951,7 @@ export default function AdminPage() {
                          placeholder="Bijv: Polders of Archief"
                          className="h-12 border-black/10 focus:border-accent font-bold"
                        />
-                       <p className="text-[9px] text-muted-foreground italic">Wijzig deze naam om het werk naar een andere zaal te verplaatsen.</p>
+                       <p className="text-[9px] text-muted-foreground italic">Wijzig deze naam om het werk naar een andere zaal te verplaatsen of een nieuwe zaal te maken.</p>
                     </div>
                   </div>
                 </div>
