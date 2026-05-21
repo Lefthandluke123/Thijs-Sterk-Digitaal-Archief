@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useMemo, Suspense } from 'react';
@@ -161,7 +162,7 @@ function NavbarContent() {
 
             <NavLink href="/curator" active={pathname === "/curator"}>{t('nav_your_room')}</NavLink>
             <NavLink href="/shop" active={pathname === "/shop"}><ShoppingBag className="w-3.5 h-3.5" /> {t('nav_shop')}</NavLink>
-            <NavLink href="/#contact" active={pathname === "/contact"}>{t('nav_contact')}</NavLink>
+            <NavLink href="/#contact" active={false}>{t('nav_contact')}</NavLink>
 
             <div className="h-8 w-px bg-border/20 mx-2" />
 

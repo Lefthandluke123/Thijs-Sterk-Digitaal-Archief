@@ -5,6 +5,7 @@ import React from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { 
   Sparkles, 
@@ -58,6 +59,7 @@ export function MuseumGuide({ open, onOpenChange }: MuseumGuideProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto p-0 bg-background border-none rounded-[2rem] shadow-2xl">
+        <DialogTitle className="sr-only">{t('guide_welcome')}</DialogTitle>
         <div className="bg-primary p-12 text-primary-foreground relative overflow-hidden">
           <div className="absolute inset-0 opacity-10 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/pinstriped-suit.png')]" />
           <div className="relative z-10 space-y-6">
