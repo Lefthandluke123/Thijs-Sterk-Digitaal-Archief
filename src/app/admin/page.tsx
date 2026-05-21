@@ -54,7 +54,8 @@ import {
   BookOpen,
   ArrowRight,
   Filter,
-  HelpCircle
+  HelpCircle,
+  Sparkles
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -67,6 +68,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/components/language-provider';
 import { sortArtworksByTitle } from '@/lib/museum-utils';
+import { translateMuseumText } from '@/ai/flows/translate-flow';
+
+const LANG_MAP: Record<string, string> = {
+  en: 'Engels',
+  de: 'Duits',
+  fr: 'Frans',
+  es: 'Spaans'
+};
 
 export default function AdminPage() {
   const firestore = useFirestore();
@@ -88,6 +97,7 @@ export default function AdminPage() {
   // Quick Translate State
   const [quickTranslateSource, setQuickTranslateSource] = useState('');
   const [quickTranslations, setQuickTranslations] = useState({ en: '', de: '', fr: '', es: '' });
+  const [isAiTranslating, setIsAiTranslating] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
@@ -216,6 +226,31 @@ export default function AdminPage() {
     setDoc(settingsRef, { [field]: value }, { merge: true }).catch(async () => 
       errorEmitter.emit('permission-error', new FirestorePermissionError({ path: settingsRef.path, operation: 'update' }))
     );
+  };
+
+  const handleAiSuggestQuick = async () => {
+    if (!quickTranslateSource) return;
+    setIsAiTranslating(true);
+    try {
+      const langs = ['en', 'de', 'fr', 'es'];
+      const newTranslations = { ...quickTranslations };
+      
+      for (const lang of langs) {
+        const result = await translateMuseumText({
+          text: quickTranslateSource,
+          targetLanguage: LANG_MAP[lang],
+          context: "Dit is een naam voor een zaal of collectie in een digitaal museum van kunstschilder Thijs Sterk."
+        });
+        (newTranslations as any)[lang] = result.translatedText;
+      }
+      
+      setQuickTranslations(newTranslations);
+      toast({ title: "AI Suggesties gegenereerd" });
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "AI Fout", description: e.message });
+    } finally {
+      setIsAiTranslating(false);
+    }
   };
 
   const handleQuickTranslateSave = () => {
@@ -562,7 +597,19 @@ export default function AdminPage() {
                    <div className="grid lg:grid-cols-2 gap-12">
                       <div className="space-y-6">
                          <div className="space-y-2">
-                            <Label className="text-[10px] uppercase font-bold opacity-60 tracking-widest">Bron Naam (NL)</Label>
+                            <div className="flex items-center justify-between">
+                              <Label className="text-[10px] uppercase font-bold opacity-60 tracking-widest">Bron Naam (NL)</Label>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-6 text-[9px] uppercase font-black text-accent hover:text-accent hover:bg-white/10"
+                                onClick={handleAiSuggestQuick}
+                                disabled={!quickTranslateSource || isAiTranslating}
+                              >
+                                {isAiTranslating ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : <Sparkles className="w-3 h-3 mr-2" />} 
+                                AI Suggestie
+                              </Button>
+                            </div>
                             <Input 
                               placeholder="Bijv: Polders of Havens" 
                               className="bg-white/10 border-none text-white h-14 rounded-2xl text-lg font-bold"
