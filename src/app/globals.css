@@ -4,22 +4,22 @@
 
 @layer base {
   :root {
-    --background: 66 35% 82%; /* Iets lichter voor meer frisheid */
-    --foreground: 201 45% 5%; /* Bijna zwart voor maximaal contrast */
-    --card: 66 35% 84%;
+    --background: 66 45% 78%; /* Verhoogde saturation voor een kleurrijkere uitstraling */
+    --foreground: 201 45% 5%;
+    --card: 66 45% 80%;
     --card-foreground: 201 45% 5%;
-    --popover: 66 35% 84%;
+    --popover: 66 45% 80%;
     --popover-foreground: 201 45% 5%;
-    --primary: 201 45% 10%; /* Dieper donkerblauw/zwart */
+    --primary: 201 45% 10%;
     --primary-foreground: 66 46% 95%;
-    --secondary: 66 25% 70%;
+    --secondary: 66 35% 65%;
     --secondary-foreground: 201 45% 8%;
-    --muted: 66 15% 60%;
+    --muted: 66 25% 55%;
     --muted-foreground: 201 35% 20%;
-    --accent: 35 90% 22%; /* Rijk, diep brons/oker voor perfect contrast op beige */
+    --accent: 35 90% 22%; /* Rijk brons voor contrast */
     --accent-foreground: 0 0% 100%;
-    --border: 66 20% 50%;
-    --input: 66 20% 50%;
+    --border: 66 25% 45%;
+    --input: 66 25% 45%;
     --ring: 35 90% 22%;
     --radius: 0.5rem;
   }
