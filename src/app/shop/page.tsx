@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useMemo } from 'react';
@@ -40,7 +39,7 @@ export default function ShopPage() {
   }
 
   return (
-    <main className="min-h-screen bg-background pt-32 pb-32">
+    <main className="min-h-screen bg-background pt-16 md:pt-48 pb-32">
       <div className="container mx-auto px-6 max-w-7xl">
         <header className="mb-20 text-center space-y-4 max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent/10 border border-accent/20 mb-4">

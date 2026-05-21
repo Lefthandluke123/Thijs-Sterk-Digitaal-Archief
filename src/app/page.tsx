@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from 'react';
@@ -10,7 +9,7 @@ import { Toaster } from '@/components/ui/toaster';
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-background pt-16">
+    <main className="min-h-screen bg-background pt-16 md:pt-32">
       <Hero />
       <PortfolioGrid />
       <ArtistBio />

@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -50,7 +49,6 @@ export default function CuratorPage() {
         try {
           localStorage.setItem('ts_visitor_id', vid);
         } catch (e) {
-          // Privemodus kan localStorage blokkeren
           console.warn("Storage restricted in private mode");
         }
       }
@@ -116,9 +114,7 @@ export default function CuratorPage() {
   const logInteraction = (type: 'view_artwork' | 'filter_tags', data: any) => {
     if (!firestore || !visitorId) return;
     const logData = { visitorId, type, ...data, timestamp: serverTimestamp() };
-    addDoc(collection(firestore, 'interactions'), logData).catch(() => {
-      // Stilzwijgend falen voor analytics logs
-    });
+    addDoc(collection(firestore, 'interactions'), logData).catch(() => {});
   };
 
   const toggleTag = (tag: string) => {
@@ -127,7 +123,7 @@ export default function CuratorPage() {
   };
 
   return (
-    <main className="min-h-screen bg-background pt-14">
+    <main className="min-h-screen bg-background pt-16 md:pt-32">
       <div className="w-full bg-secondary/10 border-b border-border/20 py-10 md:py-16">
         <div className="container mx-auto px-6 max-w-5xl text-center space-y-4">
           <h1 className="font-headline text-3xl md:text-5xl font-light text-foreground tracking-tight leading-tight uppercase">

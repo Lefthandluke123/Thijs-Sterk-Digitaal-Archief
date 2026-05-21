@@ -121,7 +121,7 @@ function GalleryContent() {
   };
 
   return (
-    <main className="min-h-screen bg-background pt-14">
+    <main className="min-h-screen bg-background pt-16 md:pt-32">
       <div className="w-full bg-secondary/5 border-b border-border/10 py-12 md:py-16">
         <div className="container mx-auto px-6 max-w-7xl">
           <h1 className="font-headline text-[18px] md:text-[24px] font-light text-foreground text-center tracking-tight uppercase">
@@ -135,7 +135,7 @@ function GalleryContent() {
           <div className="flex flex-col items-center justify-center py-32"><Loader2 className="w-8 h-8 animate-spin text-accent/40" /></div>
         ) : (
           <>
-            <div className="bg-background/80 backdrop-blur-md sticky top-14 z-30 border-b border-border/10 py-6 mb-12">
+            <div className="bg-background/80 backdrop-blur-md sticky top-16 md:top-32 z-30 border-b border-border/10 py-6 mb-12">
               <div className="flex flex-row items-center justify-center gap-4 md:gap-10">
                 
                 {prevSeries && (
