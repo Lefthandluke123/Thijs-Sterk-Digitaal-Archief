@@ -287,20 +287,22 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col pt-14">
-      <header className="h-16 border-b border-border bg-background/95 backdrop-blur-sm sticky top-14 z-40 px-8 flex items-center justify-between">
+    <div className="min-h-screen bg-background flex flex-col pt-14 md:pt-32">
+      <header className="h-16 md:h-32 border-b border-border bg-background/95 backdrop-blur-sm sticky top-14 md:top-0 z-40 px-8 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <img src={siteSettings?.logoUrl || "/logo.png"} className="h-10 w-auto" alt="Logo" />
-          <div className="flex flex-col leading-none border-l border-border/40 pl-4">
-            <h1 className="font-headline text-lg font-light text-foreground">{siteSettings?.siteTitle || "Digitaal Museum"}</h1>
-            <span className="text-[7px] font-black uppercase tracking-[0.3em] text-accent">Safe Harbor Framework &bull; Curator Edition</span>
-          </div>
+          <Link href="/" className="flex items-center gap-4">
+            <img src={siteSettings?.logoUrl || "/logo.png"} className="h-10 md:h-20 w-auto" alt="Logo" />
+            <div className="flex flex-col leading-none border-l border-border/40 pl-4">
+              <h1 className="font-headline text-lg md:text-3xl font-medium text-foreground">{siteSettings?.siteTitle || "Digitaal Museum"}</h1>
+              <span className="text-[7px] md:text-[11px] font-bold uppercase tracking-[0.3em] text-accent">Safe Harbor Framework &bull; Curator Edition</span>
+            </div>
+          </Link>
         </div>
         <div className="flex items-center gap-4">
-           <Link href="/admin/translate" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-accent flex items-center gap-2">
+           <Link href="/admin/translate" className="text-[10px] md:text-[13px] font-bold uppercase tracking-widest text-muted-foreground hover:text-accent flex items-center gap-2">
              <Languages className="w-3.5 h-3.5" /> Vertaal Station
            </Link>
-           <Link href="/" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-foreground border-l border-border pl-4 flex items-center gap-2">
+           <Link href="/" className="text-[10px] md:text-[13px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground border-l border-border pl-4 flex items-center gap-2">
              <ArrowLeft className="w-3.5 h-3.5" /> Naar Website
            </Link>
         </div>
@@ -309,12 +311,12 @@ export default function AdminPage() {
       <main className="flex-1 p-8 max-w-7xl mx-auto w-full relative">
         <Tabs defaultValue="archive" className="space-y-8">
           <TabsList className="bg-muted/50 p-1 rounded-full w-fit mx-auto flex flex-wrap justify-center h-auto border border-black/5">
-            <TabsTrigger value="archive" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Archief [{artworks.length}]</TabsTrigger>
-            <TabsTrigger value="orders" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Bestellingen [{orders?.length || 0}]</TabsTrigger>
-            <TabsTrigger value="upload" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Digitaliseren</TabsTrigger>
-            <TabsTrigger value="branding" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Identiteit</TabsTrigger>
-            <TabsTrigger value="payments" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest">Commercieel</TabsTrigger>
-            <TabsTrigger value="help" className="rounded-full px-6 text-[11px] uppercase font-black tracking-widest bg-primary text-primary-foreground hover:bg-primary/90 shadow-xl"><LifeBuoy className="w-3 h-3 mr-2" /> Gids & Cijfers</TabsTrigger>
+            <TabsTrigger value="archive" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest">Archief [{artworks.length}]</TabsTrigger>
+            <TabsTrigger value="orders" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest">Bestellingen [{orders?.length || 0}]</TabsTrigger>
+            <TabsTrigger value="upload" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest">Digitaliseren</TabsTrigger>
+            <TabsTrigger value="branding" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest">Identiteit</TabsTrigger>
+            <TabsTrigger value="payments" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest">Commercieel</TabsTrigger>
+            <TabsTrigger value="help" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest bg-primary text-primary-foreground hover:bg-primary/90 shadow-xl"><LifeBuoy className="w-3 h-3 mr-2" /> Gids & Cijfers</TabsTrigger>
           </TabsList>
 
           <TabsContent value="archive" className="space-y-6">
@@ -331,7 +333,7 @@ export default function AdminPage() {
                <Button 
                 variant={isSelectionMode ? "accent" : "outline"} 
                 onClick={() => { setIsSelectionMode(!isSelectionMode); setSelectedIds([]); }}
-                className="rounded-full h-12 px-6 uppercase font-black tracking-widest text-[10px]"
+                className="rounded-full h-12 px-6 uppercase font-bold tracking-widest text-[10px]"
                >
                  {isSelectionMode ? <X className="w-4 h-4 mr-2" /> : <CheckSquare className="w-4 h-4 mr-2" />} 
                  {isSelectionMode ? "Annuleer Selectie" : "Selectie-modus"}
@@ -363,7 +365,7 @@ export default function AdminPage() {
                       <img src={art.imageUrl} className="w-full h-full object-cover transition-transform group-hover:scale-105" alt={art.title} />
                     </div>
                     <CardContent className="p-2 text-center bg-white">
-                      <h4 className="text-[9px] font-black uppercase truncate">{art.displayTitle || art.title}</h4>
+                      <h4 className="text-[9px] font-bold uppercase truncate">{art.displayTitle || art.title}</h4>
                       <p className="text-[7px] opacity-40 uppercase font-bold mt-1">{art.series}</p>
                     </CardContent>
                   </Card>
@@ -375,7 +377,7 @@ export default function AdminPage() {
             {isSelectionMode && selectedIds.length > 0 && (
               <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-8 py-4 rounded-3xl shadow-2xl flex items-center gap-8 z-[100] animate-in slide-in-from-bottom-10 border border-white/10 backdrop-blur-xl">
                  <div className="flex flex-col">
-                    <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Geselecteerd</span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest opacity-60">Geselecteerd</span>
                     <span className="font-headline text-xl">{selectedIds.length} werken</span>
                  </div>
                  
@@ -419,12 +421,12 @@ export default function AdminPage() {
              <Card className="p-6 rounded-3xl border-none shadow-xl bg-white/50 backdrop-blur-md">
                 <div className="flex items-center gap-3 mb-8 border-l-4 border-accent pl-4">
                    <TrendingUp className="w-5 h-5 text-accent" />
-                   <h2 className="text-[12px] font-black uppercase tracking-widest text-accent">Omzet & Historie</h2>
+                   <h2 className="text-[12px] font-bold uppercase tracking-widest text-accent">Omzet & Historie</h2>
                 </div>
                 
                 <Table>
                   <TableHeader>
-                    <TableRow className="text-[10px] uppercase font-black tracking-widest opacity-40">
+                    <TableRow className="text-[10px] uppercase font-bold tracking-widest opacity-40">
                       <TableHead>Datum</TableHead>
                       <TableHead>Klant</TableHead>
                       <TableHead>Werk</TableHead>
@@ -441,10 +443,10 @@ export default function AdminPage() {
                           <div className="text-[10px] opacity-40">{order.customerEmail}</div>
                         </TableCell>
                         <TableCell className="italic">{order.artworkTitle}</TableCell>
-                        <TableCell className="uppercase text-[9px] font-black">{order.productType}</TableCell>
+                        <TableCell className="uppercase text-[9px] font-bold">{order.productType}</TableCell>
                         <TableCell>
                           <span className={cn(
-                            "px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest",
+                            "px-3 py-1 rounded-full text-[8px] font-bold uppercase tracking-widest",
                             order.status === 'paid' ? "bg-green-100 text-green-700" : "bg-accent/10 text-accent"
                           )}>
                             {order.status || 'nieuw'}
@@ -453,7 +455,7 @@ export default function AdminPage() {
                       </TableRow>
                     )) : (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center py-12 opacity-30 uppercase font-black tracking-widest italic">Nog geen transacties geregistreerd</TableCell>
+                        <TableCell colSpan={5} className="text-center py-12 opacity-30 uppercase font-bold tracking-widest italic">Nog geen transacties geregistreerd</TableCell>
                       </TableRow>
                     )}
                   </TableBody>
@@ -466,7 +468,7 @@ export default function AdminPage() {
                 <div className="space-y-8">
                    <div className="flex items-center gap-3 border-l-4 border-accent pl-4">
                       <Palette className="w-5 h-5 text-accent" />
-                      <h2 className="text-[12px] font-black uppercase tracking-widest text-accent">White Label Configuratie</h2>
+                      <h2 className="text-[12px] font-bold uppercase tracking-widest text-accent">White Label Configuratie</h2>
                    </div>
 
                    <div className="grid md:grid-cols-2 gap-8">
@@ -491,7 +493,7 @@ export default function AdminPage() {
                             {siteSettings?.logoUrl ? <img src={siteSettings.logoUrl} className="max-w-full max-h-full object-contain p-2" alt="Logo" /> : <ImageIcon className="w-8 h-8 opacity-20" />}
                          </div>
                          <input type="file" ref={logoInputRef} className="hidden" onChange={handleLogoUpload} accept="image/*" />
-                         <Button variant="outline" size="sm" onClick={() => logoInputRef.current?.click()} className="rounded-full border-accent/40 text-accent font-black uppercase text-[9px] px-6">Upload Merklogo</Button>
+                         <Button variant="outline" size="sm" onClick={() => logoInputRef.current?.click()} className="rounded-full border-accent/40 text-accent font-bold uppercase text-[9px] px-6">Upload Merklogo</Button>
                       </div>
                    </div>
                 </div>
@@ -502,7 +504,7 @@ export default function AdminPage() {
              <Card className="p-8 md:p-12 rounded-3xl max-w-4xl mx-auto space-y-8 shadow-2xl border-none bg-white">
                 <div className="flex items-center gap-3 border-l-4 border-primary pl-4">
                    <CreditCard className="w-5 h-5 text-primary" />
-                   <h2 className="text-[12px] font-black uppercase tracking-widest text-primary">Betaalmodule (Stripe)</h2>
+                   <h2 className="text-[12px] font-bold uppercase tracking-widest text-primary">Betaalmodule (Stripe)</h2>
                 </div>
 
                 <div className="bg-primary/5 p-8 rounded-2xl space-y-6 border border-primary/10">
@@ -519,7 +521,7 @@ export default function AdminPage() {
 
                    <div className="grid gap-6">
                       <div className="space-y-2">
-                         <Label className="text-[10px] uppercase font-black opacity-40">Stripe Public Key</Label>
+                         <Label className="text-[10px] uppercase font-bold opacity-40">Stripe Public Key</Label>
                          <Input 
                            defaultValue={siteSettings?.stripePublicKey || ''} 
                            onBlur={(e) => updateSettingsField('stripePublicKey', e.target.value)} 
@@ -527,7 +529,7 @@ export default function AdminPage() {
                          />
                       </div>
                       <div className="space-y-2">
-                         <Label className="text-[10px] uppercase font-black opacity-40">Stripe Secret Key</Label>
+                         <Label className="text-[10px] uppercase font-bold opacity-40">Stripe Secret Key</Label>
                          <Input 
                            type="password"
                            defaultValue={siteSettings?.stripeSecretKey || ''} 
@@ -555,7 +557,7 @@ export default function AdminPage() {
                         <div className="p-8 rounded-3xl bg-white/5 border border-white/10 space-y-6">
                            <div className="flex items-center gap-3">
                               <Users className="w-5 h-5 text-accent" />
-                              <h4 className="font-black uppercase text-[11px] tracking-widest text-accent">De Vriendenprijs (Wel oké)</h4>
+                              <h4 className="font-bold uppercase text-[11px] tracking-widest text-accent">De Vriendenprijs (Wel oké)</h4>
                            </div>
                            <div className="space-y-4">
                               <div className="flex justify-between items-end border-b border-white/10 pb-2">
@@ -577,7 +579,7 @@ export default function AdminPage() {
                         <div className="p-8 rounded-3xl bg-black/20 border border-white/5 space-y-6">
                            <div className="flex items-center gap-3">
                               <Zap className="w-5 h-5 text-red-400" />
-                              <h4 className="font-black uppercase text-[11px] tracking-widest text-red-400">Het "Niet zo leuk" Tarief</h4>
+                              <h4 className="font-bold uppercase text-[11px] tracking-widest text-red-400">Het "Niet zo leuk" Tarief</h4>
                            </div>
                            <div className="space-y-4">
                               <div className="flex justify-between items-end border-b border-white/10 pb-2">
@@ -616,7 +618,7 @@ export default function AdminPage() {
 
                     <div className="grid md:grid-cols-2 gap-8">
                        <div className="p-6 rounded-2xl bg-white/10 border border-white/20 space-y-4">
-                          <h4 className="font-black uppercase text-[10px] tracking-widest opacity-70">Partner Overname (Vrienden)</h4>
+                          <h4 className="font-bold uppercase text-[10px] tracking-widest opacity-70">Partner Overname (Vrienden)</h4>
                           <div className="flex justify-between items-end border-b border-white/10 pb-2">
                              <span className="text-[10px] uppercase opacity-60">Volledig Concept</span>
                              <span className="font-headline text-2xl">€7.500,-</span>
@@ -628,7 +630,7 @@ export default function AdminPage() {
                        </div>
 
                        <div className="p-6 rounded-2xl bg-black/10 border border-white/10 space-y-4">
-                          <h4 className="font-black uppercase text-[10px] tracking-widest opacity-70">Enterprise Overname (Zakelijk)</h4>
+                          <h4 className="font-bold uppercase text-[10px] tracking-widest opacity-70">Enterprise Overname (Zakelijk)</h4>
                           <div className="flex justify-between items-end border-b border-white/10 pb-2">
                              <span className="text-[10px] uppercase opacity-60">IP & Licentie</span>
                              <span className="font-headline text-2xl">€15.000,-</span>
@@ -656,7 +658,7 @@ export default function AdminPage() {
                   <div className="grid md:grid-cols-2 gap-12">
                     <div className="space-y-8">
                       <div className="space-y-4">
-                        <h4 className="text-[10px] font-black uppercase tracking-widest text-accent flex items-center gap-2">
+                        <h4 className="text-[10px] font-bold uppercase tracking-widest text-accent flex items-center gap-2">
                           <CircleCheck className="w-3 h-3" /> {t('asset_specs_title')}
                         </h4>
                         <ul className="space-y-3 text-sm">
@@ -667,7 +669,7 @@ export default function AdminPage() {
                       </div>
 
                       <div className="space-y-4">
-                        <h4 className="text-[10px] font-black uppercase tracking-widest text-accent flex items-center gap-2">
+                        <h4 className="text-[10px] font-bold uppercase tracking-widest text-accent flex items-center gap-2">
                           <Camera className="w-3 h-3" /> {t('asset_manual_title')}
                         </h4>
                         <div className="space-y-4 text-sm text-muted-foreground leading-relaxed">
@@ -679,20 +681,20 @@ export default function AdminPage() {
                     </div>
 
                     <div className="bg-secondary/10 p-8 rounded-3xl space-y-6">
-                       <h4 className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                       <h4 className="text-[10px] font-bold uppercase tracking-widest text-primary flex items-center gap-2">
                          <CircleCheck className="w-3 h-3" /> {t('asset_faq_title')}
                        </h4>
                        <div className="space-y-6">
                          <div className="space-y-2">
-                           <p className="text-[11px] font-black uppercase tracking-tight text-foreground">{t('asset_faq_q1')}</p>
+                           <p className="text-[11px] font-bold uppercase tracking-tight text-foreground">{t('asset_faq_q1')}</p>
                            <p className="text-xs text-muted-foreground leading-relaxed italic">{t('asset_faq_a1')}</p>
                          </div>
                          <div className="space-y-2">
-                           <p className="text-[11px] font-black uppercase tracking-tight text-foreground">{t('asset_faq_q2')}</p>
+                           <p className="text-[11px] font-bold uppercase tracking-tight text-foreground">{t('asset_faq_q2')}</p>
                            <p className="text-xs text-muted-foreground leading-relaxed italic">{t('asset_faq_a2')}</p>
                          </div>
                          <div className="space-y-2">
-                           <p className="text-[11px] font-black uppercase tracking-tight text-foreground">{t('asset_faq_q3')}</p>
+                           <p className="text-[11px] font-bold uppercase tracking-tight text-foreground">{t('asset_faq_q3')}</p>
                            <p className="text-xs text-muted-foreground leading-relaxed italic">{t('asset_faq_a3')}</p>
                          </div>
                        </div>
@@ -700,7 +702,7 @@ export default function AdminPage() {
                   </div>
 
                   <div className="pt-8 border-t border-black/5 flex items-center justify-between">
-                     <p className="text-[9px] uppercase tracking-widest font-black opacity-30">Safe Harbor Framework &bull; Curator Edition</p>
+                     <p className="text-[9px] uppercase tracking-widest font-bold opacity-30">Safe Harbor Framework &bull; Curator Edition</p>
                      <div className="flex gap-2">
                         <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                         <span className="text-[9px] font-bold opacity-40 uppercase">System Ready</span>
@@ -718,11 +720,11 @@ export default function AdminPage() {
                    <p className="text-sm text-muted-foreground">Sleep hier de Master Files (min. 4000px) naar binnen.</p>
                    <div className="flex items-center justify-center gap-2 mt-4 text-accent">
                       <CircleAlert className="w-4 h-4" />
-                      <p className="text-[10px] uppercase font-black tracking-widest italic">{t('asset_specs_pixels')}</p>
+                      <p className="text-[10px] uppercase font-bold tracking-widest italic">{t('asset_specs_pixels')}</p>
                    </div>
                 </div>
                 <input type="file" ref={fileInputRef} className="hidden" onChange={(e) => handleBatchProcess(e.target.files)} accept="image/*" multiple />
-                <Button size="lg" onClick={() => fileInputRef.current?.click()} disabled={isUploading} className="rounded-full px-12 h-14 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest text-[11px] shadow-2xl transition-all">
+                <Button size="lg" onClick={() => fileInputRef.current?.click()} disabled={isUploading} className="rounded-full px-12 h-14 bg-primary hover:bg-primary/90 text-primary-foreground font-bold uppercase tracking-widest text-[11px] shadow-2xl transition-all">
                    {isUploading ? <Loader2 className="animate-spin mr-2" /> : <Plus className="mr-2" />} Selecteer Bestanden
                 </Button>
                 {isUploading && (
@@ -742,14 +744,14 @@ export default function AdminPage() {
           
           <div className="flex flex-col md:flex-row h-full">
             <div className="flex-1 bg-black/5 flex flex-col">
-              <div className="h-14 border-b border-black/5 bg-white/80 backdrop-blur-md px-8 flex items-center justify-between shrink-0">
+              <div className="h-14 md:h-20 border-b border-black/5 bg-white/80 backdrop-blur-md px-8 flex items-center justify-between shrink-0">
                  <div className="flex items-center gap-4">
                     <button onClick={() => setEditingId(null)} className="p-2 hover:bg-black/5 rounded-full transition-colors"><ArrowLeft className="w-5 h-5" /></button>
-                    <h2 className="text-sm font-black uppercase tracking-widest truncate">{editingArtwork?.displayTitle || editingArtwork?.title}</h2>
+                    <h2 className="text-sm font-bold uppercase tracking-widest truncate">{editingArtwork?.displayTitle || editingArtwork?.title}</h2>
                  </div>
                  <div className="flex items-center gap-4">
                     {editingArtwork?.featured && <Star className="w-4 h-4 text-accent fill-accent" />}
-                    <span className="text-[10px] font-black uppercase tracking-widest opacity-30">{editingArtwork?.series}</span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest opacity-30">{editingArtwork?.series}</span>
                  </div>
               </div>
               <div className="flex-1 flex items-center justify-center p-12 overflow-hidden relative">
@@ -772,7 +774,7 @@ export default function AdminPage() {
                 <div className="space-y-6">
                   <div className="flex items-center gap-3 border-l-4 border-accent pl-4">
                      <Palette className="w-4 h-4 text-accent" />
-                     <h3 className="text-[11px] font-black uppercase tracking-widest text-accent">Identiteit & Locatie</h3>
+                     <h3 className="text-[11px] font-bold uppercase tracking-widest text-accent">Identiteit & Locatie</h3>
                   </div>
                   <div className="space-y-4">
                     <div className="space-y-2">
@@ -799,7 +801,7 @@ export default function AdminPage() {
                 <div className="space-y-6">
                   <div className="flex items-center gap-3 border-l-4 border-primary pl-4">
                      <Info className="w-4 h-4 text-primary" />
-                     <h3 className="text-[11px] font-black uppercase tracking-widest text-primary">Specificaties</h3>
+                     <h3 className="text-[11px] font-bold uppercase tracking-widest text-primary">Specificaties</h3>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -833,26 +835,26 @@ export default function AdminPage() {
                   <div className="flex items-center justify-between mb-4">
                      <div className="flex items-center gap-3 border-l-4 border-accent pl-4">
                         <ShoppingBag className="w-4 h-4 text-accent" />
-                        <h3 className="text-[11px] font-black uppercase tracking-widest text-accent">Commercieel</h3>
+                        <h3 className="text-[11px] font-bold uppercase tracking-widest text-accent">Commercieel</h3>
                      </div>
                      <Switch checked={editingArtwork?.inShop} onCheckedChange={(val) => updateArtworkField(editingId!, 'inShop', val)} />
                   </div>
                   
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                       <Label className="text-[9px] uppercase font-black opacity-40">Kaart (€)</Label>
+                       <Label className="text-[9px] uppercase font-bold opacity-40">Kaart (€)</Label>
                        <Input type="number" step="0.10" defaultValue={editingArtwork?.pricePostcard || 2.50} onBlur={(e) => updateArtworkField(editingId!, 'pricePostcard', parseFloat(e.target.value))} />
                     </div>
                     <div className="space-y-2">
-                       <Label className="text-[9px] uppercase font-black opacity-40">Poster (€)</Label>
+                       <Label className="text-[9px] uppercase font-bold opacity-40">Poster (€)</Label>
                        <Input type="number" step="1" defaultValue={editingArtwork?.pricePoster || 24.00} onBlur={(e) => updateArtworkField(editingId!, 'pricePoster', parseFloat(e.target.value))} />
                     </div>
                     <div className="space-y-2">
-                       <Label className="text-[9px] uppercase font-black opacity-40">Art Print (€)</Label>
+                       <Label className="text-[9px] uppercase font-bold opacity-40">Art Print (€)</Label>
                        <Input type="number" step="1" defaultValue={editingArtwork?.pricePrint || 85.00} onBlur={(e) => updateArtworkField(editingId!, 'pricePrint', parseFloat(e.target.value))} />
                     </div>
                     <div className="space-y-2">
-                       <Label className="text-[9px] uppercase font-black opacity-40">Digitaal (€)</Label>
+                       <Label className="text-[9px] uppercase font-bold opacity-40">Digitaal (€)</Label>
                        <Input type="number" step="1" defaultValue={editingArtwork?.priceDigital || 15.00} onBlur={(e) => updateArtworkField(editingId!, 'priceDigital', parseFloat(e.target.value))} />
                     </div>
                   </div>
@@ -872,14 +874,14 @@ export default function AdminPage() {
                    <div className="flex items-center justify-between p-4 bg-black/5 rounded-2xl border border-black/5">
                       <div className="flex items-center gap-3">
                          <Star className={cn("w-4 h-4", editingArtwork?.featured ? "text-accent fill-accent" : "opacity-20")} />
-                         <Label className="text-[10px] uppercase font-black tracking-widest opacity-60">Featured (Homepage)</Label>
+                         <Label className="text-[10px] uppercase font-bold tracking-widest opacity-60">Featured (Homepage)</Label>
                       </div>
                       <Switch checked={editingArtwork?.featured} onCheckedChange={(val) => updateArtworkField(editingId!, 'featured', val)} />
                    </div>
                    
                    <Button 
                      variant="destructive" 
-                     className="w-full h-14 rounded-2xl uppercase font-black tracking-widest text-[10px] flex items-center gap-3" 
+                     className="w-full h-14 rounded-2xl uppercase font-bold tracking-widest text-[10px] flex items-center gap-3" 
                      onClick={() => { if(confirm('Dit werk permanent uit het archief verwijderen?')) { deleteDoc(doc(firestore!, 'artworks', editingId!)); setEditingId(null); }}}
                    >
                      <Trash2 className="w-4 h-4" /> Verwijder uit Collectie

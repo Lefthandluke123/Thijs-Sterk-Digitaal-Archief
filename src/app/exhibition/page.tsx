@@ -79,7 +79,7 @@ function ExhibitionContent() {
   const artworks = useMemo(() => {
     if (!dbArtworks) return [];
     const seen = new Set();
-    const unique dbArtworks.filter(art => {
+    const unique = dbArtworks.filter(art => {
       const url = art.imageUrl;
       if (!url || seen.has(url)) return false;
       seen.add(url);
@@ -171,12 +171,12 @@ function ExhibitionContent() {
           <div className="bg-white/80 backdrop-blur-md border border-black/10 rounded-full px-8 py-3 flex items-center gap-8 shadow-md hover:shadow-xl transition-all max-w-full overflow-x-auto no-scrollbar">
             <div className="flex items-center gap-3 border-r border-black/10 pr-6 mr-2 hidden md:flex">
               <Layers className="w-4 h-4 text-accent" />
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">{t('viewer_room')}</span>
+              <span className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-40">{t('viewer_room')}</span>
             </div>
             <button 
               onClick={() => handleSeriesChange("Alles")}
               className={cn(
-                "text-[11px] md:text-[13px] font-bold uppercase tracking-[0.2em] whitespace-nowrap transition-colors",
+                "text-[14px] md:text-[18px] font-bold uppercase tracking-[0.2em] whitespace-nowrap transition-colors",
                 !seriesParam ? "text-accent" : "text-black/50 hover:text-black"
               )}
             >
@@ -187,11 +187,11 @@ function ExhibitionContent() {
                 key={s.name}
                 onClick={() => handleSeriesChange(s.name)}
                 className={cn(
-                  "text-[11px] md:text-[13px] font-bold uppercase tracking-[0.2em] whitespace-nowrap transition-colors",
+                  "text-[14px] md:text-[18px] font-bold uppercase tracking-[0.2em] whitespace-nowrap transition-colors",
                   seriesParam === s.name ? "text-accent" : "text-black/50 hover:text-black"
                 )}
               >
-                {s.translatedName} <span className="opacity-30 text-[9px] ml-1">[{s.count}]</span>
+                {s.translatedName} <span className="opacity-30 text-[11px] ml-1">[{s.count}]</span>
               </button>
             ))}
           </div>
@@ -208,9 +208,9 @@ function ExhibitionContent() {
         </div>
       </div>
 
-      <div className="absolute top-24 md:top-40 left-1/2 -translate-x-1/2 z-20 text-center pointer-events-none opacity-90 w-full px-4">
-        <span className="text-accent font-black tracking-[0.4em] uppercase text-[10px] md:text-[12px] block mb-2">{t('hero_subtitle')}</span>
-        <h1 className="text-black/70 font-headline text-3xl md:text-5xl lg:text-6xl font-medium italic leading-tight tracking-tight">
+      <div className="absolute top-24 md:top-48 left-1/2 -translate-x-1/2 z-20 text-center pointer-events-none opacity-90 w-full px-4">
+        <span className="text-accent font-bold tracking-[0.4em] uppercase text-[10px] md:text-[12px] block mb-2">{t('hero_subtitle')}</span>
+        <h1 className="text-black/70 font-headline text-3xl md:text-6xl font-medium italic leading-tight tracking-tight">
           {seriesParam ? translateTerm(seriesParam, 'series') : t('all_works')}
         </h1>
       </div>
@@ -249,7 +249,7 @@ function ExhibitionContent() {
                   </div>
                   
                   <div className="px-8 py-6 border-t border-black/[0.03] bg-white">
-                    <h3 className="text-black text-[9px] font-black uppercase tracking-[0.2em] mb-1 truncate">{art.displayTitle || art.title}</h3>
+                    <h3 className="text-black text-[9px] font-bold uppercase tracking-[0.2em] mb-1 truncate">{art.displayTitle || art.title}</h3>
                     <div className="flex items-center gap-2">
                        <span className="text-accent text-[8px] font-bold uppercase tracking-widest">{art.year}</span>
                        <span className="w-1 h-1 rounded-full bg-black/10" />
@@ -266,13 +266,13 @@ function ExhibitionContent() {
 
             <div className="shrink-0 w-[50vw] flex flex-col items-center justify-center text-center opacity-40 group hover:opacity-100 transition-opacity">
                <div className="w-px h-24 bg-black/10 mb-6" />
-               <h4 className="text-[11px] font-black uppercase tracking-[0.5em]">{t('end_of_room')}</h4>
+               <h4 className="text-[11px] font-bold uppercase tracking-[0.5em]">{t('end_of_room')}</h4>
                <p className="text-[8px] mt-2 uppercase tracking-widest">{t('footer_rights')}</p>
                
                {nextSeries && (
                  <button 
                   onClick={() => handleSeriesChange(nextSeries.name)}
-                  className="mt-12 px-10 py-4 rounded-full bg-accent text-accent-foreground text-[10px] font-black uppercase tracking-[0.25em] shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-4"
+                  className="mt-12 px-10 py-4 rounded-full bg-accent text-accent-foreground text-[10px] font-bold uppercase tracking-[0.25em] shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-4"
                  >
                    {t('next_room')}: {nextSeries.translatedName} <ArrowRight className="w-4 h-4" />
                  </button>
@@ -294,7 +294,7 @@ function ExhibitionContent() {
           <div className="flex flex-col items-center gap-2">
              <div className="flex items-center gap-2 text-black/20">
                 <MousePointer2 className="w-3 h-3" />
-                <span className="text-[8px] font-black uppercase tracking-[0.4em]">{t('viewer_unknown')}</span>
+                <span className="text-[8px] font-bold uppercase tracking-[0.4em]">{t('viewer_unknown')}</span>
              </div>
              <div className="w-48 h-0.5 bg-black/5 relative overflow-hidden rounded-full">
                 <div 

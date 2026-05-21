@@ -154,11 +154,11 @@ function GalleryContent() {
                       key={s.name}
                       onClick={() => handleSeriesChange(s.name)}
                       className={cn(
-                        "text-[12px] md:text-[14px] font-bold uppercase tracking-[0.25em] transition-all whitespace-nowrap pb-3 border-b-2 flex items-center gap-2",
+                        "text-[14px] md:text-[20px] font-bold uppercase tracking-[0.25em] transition-all whitespace-nowrap pb-3 border-b-2 flex items-center gap-2",
                         activeSeries === s.name ? "border-accent text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"
                       )}
                     >
-                      {s.translatedName} <span className="opacity-40 text-[10px] md:text-[11px]">[{s.count}]</span>
+                      {s.translatedName} <span className="opacity-40 text-[12px] md:text-[14px]">[{s.count}]</span>
                     </button>
                   ))}
                 </div>
@@ -198,14 +198,14 @@ function GalleryContent() {
                     </div>
                   </div>
                   <div className="mt-4 text-center">
-                    <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground group-hover:text-foreground transition-colors truncate">{item.displayTitle || item.title}</h3>
+                    <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground group-hover:text-foreground transition-colors truncate">{item.displayTitle || item.title}</h3>
                     <p className="text-[7px] uppercase opacity-20 tracking-widest mt-1">{item.year || 'Zonder jaartal'}</p>
                   </div>
                 </article>
               ))}
             </div>
             {filteredArtworks.length === 0 && !loading && (
-              <div className="text-center py-32 opacity-20 uppercase font-black text-[11px] tracking-widest">{t('gallery_closed')}</div>
+              <div className="text-center py-32 opacity-20 uppercase font-bold text-[11px] tracking-widest">{t('gallery_closed')}</div>
             )}
           </>
         )}
