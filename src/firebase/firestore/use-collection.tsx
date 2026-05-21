@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -38,27 +37,22 @@ export function useCollection<T = DocumentData>(collectionQuery: Query<T> | null
         setError(null);
       },
       async (serverError: FirestoreError) => {
-        // Alleen een Permission Error emitten als het daadwerkelijk om rechten gaat op de server.
-        // Andere fouten (zoals privemodus-blokkades) negeren we voor de UI om verwarring te voorkomen.
         if (serverError.code === 'permission-denied') {
-          // Haal het pad op voor context, maar voorkom circular structure errors
-          const path = (collectionQuery as any)._query?.path?.segments?.join('/') || 'collection';
           const permissionError = new FirestorePermissionError({
-            path,
+            path: 'collection', // Gebruik generieke naam om circular issues tijdens SSR te voorkomen
             operation: 'list',
           });
           errorEmitter.emit('permission-error', permissionError);
           setError(permissionError);
         } else {
-          // Log andere fouten (netwerk, etc.) alleen in de console
-          console.warn('Firestore non-critical error:', serverError.code, serverError.message);
+          console.warn('Firestore error:', serverError.code);
           setLoading(false);
         }
       }
     );
 
     return () => unsubscribe();
-  }, [collectionQuery]); // Vertrouw op useMemoFirebase in de componenten
+  }, [collectionQuery]);
 
   return { data, loading, error };
 }

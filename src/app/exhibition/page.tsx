@@ -8,22 +8,7 @@ import { ArtworkViewer } from '@/components/artwork-viewer';
 import { Loader2, MousePointer2, ChevronLeft, ChevronRight, Layers, ArrowRight, ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/components/language-provider';
-
-const ROMAN_VALUES: Record<string, number> = {
-  'I': 1, 'II': 2, 'III': 3, 'IV': 4, 'V': 5, 'VI': 6, 'VII': 7, 'VIII': 8, 'IX': 9, 'X': 10, 
-  'XI': 11, 'XII': 12, 'XIII': 13, 'XIV': 14, 'XV': 15, 'XVI': 16, 'XVII': 17, 'XVIII': 18, 'XIX': 19, 'XX': 20
-};
-
-const parseTitleForSort = (title: string) => {
-  if (!title) return { romanVal: 999, num: 999, suffix: '' };
-  const romanMatch = title.match(/\b(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII|XIV|XV|XVI|XVII|XVIII|XIX|XX)\b/i);
-  const numMatch = title.match(/(\d+)([a-z]*)?/i);
-  return {
-    romanVal: romanMatch ? (ROMAN_VALUES[romanMatch[1].toUpperCase()] || 999) : 999,
-    num: numMatch ? parseInt(numMatch[1], 10) : 999,
-    suffix: numMatch ? (numMatch[2] || '').toLowerCase() : ''
-  };
-};
+import { sortArtworksByTitle } from '@/lib/museum-utils';
 
 function ExhibitionContent() {
   const searchParams = useSearchParams();
@@ -93,7 +78,6 @@ function ExhibitionContent() {
 
   const artworks = useMemo(() => {
     if (!dbArtworks) return [];
-    
     const seen = new Set();
     const unique = dbArtworks.filter(art => {
       const url = art.imageUrl;
@@ -101,14 +85,7 @@ function ExhibitionContent() {
       seen.add(url);
       return true;
     });
-
-    return [...unique].sort((a: any, b: any) => {
-      const pA = parseTitleForSort(a.title || '');
-      const pB = parseTitleForSort(b.title || '');
-      if (pA.romanVal !== pB.romanVal) return pA.romanVal - pB.romanVal;
-      if (pA.num !== pB.num) return pA.num - pB.num;
-      return pA.suffix.localeCompare(pB.suffix);
-    });
+    return [...unique].sort(sortArtworksByTitle);
   }, [dbArtworks]);
 
   useEffect(() => {
@@ -179,7 +156,6 @@ function ExhibitionContent() {
     <main className="h-screen w-full bg-white overflow-hidden flex flex-col relative pt-14">
       <div className="absolute inset-0 bg-[#fafafa] pointer-events-none" />
       
-      {/* Room Selector with Prev/Next buttons */}
       <div className="absolute top-20 left-0 right-0 z-40 flex justify-center px-6">
         <div className="flex items-center gap-2">
           {prevSeries && (

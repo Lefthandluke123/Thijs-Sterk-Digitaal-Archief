@@ -24,17 +24,13 @@ import {
   Star,
   Globe2,
   TrendingUp,
-  History,
-  ShieldCheck,
   LifeBuoy,
   FileText,
   ImageIcon,
   Camera,
-  CircleHelp,
   CircleCheck,
   CircleAlert,
   Zap,
-  Gem,
   Coins,
   Users,
   Briefcase,
@@ -60,29 +56,13 @@ import { Switch } from '@/components/ui/switch';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/components/language-provider';
-
-const ROMAN_VALUES: Record<string, number> = {
-  'I': 1, 'II': 2, 'III': 3, 'IV': 4, 'V': 5, 'VI': 6, 'VII': 7, 'VIII': 8, 'IX': 9, 'X': 10, 
-  'XI': 11, 'XII': 12, 'XIII': 13, 'XIV': 14, 'XV': 15, 'XVI': 16, 'XVII': 17, 'XVIII': 18, 'XIX': 19, 'XX': 20
-};
-
-const parseTitleForSort = (title: string) => {
-  if (!title) return { romanVal: 999, num: 999, suffix: '' };
-  const romanMatch = title.match(/\b(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII|XIV|XV|XVI|XVII|XVIII|XIX|XX)\b/i);
-  const numMatch = title.match(/(\d+)([a-z]*)?/i);
-  return {
-    romanVal: romanMatch ? (ROMAN_VALUES[romanMatch[1].toUpperCase()] || 999) : 999,
-    num: numMatch ? parseInt(numMatch[1], 10) : 999,
-    suffix: numMatch ? (numMatch[2] || '').toLowerCase() : ''
-  };
-};
+import { sortArtworksByTitle } from '@/lib/museum-utils';
 
 export default function AdminPage() {
   const firestore = useFirestore();
   const storage = useStorage();
   const { t } = useLanguage();
   
-  // Auth state
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState(false);
@@ -91,7 +71,6 @@ export default function AdminPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   
-  // Multi-select state
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [batchSeriesName, setBatchSeriesName] = useState('');
@@ -144,13 +123,7 @@ export default function AdminPage() {
       seen.add(url);
       return true;
     });
-    return [...unique].sort((a: any, b: any) => {
-      const pA = parseTitleForSort(a.title || '');
-      const pB = parseTitleForSort(b.title || '');
-      if (pA.romanVal !== pB.romanVal) return pA.romanVal - pB.romanVal;
-      if (pA.num !== pB.num) return pA.num - pB.num;
-      return pA.suffix.localeCompare(pB.suffix);
-    });
+    return [...unique].sort(sortArtworksByTitle);
   }, [rawArtworks]);
 
   const siteSettingsRef = useMemoFirebase(() => {
@@ -515,7 +488,7 @@ export default function AdminPage() {
                       <div className="space-y-4 bg-accent/5 p-6 rounded-2xl border border-accent/10 flex flex-col items-center justify-center">
                          <Label className="text-[10px] uppercase opacity-60 mb-4 block w-full text-center">Artist Logo</Label>
                          <div className="w-32 h-32 rounded-2xl bg-white flex items-center justify-center border-2 border-dashed border-accent/20 mb-4 overflow-hidden shadow-inner">
-                            {siteSettings?.logoUrl ? <img src={siteSettings.logoUrl} className="max-w-full max-h-full object-contain p-2" /> : <ImageIcon className="w-8 h-8 opacity-20" />}
+                            {siteSettings?.logoUrl ? <img src={siteSettings.logoUrl} className="max-w-full max-h-full object-contain p-2" alt="Logo" /> : <ImageIcon className="w-8 h-8 opacity-20" />}
                          </div>
                          <input type="file" ref={logoInputRef} className="hidden" onChange={handleLogoUpload} accept="image/*" />
                          <Button variant="outline" size="sm" onClick={() => logoInputRef.current?.click()} className="rounded-full border-accent/40 text-accent font-black uppercase text-[9px] px-6">Upload Merklogo</Button>
@@ -570,7 +543,6 @@ export default function AdminPage() {
 
           <TabsContent value="help">
              <div className="max-w-5xl mx-auto space-y-12 pb-24">
-               {/* Vlijmscherpe Business Guide */}
                <Card className="p-8 md:p-12 rounded-3xl shadow-2xl border-none bg-primary text-primary-foreground relative overflow-hidden">
                   <div className="absolute top-0 right-0 p-12 opacity-10 rotate-12"><Coins className="w-64 h-64" /></div>
                   <div className="relative z-10 space-y-12">
@@ -627,13 +599,12 @@ export default function AdminPage() {
                   </div>
                </Card>
 
-               {/* Master Franchise Section - GEBASEERD OP 100+ UUR DEV */}
                <Card className="p-8 md:p-12 rounded-3xl shadow-2xl border-none bg-accent text-accent-foreground relative overflow-hidden">
                   <div className="absolute top-0 right-0 p-12 opacity-10 -rotate-12"><Briefcase className="w-64 h-64" /></div>
                   <div className="relative z-10 space-y-8">
                     <div className="flex items-center gap-4">
                        <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center border border-white/20"><GraduationCap className="w-6 h-6" /></div>
-                       <h2 className="text-3xl font-headline text-3xl md:text-3xl font-light italic">Master Franchise & Exit Strategie</h2>
+                       <h2 className="text-3xl font-headline font-light italic">Master Franchise & Exit Strategie</h2>
                     </div>
                     <div className="flex items-start gap-4 p-4 bg-black/10 rounded-2xl border border-black/5 max-w-2xl">
                        <HardDrive className="w-5 h-5 shrink-0 mt-1" />
@@ -671,7 +642,6 @@ export default function AdminPage() {
                   </div>
                </Card>
 
-               {/* Asset Delivery Guide (Meertalig via t()) */}
                <Card className="p-8 md:p-12 rounded-3xl shadow-xl border-none bg-white space-y-12">
                   <div className="space-y-6">
                     <div className="flex items-center gap-4">
@@ -710,7 +680,7 @@ export default function AdminPage() {
 
                     <div className="bg-secondary/10 p-8 rounded-3xl space-y-6">
                        <h4 className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2">
-                         <CircleHelp className="w-3 h-3" /> {t('asset_faq_title')}
+                         <CircleCheck className="w-3 h-3" /> {t('asset_faq_title')}
                        </h4>
                        <div className="space-y-6">
                          <div className="space-y-2">
@@ -771,7 +741,6 @@ export default function AdminPage() {
           <DialogTitle className="sr-only">Editor - {editingArtwork?.title}</DialogTitle>
           
           <div className="flex flex-col md:flex-row h-full">
-            {/* Linkerkant: Preview */}
             <div className="flex-1 bg-black/5 flex flex-col">
               <div className="h-14 border-b border-black/5 bg-white/80 backdrop-blur-md px-8 flex items-center justify-between shrink-0">
                  <div className="flex items-center gap-4">
@@ -797,11 +766,9 @@ export default function AdminPage() {
               </div>
             </div>
 
-            {/* Rechterkant: Formulier */}
             <div className="w-full md:w-[450px] lg:w-[550px] shrink-0 bg-white border-l border-black/5 flex flex-col overflow-y-auto shadow-2xl z-10">
               <div className="p-8 space-y-12 pb-32">
                 
-                {/* Groep 1: Publieke Identiteit */}
                 <div className="space-y-6">
                   <div className="flex items-center gap-3 border-l-4 border-accent pl-4">
                      <Palette className="w-4 h-4 text-accent" />
@@ -829,7 +796,6 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                {/* Groep 2: Specificaties */}
                 <div className="space-y-6">
                   <div className="flex items-center gap-3 border-l-4 border-primary pl-4">
                      <Info className="w-4 h-4 text-primary" />
@@ -863,7 +829,6 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                {/* Groep 3: Commercieel */}
                 <div className="space-y-6 bg-accent/5 p-6 rounded-3xl border border-accent/10">
                   <div className="flex items-center justify-between mb-4">
                      <div className="flex items-center gap-3 border-l-4 border-accent pl-4">
@@ -893,7 +858,6 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                {/* Groep 4: Beschrijving */}
                 <div className="space-y-4">
                   <Label className="text-[10px] uppercase font-bold opacity-40 tracking-widest flex items-center gap-2"><FileText className="w-3 h-3" /> Verhaal bij het werk</Label>
                   <Textarea 
@@ -904,7 +868,6 @@ export default function AdminPage() {
                   />
                 </div>
 
-                {/* Groep 5: Acties */}
                 <div className="pt-8 border-t border-black/5 space-y-4">
                    <div className="flex items-center justify-between p-4 bg-black/5 rounded-2xl border border-black/5">
                       <div className="flex items-center gap-3">

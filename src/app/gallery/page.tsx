@@ -8,22 +8,7 @@ import { ArtworkViewer } from '@/components/artwork-viewer';
 import { Maximize2, Loader2, ArrowLeft, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/components/language-provider';
-
-const ROMAN_VALUES: Record<string, number> = {
-  'I': 1, 'II': 2, 'III': 3, 'IV': 4, 'V': 5, 'VI': 6, 'VII': 7, 'VIII': 8, 'IX': 9, 'X': 10, 
-  'XI': 11, 'XII': 12, 'XIII': 13, 'XIV': 14, 'XV': 15, 'XVI': 16, 'XVII': 17, 'XVIII': 18, 'XIX': 19, 'XX': 20
-};
-
-const parseTitleForSort = (title: string) => {
-  if (!title) return { romanVal: 999, num: 999, suffix: '' };
-  const romanMatch = title.match(/\b(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII|XIV|XV|XVI|XVII|XVIII|XIX|XX)\b/i);
-  const numMatch = title.match(/(\d+)([a-z]*)?/i);
-  return {
-    romanVal: romanMatch ? (ROMAN_VALUES[romanMatch[1].toUpperCase()] || 999) : 999,
-    num: numMatch ? parseInt(numMatch[1], 10) : 999,
-    suffix: numMatch ? (numMatch[2] || '').toLowerCase() : ''
-  };
-};
+import { sortArtworksByTitle } from '@/lib/museum-utils';
 
 function GalleryContent() {
   const searchParams = useSearchParams();
@@ -58,7 +43,6 @@ function GalleryContent() {
 
   const artworks = useMemo(() => {
     if (!dbArtworks) return [];
-    
     const seen = new Set();
     const unique = dbArtworks.filter(art => {
       const url = art.imageUrl;
@@ -66,14 +50,7 @@ function GalleryContent() {
       seen.add(url);
       return true;
     });
-
-    return [...unique].sort((a: any, b: any) => {
-      const pA = parseTitleForSort(a.title || '');
-      const pB = parseTitleForSort(b.title || '');
-      if (pA.romanVal !== pB.romanVal) return pA.romanVal - pB.romanVal;
-      if (pA.num !== pB.num) return pA.num - pB.num;
-      return pA.suffix.localeCompare(pB.suffix);
-    });
+    return [...unique].sort(sortArtworksByTitle);
   }, [dbArtworks]);
 
   const seriesWithCounts = useMemo(() => {
