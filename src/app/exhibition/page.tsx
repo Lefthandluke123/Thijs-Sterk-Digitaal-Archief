@@ -176,7 +176,7 @@ function ExhibitionContent() {
             <button 
               onClick={() => handleSeriesChange("Alles")}
               className={cn(
-                "text-[14px] md:text-[18px] font-bold uppercase tracking-[0.2em] whitespace-nowrap transition-colors",
+                "text-[14px] md:text-[20px] font-bold uppercase tracking-[0.2em] whitespace-nowrap transition-colors",
                 !seriesParam ? "text-accent" : "text-black/50 hover:text-black"
               )}
             >
@@ -187,7 +187,7 @@ function ExhibitionContent() {
                 key={s.name}
                 onClick={() => handleSeriesChange(s.name)}
                 className={cn(
-                  "text-[14px] md:text-[18px] font-bold uppercase tracking-[0.2em] whitespace-nowrap transition-colors",
+                  "text-[14px] md:text-[20px] font-bold uppercase tracking-[0.2em] whitespace-nowrap transition-colors",
                   seriesParam === s.name ? "text-accent" : "text-black/50 hover:text-black"
                 )}
               >
@@ -210,7 +210,7 @@ function ExhibitionContent() {
 
       <div className="absolute top-24 md:top-48 left-1/2 -translate-x-1/2 z-20 text-center pointer-events-none opacity-90 w-full px-4">
         <span className="text-accent font-bold tracking-[0.4em] uppercase text-[10px] md:text-[12px] block mb-2">{t('hero_subtitle')}</span>
-        <h1 className="text-black/70 font-headline text-3xl md:text-6xl font-medium italic leading-tight tracking-tight">
+        <h1 className="text-black/70 font-headline text-3xl md:text-5xl font-medium italic leading-tight tracking-tight">
           {seriesParam ? translateTerm(seriesParam, 'series') : t('all_works')}
         </h1>
       </div>

@@ -45,7 +45,7 @@ function GalleryContent() {
     if (!dbArtworks) return [];
     const seen = new Set();
     const unique = dbArtworks.filter(art => {
-      const url = art.imageUrl;
+      const url = (art as any).imageUrl;
       if (!url || seen.has(url)) return false;
       seen.add(url);
       return true;
@@ -56,7 +56,7 @@ function GalleryContent() {
   const seriesWithCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     artworks.forEach(art => {
-      const name = art.series || "Geen zaal";
+      const name = (art as any).series || "Geen zaal";
       if (!hiddenSeries.includes(name) && name !== "Nieuwe Uploads") {
         counts[name] = (counts[name] || 0) + 1;
       }
@@ -85,12 +85,12 @@ function GalleryContent() {
 
   const filteredArtworks = useMemo(() => {
     if (!activeSeries || hiddenSeries.includes(activeSeries)) return [];
-    return artworks.filter(art => (art.series || "Geen zaal") === activeSeries);
+    return artworks.filter(art => ((art as any).series || "Geen zaal") === activeSeries);
   }, [artworks, activeSeries, hiddenSeries]);
 
   const navigateGallery = useCallback((direction: 'next' | 'prev') => {
     if (!selectedArtwork || !filteredArtworks.length) return;
-    const currentIndex = filteredArtworks.findIndex(art => art.id === selectedArtwork.id);
+    const currentIndex = filteredArtworks.findIndex(art => (art as any).id === selectedArtwork.id);
     let nextIndex = direction === 'next' 
       ? (currentIndex + 1) % filteredArtworks.length 
       : (currentIndex - 1 + filteredArtworks.length) % filteredArtworks.length;
@@ -124,7 +124,7 @@ function GalleryContent() {
     <main className="min-h-screen bg-background pt-16 md:pt-32">
       <div className="w-full bg-secondary/5 border-b border-border/10 py-12 md:py-20">
         <div className="container mx-auto px-6 max-w-7xl">
-          <h1 className="font-headline text-3xl md:text-5xl lg:text-6xl font-medium text-foreground text-center tracking-tight uppercase leading-none italic opacity-80">
+          <h1 className="font-headline text-3xl md:text-5xl font-medium text-foreground text-center tracking-tight uppercase leading-none italic opacity-80">
             {activeSeries ? translateTerm(activeSeries, 'series') : (loading ? "Laden..." : t('gallery_select'))}
           </h1>
         </div>
@@ -176,7 +176,7 @@ function GalleryContent() {
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-10">
-              {filteredArtworks.map((item) => (
+              {filteredArtworks.map((item: any) => (
                 <article 
                   key={item.id} 
                   className="group relative cursor-pointer" 

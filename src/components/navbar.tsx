@@ -73,14 +73,15 @@ function NavbarContent() {
     if (!dbArtworks) return [];
     const seen = new Set();
     const uniqueArtworks = dbArtworks.filter(art => {
-      const url = art.imageUrl;
+      const url = (art as any).imageUrl;
       if (!url || seen.has(url)) return false;
       seen.add(url);
       return true;
     });
     const counts: Record<string, number> = {};
     uniqueArtworks.forEach(art => {
-      if (art.series) counts[art.series] = (counts[art.series] || 0) + 1;
+      const seriesName = (art as any).series;
+      if (seriesName) counts[seriesName] = (counts[seriesName] || 0) + 1;
     });
     return Object.entries(counts)
       .filter(([name]) => name !== "Nieuwe Uploads" && name !== "Geen zaal" && !hiddenSeries.includes(name))

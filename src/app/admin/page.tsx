@@ -1010,7 +1010,7 @@ export default function AdminPage() {
                         <Tags className="w-4 h-4 opacity-30" />
                         <Input 
                           defaultValue={editingArtwork?.tags?.join(', ') || ''} 
-                          onBlur={(e) => updateArtworkField(editingId!, 'tags', e.target.value.split(',').map(t => t.trim()).filter(Boolean))} 
+                          onBlur={(e) => updateArtworkField(editingId!, 'tags', e.target.value.split(',').map((t: string) => t.trim()).filter(Boolean))} 
                           placeholder="zee, groet, licht"
                           className="bg-transparent border-none p-0 focus-visible:ring-0"
                         />
