@@ -128,15 +128,21 @@ function NavbarContent() {
             onClick={() => setGuideOpen(true)}
             title={t('nav_guide_click')}
           >
-            <img src={siteSettings?.logoUrl || "/logo.png"} alt="Logo" className="h-8 md:h-12 w-auto object-contain transition-transform duration-500 group-hover:rotate-12 group-hover:scale-110" />
-            <div className="flex flex-col leading-tight border-l border-border/40 pl-3 md:pl-5 transition-all group-hover:border-accent">
+            <img 
+              src={siteSettings?.logoUrl || "/logo.png"} 
+              alt="Logo" 
+              className="h-8 md:h-12 w-auto object-contain transition-transform duration-700 group-hover:rotate-[15deg] group-hover:scale-110 animate-in fade-in zoom-in duration-1000" 
+            />
+            <div className="flex flex-col leading-tight border-l border-border/40 pl-3 md:pl-5 transition-all group-hover:border-accent animate-in fade-in slide-in-from-left-4 duration-700">
                <div className="flex items-center gap-2">
                  <span className="font-headline font-light text-base md:text-xl tracking-tight text-foreground transition-colors group-hover:text-accent">
                    {siteTitle}
                  </span>
-                 <BookOpen className="w-3 h-3 text-accent opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-x-[-10px] group-hover:translate-x-0 hidden md:inline" />
+                 <BookOpen className="w-3.5 h-3.5 text-accent opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-x-[-10px] group-hover:translate-x-0 hidden md:inline animate-pulse" />
                </div>
-               <span className="text-[7px] md:text-[9px] font-black uppercase tracking-[0.3em] text-accent/80 hidden sm:block">{siteSubtitle}</span>
+               <span className="text-[7px] md:text-[9px] font-black uppercase tracking-[0.3em] text-accent/80 hidden sm:block transition-all group-hover:tracking-[0.4em]">
+                 {siteSubtitle}
+               </span>
             </div>
           </div>
           
