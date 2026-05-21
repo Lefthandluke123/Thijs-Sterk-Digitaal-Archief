@@ -4,23 +4,23 @@
 
 @layer base {
   :root {
-    --background: 66 46% 73%;
-    --foreground: 201 30% 15%;
-    --card: 66 46% 76%;
-    --card-foreground: 201 30% 15%;
-    --popover: 66 46% 76%;
-    --popover-foreground: 201 30% 15%;
-    --primary: 201 30% 25%;
+    --background: 66 40% 78%; /* Iets lichter en minder verzadigd voor beter contrast */
+    --foreground: 201 40% 8%; /* Dieper donker voor maximale leesbaarheid */
+    --card: 66 40% 80%;
+    --card-foreground: 201 40% 8%;
+    --popover: 66 40% 80%;
+    --popover-foreground: 201 40% 8%;
+    --primary: 201 40% 15%; /* Donkerder primary */
     --primary-foreground: 66 46% 95%;
     --secondary: 66 30% 65%;
-    --secondary-foreground: 201 30% 20%;
-    --muted: 66 20% 60%;
-    --muted-foreground: 201 15% 35%;
-    --accent: 45 89% 41%; 
-    --accent-foreground: 0 0% 90%;
-    --border: 66 20% 60%;
-    --input: 66 20% 60%;
-    --ring: 45 89% 41%;
+    --secondary-foreground: 201 40% 12%;
+    --muted: 66 20% 55%;
+    --muted-foreground: 201 25% 25%; /* Donkerder muted text */
+    --accent: 45 95% 35%; /* Iets dieper goud/oker */
+    --accent-foreground: 0 0% 100%;
+    --border: 66 20% 50%;
+    --input: 66 20% 50%;
+    --ring: 45 95% 35%;
     --radius: 0.5rem;
   }
 }
@@ -33,7 +33,7 @@
     @apply bg-background text-foreground font-body antialiased;
   }
   h1, h2, h3, h4, h5, h6 {
-    @apply font-headline;
+    @apply font-headline text-foreground;
   }
   
   img {

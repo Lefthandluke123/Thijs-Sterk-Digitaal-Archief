@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from 'react';
@@ -43,70 +42,70 @@ export function Hero() {
 
   return (
     <section className="relative min-h-[70vh] flex flex-col items-center justify-center pt-24 pb-16 px-4 overflow-hidden">
-      <div className="absolute inset-0 z-0 opacity-10 pointer-events-none">
-        <div className="absolute top-1/4 -left-20 w-96 h-96 bg-accent rounded-full blur-[120px]" />
-        <div className="absolute bottom-1/4 -right-20 w-96 h-96 bg-primary rounded-full blur-[120px]" />
+      <div className="absolute inset-0 z-0 opacity-15 pointer-events-none">
+        <div className="absolute top-1/4 -left-20 w-96 h-96 bg-accent rounded-full blur-[140px]" />
+        <div className="absolute bottom-1/4 -right-20 w-96 h-96 bg-primary rounded-full blur-[140px]" />
       </div>
 
       <div className="container mx-auto z-10 text-center">
-        <div className="inline-block animate-fade-in-up">
-          <span className="text-accent font-black tracking-[0.4em] uppercase text-[14px] md:text-[16px] mb-6 block border-b border-accent/20 pb-2">
+        <div className="inline-block mb-8">
+          <span className="text-accent font-bold tracking-[0.4em] uppercase text-[15px] md:text-[18px] block border-b-2 border-accent/30 pb-2">
             {t('hero_subtitle')} &bull; Thijs Sterk (1913-1982)
           </span>
         </div>
         
-        <h1 className="font-headline text-xl md:text-3xl lg:text-4xl font-light tracking-tight text-foreground mb-8 max-w-4xl mx-auto leading-[1.2] animate-fade-in-up delay-100">
+        <h1 className="font-headline text-2xl md:text-4xl lg:text-6xl font-medium tracking-tight text-foreground mb-8 max-w-5xl mx-auto leading-[1.15]">
           {heroTitle.split(' ').map((word, i, arr) => 
-            i >= arr.length - 3 ? <span key={i} className="italic">{word} </span> : word + ' '
+            i >= arr.length - 3 ? <span key={i} className="italic font-normal">{word} </span> : word + ' '
           )}
         </h1>
         
-        <div className="max-w-3xl mx-auto mb-12 space-y-6 animate-fade-in-up delay-200">
-          <div className="text-muted-foreground text-base md:text-lg leading-relaxed font-light whitespace-pre-line">
+        <div className="max-w-3xl mx-auto mb-14 space-y-6">
+          <div className="text-foreground/80 text-lg md:text-xl leading-relaxed font-normal whitespace-pre-line">
             {heroIntro}
           </div>
         </div>
         
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-6 animate-fade-in-up delay-300">
-          <Button size="lg" className="rounded-full px-10 bg-accent hover:bg-accent/90 text-accent-foreground font-black uppercase tracking-[0.2em] text-[10px] h-12 shadow-xl border-2 border-black/5" asChild>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-8">
+          <Button size="lg" className="rounded-full px-12 bg-primary hover:bg-primary/90 text-primary-foreground font-bold uppercase tracking-[0.2em] text-[12px] h-14 shadow-2xl border-2 border-white/10" asChild>
             <a href="/exhibition">
-              <Sparkles className="mr-2 w-4 h-4" />
+              <Sparkles className="mr-3 w-5 h-5" />
               {t('hero_start_walk')}
             </a>
           </Button>
-          <Button variant="outline" size="lg" className="rounded-full px-10 border-black/20 text-foreground hover:bg-black/5 font-black uppercase tracking-[0.2em] text-[10px] h-12 group transition-all" asChild>
+          <Button variant="outline" size="lg" className="rounded-full px-12 border-2 border-foreground/20 text-foreground hover:bg-black/5 font-bold uppercase tracking-[0.2em] text-[12px] h-14 transition-all" asChild>
             <a href="/curator">
-              <Layout className="mr-2 w-4 h-4" />
+              <Layout className="mr-3 w-5 h-5" />
               {t('hero_your_room')}
             </a>
           </Button>
         </div>
       </div>
 
-      <div className="container mx-auto mt-20 z-10 px-4 animate-fade-in-up delay-500 max-w-5xl">
+      <div className="container mx-auto mt-24 z-10 px-4 max-w-6xl">
         <div 
-          className="relative aspect-[21/9] w-full rounded-2xl overflow-hidden shadow-2xl border border-border/10 cursor-pointer group"
+          className="relative aspect-[21/9] w-full rounded-[2.5rem] overflow-hidden shadow-[0_40px_100px_-20px_rgba(0,0,0,0.3)] border-2 border-white/10 cursor-pointer group"
           onClick={() => setSelectedArtwork(artwork || { imageUrl: heroImage, title: "Maannacht", displayTitle: "Maannacht", series: "Hoofdcollectie", year: "1954", medium: "Olieverf op doek" })}
         >
           <Image
             src={heroImage}
             alt={artwork?.displayTitle || artwork?.title || "Representatief werk van Thijs Sterk"}
             fill
-            className="object-cover transition-transform duration-1000 group-hover:scale-[1.02]"
+            className="object-cover transition-transform duration-1000 group-hover:scale-105"
             priority
             data-ai-hint="atmospheric landscape painting"
           />
           <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-            <div className="bg-white/10 backdrop-blur-md p-4 rounded-full border border-white/20">
-              <Maximize2 className="text-white w-8 h-8 drop-shadow-2xl" />
+            <div className="bg-white/20 backdrop-blur-xl p-6 rounded-full border-2 border-white/30 shadow-2xl">
+              <Maximize2 className="text-white w-10 h-10 drop-shadow-2xl" />
             </div>
           </div>
-          <div className="absolute bottom-6 left-6 z-20">
-            <span className="text-white/60 text-[9px] font-black uppercase tracking-[0.3em] bg-black/40 px-3 py-1.5 rounded-sm backdrop-blur-md">
+          <div className="absolute bottom-8 left-8 z-20">
+            <span className="text-white font-bold text-[11px] uppercase tracking-[0.3em] bg-black/60 px-6 py-2.5 rounded-full backdrop-blur-xl border border-white/10 shadow-2xl">
               Focus: {artwork?.displayTitle || "Atmosfeer"}
             </span>
           </div>
-          <div className="absolute inset-0 bg-gradient-to-t from-background/30 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
         </div>
       </div>
 
