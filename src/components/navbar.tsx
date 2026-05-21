@@ -23,7 +23,8 @@ import {
   Home,
   Layers,
   Info,
-  Mail
+  Mail,
+  Settings
 } from 'lucide-react';
 import { useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, doc } from 'firebase/firestore';
@@ -201,6 +202,30 @@ function NavbarContent() {
                      <Link href="/#contact" className="flex items-center gap-4 p-4 rounded-xl bg-black/5 text-[12px] font-black uppercase tracking-widest">
                        <Mail className="w-4 h-4" /> {t('nav_contact')}
                      </Link>
+                     <Link href="/admin" className="flex items-center gap-4 p-4 rounded-xl bg-black/5 text-[12px] font-black uppercase tracking-widest opacity-50">
+                       <Settings className="w-4 h-4" /> {t('nav_admin')}
+                     </Link>
+
+                     <div className="pt-8 border-t border-border/10 mt-4">
+                        <div className="flex items-center gap-3 mb-4 px-4">
+                          <Languages className="w-4 h-4 text-accent" />
+                          <span className="text-[10px] font-black uppercase tracking-widest opacity-40">Selecteer Taal</span>
+                        </div>
+                        <div className="grid grid-cols-5 gap-2">
+                          {['nl', 'en', 'de', 'fr', 'es'].map((lang) => (
+                            <button
+                              key={lang}
+                              onClick={() => setLanguage(lang as any)}
+                              className={cn(
+                                "h-12 rounded-xl text-[11px] font-black uppercase transition-all flex items-center justify-center",
+                                language === lang ? "bg-accent text-accent-foreground shadow-lg" : "bg-black/5 text-muted-foreground"
+                              )}
+                            >
+                              {lang.toUpperCase()}
+                            </button>
+                          ))}
+                        </div>
+                     </div>
                   </div>
                 </div>
               </SheetContent>
