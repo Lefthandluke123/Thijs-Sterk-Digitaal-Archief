@@ -22,7 +22,7 @@ export function Footer() {
 
   const siteSubtitle = (language !== 'nl' && siteSettings?.[`siteSubtitle_${language}`])
     ? siteSettings[`siteSubtitle_${language}`]
-    : (siteSettings?.siteSubtitle || "Thijs Sterk (1913-1982)");
+    : (siteSettings?.siteSubtitle || t('nav_museum_subtitle'));
   
   return (
     <footer className="py-12 border-t border-border bg-background px-4">

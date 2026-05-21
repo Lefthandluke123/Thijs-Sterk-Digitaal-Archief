@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useMemo, Suspense } from 'react';
@@ -64,7 +63,7 @@ function NavbarContent() {
 
   const siteSubtitle = (language !== 'nl' && siteSettings?.[`siteSubtitle_${language}`])
     ? siteSettings[`siteSubtitle_${language}`]
-    : (siteSettings?.siteSubtitle || "Thijs Sterk (1913-1982)");
+    : (siteSettings?.siteSubtitle || t('nav_museum_subtitle'));
 
   const translateTerm = (text: string, category: 'series' | 'tag') => {
     if (language === 'nl' || !siteSettings) return text;
