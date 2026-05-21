@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
@@ -44,7 +45,10 @@ import {
   Square,
   FolderInput,
   X,
-  Lock
+  Lock,
+  EyeOff,
+  Eye,
+  Archive
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -132,6 +136,14 @@ export default function AdminPage() {
   }, [firestore, isAuthorized]);
   const { data: siteSettings } = useDoc(siteSettingsRef);
 
+  const uniqueSeries = useMemo(() => {
+    const series = new Set<string>();
+    artworks.forEach((art: any) => {
+      if (art.series) series.add(art.series);
+    });
+    return Array.from(series).sort();
+  }, [artworks]);
+
   const updateArtworkField = (id: string, field: string, value: any) => {
     if (!firestore || !id) return;
     const artRef = doc(firestore, 'artworks', id);
@@ -140,16 +152,17 @@ export default function AdminPage() {
     });
   };
 
-  const handleBatchMove = async () => {
-    if (!firestore || selectedIds.length === 0 || !batchSeriesName) return;
+  const handleBatchMove = async (targetSeries?: string) => {
+    const finalSeries = targetSeries || batchSeriesName;
+    if (!firestore || selectedIds.length === 0 || !finalSeries) return;
     const batch = writeBatch(firestore);
     selectedIds.forEach(id => {
       const ref = doc(firestore, 'artworks', id);
-      batch.update(ref, { series: batchSeriesName });
+      batch.update(ref, { series: finalSeries });
     });
     try {
       await batch.commit();
-      toast({ title: `${selectedIds.length} werken verplaatst naar "${batchSeriesName}"` });
+      toast({ title: `${selectedIds.length} werken verplaatst naar "${finalSeries}"` });
       setSelectedIds([]);
       setIsSelectionMode(false);
       setBatchSeriesName('');
@@ -185,6 +198,14 @@ export default function AdminPage() {
     setDoc(settingsRef, { [field]: value }, { merge: true }).catch(async () => 
       errorEmitter.emit('permission-error', new FirestorePermissionError({ path: settingsRef.path, operation: 'update' }))
     );
+  };
+
+  const toggleSeriesVisibility = (name: string) => {
+    const hidden = siteSettings?.hiddenSeries || [];
+    const newHidden = hidden.includes(name) 
+      ? hidden.filter((s: string) => s !== name) 
+      : [...hidden, name];
+    updateSettingsField('hiddenSeries', newHidden);
   };
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -311,7 +332,8 @@ export default function AdminPage() {
       <main className="flex-1 p-8 max-w-7xl mx-auto w-full relative">
         <Tabs defaultValue="archive" className="space-y-8">
           <TabsList className="bg-muted/50 p-1 rounded-full w-fit mx-auto flex flex-wrap justify-center h-auto border border-black/5">
-            <TabsTrigger value="archive" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest">Archief [{artworks.length}]</TabsTrigger>
+            <TabsTrigger value="archive" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest">Schilderijen [{artworks.length}]</TabsTrigger>
+            <TabsTrigger value="rooms" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest">Zalen & Beheer</TabsTrigger>
             <TabsTrigger value="orders" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest">Bestellingen [{orders?.length || 0}]</TabsTrigger>
             <TabsTrigger value="upload" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest">Digitaliseren</TabsTrigger>
             <TabsTrigger value="branding" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest">Identiteit</TabsTrigger>
@@ -366,7 +388,7 @@ export default function AdminPage() {
                     </div>
                     <CardContent className="p-2 text-center bg-white">
                       <h4 className="text-[9px] font-bold uppercase truncate">{art.displayTitle || art.title}</h4>
-                      <p className="text-[7px] opacity-40 uppercase font-bold mt-1">{art.series}</p>
+                      <p className={cn("text-[7px] uppercase font-bold mt-1", art.series === 'Archief' ? "text-red-500" : "opacity-40")}>{art.series}</p>
                     </CardContent>
                   </Card>
                 );
@@ -383,7 +405,7 @@ export default function AdminPage() {
                  
                  <div className="h-10 w-px bg-white/20" />
 
-                 <div className="flex items-center gap-3">
+                 <div className="flex items-center gap-6">
                     <div className="space-y-1">
                        <Label className="text-[9px] uppercase font-bold tracking-widest opacity-60 ml-2">Verplaats naar Zaal</Label>
                        <div className="flex items-center gap-2">
@@ -396,14 +418,25 @@ export default function AdminPage() {
                           <Button 
                             size="sm" 
                             disabled={!batchSeriesName}
-                            onClick={handleBatchMove}
+                            onClick={() => handleBatchMove()}
                             className="bg-accent text-accent-foreground rounded-xl"
                           >
                             <FolderInput className="w-4 h-4" />
                           </Button>
                        </div>
                     </div>
+
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => handleBatchMove('Archief')}
+                      className="border-white/20 text-white hover:bg-white/10 rounded-xl"
+                    >
+                      <Archive className="w-4 h-4 mr-2" /> Naar Archief
+                    </Button>
                  </div>
+
+                 <div className="h-10 w-px bg-white/20" />
 
                  <Button 
                    variant="destructive" 
@@ -415,6 +448,51 @@ export default function AdminPage() {
                  </Button>
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="rooms" className="space-y-6">
+             <Card className="p-8 rounded-3xl border-none shadow-xl bg-white/50 backdrop-blur-md">
+                <div className="flex items-center justify-between mb-8 border-l-4 border-accent pl-4">
+                   <div>
+                      <h2 className="text-[12px] font-bold uppercase tracking-widest text-accent">Zalenbeheer</h2>
+                      <p className="text-xs text-muted-foreground mt-1">Beheer de zichtbaarheid van collecties op de website.</p>
+                   </div>
+                </div>
+
+                <div className="grid gap-4">
+                   {uniqueSeries.map(name => {
+                      const isHidden = siteSettings?.hiddenSeries?.includes(name);
+                      const count = artworks.filter((a: any) => a.series === name).length;
+                      return (
+                        <div key={name} className="flex items-center justify-between p-6 bg-white rounded-2xl border border-black/5 group hover:shadow-md transition-all">
+                           <div className="flex items-center gap-4">
+                              <div className={cn("w-10 h-10 rounded-full flex items-center justify-center", isHidden ? "bg-muted text-muted-foreground" : "bg-accent/10 text-accent")}>
+                                 {isHidden ? <EyeOff className="w-5 h-5" /> : <Layers className="w-5 h-5" />}
+                              </div>
+                              <div>
+                                 <h4 className="font-bold text-sm uppercase tracking-wider">{name}</h4>
+                                 <p className="text-[10px] uppercase opacity-40 font-bold">{count} schilderijen</p>
+                              </div>
+                           </div>
+                           <div className="flex items-center gap-3">
+                              {isHidden && <span className="text-[9px] font-black uppercase text-red-500 bg-red-50 px-3 py-1 rounded-full">Verborgen</span>}
+                              <Button 
+                                variant={isHidden ? "default" : "outline"} 
+                                size="sm" 
+                                onClick={() => toggleSeriesVisibility(name)}
+                                className="rounded-full px-6 text-[10px] uppercase font-bold tracking-widest"
+                              >
+                                 {isHidden ? <><Eye className="w-3 h-3 mr-2" /> Toon Zaal</> : <><EyeOff className="w-3 h-3 mr-2" /> Verberg Zaal</>}
+                              </Button>
+                           </div>
+                        </div>
+                      );
+                   })}
+                   {uniqueSeries.length === 0 && (
+                      <div className="text-center py-20 opacity-30 uppercase font-bold tracking-[0.2em] italic">Geen zalen gevonden</div>
+                   )}
+                </div>
+             </Card>
           </TabsContent>
 
           <TabsContent value="orders" className="space-y-6">
@@ -545,6 +623,63 @@ export default function AdminPage() {
 
           <TabsContent value="help">
              <div className="max-w-5xl mx-auto space-y-12 pb-24">
+               <Card className="p-8 md:p-12 rounded-3xl shadow-xl border-none bg-white space-y-12">
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-4">
+                       <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center text-accent"><Info className="w-6 h-6" /></div>
+                       <div>
+                         <h2 className="text-2xl font-headline font-light">Veelgestelde Vragen (Collectiebeheer)</h2>
+                         <p className="text-sm text-muted-foreground">Hoe beheer je de zalen en schilderijen effectief?</p>
+                       </div>
+                    </div>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-12">
+                    <div className="space-y-8">
+                      <div className="space-y-4">
+                        <h4 className="text-[11px] font-bold uppercase tracking-widest text-accent flex items-center gap-2">
+                          <Layers className="w-4 h-4" /> Schilderijen uit zalen verwijderen
+                        </h4>
+                        <div className="space-y-4 text-sm text-muted-foreground leading-relaxed">
+                           <p><strong>Optie 1: Verplaatsen.</strong> Klik op een schilderij en verander de "Expositieruimte" naam. Zodra je een nieuwe naam typt, wordt er automatisch een nieuwe zaal aangemaakt en verdwijnt het werk uit de oude zaal.</p>
+                           <p><strong>Optie 2: Archiveren.</strong> Gebruik de selectie-modus in het overzicht, selecteer de werken die je wilt verbergen, en klik op "Naar Archief" in de werkbalk onderaan. Ze zijn dan niet meer zichtbaar voor het publiek.</p>
+                           <p><strong>Optie 3: Permanent verwijderen.</strong> Klik onderaan de editor op de rode knop "Verwijder uit Collectie" om het werk volledig uit de database en opslag te wissen.</p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <h4 className="text-[11px] font-bold uppercase tracking-widest text-accent flex items-center gap-2">
+                          <EyeOff className="w-4 h-4" /> Hele zalen verwijderen of verbergen
+                        </h4>
+                        <div className="space-y-4 text-sm text-muted-foreground leading-relaxed">
+                           <p>Een zaal bestaat alleen zolang er schilderijen aan gekoppeld zijn. Als je alle schilderijen uit een zaal verplaatst, verdwijnt de zaal automatisch uit de menu's.</p>
+                           <p>Wil je de schilderijen wel bewaren maar de zaal tijdelijk niet tonen? Ga dan naar het tabblad <strong>"Zalen & Beheer"</strong> en klik op "Verberg Zaal". De zaal is dan niet meer bereikbaar via de navigatie op de website.</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-secondary/10 p-8 rounded-3xl space-y-6">
+                       <h4 className="text-[10px] font-bold uppercase tracking-widest text-primary flex items-center gap-2">
+                         <CircleCheck className="w-3 h-3" /> Tips voor curatoren
+                       </h4>
+                       <div className="space-y-6">
+                         <div className="space-y-2">
+                           <p className="text-[11px] font-bold uppercase tracking-tight text-foreground">Sorteervolgorde</p>
+                           <p className="text-xs text-muted-foreground leading-relaxed italic">Werken worden in de zalen gesorteerd op titel. Gebruik bijvoorbeeld "01", "02" voor de titel als je een specifieke volgorde wilt afdwingen.</p>
+                         </div>
+                         <div className="space-y-2">
+                           <p className="text-[11px] font-bold uppercase tracking-tight text-foreground">Selecties (Curator)</p>
+                           <p className="text-xs text-muted-foreground leading-relaxed italic">De "Uw Zaal" pagina gebruikt de tags die je aan werken toekent. Hoe specifieker je tags (zoals "Periode" of "Techniek"), hoe leuker het voor bezoekers is om eigen collecties samen te stellen.</p>
+                         </div>
+                         <div className="space-y-2">
+                           <p className="text-[11px] font-bold uppercase tracking-tight text-foreground">Featured Werken</p>
+                           <p className="text-xs text-muted-foreground leading-relaxed italic">Zet de "Featured" switch aan voor je mooiste werken om ze direct op de homepagina te tonen in de 'Meester Selectie'.</p>
+                         </div>
+                       </div>
+                    </div>
+                  </div>
+               </Card>
+
                <Card className="p-8 md:p-12 rounded-3xl shadow-2xl border-none bg-primary text-primary-foreground relative overflow-hidden">
                   <div className="absolute top-0 right-0 p-12 opacity-10 rotate-12"><Coins className="w-64 h-64" /></div>
                   <div className="relative z-10 space-y-12">
@@ -597,115 +732,6 @@ export default function AdminPage() {
                            </div>
                            <p className="text-[10px] italic opacity-40">Uurtarief extra werk: €75,- ex BTW</p>
                         </div>
-                     </div>
-                  </div>
-               </Card>
-
-               <Card className="p-8 md:p-12 rounded-3xl shadow-2xl border-none bg-accent text-accent-foreground relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-12 opacity-10 -rotate-12"><Briefcase className="w-64 h-64" /></div>
-                  <div className="relative z-10 space-y-8">
-                    <div className="flex items-center gap-4">
-                       <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center border border-white/20"><GraduationCap className="w-6 h-6" /></div>
-                       <h2 className="text-3xl font-headline font-light italic">Master Franchise & Exit Strategie</h2>
-                    </div>
-                    <div className="flex items-start gap-4 p-4 bg-black/10 rounded-2xl border border-black/5 max-w-2xl">
-                       <HardDrive className="w-5 h-5 shrink-0 mt-1" />
-                       <p className="text-xs leading-relaxed">
-                         <strong>Asset Waarde:</strong> Dit platform vertegenwoordigt ruim <strong>100 uur intensieve ontwikkeltijd</strong> (IP). 
-                         De overnameprijs dekt de volledige codebase, de commerciële blauwdruk en 40 uur training.
-                       </p>
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-8">
-                       <div className="p-6 rounded-2xl bg-white/10 border border-white/20 space-y-4">
-                          <h4 className="font-bold uppercase text-[10px] tracking-widest opacity-70">Partner Overname (Vrienden)</h4>
-                          <div className="flex justify-between items-end border-b border-white/10 pb-2">
-                             <span className="text-[10px] uppercase opacity-60">Volledig Concept</span>
-                             <span className="font-headline text-2xl">€7.500,-</span>
-                          </div>
-                          <ul className="text-[10px] space-y-2 opacity-80">
-                             <li className="flex gap-2">✔ 40 uur intensieve training & support</li>
-                             <li className="flex gap-2">✔ Overdracht 100+ uur aan ontwikkelde IP</li>
-                          </ul>
-                       </div>
-
-                       <div className="p-6 rounded-2xl bg-black/10 border border-white/10 space-y-4">
-                          <h4 className="font-bold uppercase text-[10px] tracking-widest opacity-70">Enterprise Overname (Zakelijk)</h4>
-                          <div className="flex justify-between items-end border-b border-white/10 pb-2">
-                             <span className="text-[10px] uppercase opacity-60">IP & Licentie</span>
-                             <span className="font-headline text-2xl">€15.000,-</span>
-                          </div>
-                          <ul className="text-[10px] space-y-2 opacity-80">
-                             <li className="flex gap-2">✔ 40 uur professionele implementatie</li>
-                             <li className="flex gap-2">✔ Commerciële exploitatie licentie</li>
-                          </ul>
-                       </div>
-                    </div>
-                  </div>
-               </Card>
-
-               <Card className="p-8 md:p-12 rounded-3xl shadow-xl border-none bg-white space-y-12">
-                  <div className="space-y-6">
-                    <div className="flex items-center gap-4">
-                       <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center text-accent"><ImageIcon className="w-6 h-6" /></div>
-                       <div>
-                         <h2 className="text-2xl font-headline font-light">{t('asset_guide_title')}</h2>
-                         <p className="text-sm text-muted-foreground">{t('asset_guide_subtitle')}</p>
-                       </div>
-                    </div>
-                  </div>
-
-                  <div className="grid md:grid-cols-2 gap-12">
-                    <div className="space-y-8">
-                      <div className="space-y-4">
-                        <h4 className="text-[10px] font-bold uppercase tracking-widest text-accent flex items-center gap-2">
-                          <CircleCheck className="w-3 h-3" /> {t('asset_specs_title')}
-                        </h4>
-                        <ul className="space-y-3 text-sm">
-                           <li className="flex gap-3 items-start font-bold"><span className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 shrink-0" /> {t('asset_specs_pixels')}</li>
-                           <li className="flex gap-3 items-start"><span className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 shrink-0" /> {t('asset_specs_format')}</li>
-                           <li className="flex gap-3 items-start"><span className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 shrink-0" /> {t('asset_specs_color')}</li>
-                        </ul>
-                      </div>
-
-                      <div className="space-y-4">
-                        <h4 className="text-[10px] font-bold uppercase tracking-widest text-accent flex items-center gap-2">
-                          <Camera className="w-3 h-3" /> {t('asset_manual_title')}
-                        </h4>
-                        <div className="space-y-4 text-sm text-muted-foreground leading-relaxed">
-                           <p>{t('asset_manual_step1')}</p>
-                           <p>{t('asset_manual_step2')}</p>
-                           <p>{t('asset_manual_step3')}</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="bg-secondary/10 p-8 rounded-3xl space-y-6">
-                       <h4 className="text-[10px] font-bold uppercase tracking-widest text-primary flex items-center gap-2">
-                         <CircleCheck className="w-3 h-3" /> {t('asset_faq_title')}
-                       </h4>
-                       <div className="space-y-6">
-                         <div className="space-y-2">
-                           <p className="text-[11px] font-bold uppercase tracking-tight text-foreground">{t('asset_faq_q1')}</p>
-                           <p className="text-xs text-muted-foreground leading-relaxed italic">{t('asset_faq_a1')}</p>
-                         </div>
-                         <div className="space-y-2">
-                           <p className="text-[11px] font-bold uppercase tracking-tight text-foreground">{t('asset_faq_q2')}</p>
-                           <p className="text-xs text-muted-foreground leading-relaxed italic">{t('asset_faq_a2')}</p>
-                         </div>
-                         <div className="space-y-2">
-                           <p className="text-[11px] font-bold uppercase tracking-tight text-foreground">{t('asset_faq_q3')}</p>
-                           <p className="text-xs text-muted-foreground leading-relaxed italic">{t('asset_faq_a3')}</p>
-                         </div>
-                       </div>
-                    </div>
-                  </div>
-
-                  <div className="pt-8 border-t border-black/5 flex items-center justify-between">
-                     <p className="text-[9px] uppercase tracking-widest font-bold opacity-30">Safe Harbor Framework &bull; Curator Edition</p>
-                     <div className="flex gap-2">
-                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                        <span className="text-[9px] font-bold opacity-40 uppercase">System Ready</span>
                      </div>
                   </div>
                </Card>
@@ -787,13 +813,14 @@ export default function AdminPage() {
                        />
                     </div>
                     <div className="space-y-2">
-                       <Label className="text-[10px] uppercase font-bold opacity-40 tracking-widest">Expositieruimte / Collectie</Label>
+                       <Label className="text-[10px] uppercase font-bold opacity-40 tracking-widest">Expositieruimte / Collectie (Zaal)</Label>
                        <Input 
                          defaultValue={editingArtwork?.series || ''} 
                          onBlur={(e) => updateArtworkField(editingId!, 'series', e.target.value)} 
-                         placeholder="Zaalnaam"
-                         className="h-12 border-black/10 focus:border-accent"
+                         placeholder="Bijv: Polders of Archief"
+                         className="h-12 border-black/10 focus:border-accent font-bold"
                        />
+                       <p className="text-[9px] text-muted-foreground italic">Wijzig deze naam om het werk naar een andere zaal te verplaatsen.</p>
                     </div>
                   </div>
                 </div>
