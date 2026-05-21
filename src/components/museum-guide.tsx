@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from 'react';
@@ -16,9 +15,10 @@ import {
   Info, 
   Keyboard,
   ArrowRight,
-  Globe2,
-  ShieldCheck,
-  Zap
+  Layers,
+  Zap,
+  BookOpen,
+  Filter
 } from 'lucide-react';
 import { useLanguage } from '@/components/language-provider';
 
@@ -58,32 +58,47 @@ export function MuseumGuide({ open, onOpenChange }: MuseumGuideProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto p-0 bg-background border-none rounded-[2rem] shadow-2xl">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 bg-background border-none rounded-[2rem] shadow-2xl">
         <DialogTitle className="sr-only">{t('guide_welcome')}</DialogTitle>
         <div className="bg-primary p-12 text-primary-foreground relative overflow-hidden">
           <div className="absolute inset-0 opacity-10 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/pinstriped-suit.png')]" />
-          <div className="relative z-10 space-y-6">
+          <div className="relative z-10 space-y-6 text-center">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent/20 border border-accent/30">
-              <ShieldCheck className="w-3.5 h-3.5 text-accent" />
+              <BookOpen className="w-3.5 h-3.5 text-accent" />
               <span className="text-[10px] font-black uppercase tracking-[0.3em] text-accent">Safe Harbor Architecture</span>
             </div>
             <h1 className="font-headline text-4xl md:text-6xl font-light leading-tight">
-              {t('guide_welcome').split(' ').map((word, i, arr) => 
-                i >= arr.length - 2 ? <span key={i} className="italic">{word} </span> : word + ' '
+              {t('guide_welcome').split('&').map((word, i, arr) => 
+                i === 1 ? <span key={i} className="italic">& {word} </span> : word + ' '
               )}
             </h1>
-            <p className="text-xl text-primary-foreground/70 font-light max-w-2xl leading-relaxed">
+            <p className="text-xl text-primary-foreground/70 font-light max-w-2xl mx-auto leading-relaxed">
               {t('guide_intro')}
             </p>
           </div>
         </div>
 
         <div className="p-8 md:p-12 space-y-16">
-          <Section title={t('guide_concept_title')} icon={Sparkles}>
-            <p className="text-muted-foreground leading-relaxed italic border-l-4 border-accent pl-6">
-              {t('guide_concept_quote')}
-            </p>
-          </Section>
+          <div className="grid md:grid-cols-2 gap-12">
+            <Section title={t('guide_concept_title')} icon={Sparkles}>
+               <p className="text-muted-foreground leading-relaxed text-sm italic border-l-4 border-accent pl-6">
+                 {t('guide_concept_desc')}
+               </p>
+               <Item 
+                icon={Layers} 
+                label={t('guide_rooms_title')} 
+                desc={t('guide_rooms_desc')} 
+              />
+            </Section>
+
+            <Section title={t('guide_curator_manual_title')} icon={Filter}>
+               <div className="bg-accent/5 p-6 rounded-2xl border border-accent/10 space-y-4">
+                  <Item label={t('guide_curator_step1').split(':')[0]} desc={t('guide_curator_step1').split(':')[1]} />
+                  <Item label={t('guide_curator_step2').split(':')[0]} desc={t('guide_curator_step2').split(':')[1]} />
+                  <Item label={t('guide_curator_step3').split(':')[0]} desc={t('guide_curator_step3').split(':')[1]} />
+               </div>
+            </Section>
+          </div>
 
           <div className="grid md:grid-cols-2 gap-12">
             <Section title={t('guide_nav_title')} icon={Layout}>
@@ -93,18 +108,8 @@ export function MuseumGuide({ open, onOpenChange }: MuseumGuideProps) {
                 desc={t('guide_nav_tour_desc')} 
               />
               <Item 
-                icon={Globe2} 
-                label={t('guide_nav_galleries_label')} 
-                desc={t('guide_nav_galleries_desc')} 
-              />
-              <Item 
-                icon={MousePointer2} 
-                label={t('guide_nav_curator_label')} 
-                desc={t('guide_nav_curator_desc')} 
-              />
-              <Item 
                 icon={ShoppingBag} 
-                label={t('guide_nav_shop_label')} 
+                label={t('nav_shop')} 
                 desc={t('guide_nav_shop_desc')} 
               />
             </Section>
@@ -117,13 +122,8 @@ export function MuseumGuide({ open, onOpenChange }: MuseumGuideProps) {
               />
               <Item 
                 icon={Info} 
-                label={t('guide_viewer_info_label')} 
+                label={t('viewer_show_info')} 
                 desc={t('guide_viewer_info_desc')} 
-              />
-              <Item 
-                icon={ArrowRight} 
-                label={t('guide_viewer_browse_label')} 
-                desc={t('guide_viewer_browse_desc')} 
               />
             </Section>
           </div>
