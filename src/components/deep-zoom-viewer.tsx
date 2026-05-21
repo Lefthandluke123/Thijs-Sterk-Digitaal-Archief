@@ -153,26 +153,26 @@ export function DeepZoomViewer({ imageUrl, title, brightness = 1, className }: D
       `}} />
 
       {/* Custom Controls Overlay */}
-      <div className="absolute top-8 left-8 flex flex-col gap-6 z-[160] pointer-events-none">
-        <div className="bg-black/60 backdrop-blur-xl border border-white/10 p-5 rounded-2xl shadow-2xl pointer-events-auto">
-          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-accent mb-1">Collectie Thijs Sterk</p>
-          <p className="text-white text-sm font-light italic truncate max-w-[240px]">{title}</p>
+      <div className="absolute top-8 left-8 flex flex-col gap-4 md:gap-6 z-[160] pointer-events-none">
+        <div className="bg-black/60 backdrop-blur-xl border border-white/10 p-3 md:p-5 rounded-2xl shadow-2xl pointer-events-auto">
+          <p className="text-[8px] md:text-[10px] font-black uppercase tracking-[0.3em] text-accent mb-1">Collectie Thijs Sterk</p>
+          <p className="text-white text-xs md:text-sm font-light italic truncate max-w-[180px] md:max-w-[240px]">{title}</p>
         </div>
 
-        {/* De herstelde Zoom Knop (+/-) */}
+        {/* De herstelde Zoom Knop (+/-) - Responsief kleiner op mobiel */}
         <button 
           onClick={(e) => { 
             e.preventDefault(); 
             e.stopPropagation(); 
             handleToggleZoom(); 
           }}
-          className="w-20 h-20 bg-accent hover:bg-accent/90 text-accent-foreground rounded-3xl flex items-center justify-center shadow-[0_20px_50px_rgba(0,0,0,0.4)] border-2 border-white/20 transition-all hover:scale-110 active:scale-90 pointer-events-auto group/zoom"
+          className="w-14 h-14 md:w-20 md:h-20 bg-accent hover:bg-accent/90 text-accent-foreground rounded-2xl md:rounded-3xl flex items-center justify-center shadow-[0_20px_50px_rgba(0,0,0,0.4)] border-2 border-white/20 transition-all hover:scale-110 active:scale-90 pointer-events-auto group/zoom"
           title={isZoomedIn ? "Terug naar overzicht (-)" : "Zoom in op details (+)"}
         >
           {isZoomedIn ? (
-            <ZoomOut className="w-10 h-10 transition-transform group-hover/zoom:scale-110" />
+            <ZoomOut className="w-7 h-7 md:w-10 md:h-10 transition-transform group-hover/zoom:scale-110" />
           ) : (
-            <ZoomIn className="w-10 h-10 transition-transform group-hover/zoom:scale-110" />
+            <ZoomIn className="w-7 h-7 md:w-10 md:h-10 transition-transform group-hover/zoom:scale-110" />
           )}
         </button>
       </div>

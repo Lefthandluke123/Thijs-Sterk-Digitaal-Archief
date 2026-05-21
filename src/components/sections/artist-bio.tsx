@@ -3,9 +3,10 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import { Maximize2 } from 'lucide-react';
+import { Maximize2, Users, ArrowRight } from 'lucide-react';
 import { ArtworkViewer } from '@/components/artwork-viewer';
 import { useLanguage } from '@/components/language-provider';
 
@@ -79,11 +80,11 @@ export function ArtistBio() {
 
   return (
     <section className="py-24 bg-secondary/30 px-4" id="about">
-      <div className="container mx-auto">
-        <div className="grid lg:grid-cols-12 gap-16 items-center">
-          <div className="lg:col-span-5 order-2 lg:order-1">
+      <div className="container mx-auto max-w-7xl">
+        <div className="grid lg:grid-cols-12 gap-16 items-start">
+          <div className="lg:col-span-5 order-2 lg:order-1 sticky top-24">
             <div className="relative">
-              <div className="absolute -top-6 -left-6 w-24 h-24 border-t-2 border-l-2 border-accent" />
+              <div className="absolute -top-6 -left-6 w-24 h-24 border-t-2 border-l-2 border-accent hidden md:block" />
               <div 
                 className="relative aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl bg-muted/20 cursor-pointer group"
                 onClick={handleMainPortraitClick}
@@ -99,22 +100,50 @@ export function ArtistBio() {
                   <Maximize2 className="text-white w-8 h-8 drop-shadow-2xl" />
                 </div>
               </div>
+
+              {/* Extra sectie voor betrokkenen */}
+              <div className="mt-12 p-8 bg-background/50 backdrop-blur-md rounded-[2rem] border border-border shadow-sm space-y-6">
+                 <div className="flex items-center gap-3 border-b border-border pb-4">
+                    <Users className="w-5 h-5 text-accent" />
+                    <h3 className="font-black uppercase tracking-widest text-[10px]">Nalatenschap & Betrokkenen</h3>
+                 </div>
+                 <div className="grid gap-4">
+                    {[
+                      { name: "Hanneke Sterk", href: "/hanneke", role: "Archiefbeheer" },
+                      { name: "Beatrijs Sterk", href: "/beatrijs", role: "Documentatie" },
+                      { name: "Peter Bes", href: "/peter-bes", role: "Leerling" },
+                      { name: "Leo Duppen", href: "/leo-duppen", role: "Kunsthistoricus" }
+                    ].map((person) => (
+                      <Link 
+                        key={person.href} 
+                        href={person.href}
+                        className="flex items-center justify-between group/link p-2 hover:bg-black/5 rounded-xl transition-all"
+                      >
+                         <div className="flex flex-col">
+                            <span className="text-sm font-bold">{person.name}</span>
+                            <span className="text-[9px] uppercase tracking-widest opacity-40">{person.role}</span>
+                         </div>
+                         <ArrowRight className="w-4 h-4 text-accent opacity-0 group-hover/link:opacity-100 transition-all -translate-x-2 group-hover/link:translate-x-0" />
+                      </Link>
+                    ))}
+                 </div>
+              </div>
             </div>
           </div>
           
           <div className="lg:col-span-7 order-1 lg:order-2">
             <span className="text-accent font-medium tracking-widest uppercase text-sm mb-4 block">De Biografie</span>
-            <h2 className="font-headline text-4xl md:text-5xl font-light mb-8 leading-tight">
+            <h2 className="font-headline text-4xl md:text-5xl lg:text-6xl font-light mb-8 leading-tight">
               {bioTitle.split(' ').map((word, i, arr) => 
                 i === arr.length - 1 ? <span key={i} className="italic">{word}</span> : word + ' '
               )}
             </h2>
             
-            <div className="space-y-6 text-lg text-muted-foreground leading-relaxed font-light whitespace-pre-line">
+            <div className="space-y-6 text-xl text-muted-foreground leading-relaxed font-light whitespace-pre-line border-l-4 border-accent/10 pl-8">
               {renderTextWithLinks(bioText)}
             </div>
             
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 mt-12 pt-12 border-t border-border">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 mt-16 pt-12 border-t border-border">
               <div>
                 <h4 className="font-headline text-2xl font-light text-foreground mb-1">1913</h4>
                 <p className="text-[10px] uppercase tracking-tighter text-muted-foreground">Geboortejaar</p>
@@ -129,7 +158,7 @@ export function ArtistBio() {
               </div>
               <div>
                 <h4 className="font-headline text-2xl font-light text-foreground mb-1">Internationaal</h4>
-                <p className="text-[10px] uppercase tracking-tighter text-muted-foreground">Bretagne / Griekenland</p>
+                <p className="text-[10px] uppercase tracking-tighter text-muted-foreground">Frankrijk / Griekenland</p>
               </div>
             </div>
           </div>
