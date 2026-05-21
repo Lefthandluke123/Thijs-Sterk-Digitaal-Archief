@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, Suspense } from 'react';
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
@@ -18,7 +18,6 @@ import {
   ShoppingBag, 
   BookOpen,
   Menu,
-  X,
   Home,
   Layers,
   Info,
@@ -56,7 +55,6 @@ function NavbarContent() {
 
   const hiddenSeries = useMemo(() => siteSettings?.hiddenSeries || [], [siteSettings]);
 
-  // Dynamische White Label Identiteit
   const siteTitle = (language !== 'nl' && siteSettings?.[`siteTitle_${language}`])
     ? siteSettings[`siteTitle_${language}`]
     : (siteSettings?.siteTitle || t('nav_museum_title'));
@@ -133,14 +131,14 @@ function NavbarContent() {
               alt="Logo" 
               className="h-8 md:h-12 w-auto object-contain" 
             />
-            <div className="flex flex-col leading-tight border-l border-border/40 pl-3 md:pl-5">
-               <div className="flex items-center gap-2">
+            <div className="flex flex-col leading-tight border-l border-border/40 pl-3 md:pl-5 overflow-hidden">
+               <div className="flex items-center gap-2 animate-fade-in-up">
                  <span className="font-headline font-light text-base md:text-xl tracking-tight text-foreground">
                    {siteTitle}
                  </span>
-                 <BookOpen className="w-3.5 h-3.5 text-accent hidden md:inline opacity-40" />
+                 <BookOpen className="w-3.5 h-3.5 text-accent hidden md:inline opacity-40 group-hover:opacity-100 transition-opacity" />
                </div>
-               <span className="text-[7px] md:text-[9px] font-black uppercase tracking-[0.3em] text-accent/80 block">
+               <span className="text-[7px] md:text-[9px] font-black uppercase tracking-[0.3em] text-accent/80 block animate-fade-in-up delay-150">
                  {siteSubtitle}
                </span>
             </div>
