@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useRef } from 'react';
@@ -31,9 +30,9 @@ import {
   FileText,
   ImageIcon,
   Camera,
-  HelpCircle,
-  CheckCircle,
-  AlertCircle,
+  CircleHelp,
+  CircleCheck,
+  CircleAlert,
   Zap,
   Gem,
   Coins,
@@ -500,7 +499,7 @@ export default function AdminPage() {
                     <div className="space-y-8">
                       <div className="space-y-4">
                         <h4 className="text-[10px] font-black uppercase tracking-widest text-accent flex items-center gap-2">
-                          <CheckCircle className="w-3 h-3" /> {t('asset_specs_title')}
+                          <CircleCheck className="w-3 h-3" /> {t('asset_specs_title')}
                         </h4>
                         <ul className="space-y-3 text-sm">
                            <li className="flex gap-3 items-start font-bold"><span className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 shrink-0" /> {t('asset_specs_pixels')}</li>
@@ -523,7 +522,7 @@ export default function AdminPage() {
 
                     <div className="bg-secondary/10 p-8 rounded-3xl space-y-6">
                        <h4 className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2">
-                         <HelpCircle className="w-3 h-3" /> {t('asset_faq_title')}
+                         <CircleHelp className="w-3 h-3" /> {t('asset_faq_title')}
                        </h4>
                        <div className="space-y-6">
                          <div className="space-y-2">
@@ -560,7 +559,7 @@ export default function AdminPage() {
                    <h2 className="text-xl font-headline font-light italic">Onthul nieuw werk</h2>
                    <p className="text-sm text-muted-foreground">Sleep hier de Master Files (min. 4000px) naar binnen.</p>
                    <div className="flex items-center justify-center gap-2 mt-4 text-accent">
-                      <AlertCircle className="w-4 h-4" />
+                      <CircleAlert className="w-4 h-4" />
                       <p className="text-[10px] uppercase font-black tracking-widest italic">{t('asset_specs_pixels')}</p>
                    </div>
                 </div>

@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { 
   Query, 
   onSnapshot, 
@@ -15,8 +14,6 @@ export function useCollection<T = DocumentData>(collectionQuery: Query<T> | null
   const [data, setData] = useState<T[] | null>(null);
   const [loading, setLoading] = useState(!!collectionQuery);
   const [error, setError] = useState<Error | null>(null);
-  
-  const queryRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!collectionQuery) {
@@ -25,13 +22,7 @@ export function useCollection<T = DocumentData>(collectionQuery: Query<T> | null
       return;
     }
 
-    // Genereer een stabiele sleutel voor de query om onnodige re-renders te voorkomen
-    const currentQueryKey = JSON.stringify((collectionQuery as any)._query || 'default');
-    
-    if (currentQueryKey !== queryRef.current) {
-      if (!data) setLoading(true);
-      queryRef.current = currentQueryKey;
-    }
+    setLoading(true);
 
     const unsubscribe = onSnapshot(
       collectionQuery,
@@ -45,13 +36,8 @@ export function useCollection<T = DocumentData>(collectionQuery: Query<T> | null
         setError(null);
       },
       async (serverError) => {
-        // Bepaal het pad voor de foutmelding
-        let path = 'collection';
-        try {
-          path = (collectionQuery as any)._query?.path?.segments?.join('/') || 'artworks';
-        } catch (e) {
-          path = 'artworks';
-        }
+        // Safe way to get path without circular stringify
+        const path = (collectionQuery as any)._query?.path?.segments?.join('/') || 'collection';
 
         const permissionError = new FirestorePermissionError({
           path,
@@ -65,7 +51,7 @@ export function useCollection<T = DocumentData>(collectionQuery: Query<T> | null
     );
 
     return () => unsubscribe();
-  }, [collectionQuery]);
+  }, [collectionQuery]); // Reliable dependency assuming memoized query
 
   return { data, loading, error };
 }
