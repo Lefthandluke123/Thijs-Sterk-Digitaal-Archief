@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from 'react';
@@ -37,12 +36,17 @@ export default function BeatrijsSterkPage() {
 
   const bioText = (language !== 'nl' && siteSettings?.[`beatrijsBio_${language}`])
     ? siteSettings[`beatrijsBio_${language}`]
-    : siteSettings?.beatrijsBio || `Beatrijs Sterk deelt als dochter de passie voor het landschap en de atmosferische rust.`;
+    : siteSettings?.beatrijsBio || `Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. 
+
+Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+
+Curabitur pretium tincidunt lacus. Nulla gravida orci a odio. Nullam varius, turpis et commodo pharetra, est eros bibendum elit, nec luctus magna felis sollicitudin mauris. Integer in mauris eu nibh euismod gravida. Duis ac tellus et risus vulputate vehicula. Donec lobortis risus a elit. Etiam tempor. Ut ullamcorper, ligula eu tempor congue, eros est euismod turpis, id tincidunt sapien risus a quam. 
+
+Maecenas fermentum consequat mi. Donec fermentum. Pellentesque malesuada nulla a mi. Duis sapien sem, aliquet nec, commodo eget, consequat quis, neque. Aliquam faucibus, elit ut dictum aliquet, felis nisl adipiscing sapien, sed malesuada diam lacus eget erat. Cras mollis scelerisque nunc. Nullam arcu. Aliquam consequat.`;
   
   const images = siteSettings?.beatrijsBioImages || [];
   const hasMultipleImages = images.length > 1;
 
-  // Gebruik een archief-afbeelding uit eigen storage als er geen specifieke foto is ingesteld
   const defaultArchiveImageUrl = "https://firebasestorage.googleapis.com/v0/b/studio-7311695883-2090f.firebasestorage.app/o/artworks%2F1778851761925_vh0ad_2_I.jpg?alt=media";
 
   const handlePortraitClick = (url: string, index: number) => {
