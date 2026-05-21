@@ -18,7 +18,8 @@ import {
   Layers,
   Zap,
   BookOpen,
-  Filter
+  Filter,
+  Eraser
 } from 'lucide-react';
 import { useLanguage } from '@/components/language-provider';
 
@@ -96,6 +97,7 @@ export function MuseumGuide({ open, onOpenChange }: MuseumGuideProps) {
                   <Item label={t('guide_curator_step1').split(':')[0]} desc={t('guide_curator_step1').split(':')[1]} />
                   <Item label={t('guide_curator_step2').split(':')[0]} desc={t('guide_curator_step2').split(':')[1]} />
                   <Item label={t('guide_curator_step3').split(':')[0]} desc={t('guide_curator_step3').split(':')[1]} />
+                  <Item label={t('guide_curator_step4').split(':')[0]} desc={t('guide_curator_step4').split(':')[1]} />
                </div>
             </Section>
           </div>
