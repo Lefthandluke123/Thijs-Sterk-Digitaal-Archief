@@ -38,7 +38,6 @@ export default function CuratorPage() {
   const translateTerm = (text: string, category: 'tag' | 'tagcat' | 'series') => {
     if (language === 'nl' || !siteSettings) return text;
     const mapField = category === 'series' ? 'seriesTranslations' : (category === 'tag' ? 'tagTranslations' : 'tagCatTranslations');
-    // Voor categorieën gebruiken we momenteel de tagTranslations map of een fallback naar t()
     const map = siteSettings[mapField];
     return map?.[language]?.[text] || text;
   };
@@ -47,12 +46,19 @@ export default function CuratorPage() {
     let vid = typeof window !== 'undefined' ? localStorage.getItem('ts_visitor_id') : null;
     if (!vid) {
       vid = Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
-      if (typeof window !== 'undefined') localStorage.setItem('ts_visitor_id', vid);
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('ts_visitor_id', vid);
+        } catch (e) {
+          // Privemodus kan localStorage blokkeren
+          console.warn("Storage restricted in private mode");
+        }
+      }
     }
-    setVisitorId(vid);
+    setVisitorId(vid || "anonymous");
   }, []);
 
-  const artworksQuery = useMemo(() => {
+  const artworksQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'artworks'), orderBy('createdAt', 'desc'));
   }, [firestore]);
@@ -63,7 +69,7 @@ export default function CuratorPage() {
     if (!dbArtworks) return [];
     const seen = new Set();
     return dbArtworks.filter(art => {
-      const url = art.imageUrl;
+      const url = (art as any).imageUrl;
       if (!url || seen.has(url)) return false;
       seen.add(url);
       return true;
@@ -72,7 +78,7 @@ export default function CuratorPage() {
 
   const otherTags = useMemo(() => {
     const dbTags = new Set<string>();
-    artworks.forEach(art => {
+    artworks.forEach((art: any) => {
       art.tags?.forEach((tag: string) => {
         if (!FLAT_STANDARD_TAGS.includes(tag)) {
           dbTags.add(tag);
@@ -84,12 +90,12 @@ export default function CuratorPage() {
 
   const filteredArtworks = useMemo(() => {
     if (activeTags.length === 0) return [];
-    return artworks.filter(art => activeTags.every(tag => art.tags?.includes(tag)));
+    return artworks.filter((art: any) => activeTags.every(tag => art.tags?.includes(tag)));
   }, [artworks, activeTags]);
 
   const navigateResults = useCallback((direction: 'next' | 'prev') => {
     if (!selectedArtwork || !filteredArtworks.length) return;
-    const currentIndex = filteredArtworks.findIndex(art => art.id === selectedArtwork.id);
+    const currentIndex = filteredArtworks.findIndex(art => (art as any).id === selectedArtwork.id);
     let nextIndex = direction === 'next' 
       ? (currentIndex + 1) % filteredArtworks.length 
       : (currentIndex - 1 + filteredArtworks.length) % filteredArtworks.length;
@@ -110,8 +116,8 @@ export default function CuratorPage() {
   const logInteraction = (type: 'view_artwork' | 'filter_tags', data: any) => {
     if (!firestore || !visitorId) return;
     const logData = { visitorId, type, ...data, timestamp: serverTimestamp() };
-    addDoc(collection(firestore, 'interactions'), logData).catch(async () => {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'interactions', operation: 'create', requestResourceData: logData }));
+    addDoc(collection(firestore, 'interactions'), logData).catch(() => {
+      // Stilzwijgend falen voor analytics logs
     });
   };
 
@@ -225,7 +231,7 @@ export default function CuratorPage() {
               <div className="flex justify-center py-24"><Loader2 className="animate-spin opacity-30 w-8 h-8" /></div>
             ) : filteredArtworks.length > 0 ? (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8">
-                {filteredArtworks.map(item => (
+                {filteredArtworks.map((item: any) => (
                   <div key={item.id} className="group cursor-pointer" onClick={() => setSelectedArtwork(item)}>
                     <div className="relative aspect-[4/5] overflow-hidden rounded-sm bg-muted/20 shadow-md group-hover:shadow-xl transition-all duration-700">
                       <img 

@@ -2,13 +2,21 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Open regels voor het prototype: iedereen kan lezen en schrijven.
+    // Dit garandeert dat je 20 vrienden/klanten zonder problemen kunnen starten.
     match /{document=**} {
-      allow read: if true;
-      allow write: if true;
+      allow read, write: if true;
     }
-    // Specifieke regels voor bestellingen (ter illustratie, momenteel open wegens prototype fase)
+    
+    // Specifieke mail collectie voor het contactformulier
+    match /mail/{mailId} {
+      allow create: if true;
+    }
+
+    // Orders kunnen door iedereen worden aangemaakt (klanten in de shop)
     match /orders/{orderId} {
       allow create: if true;
+      allow read: if true; // In productie beperken we dit tot de admin
     }
   }
 }

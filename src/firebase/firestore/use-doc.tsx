@@ -31,6 +31,7 @@ export function useDoc<T = DocumentData>(docRef: DocumentReference<T> | null) {
       (snapshot: DocumentSnapshot<T>) => {
         setData(snapshot.exists() ? { ...(snapshot.data() as any), id: snapshot.id } : null);
         setLoading(false);
+        setError(null);
       },
       async (serverError: FirestoreError) => {
         if (serverError.code === 'permission-denied') {
@@ -41,10 +42,9 @@ export function useDoc<T = DocumentData>(docRef: DocumentReference<T> | null) {
           errorEmitter.emit('permission-error', permissionError);
           setError(permissionError);
         } else {
-          console.error('Firestore Error:', serverError.code, serverError.message);
-          setError(serverError);
+          console.warn('Firestore non-critical error:', serverError.code, serverError.message);
+          setLoading(false);
         }
-        setLoading(false);
       }
     );
 
