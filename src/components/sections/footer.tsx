@@ -27,19 +27,19 @@ export function Footer() {
   return (
     <footer className="py-12 border-t border-border bg-background px-4">
       <div className="container mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
-        <div className="flex items-center gap-4">
+        <Link href="/" className="flex items-center gap-4 group">
           <div className="h-10 w-auto flex items-center justify-center">
             <img 
               src={siteSettings?.logoUrl || "/logo.png"} 
               alt="Logo" 
-              className="h-full w-auto object-contain" 
+              className="h-full w-auto object-contain transition-transform group-hover:scale-105" 
             />
           </div>
           <div className="flex flex-col leading-none border-l border-border/40 pl-4">
-            <span className="font-headline font-medium tracking-tight text-xl text-foreground">{siteTitle}</span>
+            <span className="font-headline font-medium tracking-tight text-xl text-foreground group-hover:text-accent transition-colors">{siteTitle}</span>
             <span className="text-[8px] font-black uppercase tracking-[0.3em] text-accent mt-1">{siteSubtitle}</span>
           </div>
-        </div>
+        </Link>
         
         <p className="text-muted-foreground text-[10px] uppercase tracking-widest font-black opacity-40">
           &copy; {new Date().getFullYear()} {siteTitle}. {t('footer_rights')}

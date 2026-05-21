@@ -121,10 +121,10 @@ function NavbarContent() {
       <nav className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-2xl border-b border-border/20 shadow-md h-16 md:h-32">
         <div className="container mx-auto px-4 md:px-6 h-full flex items-center justify-between">
           
-          <div 
+          <Link 
+            href="/"
             className="flex items-center gap-3 md:gap-8 group shrink-0 cursor-pointer"
-            onClick={() => setGuideOpen(true)}
-            title={t('nav_guide_click')}
+            title={t('nav_home')}
           >
             <img 
               src={siteSettings?.logoUrl || "/logo.png"} 
@@ -136,13 +136,14 @@ function NavbarContent() {
                  <span className="font-headline font-medium text-lg md:text-3xl tracking-tight text-foreground transition-all duration-500 group-hover:text-accent">
                    {siteTitle}
                  </span>
-                 <BookOpen className="w-3.5 h-3.5 md:w-5 md:h-5 text-accent opacity-40 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500" />
                </div>
-               <span className="text-[7px] md:text-[11px] font-bold uppercase tracking-[0.3em] text-accent block transition-all duration-700 group-hover:translate-x-4 origin-left">
-                 {siteSubtitle}
-               </span>
+               <div className="relative overflow-hidden h-6 md:h-8">
+                 <span className="text-[7px] md:text-[11px] font-bold uppercase tracking-[0.3em] text-accent block transition-all duration-700 group-hover:translate-x-4 group-hover:tracking-[0.4em] group-hover:text-primary origin-left animate-fade-in-left">
+                   {siteSubtitle}
+                 </span>
+               </div>
             </div>
-          </div>
+          </Link>
           
           <div className="hidden lg:flex items-center gap-1 xl:gap-2">
             <NavLink href="/" active={pathname === "/"}>{t('nav_home')}</NavLink>
@@ -171,9 +172,18 @@ function NavbarContent() {
 
             <div className="h-10 w-px bg-border/30 mx-2" />
 
+            <button 
+              onClick={() => setGuideOpen(true)}
+              className="px-5 py-2.5 rounded-full text-[15px] font-bold tracking-wider uppercase transition-all duration-300 flex items-center gap-2 hover:scale-105 hover:bg-accent/10 text-accent group"
+              title={t('nav_guide_click')}
+            >
+              <BookOpen className="w-4 h-4 transition-transform group-hover:rotate-12" />
+              <span>{t('guide_welcome').split('&')[0].trim()}</span>
+            </button>
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-secondary/40 text-[12px] font-bold uppercase tracking-widest hover:bg-secondary/60 transition-all duration-300 border-2 border-border/20">
+                <button className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-secondary/40 text-[12px] font-bold uppercase tracking-widest hover:bg-secondary/60 transition-all duration-300 border-2 border-border/20 ml-2">
                   <Languages className="w-4 h-4 text-accent" /> {language.toUpperCase()}
                 </button>
               </DropdownMenuTrigger>
