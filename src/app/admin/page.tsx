@@ -53,7 +53,8 @@ import {
   MousePointer2,
   Type,
   BookOpen,
-  ArrowRight
+  ArrowRight,
+  Filter
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -199,6 +200,14 @@ export default function AdminPage() {
 
   const toggleSelection = (id: string) => {
     setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  };
+
+  const handleSelectAllInSeries = (seriesName: string) => {
+    const ids = artworks.filter((a: any) => a.series === seriesName).map(a => a.id);
+    setSelectedIds(ids);
+    setIsSelectionMode(true);
+    setActiveTab('archive');
+    toast({ title: `Alle ${ids.length} werken uit "${seriesName}" geselecteerd` });
   };
 
   const updateSettingsField = (field: string, value: any) => {
@@ -357,7 +366,7 @@ export default function AdminPage() {
       </header>
 
       <main className="flex-1 p-8 max-w-7xl mx-auto w-full relative">
-        <Tabs defaultValue="archive" className="space-y-8">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
           <TabsList className="bg-muted/50 p-1 rounded-full w-fit mx-auto flex flex-wrap justify-center h-auto border border-black/5">
             <TabsTrigger value="archive" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest">Schilderijen [{artworks.length}]</TabsTrigger>
             <TabsTrigger value="rooms" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest">Zalen & Beheer</TabsTrigger>
@@ -365,7 +374,7 @@ export default function AdminPage() {
             <TabsTrigger value="upload" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest">Digitaliseren</TabsTrigger>
             <TabsTrigger value="branding" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest">Identiteit</TabsTrigger>
             <TabsTrigger value="payments" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest">Commercieel</TabsTrigger>
-            <TabsTrigger value="help" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest bg-primary text-primary-foreground hover:bg-primary/90 shadow-xl"><LifeBuoy className="w-3 h-3 mr-2" /> Gids & Cijfers</TabsTrigger>
+            <TabsTrigger value="help" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest bg-primary text-primary-foreground hover:bg-primary/90 shadow-xl"><LifeBuoy className="w-3 h-3 mr-2" /> Cijfers</TabsTrigger>
           </TabsList>
 
           <TabsContent value="archive" className="space-y-6">
@@ -491,7 +500,7 @@ export default function AdminPage() {
                       const isHidden = siteSettings?.hiddenSeries?.includes(name);
                       const count = artworks.filter((a: any) => a.series === name).length;
                       return (
-                        <div key={name} className="flex items-center justify-between p-6 bg-white rounded-2xl border border-black/5 group hover:shadow-md transition-all">
+                        <div key={name} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-6 bg-white rounded-2xl border border-black/5 group hover:shadow-md transition-all gap-4">
                            <div className="flex items-center gap-4">
                               <div className={cn("w-10 h-10 rounded-full flex items-center justify-center", isHidden ? "bg-muted text-muted-foreground" : "bg-accent/10 text-accent")}>
                                  {isHidden ? <EyeOff className="w-5 h-5" /> : <Layers className="w-5 h-5" />}
@@ -501,20 +510,28 @@ export default function AdminPage() {
                                  <p className="text-[10px] uppercase opacity-40 font-bold">{count} schilderijen</p>
                               </div>
                            </div>
-                           <div className="flex items-center gap-3">
+                           <div className="flex flex-wrap items-center gap-3">
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => handleSelectAllInSeries(name)}
+                                className="rounded-full px-4 text-[9px] uppercase font-bold tracking-widest h-9 border-accent/20 text-accent hover:bg-accent hover:text-white"
+                              >
+                                 <CheckSquare className="w-3 h-3 mr-2" /> Selecteer alles
+                              </Button>
                               <div className={cn(
                                 "px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-[0.2em] border",
                                 isHidden ? "bg-red-50 text-red-500 border-red-100" : "bg-green-50 text-green-600 border-green-100"
                               )}>
-                                 {isHidden ? "Gesloten voor Publiek" : "Open in Museum"}
+                                 {isHidden ? "Gesloten" : "Open in Museum"}
                               </div>
                               <Button 
                                 variant={isHidden ? "default" : "outline"} 
                                 size="sm" 
                                 onClick={() => toggleSeriesVisibility(name)}
-                                className="rounded-full px-6 text-[10px] uppercase font-bold tracking-widest h-10"
+                                className="rounded-full px-6 text-[10px] uppercase font-bold tracking-widest h-9"
                               >
-                                 {isHidden ? <><Eye className="w-3 h-3 mr-2" /> Open Zaal</> : <><EyeOff className="w-3 h-3 mr-2" /> Sluit Zaal</>}
+                                 {isHidden ? <><Eye className="w-3 h-3 mr-2" /> Open</> : <><EyeOff className="w-3 h-3 mr-2" /> Sluit</>}
                               </Button>
                            </div>
                         </div>
@@ -571,6 +588,122 @@ export default function AdminPage() {
                    </div>
                 </div>
              </Card>
+
+             <Card className="p-8 md:p-16 rounded-[3rem] shadow-2xl border-none bg-white space-y-16">
+                  <div className="space-y-4 text-center border-b border-black/5 pb-12">
+                    <div className="w-20 h-20 rounded-full bg-primary text-primary-foreground flex items-center justify-center mx-auto mb-6 shadow-xl">
+                       <BookOpen className="w-10 h-10" />
+                    </div>
+                    <h2 className="text-4xl font-headline font-light italic">Museum Beheer Handleiding</h2>
+                    <p className="text-muted-foreground uppercase tracking-[0.2em] font-bold text-[10px]">Stap-voor-stap instructies voor de Digitaal Conservator</p>
+                  </div>
+
+                  <div className="grid gap-20">
+                    {/* Selecteren */}
+                    <div className="flex flex-col md:flex-row gap-12">
+                       <div className="md:w-1/3 space-y-4">
+                          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent/10 border border-accent/20">
+                             <CheckSquare className="w-3.5 h-3.5 text-accent" />
+                             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-accent">Stap 1</span>
+                          </div>
+                          <h3 className="text-2xl font-headline italic">Schilderijen Selecteren</h3>
+                       </div>
+                       <div className="md:w-2/3 space-y-6 text-muted-foreground leading-relaxed">
+                          <p>Om acties uit te voeren op meerdere schilderijen tegelijk, gebruik je de <strong>Selectie-modus</strong>:</p>
+                          <ul className="space-y-4 list-none p-0">
+                             <li className="flex gap-4">
+                                <div className="w-6 h-6 rounded-full bg-black/5 flex items-center justify-center shrink-0 text-[10px] font-bold">A</div>
+                                <span>Klik op de knop <strong>[Selectie-modus]</strong> rechtsboven in het overzicht. De schilderijen worden iets kleiner en vinkvakjes verschijnen.</span>
+                             </li>
+                             <li className="flex gap-4">
+                                <div className="w-6 h-6 rounded-full bg-black/5 flex items-center justify-center shrink-0 text-[10px] font-bold">B</div>
+                                <span>Klik op de schilderijen die je wilt bewerken. Er verschijnt een vinkje bij de geselecteerde werken.</span>
+                             </li>
+                             <li className="flex gap-4">
+                                <div className="w-6 h-6 rounded-full bg-black/5 flex items-center justify-center shrink-0 text-[10px] font-bold">C</div>
+                                <span>Onderaan het scherm verschijnt nu automatisch de <strong>Batch-werkbalk</strong> met acties.</span>
+                             </li>
+                          </ul>
+                       </div>
+                    </div>
+
+                    {/* Verplaatsen / Hernoemen */}
+                    <div className="flex flex-col md:flex-row gap-12">
+                       <div className="md:w-1/3 space-y-4">
+                          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent/10 border border-accent/20">
+                             <FolderInput className="w-3.5 h-3.5 text-accent" />
+                             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-accent">Stap 2</span>
+                          </div>
+                          <h3 className="text-2xl font-headline italic">Zalen & Hernoemen</h3>
+                       </div>
+                       <div className="md:w-2/3 space-y-6 text-muted-foreground leading-relaxed">
+                          <p>Je kunt schilderijen op twee manieren verplaatsen of zalen hernoemen:</p>
+                          <div className="bg-accent/5 p-8 rounded-3xl border border-accent/10 space-y-6">
+                             <div className="space-y-2">
+                                <p className="font-bold text-foreground text-sm uppercase tracking-wide">Individueel (Editor):</p>
+                                <p>Klik op een enkel schilderij om de editor te openen. Pas het veld <strong>"Expositieruimte / Collectie (Zaal)"</strong> aan. Zodra je een nieuwe naam typt, wordt de zaal aangemaakt of verplaatst het werk.</p>
+                             </div>
+                             <div className="space-y-2">
+                                <p className="font-bold text-foreground text-sm uppercase tracking-wide">In Bulk (Selectie):</p>
+                                <p>Gebruik de Batch-werkbalk onderaan. Typ de naam van de doelzaal in het tekstveld en klik op de <strong>[Pijl naar map]</strong> knop om alle geselecteerde werken in één keer te verplaatsen.</p>
+                             </div>
+                             <div className="space-y-2 border-t border-accent/20 pt-4">
+                                <p className="font-bold text-foreground text-sm uppercase tracking-wide">Samenvoegen:</p>
+                                <p>Klik bovenaan dit tabblad bij een zaal op <strong>[Selecteer alles]</strong>. De tool selecteert alle werken en brengt je naar het archief. Gebruik dan de Batch-werkbalk om ze naar de nieuwe gezamenlijke zaal te verplaatsen.</p>
+                             </div>
+                          </div>
+                       </div>
+                    </div>
+
+                    {/* Verwijderen */}
+                    <div className="flex flex-col md:flex-row gap-12">
+                       <div className="md:w-1/3 space-y-4">
+                          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-red-50 border border-red-100">
+                             <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-red-500">Stap 3</span>
+                          </div>
+                          <h3 className="text-2xl font-headline italic">Verwijderen & Archiveren</h3>
+                       </div>
+                       <div className="md:w-2/3 space-y-6 text-muted-foreground leading-relaxed">
+                          <p>Er is een belangrijk verschil tussen archiveren en permanent verwijderen:</p>
+                          <div className="grid sm:grid-cols-2 gap-8">
+                             <div className="space-y-2">
+                                <div className="flex items-center gap-2 text-foreground font-bold"><Archive className="w-4 h-4" /> Archiveren</div>
+                                <p className="text-xs">Gebruik de knop <strong>[Naar Archief]</strong> in de batch-werkbalk. De werken worden verplaatst naar de zaal 'Archief' en zijn direct onzichtbaar voor bezoekers, maar blijven bewaard in je beheer.</p>
+                             </div>
+                             <div className="space-y-2">
+                                <div className="flex items-center gap-2 text-red-500 font-bold"><Trash2 className="w-4 h-4" /> Permanent Wissen</div>
+                                <p className="text-xs">Klik op de <strong>[Rode Prullenbak]</strong> in de editor of batch-werkbalk. Dit wist het schilderij volledig uit de database en de opslag. Dit kan niet ongedaan worden gemaakt.</p>
+                             </div>
+                          </div>
+                       </div>
+                    </div>
+
+                    {/* Zalen Beheren */}
+                    <div className="flex flex-col md:flex-row gap-12">
+                       <div className="md:w-1/3 space-y-4">
+                          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent/10 border border-accent/20">
+                             <Eye className="w-3.5 h-3.5 text-accent" />
+                             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-accent">Stap 4</span>
+                          </div>
+                          <h3 className="text-2xl font-headline italic">Zalen Openen/Sluiten</h3>
+                       </div>
+                       <div className="md:w-2/3 space-y-6 text-muted-foreground leading-relaxed">
+                          <p>Bovenaan dit scherm in het zalenoverzicht:</p>
+                          <ul className="space-y-4 list-none p-0">
+                             <li className="flex gap-4">
+                                <div className="w-6 h-6 rounded-full bg-black/5 flex items-center justify-center shrink-0"><EyeOff className="w-3 h-3" /></div>
+                                <span><strong>Sluit Zaal:</strong> De zaal verdwijnt uit alle menu's en navigatie op de website. Bezoekers kunnen de werken niet meer zien, maar jij kunt ze in het beheer nog wel bewerken.</span>
+                             </li>
+                             <li className="flex gap-4">
+                                <div className="w-6 h-6 rounded-full bg-black/5 flex items-center justify-center shrink-0"><Languages className="w-3 h-3" /></div>
+                                <span><strong>Vertalen:</strong> Gebruik het "Vertaal Station" hierboven om de naam van de zaal in 4 talen in te vullen. Zo zien buitenlandse bezoekers de juiste namen in hun menu.</span>
+                             </li>
+                          </ul>
+                       </div>
+                    </div>
+                  </div>
+               </Card>
           </TabsContent>
 
           <TabsContent value="orders" className="space-y-6">
@@ -701,118 +834,6 @@ export default function AdminPage() {
 
           <TabsContent value="help">
              <div className="max-w-5xl mx-auto space-y-12 pb-24">
-               <Card className="p-8 md:p-16 rounded-[3rem] shadow-2xl border-none bg-white space-y-16">
-                  <div className="space-y-4 text-center border-b border-black/5 pb-12">
-                    <div className="w-20 h-20 rounded-full bg-primary text-primary-foreground flex items-center justify-center mx-auto mb-6 shadow-xl">
-                       <BookOpen className="w-10 h-10" />
-                    </div>
-                    <h2 className="text-4xl font-headline font-light italic">Museum Beheer Handleiding</h2>
-                    <p className="text-muted-foreground uppercase tracking-[0.2em] font-bold text-[10px]">Stap-voor-stap instructies voor de Digitaal Conservator</p>
-                  </div>
-
-                  <div className="grid gap-20">
-                    {/* Selecteren */}
-                    <div className="flex flex-col md:flex-row gap-12">
-                       <div className="md:w-1/3 space-y-4">
-                          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent/10 border border-accent/20">
-                             <CheckSquare className="w-3.5 h-3.5 text-accent" />
-                             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-accent">Stap 1</span>
-                          </div>
-                          <h3 className="text-2xl font-headline italic">Schilderijen Selecteren</h3>
-                       </div>
-                       <div className="md:w-2/3 space-y-6 text-muted-foreground leading-relaxed">
-                          <p>Om acties uit te voeren op meerdere schilderijen tegelijk, gebruik je de <strong>Selectie-modus</strong>:</p>
-                          <ul className="space-y-4 list-none p-0">
-                             <li className="flex gap-4">
-                                <div className="w-6 h-6 rounded-full bg-black/5 flex items-center justify-center shrink-0 text-[10px] font-bold">A</div>
-                                <span>Klik op de knop <strong>[Selectie-modus]</strong> rechtsboven in het overzicht. De schilderijen worden iets kleiner en vinkvakjes verschijnen.</span>
-                             </li>
-                             <li className="flex gap-4">
-                                <div className="w-6 h-6 rounded-full bg-black/5 flex items-center justify-center shrink-0 text-[10px] font-bold">B</div>
-                                <span>Klik op de schilderijen die je wilt bewerken. Er verschijnt een vinkje bij de geselecteerde werken.</span>
-                             </li>
-                             <li className="flex gap-4">
-                                <div className="w-6 h-6 rounded-full bg-black/5 flex items-center justify-center shrink-0 text-[10px] font-bold">C</div>
-                                <span>Onderaan het scherm verschijnt nu automatisch de <strong>Batch-werkbalk</strong> met acties.</span>
-                             </li>
-                          </ul>
-                       </div>
-                    </div>
-
-                    {/* Verplaatsen / Hernoemen */}
-                    <div className="flex flex-col md:flex-row gap-12">
-                       <div className="md:w-1/3 space-y-4">
-                          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent/10 border border-accent/20">
-                             <FolderInput className="w-3.5 h-3.5 text-accent" />
-                             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-accent">Stap 2</span>
-                          </div>
-                          <h3 className="text-2xl font-headline italic">Zalen & Hernoemen</h3>
-                       </div>
-                       <div className="md:w-2/3 space-y-6 text-muted-foreground leading-relaxed">
-                          <p>Je kunt schilderijen op twee manieren verplaatsen of zalen hernoemen:</p>
-                          <div className="bg-accent/5 p-8 rounded-3xl border border-accent/10 space-y-6">
-                             <div className="space-y-2">
-                                <p className="font-bold text-foreground text-sm uppercase tracking-wide">Individueel (Editor):</p>
-                                <p>Klik op een enkel schilderij om de editor te openen. Pas het veld <strong>"Expositieruimte / Collectie (Zaal)"</strong> aan. Zodra je een nieuwe naam typt, wordt de zaal aangemaakt of verplaatst het werk.</p>
-                             </div>
-                             <div className="space-y-2">
-                                <p className="font-bold text-foreground text-sm uppercase tracking-wide">In Bulk (Selectie):</p>
-                                <p>Gebruik de Batch-werkbalk onderaan. Typ de naam van de doalzaal in het tekstveld en klik op de <strong>[Pijl naar map]</strong> knop om alle geselecteerde werken in één keer te verplaatsen.</p>
-                             </div>
-                          </div>
-                       </div>
-                    </div>
-
-                    {/* Verwijderen */}
-                    <div className="flex flex-col md:flex-row gap-12">
-                       <div className="md:w-1/3 space-y-4">
-                          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-red-50 border border-red-100">
-                             <Trash2 className="w-3.5 h-3.5 text-red-500" />
-                             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-red-500">Stap 3</span>
-                          </div>
-                          <h3 className="text-2xl font-headline italic">Verwijderen & Archiveren</h3>
-                       </div>
-                       <div className="md:w-2/3 space-y-6 text-muted-foreground leading-relaxed">
-                          <p>Er is een belangrijk verschil tussen archiveren en permanent verwijderen:</p>
-                          <div className="grid sm:grid-cols-2 gap-8">
-                             <div className="space-y-2">
-                                <div className="flex items-center gap-2 text-foreground font-bold"><Archive className="w-4 h-4" /> Archiveren</div>
-                                <p className="text-xs">Gebruik de knop <strong>[Naar Archief]</strong> in de batch-werkbalk. De werken worden verplaatst naar de zaal 'Archief' en zijn direct onzichtbaar voor bezoekers, maar blijven bewaard in je beheer.</p>
-                             </div>
-                             <div className="space-y-2">
-                                <div className="flex items-center gap-2 text-red-500 font-bold"><Trash2 className="w-4 h-4" /> Permanent Wissen</div>
-                                <p className="text-xs">Klik op de <strong>[Rode Prullenbak]</strong> in de editor of batch-werkbalk. Dit wist het schilderij volledig uit de database en de opslag. Dit kan niet ongedaan worden gemaakt.</p>
-                             </div>
-                          </div>
-                       </div>
-                    </div>
-
-                    {/* Zalen Beheren */}
-                    <div className="flex flex-col md:flex-row gap-12">
-                       <div className="md:w-1/3 space-y-4">
-                          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent/10 border border-accent/20">
-                             <Eye className="w-3.5 h-3.5 text-accent" />
-                             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-accent">Stap 4</span>
-                          </div>
-                          <h3 className="text-2xl font-headline italic">Zalen Openen/Sluiten</h3>
-                       </div>
-                       <div className="md:w-2/3 space-y-6 text-muted-foreground leading-relaxed">
-                          <p>Ga naar het tabblad <strong>"Zalen & Beheer"</strong> bovenaan dit scherm:</p>
-                          <ul className="space-y-4 list-none p-0">
-                             <li className="flex gap-4">
-                                <div className="w-6 h-6 rounded-full bg-black/5 flex items-center justify-center shrink-0"><EyeOff className="w-3 h-3" /></div>
-                                <span><strong>Sluit Zaal:</strong> De zaal verdwijnt uit alle menu's en navigatie op de website. Bezoekers kunnen de werken niet meer zien, maar jij kunt ze in het beheer nog wel bewerken.</span>
-                             </li>
-                             <li className="flex gap-4">
-                                <div className="w-6 h-6 rounded-full bg-black/5 flex items-center justify-center shrink-0"><Languages className="w-3 h-3" /></div>
-                                <span><strong>Vertalen:</strong> Gebruik het "Vertaal Station" onderaan dat tabblad om de naam van de zaal in 4 talen in te vullen. Zo zien buitenlandse bezoekers de juiste namen in hun menu.</span>
-                             </li>
-                          </ul>
-                       </div>
-                    </div>
-                  </div>
-               </Card>
-
                <Card className="p-8 md:p-12 rounded-3xl shadow-2xl border-none bg-primary text-primary-foreground relative overflow-hidden">
                   <div className="absolute top-0 right-0 p-12 opacity-10 rotate-12"><Coins className="w-64 h-64" /></div>
                   <div className="relative z-10 space-y-12">
