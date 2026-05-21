@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from 'react';
@@ -47,6 +46,7 @@ export function Footer() {
         </p>
         
         <div className="flex gap-8 text-[11px] font-black uppercase tracking-widest">
+          <Link href="/#contact" className="text-muted-foreground hover:text-accent transition-colors">{t('nav_contact')}</Link>
           <Link href="/admin" className="text-muted-foreground hover:text-accent transition-colors">{t('nav_admin')}</Link>
           <a href="#" className="text-muted-foreground hover:text-accent transition-colors">{t('nav_privacy')}</a>
         </div>

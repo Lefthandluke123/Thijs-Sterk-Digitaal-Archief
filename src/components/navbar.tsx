@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useMemo, Suspense } from 'react';
@@ -22,7 +21,8 @@ import {
   X,
   Home,
   Layers,
-  Info
+  Info,
+  Mail
 } from 'lucide-react';
 import { useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, doc } from 'firebase/firestore';
@@ -161,6 +161,7 @@ function NavbarContent() {
 
             <NavLink href="/curator" active={pathname === "/curator"}>{t('nav_your_room')}</NavLink>
             <NavLink href="/shop" active={pathname === "/shop"}><ShoppingBag className="w-3.5 h-3.5" /> {t('nav_shop')}</NavLink>
+            <NavLink href="/#contact" active={pathname === "/contact"}>{t('nav_contact')}</NavLink>
 
             <div className="h-8 w-px bg-border/20 mx-2" />
 
@@ -196,6 +197,9 @@ function NavbarContent() {
                      <Link href="/gallery" className="flex items-center gap-4 p-4 rounded-xl bg-black/5 text-[12px] font-black uppercase tracking-widest">{t('nav_galleries')}</Link>
                      <Link href="/curator" className="flex items-center gap-4 p-4 rounded-xl bg-black/5 text-[12px] font-black uppercase tracking-widest">{t('nav_your_room')}</Link>
                      <Link href="/shop" className="flex items-center gap-4 p-4 rounded-xl bg-black/5 text-[12px] font-black uppercase tracking-widest">{t('nav_shop')}</Link>
+                     <Link href="/#contact" className="flex items-center gap-4 p-4 rounded-xl bg-black/5 text-[12px] font-black uppercase tracking-widest">
+                       <Mail className="w-4 h-4" /> {t('nav_contact')}
+                     </Link>
                   </div>
                 </div>
               </SheetContent>
