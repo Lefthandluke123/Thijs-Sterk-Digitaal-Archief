@@ -402,7 +402,7 @@ export default function AdminPage() {
         await addDoc(collection(firestore, 'artworks'), {
           title: fileNameNoExt,
           displayTitle: fileNameNoExt,
-          series: "Nieuwe Uploads",
+          series: "",
           imageUrl: downloadUrl,
           fileSize: file.size,
           fileType: file.type,
@@ -651,7 +651,7 @@ export default function AdminPage() {
 
                 <div className="grid gap-4">
                    {uniqueSeries.map(name => {
-                      if (name === "Nieuwe Uploads") return null;
+                      if (!name || name === "Nieuwe Uploads") return null;
                       const isHidden = siteSettings?.hiddenSeries?.includes(name);
                       const count = artworks.filter((a: any) => a.series === name).length;
                       return (
@@ -692,7 +692,7 @@ export default function AdminPage() {
                         </div>
                       );
                    })}
-                   {uniqueSeries.length <= 1 && (
+                   {uniqueSeries.filter(s => s && s !== 'Nieuwe Uploads').length === 0 && (
                       <div className="text-center py-20 opacity-30 uppercase font-bold tracking-[0.2em] italic">Geen zalen gevonden</div>
                    )}
                 </div>
