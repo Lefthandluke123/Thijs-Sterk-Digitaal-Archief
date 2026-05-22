@@ -651,6 +651,7 @@ export default function AdminPage() {
 
                 <div className="grid gap-4">
                    {uniqueSeries.map(name => {
+                      if (name === "Nieuwe Uploads") return null;
                       const isHidden = siteSettings?.hiddenSeries?.includes(name);
                       const count = artworks.filter((a: any) => a.series === name).length;
                       return (
@@ -691,7 +692,7 @@ export default function AdminPage() {
                         </div>
                       );
                    })}
-                   {uniqueSeries.length === 0 && (
+                   {uniqueSeries.length <= 1 && (
                       <div className="text-center py-20 opacity-30 uppercase font-bold tracking-[0.2em] italic">Geen zalen gevonden</div>
                    )}
                 </div>
@@ -720,7 +721,7 @@ export default function AdminPage() {
                                 {isAiTranslating ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : <Sparkles className="w-3 h-3 mr-2" />} 
                                 AI Suggestie
                               </Button>
-                            </div>
+                         </div>
                             <Input 
                               placeholder="Bijv: Polders of Havens" 
                               className="bg-white/10 border-none text-white h-14 rounded-2xl text-lg font-bold"
