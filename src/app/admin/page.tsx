@@ -140,6 +140,7 @@ export default function AdminPage() {
 
   const artworks = useMemo(() => {
     if (!rawArtworks) return [];
+    // Zorg voor unieke artworks op basis van imageUrl om duplicaten te voorkomen
     const seen = new Set();
     const unique = rawArtworks.filter(art => {
       const url = (art as any).imageUrl;
@@ -409,7 +410,7 @@ export default function AdminPage() {
             <TabsTrigger value="upload" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest">Digitaliseren</TabsTrigger>
             <TabsTrigger value="branding" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest">Identiteit</TabsTrigger>
             <TabsTrigger value="payments" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest">Commercieel</TabsTrigger>
-            <TabsTrigger value="help" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest bg-primary text-primary-foreground hover:bg-primary/90 shadow-xl"><LifeBuoy className="w-3 h-3 mr-2" /> Cijfers</TabsTrigger>
+            <TabsTrigger value="help" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest bg-primary text-primary-foreground hover:bg-primary/90 shadow-xl"><LifeBuoy className="w-3 h-3 mr-2" /> Gids</TabsTrigger>
           </TabsList>
 
           <TabsContent value="archive" className="space-y-6">
@@ -975,8 +976,8 @@ export default function AdminPage() {
         <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background border-none rounded-none overflow-hidden fixed inset-0">
           <DialogTitle className="sr-only">Editor - {editingArtwork?.title}</DialogTitle>
           
-          <div className="flex flex-col md:flex-row h-full">
-            <div className="flex-1 bg-black/5 flex flex-col">
+          <div className="flex flex-col md:flex-row h-full overflow-hidden">
+            <div className="flex-1 bg-black/5 flex flex-col overflow-hidden">
               <div className="h-14 md:h-20 border-b border-black/5 bg-white/80 backdrop-blur-md px-8 flex items-center justify-between shrink-0">
                  <div className="flex items-center gap-4">
                     <button onClick={() => setEditingId(null)} className="p-2 hover:bg-black/5 rounded-full transition-colors"><ArrowLeft className="w-5 h-5" /></button>
@@ -987,11 +988,11 @@ export default function AdminPage() {
                     <span className="text-[10px] font-bold uppercase tracking-widest opacity-30">{editingArtwork?.series}</span>
                  </div>
               </div>
-              <div className="flex-1 flex items-center justify-center p-12 overflow-hidden relative">
-                <div className="relative group max-w-full max-h-full">
+              <div className="flex-1 flex items-center justify-center p-6 md:p-12 overflow-hidden relative">
+                <div className="relative group max-w-full max-h-full overflow-hidden">
                   <img 
                     src={editingArtwork?.imageUrl} 
-                    className="max-h-[70vh] object-contain shadow-[0_50px_100px_-20px_rgba(0,0,0,0.3)] bg-white p-2" 
+                    className="max-h-[70vh] w-auto object-contain shadow-[0_50px_100px_-20px_rgba(0,0,0,0.3)] bg-white p-2" 
                     alt="Master Preview" 
                   />
                   <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
@@ -1116,7 +1117,12 @@ export default function AdminPage() {
                    <Button 
                      variant="destructive" 
                      className="w-full h-14 rounded-2xl uppercase font-bold tracking-widest text-[10px] flex items-center gap-3" 
-                     onClick={() => { if(confirm('Dit werk permanent uit het archief verwijderen?')) { deleteDoc(doc(firestore!, 'artworks', editingId!)); setEditingId(null); }}}
+                     onClick={() => { if(confirm('Dit werk permanent uit het archief verwijderen?')) { 
+                       if (firestore && editingId) {
+                         deleteDoc(doc(firestore, 'artworks', editingId)); 
+                         setEditingId(null); 
+                       }
+                     }}}
                    >
                      <Trash2 className="w-4 h-4" /> Verwijder uit Collectie
                    </Button>
