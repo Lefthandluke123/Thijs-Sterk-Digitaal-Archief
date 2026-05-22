@@ -22,14 +22,14 @@ import {
   CreditCard,
   Settings as SettingsIcon,
   Star,
-  Globe2,
+  Globe,
   TrendingUp,
   LifeBuoy,
   FileText,
-  ImageIcon,
+  Image as ImageIcon,
   Camera,
-  CircleCheck,
-  CircleAlert,
+  CheckCircle,
+  AlertCircle,
   Zap,
   Coins,
   Users,
@@ -952,7 +952,7 @@ export default function AdminPage() {
                    <h2 className="text-xl font-headline font-light italic">Onthul nieuw werk</h2>
                    <p className="text-sm text-muted-foreground">Sleep hier de Master Files (min. 4000px) naar binnen.</p>
                    <div className="flex items-center justify-center gap-2 mt-4 text-accent">
-                      <CircleAlert className="w-4 h-4" />
+                      <AlertCircle className="w-4 h-4" />
                       <p className="text-[10px] uppercase font-bold tracking-widest italic">{t('asset_specs_pixels')}</p>
                    </div>
                 </div>

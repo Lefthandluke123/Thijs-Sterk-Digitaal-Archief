@@ -15,8 +15,8 @@ import {
   ArrowLeft, 
   Sparkles, 
   Loader2, 
-  CheckCircle2,
-  Globe2,
+  CheckCircle,
+  Globe,
   Info,
   Layers,
   Tag,
@@ -253,7 +253,7 @@ export default function TranslatePage() {
           {/* Pagina Teksten */}
           <section className="space-y-8">
             <div className="flex items-center gap-4 border-b border-accent/20 pb-4">
-               <Globe2 className="w-5 h-5 text-accent" />
+               <Globe className="w-5 h-5 text-accent" />
                <h2 className="text-xl font-headline font-light uppercase tracking-widest">Pagina Teksten</h2>
             </div>
             <div className="grid gap-12">
@@ -348,7 +348,7 @@ export default function TranslatePage() {
 
       <footer className="fixed bottom-0 left-0 right-0 h-12 bg-background/80 backdrop-blur-xl border-t border-border flex items-center justify-center z-50">
         <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] opacity-40">
-          <Globe2 className="w-3 h-3" /> Ondersteunt: NL &bull; EN &bull; DE &bull; FR &bull; ES
+          <Globe className="w-3 h-3" /> Ondersteunt: NL &bull; EN &bull; DE &bull; FR &bull; ES
         </div>
       </footer>
     </div>
