@@ -8,31 +8,48 @@ export const ROMAN_VALUES: Record<string, number> = {
 };
 
 /**
- * Parsed een titel (bijv. "13 XII") naar sorteerbare waarden.
+ * Parsed een titel (bijv. "13 XII" of "24a XI") naar sorteerbare waarden.
+ * Prioriteert het Romeinse cijfer (meestal de serie/zaal) boven het getal.
  */
 export const parseTitleForSort = (title: string) => {
   if (!title) return { romanVal: 999, num: 999, suffix: '' };
   
-  // Zoek naar Romeinse cijfers aan het einde (bijv. "III")
-  const romanMatch = title.match(/\b(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII|XIV|XV|XVI|XVII|XVIII|XIX|XX)\b/i);
-  // Zoek naar gewone nummers aan het begin (bijv. "13")
+  // Zoek naar alle mogelijke Romeinse cijfers in de titel
+  const romanPattern = /\b(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII|XIV|XV|XVI|XVII|XVIII|XIX|XX)\b/gi;
+  const matches = Array.from(title.matchAll(romanPattern));
+  
+  // Gebruik het LAATSTE Romeinse cijfer (bijv. in "13 XII" is XII de serie)
+  const lastRoman = matches.length > 0 ? matches[matches.length - 1][0] : null;
+  
+  // Zoek naar gewone nummers en eventuele letters (bijv. "24a")
+  // We zoeken naar het eerste getal in de string
   const numMatch = title.match(/(\d+)([a-z]*)?/i);
   
   return {
-    romanVal: romanMatch ? (ROMAN_VALUES[romanMatch[1].toUpperCase()] || 999) : 999,
+    romanVal: lastRoman ? (ROMAN_VALUES[lastRoman.toUpperCase()] || 999) : 999,
     num: numMatch ? parseInt(numMatch[1], 10) : 999,
     suffix: numMatch ? (numMatch[2] || '').toLowerCase() : ''
   };
 };
 
 /**
- * Sorteerfunctie voor kunstwerken op basis van titel (Numeriek + Romeins).
+ * Sorteerfunctie voor kunstwerken op basis van titel (Romeins -> Numeriek -> Suffix).
+ * Dit zorgt ervoor dat "31 II" vóór "13 XII" komt (Zaal II vs Zaal XII).
  */
 export const sortArtworksByTitle = (a: any, b: any) => {
   const pA = parseTitleForSort(a.displayTitle || a.title || '');
   const pB = parseTitleForSort(b.displayTitle || b.title || '');
   
-  if (pA.romanVal !== pB.romanVal) return pA.romanVal - pB.romanVal;
-  if (pA.num !== pB.num) return pA.num - pB.num;
+  // 1. Eerst sorteren op Romeins cijfer (Zaal/Serie)
+  if (pA.romanVal !== pB.romanVal) {
+    return pA.romanVal - pB.romanVal;
+  }
+  
+  // 2. Dan op het reguliere getal binnen die serie
+  if (pA.num !== pB.num) {
+    return pA.num - pB.num;
+  }
+  
+  // 3. Als laatste op het achtervoegsel (bijv. 'a' of 'b')
   return pA.suffix.localeCompare(pB.suffix);
 };
