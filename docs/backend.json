@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Artwork": {
@@ -30,7 +31,7 @@
         "priceDigital": { "type": "number" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["title", "series", "imageUrl"]
+      "required": ["title", "imageUrl"]
     },
     "Order": {
       "title": "Order",
@@ -56,6 +57,7 @@
         "siteTitle": { "type": "string" },
         "siteSubtitle": { "type": "string" },
         "logoUrl": { "type": "string" },
+        "cdnBaseUrl": { "type": "string", "description": "Basis URL voor externe asset hosting (CDN)" },
         "adminEmail": { "type": "string" },
         "stripeEnabled": { "type": "boolean" },
         "stripePublicKey": { "type": "string" },

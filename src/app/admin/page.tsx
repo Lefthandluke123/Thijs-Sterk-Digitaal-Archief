@@ -61,7 +61,8 @@ import {
   Tag,
   ChevronDown,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Server
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -197,14 +198,6 @@ export default function AdminPage() {
 
     return groups;
   }, [filteredArtworks]);
-
-  const allExistingTags = useMemo(() => {
-    const tags = new Set<string>();
-    artworks.forEach((art: any) => {
-      art.tags?.forEach((t: string) => tags.add(t));
-    });
-    return Array.from(tags).sort();
-  }, [artworks]);
 
   const siteSettingsRef = useMemoFirebase(() => {
     if (!firestore || !isAuthorized) return null;
@@ -381,11 +374,10 @@ export default function AdminPage() {
   };
 
   const handleBatchProcess = async (files: FileList | null) => {
-    const fileList = files;
-    if (!fileList || !firestore || !storage) return;
+    if (!files || !firestore || !storage) return;
     setIsUploading(true);
     setUploadProgress(0);
-    const filesArray = Array.from(fileList).filter(f => f.type.startsWith('image/'));
+    const filesArray = Array.from(files).filter(f => f.type.startsWith('image/'));
     const totalFiles = filesArray.length;
     let processedCount = 0;
 
@@ -864,31 +856,56 @@ export default function AdminPage() {
 
           <TabsContent value="branding">
              <Card className="p-8 md:p-12 rounded-3xl max-w-4xl mx-auto space-y-12 shadow-2xl border-none bg-white">
-                <div className="space-y-8">
-                   <div className="flex items-center gap-3 border-l-4 border-accent pl-4">
-                      <Palette className="w-5 h-5 text-accent" />
-                      <h2 className="text-[12px] font-bold uppercase tracking-widest text-accent">White Label Configuratie</h2>
-                   </div>
-
-                   <div className="grid md:grid-cols-2 gap-8">
-                      <div className="space-y-4 bg-black/5 p-6 rounded-2xl">
-                         <div className="space-y-2">
-                            <Label className="text-[10px] uppercase opacity-60">Museum Naam</Label>
-                            <Input defaultValue={siteSettings?.siteTitle || ''} onBlur={(e) => updateSettingsField('siteTitle', e.target.value)} placeholder="Bijv: Studio Sophie" />
-                         </div>
-                         <div className="space-y-2">
-                            <Label className="text-[10px] uppercase opacity-60">Slogan / Artist Quote</Label>
-                            <Input defaultValue={siteSettings?.siteSubtitle || ''} onBlur={(e) => updateSettingsField('siteSubtitle', e.target.value)} placeholder="Bijv: Meester in Atmosfeer" />
-                         </div>
+                <div className="space-y-12">
+                   <div className="space-y-8">
+                      <div className="flex items-center gap-3 border-l-4 border-accent pl-4">
+                         <Palette className="w-5 h-5 text-accent" />
+                         <h2 className="text-[12px] font-bold uppercase tracking-widest text-accent">White Label Configuratie</h2>
                       </div>
 
-                      <div className="space-y-4 bg-accent/5 p-6 rounded-2xl border border-accent/10 flex flex-col items-center justify-center">
-                         <Label className="text-[10px] uppercase opacity-60 mb-4 block w-full text-center">Artist Logo</Label>
-                         <div className="w-32 h-32 rounded-2xl bg-white flex items-center justify-center border-2 border-dashed border-accent/20 mb-4 overflow-hidden shadow-inner">
-                            {siteSettings?.logoUrl ? <img src={siteSettings.logoUrl} className="max-w-full max-h-full object-contain p-2" alt="Logo" /> : <ImageIcon className="w-8 h-8 opacity-20" />}
+                      <div className="grid md:grid-cols-2 gap-8">
+                         <div className="space-y-4 bg-black/5 p-6 rounded-2xl">
+                            <div className="space-y-2">
+                               <Label className="text-[10px] uppercase opacity-60">Museum Naam</Label>
+                               <Input defaultValue={siteSettings?.siteTitle || ''} onBlur={(e) => updateSettingsField('siteTitle', e.target.value)} placeholder="Bijv: Studio Sophie" />
+                            </div>
+                            <div className="space-y-2">
+                               <Label className="text-[10px] uppercase opacity-60">Slogan / Artist Quote</Label>
+                               <Input defaultValue={siteSettings?.siteSubtitle || ''} onBlur={(e) => updateSettingsField('siteSubtitle', e.target.value)} placeholder="Bijv: Meester in Atmosfeer" />
+                            </div>
                          </div>
-                         <input type="file" ref={logoInputRef} className="hidden" onChange={handleLogoUpload} accept="image/*" />
-                         <Button variant="outline" size="sm" onClick={() => logoInputRef.current?.click()} className="rounded-full border-accent/40 text-accent font-bold uppercase text-[9px] px-6">Upload Merklogo</Button>
+
+                         <div className="space-y-4 bg-accent/5 p-6 rounded-2xl border border-accent/10 flex flex-col items-center justify-center">
+                            <Label className="text-[10px] uppercase opacity-60 mb-4 block w-full text-center">Artist Logo</Label>
+                            <div className="w-32 h-32 rounded-2xl bg-white flex items-center justify-center border-2 border-dashed border-accent/20 mb-4 overflow-hidden shadow-inner">
+                               {siteSettings?.logoUrl ? <img src={siteSettings.logoUrl} className="max-w-full max-h-full object-contain p-2" alt="Logo" /> : <ImageIcon className="w-8 h-8 opacity-20" />}
+                            </div>
+                            <input type="file" ref={logoInputRef} className="hidden" onChange={handleLogoUpload} accept="image/*" />
+                            <Button variant="outline" size="sm" onClick={() => logoInputRef.current?.click()} className="rounded-full border-accent/40 text-accent font-bold uppercase text-[9px] px-6">Upload Merklogo</Button>
+                         </div>
+                      </div>
+                   </div>
+
+                   <div className="space-y-8 border-t border-black/5 pt-12">
+                      <div className="flex items-center gap-3 border-l-4 border-primary pl-4">
+                         <Server className="w-5 h-5 text-primary" />
+                         <h2 className="text-[12px] font-bold uppercase tracking-widest text-primary">Asset Hosting & CDN</h2>
+                      </div>
+                      
+                      <div className="bg-black/5 p-8 rounded-3xl space-y-6">
+                         <div className="space-y-2">
+                            <Label className="text-[10px] uppercase opacity-60">CDN Basis URL</Label>
+                            <Input 
+                              defaultValue={siteSettings?.cdnBaseUrl || ''} 
+                              onBlur={(e) => updateSettingsField('cdnBaseUrl', e.target.value)} 
+                              placeholder="https://cdn.jouwmuseum.nl/assets/" 
+                              className="bg-white border-none h-12 rounded-xl"
+                            />
+                            <p className="text-[10px] text-muted-foreground leading-relaxed italic pt-2">
+                              Koppel hier uw eigen hosting (bijv. Cloudflare of een eigen server) voor grote Deep Zoom bestanden. 
+                              Als dit veld leeg is, worden bestanden rechtstreeks vanuit Firebase ingeladen.
+                            </p>
+                         </div>
                       </div>
                    </div>
                 </div>
