@@ -56,7 +56,9 @@ import {
   Filter,
   CircleHelp,
   Sparkles,
-  CircleX
+  CircleX,
+  Tag,
+  ChevronDown
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -70,12 +72,20 @@ import { cn } from '@/lib/utils';
 import { useLanguage } from '@/components/language-provider';
 import { sortArtworksByTitle } from '@/lib/museum-utils';
 import { translateMuseumText } from '@/ai/flows/translate-flow';
+import { Badge } from '@/components/ui/badge';
 
 const LANG_MAP: Record<string, string> = {
   en: 'Engels',
   de: 'Duits',
   fr: 'Frans',
   es: 'Spaans'
+};
+
+const QUICK_TAG_CATEGORIES = {
+  "Periode": ["Vroeg werk", "45-50", "50-60", "70-82"],
+  "Techniek": ["Olieverf", "Aquarel", "Gouache", "Monumentaal", "Glas in lood"],
+  "Plaats": ["Groet", "Schoorl", "Hargen", "Camperduin", "Holland", "Amsterdam", "Frankrijk", "Bretagne", "Griekenland"],
+  "Onderwerp": ["Havens", "Stillevens", "Bloemen", "Dieren", "Water", "Mensen", "Polder"]
 };
 
 export default function AdminPage() {
@@ -151,6 +161,14 @@ export default function AdminPage() {
     return [...unique].sort(sortArtworksByTitle);
   }, [rawArtworks]);
 
+  const allExistingTags = useMemo(() => {
+    const tags = new Set<string>();
+    artworks.forEach((art: any) => {
+      art.tags?.forEach((t: string) => tags.add(t));
+    });
+    return Array.from(tags).sort();
+  }, [artworks]);
+
   const siteSettingsRef = useMemoFirebase(() => {
     if (!firestore || !isAuthorized) return null;
     return doc(firestore, 'settings', 'site');
@@ -171,6 +189,13 @@ export default function AdminPage() {
     updateDoc(artRef, { [field]: value }).catch(async () => {
       errorEmitter.emit('permission-error', new FirestorePermissionError({ path: artRef.path, operation: 'update' }));
     });
+  };
+
+  const toggleTagInArtwork = (id: string, currentTags: string[] = [], tag: string) => {
+    const newTags = currentTags.includes(tag) 
+      ? currentTags.filter(t => t !== tag) 
+      : [...currentTags, tag];
+    updateArtworkField(id, 'tags', newTags);
   };
 
   const handleBatchMove = async (targetSeries?: string) => {
@@ -322,7 +347,8 @@ export default function AdminPage() {
           cropTop: 0, cropBottom: 0, cropLeft: 0, cropRight: 0, brightness: 1,
           year: "", dimensions: "", medium: "Olieverf op doek",
           featured: false, inShop: false,
-          pricePostcard: 2.50, pricePoster: 24.00, pricePrint: 85.00, priceDigital: 15.00
+          pricePostcard: 2.50, pricePoster: 24.00, pricePrint: 85.00, priceDigital: 15.00,
+          tags: []
         });
         processedCount++;
         setUploadProgress((processedCount / totalFiles) * 100);
@@ -1004,7 +1030,7 @@ export default function AdminPage() {
             </div>
 
             {/* Rechterkant: Formulier (Scrollbaar) */}
-            <div className="w-full md:w-[450px] lg:w-[550px] shrink-0 bg-white border-l border-black/5 flex flex-col overflow-y-auto shadow-2xl z-10">
+            <div className="w-full md:w-[450px] lg:w-[600px] shrink-0 bg-white border-l border-black/5 flex flex-col overflow-y-auto shadow-2xl z-10">
               <div className="p-8 space-y-12 pb-32">
                 
                 <div className="space-y-6">
@@ -1037,6 +1063,88 @@ export default function AdminPage() {
 
                 <div className="space-y-6">
                   <div className="flex items-center gap-3 border-l-4 border-primary pl-4">
+                     <Tag className="w-4 h-4 text-primary" />
+                     <h3 className="text-[11px] font-bold uppercase tracking-widest text-primary">Tags & Curator Filters</h3>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3 bg-black/5 p-3 rounded-xl">
+                        <Tags className="w-4 h-4 opacity-30" />
+                        <Input 
+                          value={editingArtwork?.tags?.join(', ') || ''} 
+                          onChange={(e) => updateArtworkField(editingId!, 'tags', e.target.value.split(',').map((t: string) => t.trim()).filter(Boolean))} 
+                          placeholder="zee, groet, licht"
+                          className="bg-transparent border-none p-0 focus-visible:ring-0"
+                        />
+                    </div>
+
+                    <div className="bg-accent/5 rounded-2xl p-6 space-y-6 border border-accent/10">
+                       <div className="flex items-center gap-2 mb-2">
+                          <Sparkles className="w-3.5 h-3.5 text-accent" />
+                          <span className="text-[9px] font-black uppercase tracking-widest text-accent">Snelkeuze Menu</span>
+                       </div>
+
+                       <div className="space-y-6">
+                          {Object.entries(QUICK_TAG_CATEGORIES).map(([cat, tags]) => (
+                            <div key={cat} className="space-y-2">
+                               <Label className="text-[8px] uppercase font-bold opacity-40 block">{cat}</Label>
+                               <div className="flex flex-wrap gap-1.5">
+                                  {tags.map(tag => {
+                                    const isActive = editingArtwork?.tags?.includes(tag);
+                                    return (
+                                      <button
+                                        key={tag}
+                                        onClick={() => toggleTagInArtwork(editingId!, editingArtwork?.tags, tag)}
+                                        className={cn(
+                                          "px-3 py-1 rounded-full text-[10px] font-bold transition-all border",
+                                          isActive 
+                                            ? "bg-accent text-accent-foreground border-accent" 
+                                            : "bg-white border-black/10 text-muted-foreground hover:border-accent/40"
+                                        )}
+                                      >
+                                        {tag}
+                                      </button>
+                                    );
+                                  })}
+                               </div>
+                            </div>
+                          ))}
+
+                          {allExistingTags.length > 0 && (
+                            <div className="space-y-2 pt-4 border-t border-accent/10">
+                               <Label className="text-[8px] uppercase font-bold opacity-40 block">Elders Gebruikt</Label>
+                               <div className="flex flex-wrap gap-1.5">
+                                  {allExistingTags.map(tag => {
+                                    // Sla tags over die al in de categorieën staan
+                                    const isStandard = Object.values(QUICK_TAG_CATEGORIES).flat().includes(tag);
+                                    if (isStandard) return null;
+                                    
+                                    const isActive = editingArtwork?.tags?.includes(tag);
+                                    return (
+                                      <button
+                                        key={tag}
+                                        onClick={() => toggleTagInArtwork(editingId!, editingArtwork?.tags, tag)}
+                                        className={cn(
+                                          "px-3 py-1 rounded-full text-[10px] font-bold transition-all border",
+                                          isActive 
+                                            ? "bg-primary text-primary-foreground border-primary" 
+                                            : "bg-black/5 border-transparent text-muted-foreground hover:bg-black/10"
+                                        )}
+                                      >
+                                        {tag}
+                                      </button>
+                                    );
+                                  })}
+                               </div>
+                            </div>
+                          )}
+                       </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  <div className="flex items-center gap-3 border-l-4 border-primary pl-4">
                      <Info className="w-4 h-4 text-primary" />
                      <h3 className="text-[11px] font-bold uppercase tracking-widest text-primary">Specificaties</h3>
                   </div>
@@ -1053,18 +1161,6 @@ export default function AdminPage() {
                   <div className="space-y-2">
                      <Label className="text-[10px] uppercase font-bold opacity-40 tracking-widest">Techniek / Medium</Label>
                      <Input defaultValue={editingArtwork?.medium || ''} onBlur={(e) => updateArtworkField(editingId!, 'medium', e.target.value)} placeholder="bijv. Olieverf op doek" />
-                  </div>
-                  <div className="space-y-2">
-                     <Label className="text-[10px] uppercase font-bold opacity-40 tracking-widest">Tags (Curator Filters)</Label>
-                     <div className="flex items-center gap-3 bg-black/5 p-3 rounded-xl">
-                        <Tags className="w-4 h-4 opacity-30" />
-                        <Input 
-                          defaultValue={editingArtwork?.tags?.join(', ') || ''} 
-                          onBlur={(e) => updateArtworkField(editingId!, 'tags', e.target.value.split(',').map((t: string) => t.trim()).filter(Boolean))} 
-                          placeholder="zee, groet, licht"
-                          className="bg-transparent border-none p-0 focus-visible:ring-0"
-                        />
-                     </div>
                   </div>
                 </div>
 
