@@ -58,7 +58,9 @@ import {
   Sparkles,
   CircleX,
   Tag,
-  ChevronDown
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -161,6 +163,14 @@ export default function AdminPage() {
     return [...unique].sort(sortArtworksByTitle);
   }, [rawArtworks]);
 
+  const filteredArtworks = useMemo(() => {
+    return artworks.filter((art: any) => {
+      const displayTitle = art.displayTitle || art.title || "";
+      return displayTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
+             (art.series?.toLowerCase() || "").includes(searchQuery.toLowerCase());
+    });
+  }, [artworks, searchQuery]);
+
   const allExistingTags = useMemo(() => {
     const tags = new Set<string>();
     artworks.forEach((art: any) => {
@@ -182,6 +192,30 @@ export default function AdminPage() {
     });
     return Array.from(series).sort();
   }, [artworks]);
+
+  const navigateEditing = (direction: 'next' | 'prev') => {
+    if (!editingId || filteredArtworks.length === 0) return;
+    const currentIndex = filteredArtworks.findIndex(a => a.id === editingId);
+    if (currentIndex === -1) return;
+
+    let nextIndex;
+    if (direction === 'next') {
+      nextIndex = (currentIndex + 1) % filteredArtworks.length;
+    } else {
+      nextIndex = (currentIndex - 1 + filteredArtworks.length) % filteredArtworks.length;
+    }
+    setEditingId(filteredArtworks[nextIndex].id);
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!editingId) return;
+      if (e.key === 'ArrowRight') navigateEditing('next');
+      if (e.key === 'ArrowLeft') navigateEditing('prev');
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [editingId, filteredArtworks]);
 
   const updateArtworkField = (id: string, field: string, value: any) => {
     if (!firestore || !id) return;
@@ -358,14 +392,6 @@ export default function AdminPage() {
     setUploadStatus('');
     toast({ title: "Master Files succesvol verwerkt" });
   };
-
-  const filteredArtworks = useMemo(() => {
-    return artworks.filter((art: any) => {
-      const displayTitle = art.displayTitle || art.title || "";
-      return displayTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
-             (art.series?.toLowerCase() || "").includes(searchQuery.toLowerCase());
-    });
-  }, [artworks, searchQuery]);
 
   const editingArtwork = useMemo(() => {
     return artworks.find(a => a.id === editingId);
@@ -1008,7 +1034,14 @@ export default function AdminPage() {
               <div className="h-14 md:h-20 border-b border-black/5 bg-white/80 backdrop-blur-md px-8 flex items-center justify-between shrink-0">
                  <div className="flex items-center gap-4">
                     <button onClick={() => setEditingId(null)} className="p-2 hover:bg-black/5 rounded-full transition-colors"><ArrowLeft className="w-5 h-5" /></button>
-                    <h2 className="text-sm font-bold uppercase tracking-widest truncate">{editingArtwork?.displayTitle || editingArtwork?.title}</h2>
+                    
+                    <div className="flex items-center gap-1 bg-black/5 rounded-full p-1 ml-2">
+                       <button onClick={() => navigateEditing('prev')} className="p-2 hover:bg-white rounded-full transition-all shadow-sm"><ChevronLeft className="w-4 h-4" /></button>
+                       <span className="text-[10px] font-bold px-2 opacity-40">{filteredArtworks.findIndex(a => a.id === editingId) + 1} / {filteredArtworks.length}</span>
+                       <button onClick={() => navigateEditing('next')} className="p-2 hover:bg-white rounded-full transition-all shadow-sm"><ChevronRight className="w-4 h-4" /></button>
+                    </div>
+
+                    <h2 className="text-sm font-bold uppercase tracking-widest truncate ml-4">{editingArtwork?.displayTitle || editingArtwork?.title}</h2>
                  </div>
                  <div className="flex items-center gap-4">
                     {editingArtwork?.featured && <Star className="w-4 h-4 text-accent fill-accent" />}
@@ -1042,6 +1075,7 @@ export default function AdminPage() {
                     <div className="space-y-2">
                        <Label className="text-[10px] uppercase font-bold opacity-40 tracking-widest">Publieke Titel</Label>
                        <Input 
+                         key={`title-${editingId}`}
                          defaultValue={editingArtwork?.displayTitle || ''} 
                          onBlur={(e) => updateArtworkField(editingId!, 'displayTitle', e.target.value)} 
                          placeholder="De naam zoals bezoekers hem zien"
@@ -1051,6 +1085,7 @@ export default function AdminPage() {
                     <div className="space-y-2">
                        <Label className="text-[10px] uppercase font-bold opacity-40 tracking-widest">Expositieruimte / Collectie (Zaal)</Label>
                        <Input 
+                         key={`series-${editingId}`}
                          defaultValue={editingArtwork?.series || ''} 
                          onBlur={(e) => updateArtworkField(editingId!, 'series', e.target.value)} 
                          placeholder="Bijv: Polders of Archief"
@@ -1071,6 +1106,7 @@ export default function AdminPage() {
                     <div className="flex items-center gap-3 bg-black/5 p-3 rounded-xl">
                         <Tags className="w-4 h-4 opacity-30" />
                         <Input 
+                          key={`tags-input-${editingId}`}
                           value={editingArtwork?.tags?.join(', ') || ''} 
                           onChange={(e) => updateArtworkField(editingId!, 'tags', e.target.value.split(',').map((t: string) => t.trim()).filter(Boolean))} 
                           placeholder="zee, groet, licht"
@@ -1151,16 +1187,16 @@ export default function AdminPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                        <Label className="text-[10px] uppercase font-bold opacity-40 tracking-widest">Jaartal</Label>
-                       <Input defaultValue={editingArtwork?.year || ''} onBlur={(e) => updateArtworkField(editingId!, 'year', e.target.value)} placeholder="bijv. 1954" />
+                       <Input key={`year-${editingId}`} defaultValue={editingArtwork?.year || ''} onBlur={(e) => updateArtworkField(editingId!, 'year', e.target.value)} placeholder="bijv. 1954" />
                     </div>
                     <div className="space-y-2">
                        <Label className="text-[10px] uppercase font-bold opacity-40 tracking-widest">Afmetingen</Label>
-                       <Input defaultValue={editingArtwork?.dimensions || ''} onBlur={(e) => updateArtworkField(editingId!, 'dimensions', e.target.value)} placeholder="bijv. 45x50 cm" />
+                       <Input key={`dims-${editingId}`} defaultValue={editingArtwork?.dimensions || ''} onBlur={(e) => updateArtworkField(editingId!, 'dimensions', e.target.value)} placeholder="bijv. 45x50 cm" />
                     </div>
                   </div>
                   <div className="space-y-2">
                      <Label className="text-[10px] uppercase font-bold opacity-40 tracking-widest">Techniek / Medium</Label>
-                     <Input defaultValue={editingArtwork?.medium || ''} onBlur={(e) => updateArtworkField(editingId!, 'medium', e.target.value)} placeholder="bijv. Olieverf op doek" />
+                     <Input key={`medium-${editingId}`} defaultValue={editingArtwork?.medium || ''} onBlur={(e) => updateArtworkField(editingId!, 'medium', e.target.value)} placeholder="bijv. Olieverf op doek" />
                   </div>
                 </div>
 
@@ -1176,19 +1212,19 @@ export default function AdminPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                        <Label className="text-[9px] uppercase font-bold opacity-40">Kaart (€)</Label>
-                       <Input type="number" step="0.10" defaultValue={editingArtwork?.pricePostcard || 2.50} onBlur={(e) => updateArtworkField(editingId!, 'pricePostcard', parseFloat(e.target.value))} />
+                       <Input key={`p-card-${editingId}`} type="number" step="0.10" defaultValue={editingArtwork?.pricePostcard || 2.50} onBlur={(e) => updateArtworkField(editingId!, 'pricePostcard', parseFloat(e.target.value))} />
                     </div>
                     <div className="space-y-2">
                        <Label className="text-[9px] uppercase font-bold opacity-40">Poster (€)</Label>
-                       <Input type="number" step="1" defaultValue={editingArtwork?.pricePoster || 24.00} onBlur={(e) => updateArtworkField(editingId!, 'pricePoster', parseFloat(e.target.value))} />
+                       <Input key={`p-post-${editingId}`} type="number" step="1" defaultValue={editingArtwork?.pricePoster || 24.00} onBlur={(e) => updateArtworkField(editingId!, 'pricePoster', parseFloat(e.target.value))} />
                     </div>
                     <div className="space-y-2">
                        <Label className="text-[9px] uppercase font-bold opacity-40">Art Print (€)</Label>
-                       <Input type="number" step="1" defaultValue={editingArtwork?.pricePrint || 85.00} onBlur={(e) => updateArtworkField(editingId!, 'pricePrint', parseFloat(e.target.value))} />
+                       <Input key={`p-print-${editingId}`} type="number" step="1" defaultValue={editingArtwork?.pricePrint || 85.00} onBlur={(e) => updateArtworkField(editingId!, 'pricePrint', parseFloat(e.target.value))} />
                     </div>
                     <div className="space-y-2">
                        <Label className="text-[9px] uppercase font-bold opacity-40">Digitaal (€)</Label>
-                       <Input type="number" step="1" defaultValue={editingArtwork?.priceDigital || 15.00} onBlur={(e) => updateArtworkField(editingId!, 'priceDigital', parseFloat(e.target.value))} />
+                       <Input key={`p-digi-${editingId}`} type="number" step="1" defaultValue={editingArtwork?.priceDigital || 15.00} onBlur={(e) => updateArtworkField(editingId!, 'priceDigital', parseFloat(e.target.value))} />
                     </div>
                   </div>
                 </div>
@@ -1196,6 +1232,7 @@ export default function AdminPage() {
                 <div className="space-y-4">
                   <Label className="text-[10px] uppercase font-bold opacity-40 tracking-widest flex items-center gap-2"><FileText className="w-3 h-3" /> Verhaal bij het werk</Label>
                   <Textarea 
+                    key={`desc-${editingId}`}
                     defaultValue={editingArtwork?.description || ''} 
                     onBlur={(e) => updateArtworkField(editingId!, 'description', e.target.value)} 
                     placeholder="Vertel hier meer over de context of historie van dit werk..."
