@@ -171,6 +171,34 @@ export default function AdminPage() {
     });
   }, [artworks, searchQuery]);
 
+  // Grouping logic for the archive view
+  const groupedArtworks = useMemo(() => {
+    const groups: { label: string; items: any[] }[] = [];
+    let currentRoman = "";
+    let currentGroup: any[] = [];
+
+    filteredArtworks.forEach((art: any) => {
+      const romanMatch = (art.displayTitle || art.title || "").match(/\b(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII|XIV|XV|XVI|XVII|XVIII|XIX|XX)\b/i);
+      const roman = romanMatch ? romanMatch[0].toUpperCase() : "Diversen";
+
+      if (roman !== currentRoman) {
+        if (currentGroup.length > 0) {
+          groups.push({ label: currentRoman, items: currentGroup });
+        }
+        currentRoman = roman;
+        currentGroup = [art];
+      } else {
+        currentGroup.push(art);
+      }
+    });
+
+    if (currentGroup.length > 0) {
+      groups.push({ label: currentRoman, items: currentGroup });
+    }
+
+    return groups;
+  }, [filteredArtworks]);
+
   const allExistingTags = useMemo(() => {
     const tags = new Set<string>();
     artworks.forEach((art: any) => {
@@ -486,37 +514,64 @@ export default function AdminPage() {
                </Button>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {filteredArtworks.map((art: any) => {
-                const isSelected = selectedIds.includes(art.id);
-                return (
-                  <Card 
-                    key={art.id} 
-                    className={cn(
-                      "overflow-hidden cursor-pointer transition-all relative border-none shadow-md group",
-                      isSelected ? "ring-4 ring-accent" : "hover:ring-2 hover:ring-accent/50",
-                      isSelectionMode && "scale-95"
-                    )} 
-                    onClick={() => isSelectionMode ? toggleSelection(art.id) : setEditingId(art.id)}
-                  >
-                    {art.featured && <Star className="absolute top-2 left-2 w-3 h-3 text-accent fill-accent z-10" />}
-                    
-                    {isSelectionMode && (
-                      <div className="absolute top-2 right-2 z-20">
-                        {isSelected ? <CheckSquare className="w-5 h-5 text-accent fill-white" /> : <Square className="w-5 h-5 text-white/50" />}
-                      </div>
-                    )}
+            {/* Grouped Artworks Grid */}
+            <div className="space-y-12">
+              {groupedArtworks.map((group) => (
+                <div key={group.label} className="space-y-6">
+                  <div className="flex items-center gap-4 border-l-4 border-accent pl-4 py-1 sticky top-[136px] md:top-[208px] z-30 bg-background/80 backdrop-blur-md -mx-4 px-4 rounded-r-xl">
+                    <h3 className="text-[12px] font-black uppercase tracking-[0.3em] text-accent">Zaal {group.label}</h3>
+                    <div className="h-px bg-accent/20 flex-1" />
+                    <span className="text-[9px] font-bold opacity-40 uppercase tracking-widest">{group.items.length} werken</span>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                    {group.items.map((art: any) => {
+                      const isSelected = selectedIds.includes(art.id);
+                      return (
+                        <Card 
+                          key={art.id} 
+                          className={cn(
+                            "overflow-hidden cursor-pointer transition-all relative border-none shadow-md group",
+                            isSelected ? "ring-4 ring-accent" : "hover:ring-2 hover:ring-accent/50",
+                            isSelectionMode && "scale-95"
+                          )} 
+                          onClick={() => isSelectionMode ? toggleSelection(art.id) : setEditingId(art.id)}
+                        >
+                          {art.featured && <Star className="absolute top-2 left-2 w-3 h-3 text-accent fill-accent z-10" />}
+                          
+                          {isSelectionMode && (
+                            <div className="absolute top-2 right-2 z-20">
+                              {isSelected ? <CheckSquare className="w-5 h-5 text-accent fill-white" /> : <Square className="w-5 h-5 text-white/50" />}
+                            </div>
+                          )}
 
-                    <div className="aspect-square bg-muted/20">
-                      <img src={art.imageUrl} className="w-full h-full object-cover transition-transform group-hover:scale-105" alt={art.title} />
-                    </div>
-                    <CardContent className="p-2 text-center bg-white">
-                      <h4 className="text-[9px] font-bold uppercase truncate">{art.displayTitle || art.title}</h4>
-                      <p className={cn("text-[7px] uppercase font-bold mt-1", art.series === 'Archief' ? "text-red-500" : "opacity-40")}>{art.series}</p>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+                          <div className="aspect-square bg-muted/20">
+                            <img 
+                              src={art.imageUrl} 
+                              className="w-full h-full object-cover transition-transform group-hover:scale-105" 
+                              alt={art.title} 
+                              style={{ 
+                                filter: `brightness(${art.brightness || 1})`,
+                                clipPath: art.cropTop ? `inset(${art.cropTop}% ${art.cropRight}% ${art.cropBottom}% ${art.cropLeft}%)` : 'none'
+                              }}
+                            />
+                          </div>
+                          <CardContent className="p-2 text-center bg-white">
+                            <h4 className="text-[9px] font-bold uppercase truncate">{art.displayTitle || art.title}</h4>
+                            <p className={cn("text-[7px] uppercase font-bold mt-1", art.series === 'Archief' ? "text-red-500" : "opacity-40")}>{art.series}</p>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+              
+              {filteredArtworks.length === 0 && (
+                <div className="text-center py-24 opacity-20 uppercase font-black tracking-widest italic">
+                  Geen schilderijen gevonden voor deze zoekopdracht
+                </div>
+              )}
             </div>
 
             {/* Batch Action Toolbar */}
@@ -1054,6 +1109,10 @@ export default function AdminPage() {
                     src={editingArtwork?.imageUrl} 
                     className="max-h-[70vh] w-auto object-contain shadow-[0_50px_100px_-20px_rgba(0,0,0,0.3)] bg-white p-2" 
                     alt="Master Preview" 
+                    style={{ 
+                      filter: `brightness(${editingArtwork?.brightness || 1})`,
+                      clipPath: editingArtwork?.cropTop ? `inset(${editingArtwork.cropTop}% ${editingArtwork.cropRight}% ${editingArtwork.cropBottom}% ${editingArtwork.cropLeft}%)` : 'none'
+                    }}
                   />
                   <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
                      <Maximize2 className="text-white w-12 h-12" />
