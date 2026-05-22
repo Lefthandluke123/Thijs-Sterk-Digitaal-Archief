@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
@@ -107,7 +108,6 @@ export default function AdminPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [batchSeriesName, setBatchSeriesName] = useState('');
 
-  // Quick Translate State
   const [quickTranslateSource, setQuickTranslateSource] = useState('');
   const [quickTranslations, setQuickTranslations] = useState({ en: '', de: '', fr: '', es: '' });
   const [isAiTranslating, setIsAiTranslating] = useState(false);
@@ -171,7 +171,6 @@ export default function AdminPage() {
     });
   }, [artworks, searchQuery]);
 
-  // Grouping logic for the archive view
   const groupedArtworks = useMemo(() => {
     const groups: { label: string; items: any[] }[] = [];
     let currentRoman = "";
@@ -515,7 +514,6 @@ export default function AdminPage() {
                </Button>
             </div>
 
-            {/* Grouped Artworks Grid */}
             <div className="space-y-12">
               {groupedArtworks.map((group) => (
                 <div key={group.label} className="space-y-6">
@@ -559,7 +557,7 @@ export default function AdminPage() {
                           </div>
                           <CardContent className="p-2 text-center bg-white">
                             <h4 className="text-[9px] font-bold uppercase truncate">{art.displayTitle || art.title}</h4>
-                            {art.series && art.series !== 'Nieuwe Uploads' && (
+                            {art.series && (
                               <p className={cn("text-[7px] uppercase font-bold mt-1", art.series === 'Archief' ? "text-red-500" : "opacity-40")}>{art.series}</p>
                             )}
                           </CardContent>
@@ -577,7 +575,6 @@ export default function AdminPage() {
               )}
             </div>
 
-            {/* Batch Action Toolbar */}
             {isSelectionMode && selectedIds.length > 0 && (
               <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-8 py-4 rounded-3xl shadow-2xl flex items-center gap-8 z-[100] animate-in slide-in-from-bottom-10 border border-white/10 backdrop-blur-xl">
                  <div className="flex flex-col">
@@ -651,7 +648,7 @@ export default function AdminPage() {
 
                 <div className="grid gap-4">
                    {uniqueSeries.map(name => {
-                      if (!name || name === "Nieuwe Uploads") return null;
+                      if (!name) return null;
                       const isHidden = siteSettings?.hiddenSeries?.includes(name);
                       const count = artworks.filter((a: any) => a.series === name).length;
                       return (
@@ -692,7 +689,7 @@ export default function AdminPage() {
                         </div>
                       );
                    })}
-                   {uniqueSeries.filter(s => s && s !== 'Nieuwe Uploads').length === 0 && (
+                   {uniqueSeries.filter(s => s).length === 0 && (
                       <div className="text-center py-20 opacity-30 uppercase font-bold tracking-[0.2em] italic">Geen zalen gevonden</div>
                    )}
                 </div>
@@ -766,7 +763,6 @@ export default function AdminPage() {
                   </div>
 
                   <div className="grid gap-20">
-                    {/* Selecteren */}
                     <div className="flex flex-col md:flex-row gap-12">
                        <div className="md:w-1/3 space-y-4">
                           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent/10 border border-accent/20">
@@ -794,7 +790,6 @@ export default function AdminPage() {
                        </div>
                     </div>
 
-                    {/* Verplaatsen / Hernoemen */}
                     <div className="flex flex-col md:flex-row gap-12">
                        <div className="md:w-1/3 space-y-4">
                           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent/10 border border-accent/20">
@@ -808,65 +803,13 @@ export default function AdminPage() {
                           <div className="bg-accent/5 p-8 rounded-3xl border border-accent/10 space-y-6">
                              <div className="space-y-2">
                                 <p className="font-bold text-foreground text-sm uppercase tracking-wide">Individueel (Editor):</p>
-                                <p>Klik op een enkel schilderij om de editor te openen. Pas het veld <strong>"Expositieruimte / Collectie (Zaal)"</strong> aan. Zodra je een nieuwe naam typt, wordt de zaal aangemaakt of verplaatst het werk.</p>
+                                <p>Klik op een enkel schilderij om the editor te openen. Pas het veld <strong>"Expositieruimte / Collectie (Zaal)"</strong> aan. Zodra je een nieuwe naam typt, wordt de zaal aangemaakt of verplaatst het werk.</p>
                              </div>
                              <div className="space-y-2">
                                 <p className="font-bold text-foreground text-sm uppercase tracking-wide">In Bulk (Selectie):</p>
                                 <p>Gebruik de Batch-werkbalk onderaan. Typ de naam van de doelzaal in het tekstveld en klik op de <strong>[Pijl naar map]</strong> knop om alle geselecteerde werken in één keer te verplaatsen.</p>
                              </div>
-                             <div className="space-y-2 border-t border-accent/20 pt-4">
-                                <p className="font-bold text-foreground text-sm uppercase tracking-wide">Samenvoegen:</p>
-                                <p>Klik bovenaan dit tabblad bij een zaal op <strong>[Selecteer alles]</strong>. De tool selecteert alle werken en brengt je naar het archief. Gebruik dan de Batch-werkbalk om ze naar de nieuwe gezamenlijke zaal te verplaatsen.</p>
-                             </div>
                           </div>
-                       </div>
-                    </div>
-
-                    {/* Verwijderen */}
-                    <div className="flex flex-col md:flex-row gap-12">
-                       <div className="md:w-1/3 space-y-4">
-                          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-red-50 border border-red-100">
-                             <Trash2 className="w-3.5 h-3.5 text-red-500" />
-                             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-red-500">Stap 3</span>
-                          </div>
-                          <h3 className="text-2xl font-headline italic">Verwijderen & Archiveren</h3>
-                       </div>
-                       <div className="md:w-2/3 space-y-6 text-muted-foreground leading-relaxed">
-                          <p>Er is een belangrijk verschil tussen archiveren en permanent verwijderen:</p>
-                          <div className="grid sm:grid-cols-2 gap-8">
-                             <div className="space-y-2">
-                                <div className="flex items-center gap-2 text-foreground font-bold"><Archive className="w-4 h-4" /> Archiveren</div>
-                                <p className="text-xs">Gebruik de knop <strong>[Naar Archief]</strong> in de batch-werkbalk. De werken worden verplaatst naar de zaal 'Archief' en zijn direct onzichtbaar voor bezoekers, maar blijven bewaard in je beheer.</p>
-                             </div>
-                             <div className="space-y-2">
-                                <div className="flex items-center gap-2 text-red-500 font-bold"><Trash2 className="w-4 h-4" /> Permanent Wissen</div>
-                                <p className="text-xs">Klik op de <strong>[Rode Prullenbak]</strong> in de editor of batch-werkbalk. Dit wist het schilderij volledig uit de database en de opslag. Dit kan niet ongedaan worden gemaakt.</p>
-                             </div>
-                          </div>
-                       </div>
-                    </div>
-
-                    {/* Zalen Beheren */}
-                    <div className="flex flex-col md:flex-row gap-12">
-                       <div className="md:w-1/3 space-y-4">
-                          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent/10 border border-accent/20">
-                             <Eye className="w-3.5 h-3.5 text-accent" />
-                             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-accent">Stap 4</span>
-                          </div>
-                          <h3 className="text-2xl font-headline italic">Zalen Openen/Sluiten</h3>
-                       </div>
-                       <div className="md:w-2/3 space-y-6 text-muted-foreground leading-relaxed">
-                          <p>Bovenaan dit scherm in het zalenoverzicht:</p>
-                          <ul className="space-y-4 list-none p-0">
-                             <li className="flex gap-4">
-                                <div className="w-6 h-6 rounded-full bg-black/5 flex items-center justify-center shrink-0"><EyeOff className="w-3 h-3" /></div>
-                                <span><strong>Sluit Zaal:</strong> De zaal verdwijnt uit alle menu's en navigatie op de website. Bezoekers kunnen de werken niet meer zien, maar jij kunt ze in het beheer nog wel bewerken.</span>
-                             </li>
-                             <li className="flex gap-4">
-                                <div className="w-6 h-6 rounded-full bg-black/5 flex items-center justify-center shrink-0"><Languages className="w-3 h-3" /></div>
-                                <span><strong>Vertalen:</strong> Gebruik het "Vertaal Station" hierboven om de naam van de zaal in 4 talen in te vullen. Zo zien buitenlandse bezoekers de juiste namen in hun menu.</span>
-                             </li>
-                          </ul>
                        </div>
                     </div>
                   </div>
@@ -937,10 +880,6 @@ export default function AdminPage() {
                             <Label className="text-[10px] uppercase opacity-60">Slogan / Artist Quote</Label>
                             <Input defaultValue={siteSettings?.siteSubtitle || ''} onBlur={(e) => updateSettingsField('siteSubtitle', e.target.value)} placeholder="Bijv: Meester in Atmosfeer" />
                          </div>
-                         <div className="space-y-2">
-                            <Label className="text-[10px] uppercase opacity-60">Notificatie Email (Orders)</Label>
-                            <Input defaultValue={siteSettings?.adminEmail || ''} onBlur={(e) => updateSettingsField('adminEmail', e.target.value)} placeholder="artist@email.com" />
-                         </div>
                       </div>
 
                       <div className="space-y-4 bg-accent/5 p-6 rounded-2xl border border-accent/10 flex flex-col items-center justify-center">
@@ -954,107 +893,6 @@ export default function AdminPage() {
                    </div>
                 </div>
              </Card>
-          </TabsContent>
-
-          <TabsContent value="payments">
-             <Card className="p-8 md:p-12 rounded-3xl max-w-4xl mx-auto space-y-8 shadow-2xl border-none bg-white">
-                <div className="flex items-center gap-3 border-l-4 border-primary pl-4">
-                   <CreditCard className="w-5 h-5 text-primary" />
-                   <h2 className="text-[12px] font-bold uppercase tracking-widest text-primary">Betaalmodule (Stripe)</h2>
-                </div>
-
-                <div className="bg-primary/5 p-8 rounded-2xl space-y-6 border border-primary/10">
-                   <div className="flex items-center justify-between border-b border-primary/10 pb-6">
-                      <div className="space-y-1">
-                         <h4 className="font-bold text-sm">Directe verkoop inschakelen</h4>
-                         <p className="text-xs text-muted-foreground italic">Zodra ingeschakeld, kunnen bezoekers direct afrekenen via iDEAL of Creditcard.</p>
-                      </div>
-                      <Switch 
-                        checked={siteSettings?.stripeEnabled} 
-                        onCheckedChange={(val) => updateSettingsField('stripeEnabled', val)} 
-                      />
-                   </div>
-
-                   <div className="grid gap-6">
-                      <div className="space-y-2">
-                         <Label className="text-[10px] uppercase font-bold opacity-40">Stripe Public Key</Label>
-                         <Input 
-                           defaultValue={siteSettings?.stripePublicKey || ''} 
-                           onBlur={(e) => updateSettingsField('stripePublicKey', e.target.value)} 
-                           placeholder="pk_test_..." 
-                         />
-                      </div>
-                      <div className="space-y-2">
-                         <Label className="text-[10px] uppercase font-bold opacity-40">Stripe Secret Key</Label>
-                         <Input 
-                           type="password"
-                           defaultValue={siteSettings?.stripeSecretKey || ''} 
-                           onBlur={(e) => updateSettingsField('stripeSecretKey', e.target.value)} 
-                           placeholder="sk_test_..." 
-                         />
-                         <p className="text-[9px] text-muted-foreground italic">Alleen zichtbaar voor jou als beheerder. Veilig opgeslagen in de Cloud.</p>
-                      </div>
-                   </div>
-                </div>
-             </Card>
-          </TabsContent>
-
-          <TabsContent value="help">
-             <div className="max-w-5xl mx-auto space-y-12 pb-24">
-               <Card className="p-8 md:p-12 rounded-3xl shadow-2xl border-none bg-primary text-primary-foreground relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-12 opacity-10 rotate-12"><Coins className="w-64 h-64" /></div>
-                  <div className="relative z-10 space-y-12">
-                     <div className="space-y-2">
-                        <h2 className="text-3xl font-headline font-light italic text-accent">De Digitaal Conservator Strategie</h2>
-                        <p className="text-primary-foreground/70 text-sm">Jouw commerciële routekaart voor museumbeheer.</p>
-                     </div>
-                     
-                     <div className="grid md:grid-cols-2 gap-12">
-                        <div className="p-8 rounded-3xl bg-white/5 border border-white/10 space-y-6">
-                           <div className="flex items-center gap-3">
-                              <Users className="w-5 h-5 text-accent" />
-                              <h4 className="font-bold uppercase text-[11px] tracking-widest text-accent">De Vriendenprijs</h4>
-                           </div>
-                           <div className="space-y-4">
-                              <div className="flex justify-between items-end border-b border-white/10 pb-2">
-                                 <span className="text-[10px] uppercase opacity-60">Setup Fee</span>
-                                 <span className="font-headline text-2xl">€250,-</span>
-                              </div>
-                              <div className="flex justify-between items-end border-b border-white/10 pb-2">
-                                 <span className="text-[10px] uppercase opacity-60">Service Fee (pm)</span>
-                                 <span className="font-headline text-2xl">€25,-</span>
-                              </div>
-                              <div className="flex justify-between items-end border-b border-white/10 pb-2">
-                                 <span className="text-[10px] uppercase opacity-60">Commissie</span>
-                                 <span className="font-headline text-2xl">10%</span>
-                              </div>
-                           </div>
-                        </div>
-
-                        <div className="p-8 rounded-3xl bg-black/20 border border-white/5 space-y-6">
-                           <div className="flex items-center gap-3">
-                              <Zap className="w-5 h-5 text-red-400" />
-                              <h4 className="font-bold uppercase text-[11px] tracking-widest text-red-400">Zakelijk Tarief</h4>
-                           </div>
-                           <div className="space-y-4">
-                              <div className="flex justify-between items-end border-b border-white/10 pb-2">
-                                 <span className="text-[10px] uppercase opacity-60">Setup Fee</span>
-                                 <span className="font-headline text-2xl">€500,-</span>
-                              </div>
-                              <div className="flex justify-between items-end border-b border-white/10 pb-2">
-                                 <span className="text-[10px] uppercase opacity-60">Service Fee (pm)</span>
-                                 <span className="font-headline text-2xl">€50,-</span>
-                              </div>
-                              <div className="flex justify-between items-end border-b border-white/10 pb-2">
-                                 <span className="text-[10px] uppercase opacity-60">Commissie</span>
-                                 <span className="font-headline text-2xl">20%</span>
-                              </div>
-                           </div>
-                        </div>
-                     </div>
-                  </div>
-               </Card>
-             </div>
           </TabsContent>
 
           <TabsContent value="upload">
@@ -1088,7 +926,6 @@ export default function AdminPage() {
           <DialogTitle className="sr-only">Editor - {editingArtwork?.title}</DialogTitle>
           
           <div className="flex flex-col md:flex-row h-full overflow-hidden">
-            {/* Linkerkant: Preview */}
             <div className="flex-1 bg-black/5 flex flex-col overflow-hidden">
               <div className="h-14 md:h-20 border-b border-black/5 bg-white/80 backdrop-blur-md px-8 flex items-center justify-between shrink-0">
                  <div className="flex items-center gap-4">
@@ -1104,7 +941,7 @@ export default function AdminPage() {
                  </div>
                  <div className="flex items-center gap-4">
                     {editingArtwork?.featured && <Star className="w-4 h-4 text-accent fill-accent" />}
-                    {editingArtwork?.series && editingArtwork?.series !== 'Nieuwe Uploads' && (
+                    {editingArtwork?.series && (
                       <span className="text-[10px] font-bold uppercase tracking-widest opacity-30">{editingArtwork?.series}</span>
                     )}
                  </div>
@@ -1127,10 +964,8 @@ export default function AdminPage() {
               </div>
             </div>
 
-            {/* Rechterkant: Formulier (Scrollbaar) */}
             <div className="w-full md:w-[450px] lg:w-[600px] shrink-0 bg-white border-l border-black/5 flex flex-col overflow-y-auto shadow-2xl z-10">
               <div className="p-8 space-y-12 pb-32">
-                
                 <div className="space-y-6">
                   <div className="flex items-center gap-3 border-l-4 border-accent pl-4">
                      <Palette className="w-4 h-4 text-accent" />
@@ -1156,7 +991,6 @@ export default function AdminPage() {
                          placeholder="Bijv: Polders of Archief"
                          className="h-12 border-black/10 focus:border-accent font-bold"
                        />
-                       <p className="text-[9px] text-muted-foreground italic">Wijzig deze naam om het werk naar een andere zaal te verplaatsen of een nieuwe zaal te maken.</p>
                     </div>
                   </div>
                 </div>
@@ -1210,35 +1044,6 @@ export default function AdminPage() {
                                </div>
                             </div>
                           ))}
-
-                          {allExistingTags.length > 0 && (
-                            <div className="space-y-2 pt-4 border-t border-accent/10">
-                               <Label className="text-[8px] uppercase font-bold opacity-40 block">Elders Gebruikt</Label>
-                               <div className="flex flex-wrap gap-1.5">
-                                  {allExistingTags.map(tag => {
-                                    // Sla tags over die al in de categorieën staan
-                                    const isStandard = Object.values(QUICK_TAG_CATEGORIES).flat().includes(tag);
-                                    if (isStandard) return null;
-                                    
-                                    const isActive = editingArtwork?.tags?.includes(tag);
-                                    return (
-                                      <button
-                                        key={tag}
-                                        onClick={() => toggleTagInArtwork(editingId!, editingArtwork?.tags, tag)}
-                                        className={cn(
-                                          "px-3 py-1 rounded-full text-[10px] font-bold transition-all border",
-                                          isActive 
-                                            ? "bg-primary text-primary-foreground border-primary" 
-                                            : "bg-black/5 border-transparent text-muted-foreground hover:bg-black/10"
-                                        )}
-                                      >
-                                        {tag}
-                                      </button>
-                                    );
-                                  })}
-                               </div>
-                            </div>
-                          )}
                        </div>
                     </div>
                   </div>
@@ -1252,7 +1057,13 @@ export default function AdminPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                        <Label className="text-[10px] uppercase font-bold opacity-40 tracking-widest">Jaartal</Label>
-                       <Input key={`year-${editingId}`} defaultValue={editingArtwork?.year || ''} onBlur={(e) => updateArtworkField(editingId!, 'year', e.target.value)} placeholder="bijv. 1954" />
+                       <Input 
+                         key={`year-${editingId}`} 
+                         defaultValue={editingArtwork?.year || ''} 
+                         onBlur={(e) => updateArtworkField(editingId!, 'year', e.target.value)} 
+                         placeholder="bijv. 1954" 
+                         autoComplete="off"
+                       />
                     </div>
                     <div className="space-y-2">
                        <Label className="text-[10px] uppercase font-bold opacity-40 tracking-widest">Afmetingen</Label>
