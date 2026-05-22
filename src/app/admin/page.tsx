@@ -84,7 +84,7 @@ const LANG_MAP: Record<string, string> = {
 };
 
 const QUICK_TAG_CATEGORIES = {
-  "Periode": ["Vroeg werk", "45-50", "50-60", "70-82"],
+  "Periode": ["Vroeg werk", "45-50", "50-60", "60-70", "70-82"],
   "Techniek": ["Olieverf", "Aquarel", "Gouache", "Monumentaal", "Glas in lood"],
   "Plaats": ["Groet", "Schoorl", "Hargen", "Camperduin", "Holland", "Amsterdam", "Frankrijk", "Bretagne", "Griekenland"],
   "Onderwerp": ["Havens", "Stillevens", "Bloemen", "Dieren", "Water", "Mensen", "Polder"]
@@ -1103,7 +1103,9 @@ export default function AdminPage() {
                  </div>
                  <div className="flex items-center gap-4">
                     {editingArtwork?.featured && <Star className="w-4 h-4 text-accent fill-accent" />}
-                    <span className="text-[10px] font-bold uppercase tracking-widest opacity-30">{editingArtwork?.series}</span>
+                    {editingArtwork?.series && editingArtwork?.series !== 'Nieuwe Uploads' && (
+                      <span className="text-[10px] font-bold uppercase tracking-widest opacity-30">{editingArtwork?.series}</span>
+                    )}
                  </div>
               </div>
               <div className="flex-1 flex items-center justify-center p-6 md:p-12 overflow-hidden relative">
