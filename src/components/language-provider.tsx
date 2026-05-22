@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
@@ -33,6 +34,7 @@ const translations: Record<Language, Record<string, string>> = {
     shop_postcard: 'Ansichtkaart',
     shop_poster: 'Poster',
     shop_print: 'Fine Art Print',
+    shop_canvas: 'Canvas 100x100cm',
     shop_digital: 'Digitale Download',
     shop_order_now: 'Nu Bestellen',
     shop_order_form: 'Bestelformulier',
@@ -131,6 +133,7 @@ const translations: Record<Language, Record<string, string>> = {
     shop_postcard: 'Postcard',
     shop_poster: 'Poster',
     shop_print: 'Fine Art Print',
+    shop_canvas: 'Canvas 100x100cm',
     shop_digital: 'Digital Download',
     shop_order_now: 'Order Now',
     shop_order_form: 'Order Form',
@@ -229,6 +232,7 @@ const translations: Record<Language, Record<string, string>> = {
     shop_postcard: 'Postkarte',
     shop_poster: 'Poster',
     shop_print: 'Kunstdruck',
+    shop_canvas: 'Canvas 100x100cm',
     shop_digital: 'Digitaler Download',
     shop_order_now: 'Jetzt Bestellen',
     shop_order_form: 'Bestellformular',
@@ -287,11 +291,11 @@ const translations: Record<Language, Record<string, string>> = {
     guide_concept_desc: 'Die Sammlung wird in zwei Formen angeboten: Feste Säle (kuratierte Themen) und wechselnde Sammlungen, die Sie selbst zusammenstellen können.',
     guide_rooms_title: 'Feste & Wechselnde Säle',
     guide_rooms_desc: 'Besuchen Sie unsere permanenten Kollektionen über das Menü \'Galerien\', die sorgfältig nach Themen geordnet sind.',
-    guide_curator_manual_title: 'Kunst selbst erschließen',
+    guide_curator_manual_title: 'Kunst zelf erschließen',
     guide_curator_step1: '1. Gehen Sie zu \'Ihr Saal\': Hier sind Sie der Kurator und haben Zugriff auf das gesamte Archiv.',
     guide_curator_step2: '2. Tags verwenden: Wählen Sie Filter wie Periode oder Technik aus. Mehrere Tags und Kombinationen sind gleichzeitig möglich.',
     guide_curator_step3: '3. Saal öffnen: Klicken Sie auf die Schaltfläche, um Ihre persönliche Auswahl im Deep Zoom Viewer anzuzeigen.',
-    guide_curator_step4: '4. Auswahl löschen: Verwenden Sie die Löschtaste, um von vorne te beginnen und eine neue Kombination zu entdecken.',
+    guide_curator_step4: '4. Auswahl löschen: Verwenden Sie die Löschtaste, um von vorne te beginnen und eine neue Kombination te entdecken.',
     guide_nav_title: 'Navigation',
     guide_nav_tour_label: 'Die Tour',
     guide_nav_tour_desc: 'Ein immersiver Rundgang. Nutzen Sie die Pfeiltasten zum Gehen.',
@@ -327,6 +331,7 @@ const translations: Record<Language, Record<string, string>> = {
     shop_postcard: 'Carte postale',
     shop_poster: 'Poster',
     shop_print: 'Impression d\'art',
+    shop_canvas: 'Canvas 100x100cm',
     shop_digital: 'Téléchargement numérique',
     shop_order_now: 'Commander',
     shop_order_form: 'Bon de commande',
@@ -425,6 +430,7 @@ const translations: Record<Language, Record<string, string>> = {
     shop_postcard: 'Postal',
     shop_poster: 'Póster',
     shop_print: 'Impresión de arte',
+    shop_canvas: 'Canvas 100x100cm',
     shop_digital: 'Descarga digital',
     shop_order_now: 'Pedir ahora',
     shop_order_form: 'Formulario de pedido',

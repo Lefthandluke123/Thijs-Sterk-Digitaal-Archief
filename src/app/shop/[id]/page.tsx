@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo } from 'react';
@@ -40,10 +41,11 @@ export default function ProductDetailPage() {
   const { data: artwork, loading } = useDoc(artworkRef);
 
   const PRODUCTS = useMemo(() => [
-    { id: 'postcard', label: t('shop_postcard'), price: artwork?.pricePostcard || 2.50, desc: 'A6 format.' },
+    { id: 'postcard', label: t('shop_postcard'), price: artwork?.pricePostcard || 2.50, desc: 'A6 formaat.' },
     { id: 'poster', label: t('shop_poster'), price: artwork?.pricePoster || 24.00, desc: '50x70 cm.' },
     { id: 'fine-art', label: t('shop_print'), price: artwork?.pricePrint || 85.00, desc: 'Giclée print.' },
-    { id: 'digital', label: t('shop_digital'), price: artwork?.priceDigital || 15.00, desc: 'Digital file (300dpi).' }
+    { id: 'canvas', label: t('shop_canvas'), price: artwork?.priceCanvas || 245.00, desc: '100x100 cm op houten frame.' },
+    { id: 'digital', label: t('shop_digital'), price: artwork?.priceDigital || 15.00, desc: 'Digitaal bestand (300dpi).' }
   ], [artwork, t]);
 
   const currentPrice = useMemo(() => {

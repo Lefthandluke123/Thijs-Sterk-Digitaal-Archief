@@ -28,6 +28,7 @@
         "pricePostcard": { "type": "number" },
         "pricePoster": { "type": "number" },
         "pricePrint": { "type": "number" },
+        "priceCanvas": { "type": "number", "description": "Prijs voor Canvas 100x100cm" },
         "priceDigital": { "type": "number" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
@@ -43,7 +44,7 @@
         "customerAddress": { "type": "string" },
         "artworkId": { "type": "string" },
         "artworkTitle": { "type": "string" },
-        "productType": { "type": "string", "enum": ["postcard", "poster", "fine-art", "digital"] },
+        "productType": { "type": "string", "enum": ["postcard", "poster", "fine-art", "canvas", "digital"] },
         "status": { "type": "string", "enum": ["new", "pending", "shipped", "paid"] },
         "stripeSessionId": { "type": "string" },
         "timestamp": { "type": "string", "format": "date-time" }

@@ -401,7 +401,7 @@ export default function AdminPage() {
           cropTop: 0, cropBottom: 0, cropLeft: 0, cropRight: 0, brightness: 1,
           year: "", dimensions: "", medium: "Olieverf op doek",
           featured: false, inShop: false,
-          pricePostcard: 2.50, pricePoster: 24.00, pricePrint: 85.00, priceDigital: 15.00,
+          pricePostcard: 2.50, pricePoster: 24.00, pricePrint: 85.00, priceCanvas: 245.00, priceDigital: 15.00,
           tags: []
         });
         processedCount++;
@@ -1114,6 +1114,10 @@ export default function AdminPage() {
                     <div className="space-y-2">
                        <Label className="text-[9px] uppercase font-bold opacity-40">Art Print (€)</Label>
                        <Input key={`p-print-${editingId}`} type="number" step="1" defaultValue={editingArtwork?.pricePrint || 85.00} onBlur={(e) => updateArtworkField(editingId!, 'pricePrint', parseFloat(e.target.value))} />
+                    </div>
+                    <div className="space-y-2">
+                       <Label className="text-[9px] uppercase font-bold opacity-40">Canvas 100x100 (€)</Label>
+                       <Input key={`p-canvas-${editingId}`} type="number" step="1" defaultValue={editingArtwork?.priceCanvas || 245.00} onBlur={(e) => updateArtworkField(editingId!, 'priceCanvas', parseFloat(e.target.value))} />
                     </div>
                     <div className="space-y-2">
                        <Label className="text-[9px] uppercase font-bold opacity-40">Digitaal (€)</Label>
