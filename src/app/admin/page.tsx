@@ -382,10 +382,11 @@ export default function AdminPage() {
   };
 
   const handleBatchProcess = async (files: FileList | null) => {
-    if (!files || !firestore || !storage) return;
+    const fileList = files;
+    if (!fileList || !firestore || !storage) return;
     setIsUploading(true);
     setUploadProgress(0);
-    const filesArray = Array.from(files).filter(f => f.type.startsWith('image/'));
+    const filesArray = Array.from(fileList).filter(f => f.type.startsWith('image/'));
     const totalFiles = filesArray.length;
     let processedCount = 0;
 
@@ -558,7 +559,9 @@ export default function AdminPage() {
                           </div>
                           <CardContent className="p-2 text-center bg-white">
                             <h4 className="text-[9px] font-bold uppercase truncate">{art.displayTitle || art.title}</h4>
-                            <p className={cn("text-[7px] uppercase font-bold mt-1", art.series === 'Archief' ? "text-red-500" : "opacity-40")}>{art.series}</p>
+                            {art.series && art.series !== 'Nieuwe Uploads' && (
+                              <p className={cn("text-[7px] uppercase font-bold mt-1", art.series === 'Archief' ? "text-red-500" : "opacity-40")}>{art.series}</p>
+                            )}
                           </CardContent>
                         </Card>
                       );

@@ -49,7 +49,7 @@ export function Footer() {
         </Link>
         
         <p className="text-muted-foreground text-[10px] uppercase tracking-widest font-black opacity-40">
-          &copy; {new Date().getFullYear()} {siteTitle}. {t('footer_rights')}
+          &copy; {siteTitle}. {t('footer_rights')}
         </p>
         
         <div className="flex gap-8 text-[11px] font-black uppercase tracking-widest">
