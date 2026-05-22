@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { ShoppingBag, ArrowLeft, CheckCircle2, Loader2, Info, Mail, CreditCard } from 'lucide-react';
+import { ShoppingBag, ArrowLeft, CircleCheck, Loader2, Info, Mail, CreditCard } from 'lucide-react';
 import { useLanguage } from '@/components/language-provider';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -117,7 +117,7 @@ export default function ProductDetailPage() {
     return (
       <main className="min-h-screen flex flex-col items-center justify-center p-6 text-center space-y-8">
         <div className="w-24 h-24 bg-green-500/10 rounded-full flex items-center justify-center">
-          <CheckCircle2 className="w-12 h-12 text-green-500" />
+          <CircleCheck className="w-12 h-12 text-green-500" />
         </div>
         <div className="space-y-4 max-w-md">
           <h1 className="font-headline text-4xl">{t('shop_order_success')}</h1>

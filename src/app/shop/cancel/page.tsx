@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { XCircle, ArrowLeft } from 'lucide-react';
+import { CircleX, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function OrderCancelPage() {
@@ -10,7 +10,7 @@ export default function OrderCancelPage() {
     <main className="min-h-screen bg-background flex items-center justify-center p-6 pt-32">
       <div className="max-w-md w-full bg-white/50 backdrop-blur-xl border-2 border-red-500/10 p-12 rounded-[3rem] shadow-2xl text-center space-y-8 animate-in fade-in duration-500">
         <div className="w-24 h-24 bg-red-500/10 rounded-full flex items-center justify-center mx-auto">
-          <XCircle className="w-12 h-12 text-red-400" />
+          <CircleX className="w-12 h-12 text-red-400" />
         </div>
         <div className="space-y-4">
           <h1 className="font-headline text-3xl font-light">Betaling afgebroken</h1>

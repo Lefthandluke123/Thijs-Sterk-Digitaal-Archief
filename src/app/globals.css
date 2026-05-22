@@ -4,22 +4,22 @@
 
 @layer base {
   :root {
-    --background: 66 45% 78%; /* Verlevendigde groentint */
+    --background: 85 45% 82%; /* Iets kleuriger, frisser groen */
     --foreground: 201 45% 5%;
-    --card: 66 45% 80%;
+    --card: 85 45% 84%;
     --card-foreground: 201 45% 5%;
-    --popover: 66 45% 80%;
+    --popover: 85 45% 84%;
     --popover-foreground: 201 45% 5%;
     --primary: 201 45% 10%;
-    --primary-foreground: 66 46% 95%;
-    --secondary: 66 35% 65%;
+    --primary-foreground: 85 46% 95%;
+    --secondary: 85 35% 70%;
     --secondary-foreground: 201 45% 8%;
-    --muted: 66 25% 55%;
+    --muted: 85 25% 60%;
     --muted-foreground: 201 35% 20%;
     --accent: 35 90% 22%; /* Rijk brons voor krachtig contrast */
     --accent-foreground: 0 0% 100%;
-    --border: 66 25% 45%;
-    --input: 66 25% 45%;
+    --border: 85 25% 50%;
+    --input: 85 25% 50%;
     --ring: 35 90% 22%;
     --radius: 0.5rem;
   }

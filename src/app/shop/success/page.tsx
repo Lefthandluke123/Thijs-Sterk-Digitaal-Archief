@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { CheckCircle, ShoppingBag, ArrowRight } from 'lucide-react';
+import { CircleCheck, ShoppingBag, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/components/language-provider';
 
@@ -13,7 +13,7 @@ export default function OrderSuccessPage() {
     <main className="min-h-screen bg-background flex items-center justify-center p-6 pt-32">
       <div className="max-w-md w-full bg-white/50 backdrop-blur-xl border-2 border-green-500/20 p-12 rounded-[3rem] shadow-2xl text-center space-y-8 animate-in fade-in zoom-in duration-700">
         <div className="w-24 h-24 bg-green-500/10 rounded-full flex items-center justify-center mx-auto">
-          <CheckCircle className="w-12 h-12 text-green-500" />
+          <CircleCheck className="w-12 h-12 text-green-500" />
         </div>
         <div className="space-y-4">
           <h1 className="font-headline text-4xl font-light italic">Betaald!</h1>

@@ -15,7 +15,7 @@ import {
   ArrowLeft, 
   Sparkles, 
   Loader2, 
-  CheckCircle,
+  CircleCheck,
   Globe,
   Info,
   Layers,

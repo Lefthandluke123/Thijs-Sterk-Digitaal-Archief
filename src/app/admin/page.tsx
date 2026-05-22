@@ -28,8 +28,8 @@ import {
   FileText,
   Image as ImageIcon,
   Camera,
-  CheckCircle,
-  AlertCircle,
+  CircleCheck,
+  CircleAlert,
   Zap,
   Coins,
   Users,
@@ -54,7 +54,7 @@ import {
   BookOpen,
   ArrowRight,
   Filter,
-  HelpCircle,
+  CircleHelp,
   Sparkles
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -534,7 +534,7 @@ export default function AdminPage() {
                      onClick={() => document.getElementById('manual-section')?.scrollIntoView({ behavior: 'smooth' })}
                      className="rounded-full px-4 text-[9px] uppercase font-bold tracking-widest h-9 border-accent/20 text-accent hover:bg-accent hover:text-white"
                    >
-                     <HelpCircle className="w-3.5 h-3.5 mr-2" /> Hoe werkt dit?
+                     <CircleHelp className="w-3.5 h-3.5 mr-2" /> Hoe werkt dit?
                    </Button>
                 </div>
 
@@ -779,7 +779,7 @@ export default function AdminPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {orders && orders.length > 0 ? orders.sort((a:any, b:any) => b.timestamp?.seconds - a.timestamp?.seconds).map((order: any) => (
+                    {orders && orders.length > 0 ? orders.sort((a:any, b:any) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0)).map((order: any) => (
                       <TableRow key={order.id} className="text-xs group hover:bg-black/5 transition-colors">
                         <TableCell className="font-mono opacity-50">{order.timestamp?.toDate().toLocaleDateString()}</TableCell>
                         <TableCell>
@@ -952,7 +952,7 @@ export default function AdminPage() {
                    <h2 className="text-xl font-headline font-light italic">Onthul nieuw werk</h2>
                    <p className="text-sm text-muted-foreground">Sleep hier de Master Files (min. 4000px) naar binnen.</p>
                    <div className="flex items-center justify-center gap-2 mt-4 text-accent">
-                      <AlertCircle className="w-4 h-4" />
+                      <CircleAlert className="w-4 h-4" />
                       <p className="text-[10px] uppercase font-bold tracking-widest italic">{t('asset_specs_pixels')}</p>
                    </div>
                 </div>
