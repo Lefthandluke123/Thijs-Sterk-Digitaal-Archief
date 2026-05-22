@@ -55,7 +55,8 @@ import {
   ArrowRight,
   Filter,
   CircleHelp,
-  Sparkles
+  Sparkles,
+  CircleX
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -140,7 +141,6 @@ export default function AdminPage() {
 
   const artworks = useMemo(() => {
     if (!rawArtworks) return [];
-    // Zorg voor unieke artworks op basis van imageUrl om duplicaten te voorkomen
     const seen = new Set();
     const unique = rawArtworks.filter(art => {
       const url = (art as any).imageUrl;
@@ -973,10 +973,11 @@ export default function AdminPage() {
       </main>
 
       <Dialog open={!!editingId} onOpenChange={() => setEditingId(null)}>
-        <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-background border-none rounded-none overflow-hidden fixed inset-0">
+        <DialogContent className="max-w-none w-screen h-screen p-0 flex flex-col bg-background border-none rounded-none overflow-hidden fixed inset-0 translate-x-0 translate-y-0 left-0 top-0 z-[100]">
           <DialogTitle className="sr-only">Editor - {editingArtwork?.title}</DialogTitle>
           
           <div className="flex flex-col md:flex-row h-full overflow-hidden">
+            {/* Linkerkant: Preview */}
             <div className="flex-1 bg-black/5 flex flex-col overflow-hidden">
               <div className="h-14 md:h-20 border-b border-black/5 bg-white/80 backdrop-blur-md px-8 flex items-center justify-between shrink-0">
                  <div className="flex items-center gap-4">
@@ -1002,6 +1003,7 @@ export default function AdminPage() {
               </div>
             </div>
 
+            {/* Rechterkant: Formulier (Scrollbaar) */}
             <div className="w-full md:w-[450px] lg:w-[550px] shrink-0 bg-white border-l border-black/5 flex flex-col overflow-y-auto shadow-2xl z-10">
               <div className="p-8 space-y-12 pb-32">
                 
