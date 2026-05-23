@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -86,13 +87,7 @@ export default function AdminPage() {
     return query(collection(firestore, 'artworks'));
   }, [firestore, isAuthorized]);
 
-  const ordersQuery = useMemoFirebase(() => {
-    if (!firestore || !isAuthorized) return null;
-    return query(collection(firestore, 'orders'));
-  }, [firestore, isAuthorized]);
-
   const { data: rawArtworks } = useCollection(artworksQuery);
-  const { data: orders } = useCollection(ordersQuery);
 
   const artworks = useMemo(() => {
     if (!rawArtworks) return [];
@@ -225,7 +220,6 @@ export default function AdminPage() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
           <TabsList className="bg-muted/50 p-1 rounded-full w-fit mx-auto flex flex-wrap justify-center h-auto border border-black/5">
             <TabsTrigger value="archive" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest">Schilderijen</TabsTrigger>
-            <TabsTrigger value="orders" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest">Bestellingen</TabsTrigger>
             <TabsTrigger value="branding" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest">Identiteit</TabsTrigger>
             <TabsTrigger value="help" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest bg-primary text-primary-foreground hover:bg-primary/90 shadow-xl"><LifeBuoy className="w-3 h-3 mr-2" /> Gids</TabsTrigger>
           </TabsList>
@@ -318,8 +312,8 @@ export default function AdminPage() {
         <DialogContent className="max-w-none w-screen h-screen p-0 flex flex-col bg-background border-none rounded-none overflow-hidden fixed inset-0 z-[100] outline-none">
           <DialogTitle className="sr-only">Editor - {editingArtwork?.title}</DialogTitle>
           <div className="flex flex-col md:flex-row h-full w-full overflow-hidden">
-            {/* Linker paneel: Preview - GECENTREERD met Grid */}
-            <div className="flex-1 bg-black/5 flex flex-col overflow-hidden relative border-r border-black/5">
+            {/* Linker paneel: Preview - Nu gegarandeerd gecentreerd */}
+            <div className="flex-1 bg-black/5 flex flex-col overflow-hidden relative border-r border-black/5 h-full">
               <div className="h-16 md:h-20 border-b border-black/5 bg-white/80 backdrop-blur-md px-8 flex items-center justify-between shrink-0 z-10">
                  <button onClick={() => setEditingId(null)} className="p-2 hover:bg-black/5 rounded-full transition-colors"><ArrowLeft className="w-5 h-5" /></button>
                  <div className="flex flex-col items-center">
@@ -330,8 +324,9 @@ export default function AdminPage() {
                  </div>
                  <div className="w-10" />
               </div>
-              <div className="flex-1 grid place-items-center p-4 md:p-12 overflow-hidden bg-[url('https://www.transparenttextures.com/patterns/pinstriped-suit.png')]">
-                <div className="relative group max-h-full max-w-full">
+              {/* De afbeelding wordt hier gecentreerd met flex-center op de container */}
+              <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-12 overflow-hidden bg-[url('https://www.transparenttextures.com/patterns/pinstriped-suit.png')] relative">
+                <div className="relative group max-h-full max-w-full flex items-center justify-center">
                   <img 
                     src={editingArtwork?.imageUrl} 
                     className="max-h-[70vh] md:max-h-[80vh] max-w-full object-contain shadow-[0_50px_100px_-20px_rgba(0,0,0,0.3)] bg-white p-2 md:p-4 rounded-sm" 
