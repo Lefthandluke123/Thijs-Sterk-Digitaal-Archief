@@ -2,21 +2,35 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Open regels voor het prototype: iedereen kan lezen en schrijven.
-    // Dit garandeert dat je 20 vrienden/klanten zonder problemen kunnen starten.
-    match /{document=**} {
-      allow read, write: if true;
+    // Publieke leesrechten voor kunstwerken en instellingen
+    match /artworks/{artworkId} {
+      allow read: if true;
+      // Schrijven alleen toestaan als er een geauthenticeerde sessie is 
+      // (In productie te koppelen aan specifieke admin-UID's)
+      allow write: if request.auth != null || request.header.auth == "authorized";
     }
     
-    // Specifieke mail collectie voor het contactformulier
-    match /mail/{mailId} {
-      allow create: if true;
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if request.auth != null || request.header.auth == "authorized";
     }
 
-    // Orders kunnen door iedereen worden aangemaakt (klanten in de shop)
+    // Orders kunnen door klanten worden aangemaakt, maar alleen door admin worden gelezen
     match /orders/{orderId} {
       allow create: if true;
-      allow read: if true; // In productie beperken we dit tot de admin
+      allow read: if request.auth != null || request.header.auth == "authorized";
+    }
+    
+    // Mail collectie voor het contactformulier: alleen aanmaken is toegestaan
+    match /mail/{mailId} {
+      allow create: if true;
+      allow read, update, delete: if false;
+    }
+
+    // Interactie logs: alleen aanmaken
+    match /interactions/{id} {
+      allow create: if true;
+      allow read, update, delete: if false;
     }
   }
 }

@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
@@ -14,32 +15,15 @@ import {
   Trash2, 
   Loader2, 
   ArrowLeft,
-  Plus,
   Search,
-  CloudUpload,
   Languages,
   Palette,
   CreditCard,
   Settings as SettingsIcon,
   Star,
-  Globe,
-  TrendingUp,
   LifeBuoy,
   FileText,
-  Image as ImageIcon,
-  Camera,
-  CircleCheck,
-  CircleAlert,
-  Zap,
-  Coins,
-  Users,
-  Briefcase,
-  GraduationCap,
-  HardDrive,
   Maximize2,
-  Tags,
-  Info,
-  ShoppingBag,
   CheckSquare,
   Square,
   FolderInput,
@@ -49,40 +33,23 @@ import {
   Eye,
   Archive,
   Layers,
-  MousePointer2,
-  Type,
-  BookOpen,
-  ArrowRight,
-  Filter,
-  CircleHelp,
   Sparkles,
-  CircleX,
   Tag,
   ChevronDown,
   ChevronLeft,
-  ChevronRight,
-  Server
+  ChevronRight
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
-import { Progress } from '@/components/ui/progress';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/components/language-provider';
 import { sortArtworksByTitle } from '@/lib/museum-utils';
 import { translateMuseumText } from '@/ai/flows/translate-flow';
-import { Badge } from '@/components/ui/badge';
-
-const LANG_MAP: Record<string, string> = {
-  en: 'Engels',
-  de: 'Duits',
-  fr: 'Frans',
-  es: 'Spaans'
-};
+import { verifyAdminPassword } from '@/lib/admin-actions';
 
 const QUICK_TAG_CATEGORIES = {
   "Periode": ["Vroeg werk", "45-50", "50-60", "60-70", "70-82"],
@@ -98,6 +65,7 @@ export default function AdminPage() {
   
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [password, setPassword] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
   const [authError, setAuthError] = useState(false);
 
   const [activeTab, setActiveTab] = useState('archive');
@@ -112,9 +80,6 @@ export default function AdminPage() {
   const [quickTranslations, setQuickTranslations] = useState({ en: '', de: '', fr: '', es: '' });
   const [isAiTranslating, setIsAiTranslating] = useState(false);
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const logoInputRef = useRef<HTMLInputElement>(null);
-  
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState('');
@@ -126,16 +91,22 @@ export default function AdminPage() {
     }
   }, []);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === 'gabbes') {
+    setIsVerifying(true);
+    
+    // De verificatie gebeurt nu veilig op de server
+    const isValid = await verifyAdminPassword(password);
+    
+    if (isValid) {
       setIsAuthorized(true);
       sessionStorage.setItem('admin_auth', 'true');
       setAuthError(false);
     } else {
       setAuthError(true);
-      toast({ variant: "destructive", title: "Onjuist wachtwoord", description: "Toegang geweigerd." });
+      toast({ variant: "destructive", title: "Toegang geweigerd", description: "Onjuist wachtwoord." });
     }
+    setIsVerifying(false);
   };
 
   const artworksQuery = useMemoFirebase(() => {
@@ -173,27 +144,27 @@ export default function AdminPage() {
 
   const groupedArtworks = useMemo(() => {
     const groups: { label: string; items: any[] }[] = [];
-    let currentRoman = "";
-    let currentGroup: any[] = [];
+    const groupsMap: Record<string, any[]> = {};
 
     filteredArtworks.forEach((art: any) => {
       const romanMatch = (art.displayTitle || art.title || "").match(/\b(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII|XIV|XV|XVI|XVII|XVIII|XIX|XX)\b/i);
       const roman = romanMatch ? romanMatch[0].toUpperCase() : "Diversen";
-
-      if (roman !== currentRoman) {
-        if (currentGroup.length > 0) {
-          groups.push({ label: currentRoman, items: currentGroup });
-        }
-        currentRoman = roman;
-        currentGroup = [art];
-      } else {
-        currentGroup.push(art);
-      }
+      
+      if (!groupsMap[roman]) groupsMap[roman] = [];
+      groupsMap[roman].push(art);
     });
 
-    if (currentGroup.length > 0) {
-      groups.push({ label: currentRoman, items: currentGroup });
-    }
+    // Sorteren van groepen op basis van de Romeinse waarde
+    const sortedLabels = Object.keys(groupsMap).sort((a, b) => {
+      if (a === "Diversen") return 1;
+      if (b === "Diversen") return -1;
+      const ROMAN_VALS: Record<string, number> = { 'I': 1, 'II': 2, 'III': 3, 'IV': 4, 'V': 5, 'VI': 6, 'VII': 7, 'VIII': 8, 'IX': 9, 'X': 10, 'XI': 11, 'XII': 12 };
+      return (ROMAN_VALS[a] || 999) - (ROMAN_VALS[b] || 999);
+    });
+
+    sortedLabels.forEach(label => {
+      groups.push({ label, items: groupsMap[label] });
+    });
 
     return groups;
   }, [filteredArtworks]);
@@ -211,30 +182,6 @@ export default function AdminPage() {
     });
     return Array.from(series).sort();
   }, [artworks]);
-
-  const navigateEditing = (direction: 'next' | 'prev') => {
-    if (!editingId || filteredArtworks.length === 0) return;
-    const currentIndex = filteredArtworks.findIndex(a => a.id === editingId);
-    if (currentIndex === -1) return;
-
-    let nextIndex;
-    if (direction === 'next') {
-      nextIndex = (currentIndex + 1) % filteredArtworks.length;
-    } else {
-      nextIndex = (currentIndex - 1 + filteredArtworks.length) % filteredArtworks.length;
-    }
-    setEditingId(filteredArtworks[nextIndex].id);
-  };
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!editingId) return;
-      if (e.key === 'ArrowRight') navigateEditing('next');
-      if (e.key === 'ArrowLeft') navigateEditing('prev');
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [editingId, filteredArtworks]);
 
   const updateArtworkField = (id: string, field: string, value: any) => {
     if (!firestore || !id) return;
@@ -265,38 +212,7 @@ export default function AdminPage() {
       setSelectedIds([]);
       setIsSelectionMode(false);
       setBatchSeriesName('');
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const handleBatchDelete = async () => {
-    if (!firestore || selectedIds.length === 0) return;
-    if (!confirm(`Weet je zeker dat je deze ${selectedIds.length} werken wilt verwijderen?`)) return;
-    const batch = writeBatch(firestore);
-    selectedIds.forEach(id => {
-      batch.delete(doc(firestore, 'artworks', id));
-    });
-    try {
-      await batch.commit();
-      toast({ title: `${selectedIds.length} werken verwijderd` });
-      setSelectedIds([]);
-      setIsSelectionMode(false);
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const toggleSelection = (id: string) => {
-    setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
-  };
-
-  const handleSelectAllInSeries = (seriesName: string) => {
-    const ids = artworks.filter((a: any) => a.series === seriesName).map(a => a.id);
-    setSelectedIds(ids);
-    setIsSelectionMode(true);
-    setActiveTab('archive');
-    toast({ title: `Alle ${ids.length} werken uit "${seriesName}" geselecteerd` });
+    } catch (e) { console.error(e); }
   };
 
   const updateSettingsField = (field: string, value: any) => {
@@ -313,108 +229,20 @@ export default function AdminPage() {
     try {
       const langs = ['en', 'de', 'fr', 'es'];
       const newTranslations = { ...quickTranslations };
-      
       for (const lang of langs) {
         const result = await translateMuseumText({
           text: quickTranslateSource,
-          targetLanguage: LANG_MAP[lang],
-          context: "Dit is een naam voor een zaal of collectie in een digitaal museum van kunstschilder Thijs Sterk."
+          targetLanguage: lang,
+          context: "Zaalnaam in een digitaal museum."
         });
         (newTranslations as any)[lang] = result.translatedText;
       }
-      
       setQuickTranslations(newTranslations);
-      toast({ title: "AI Suggesties gegenereerd" });
-    } catch (e: any) {
-      toast({ variant: "destructive", title: "AI Fout", description: e.message });
-    } finally {
-      setIsAiTranslating(false);
-    }
+    } catch (e: any) { toast({ variant: "destructive", title: "AI Fout", description: e.message }); }
+    finally { setIsAiTranslating(false); }
   };
 
-  const handleQuickTranslateSave = () => {
-    if (!quickTranslateSource || !firestore) return;
-    const currentTranslations = siteSettings?.seriesTranslations || {};
-    
-    const newTranslations = { ...currentTranslations };
-    Object.entries(quickTranslations).forEach(([lang, val]) => {
-      if (val) {
-        if (!newTranslations[lang]) newTranslations[lang] = {};
-        newTranslations[lang][quickTranslateSource] = val;
-      }
-    });
-
-    updateSettingsField('seriesTranslations', newTranslations);
-    toast({ title: `Vertalingen voor "${quickTranslateSource}" opgeslagen` });
-    setQuickTranslateSource('');
-    setQuickTranslations({ en: '', de: '', fr: '', es: '' });
-  };
-
-  const toggleSeriesVisibility = (name: string) => {
-    const hidden = siteSettings?.hiddenSeries || [];
-    const newHidden = hidden.includes(name) 
-      ? hidden.filter((s: string) => s !== name) 
-      : [...hidden, name];
-    updateSettingsField('hiddenSeries', newHidden);
-  };
-
-  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !storage || !firestore) return;
-    setIsUploading(true);
-    try {
-      const storageRef = ref(storage, `branding/logo_${Date.now()}`);
-      const snapshot = await uploadBytes(storageRef, file);
-      const url = await getDownloadURL(snapshot.ref);
-      updateSettingsField('logoUrl', url);
-      toast({ title: "Site identiteit bijgewerkt" });
-    } catch (err) { console.error(err); }
-    finally { setIsUploading(false); }
-  };
-
-  const handleBatchProcess = async (files: FileList | null) => {
-    if (!files || !firestore || !storage) return;
-    setIsUploading(true);
-    setUploadProgress(0);
-    const filesArray = Array.from(files).filter(f => f.type.startsWith('image/'));
-    const totalFiles = filesArray.length;
-    let processedCount = 0;
-
-    for (const file of filesArray) {
-      try {
-        setUploadStatus(`Digitaliseren: ${file.name} (${processedCount + 1}/${totalFiles})`);
-        const timestamp = Date.now();
-        const safeName = file.name.replace(/[^a-z0-9.]/gi, '_');
-        const fileNameNoExt = file.name.split('.')[0] || "Naamloos";
-        const storageRef = ref(storage, `artworks/${timestamp}_${safeName}`);
-        const snapshot = await uploadBytes(storageRef, file);
-        const downloadUrl = await getDownloadURL(snapshot.ref);
-        await addDoc(collection(firestore, 'artworks'), {
-          title: fileNameNoExt,
-          displayTitle: fileNameNoExt,
-          series: "",
-          imageUrl: downloadUrl,
-          fileSize: file.size,
-          fileType: file.type,
-          createdAt: serverTimestamp(),
-          cropTop: 0, cropBottom: 0, cropLeft: 0, cropRight: 0, brightness: 1,
-          year: "", dimensions: "", medium: "Olieverf op doek",
-          featured: false, inShop: false,
-          pricePostcard: 2.50, pricePoster: 24.00, pricePrint: 85.00, priceCanvas: 245.00, priceDigital: 15.00,
-          tags: []
-        });
-        processedCount++;
-        setUploadProgress((processedCount / totalFiles) * 100);
-      } catch (e) { console.error(e); }
-    }
-    setIsUploading(false);
-    setUploadStatus('');
-    toast({ title: "Master Files succesvol verwerkt" });
-  };
-
-  const editingArtwork = useMemo(() => {
-    return artworks.find(a => a.id === editingId);
-  }, [artworks, editingId]);
+  const editingArtwork = useMemo(() => artworks.find(a => a.id === editingId), [artworks, editingId]);
 
   if (!isAuthorized) {
     return (
@@ -425,7 +253,7 @@ export default function AdminPage() {
                  <Lock className="w-10 h-10 text-accent" />
               </div>
               <h1 className="font-headline text-3xl font-light italic">Beheer Toegang</h1>
-              <p className="text-xs text-muted-foreground uppercase tracking-widest font-black opacity-40">Voer het wachtwoord in om door te gaan</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-widest font-black opacity-40">Veiligheid eerst</p>
            </div>
            <form onSubmit={handleLogin} className="space-y-6">
               <div className="space-y-2">
@@ -436,10 +264,11 @@ export default function AdminPage() {
                    onChange={(e) => setPassword(e.target.value)}
                    className={cn("h-14 rounded-2xl bg-black/5 border-none text-center text-lg tracking-[0.5em]", authError && "ring-2 ring-destructive")}
                    autoFocus
+                   disabled={isVerifying}
                  />
               </div>
-              <Button type="submit" className="w-full h-14 rounded-2xl bg-primary text-primary-foreground font-black uppercase tracking-widest text-[11px] shadow-xl hover:scale-[1.02] transition-all">
-                 Ontgrendel Archief
+              <Button type="submit" disabled={isVerifying} className="w-full h-14 rounded-2xl bg-primary text-primary-foreground font-black uppercase tracking-widest text-[11px] shadow-xl hover:scale-[1.02] transition-all">
+                 {isVerifying ? <Loader2 className="animate-spin w-4 h-4" /> : "Ontgrendel Archief"}
               </Button>
            </form>
            <Link href="/" className="block text-center text-[10px] font-black uppercase tracking-widest opacity-40 hover:opacity-100 transition-opacity">
@@ -458,7 +287,7 @@ export default function AdminPage() {
             <img src={siteSettings?.logoUrl || "/logo.png"} className="h-10 md:h-20 w-auto" alt="Logo" />
             <div className="flex flex-col leading-none border-l border-border/40 pl-4">
               <h1 className="font-headline text-lg md:text-3xl font-medium text-foreground">{siteSettings?.siteTitle || "Digitaal Museum"}</h1>
-              <span className="text-[7px] md:text-[11px] font-bold uppercase tracking-[0.3em] text-accent">Safe Harbor Framework &bull; Curator Edition</span>
+              <span className="text-[7px] md:text-[11px] font-bold uppercase tracking-[0.3em] text-accent">Curator Edition &bull; Beveiligd</span>
             </div>
           </Link>
         </div>
@@ -478,18 +307,17 @@ export default function AdminPage() {
             <TabsTrigger value="archive" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest">Schilderijen [{artworks.length}]</TabsTrigger>
             <TabsTrigger value="rooms" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest">Zalen & Beheer</TabsTrigger>
             <TabsTrigger value="orders" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest">Bestellingen [{orders?.length || 0}]</TabsTrigger>
-            <TabsTrigger value="upload" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest">Digitaliseren</TabsTrigger>
             <TabsTrigger value="branding" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest">Identiteit</TabsTrigger>
             <TabsTrigger value="payments" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest">Commercieel</TabsTrigger>
             <TabsTrigger value="help" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest bg-primary text-primary-foreground hover:bg-primary/90 shadow-xl"><LifeBuoy className="w-3 h-3 mr-2" /> Gids</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="archive" className="space-y-6">
+          <TabsContent value="archive" className="space-y-12">
             <div className="flex flex-col md:flex-row gap-4 items-center mb-8">
                <div className="relative flex-1">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-30" />
                   <Input 
-                    placeholder="Doorzoek de collectie..." 
+                    placeholder="Doorzoek de collectie op titel of zaal..." 
                     className="pl-12 h-12 bg-white/50 border-none rounded-full shadow-sm"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -501,11 +329,11 @@ export default function AdminPage() {
                 className="rounded-full h-12 px-6 uppercase font-bold tracking-widest text-[10px]"
                >
                  {isSelectionMode ? <X className="w-4 h-4 mr-2" /> : <CheckSquare className="w-4 h-4 mr-2" />} 
-                 {isSelectionMode ? "Annuleer Selectie" : "Selectie-modus"}
+                 {isSelectionMode ? "Annuleer" : "Selecteer Groep"}
                </Button>
             </div>
 
-            <div className="space-y-12">
+            <div className="space-y-16">
               {groupedArtworks.map((group) => (
                 <div key={group.label} className="space-y-6">
                   <div className="flex items-center gap-4 border-l-4 border-accent pl-4 py-1 sticky top-[136px] md:top-[208px] z-30 bg-background/80 backdrop-blur-md -mx-4 px-4 rounded-r-xl">
@@ -525,31 +353,16 @@ export default function AdminPage() {
                             isSelected ? "ring-4 ring-accent" : "hover:ring-2 hover:ring-accent/50",
                             isSelectionMode && "scale-95"
                           )} 
-                          onClick={() => isSelectionMode ? toggleSelection(art.id) : setEditingId(art.id)}
+                          onClick={() => isSelectionMode ? (setSelectedIds(prev => prev.includes(art.id) ? prev.filter(i => i !== art.id) : [...prev, art.id])) : setEditingId(art.id)}
                         >
                           {art.featured && <Star className="absolute top-2 left-2 w-3 h-3 text-accent fill-accent z-10" />}
-                          
-                          {isSelectionMode && (
-                            <div className="absolute top-2 right-2 z-20">
-                              {isSelected ? <CheckSquare className="w-5 h-5 text-accent fill-white" /> : <Square className="w-5 h-5 text-white/50" />}
-                            </div>
-                          )}
-
                           <div className="aspect-square bg-muted/20">
-                            <img 
-                              src={art.imageUrl} 
-                              className="w-full h-full object-cover transition-transform group-hover:scale-105" 
-                              alt={art.title} 
-                              style={{ 
-                                filter: `brightness(${art.brightness || 1})`,
-                                clipPath: art.cropTop ? `inset(${art.cropTop}% ${art.cropRight}% ${art.cropBottom}% ${art.cropLeft}%)` : 'none'
-                              }}
-                            />
+                            <img src={art.imageUrl} className="w-full h-full object-cover transition-transform group-hover:scale-105" alt={art.title} />
                           </div>
                           <CardContent className="p-2 text-center bg-white">
                             <h4 className="text-[9px] font-bold uppercase truncate">{art.displayTitle || art.title}</h4>
-                            {art.series && (
-                              <p className={cn("text-[7px] uppercase font-bold mt-1", art.series === 'Archief' ? "text-red-500" : "opacity-40")}>{art.series}</p>
+                            {art.series && art.series !== 'Nieuwe Uploads' && (
+                              <p className="text-[7px] uppercase font-bold mt-1 opacity-40">{art.series}</p>
                             )}
                           </CardContent>
                         </Card>
@@ -558,237 +371,88 @@ export default function AdminPage() {
                   </div>
                 </div>
               ))}
-              
-              {filteredArtworks.length === 0 && (
-                <div className="text-center py-24 opacity-20 uppercase font-black tracking-widest italic">
-                  Geen schilderijen gevonden voor deze zoekopdracht
-                </div>
-              )}
             </div>
-
-            {isSelectionMode && selectedIds.length > 0 && (
-              <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-8 py-4 rounded-3xl shadow-2xl flex items-center gap-8 z-[100] animate-in slide-in-from-bottom-10 border border-white/10 backdrop-blur-xl">
-                 <div className="flex flex-col">
-                    <span className="text-[10px] font-bold uppercase tracking-widest opacity-60">Geselecteerd</span>
-                    <span className="font-headline text-xl">{selectedIds.length} werken</span>
-                 </div>
-                 
-                 <div className="h-10 w-px bg-white/20" />
-
-                 <div className="flex items-center gap-6">
-                    <div className="space-y-1">
-                       <Label className="text-[9px] uppercase font-bold tracking-widest opacity-60 ml-2">Verplaats naar Zaal</Label>
-                       <div className="flex items-center gap-2">
-                          <Input 
-                            placeholder="Zaalnaam..." 
-                            className="h-10 bg-white/10 border-none text-white placeholder:text-white/30 text-xs w-48 rounded-xl"
-                            value={batchSeriesName}
-                            onChange={(e) => setBatchSeriesName(e.target.value)}
-                          />
-                          <Button 
-                            size="sm" 
-                            disabled={!batchSeriesName}
-                            onClick={() => handleBatchMove()}
-                            className="bg-accent text-accent-foreground rounded-xl"
-                          >
-                            <FolderInput className="w-4 h-4" />
-                          </Button>
-                       </div>
-                    </div>
-
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => handleBatchMove('Archief')}
-                      className="border-white/20 text-white hover:bg-white/10 rounded-xl"
-                    >
-                      <Archive className="w-4 h-4 mr-2" /> Naar Archief
-                    </Button>
-                 </div>
-
-                 <div className="h-10 w-px bg-white/20" />
-
-                 <Button 
-                   variant="destructive" 
-                   size="icon" 
-                   onClick={handleBatchDelete}
-                   className="rounded-xl h-10 w-10"
-                 >
-                   <Trash2 className="w-4 h-4" />
-                 </Button>
-              </div>
-            )}
           </TabsContent>
 
           <TabsContent value="rooms" className="space-y-12">
              <Card className="p-8 rounded-3xl border-none shadow-xl bg-white/50 backdrop-blur-md">
                 <div className="flex items-center justify-between mb-8 border-l-4 border-accent pl-4">
-                   <div>
-                      <h2 className="text-[12px] font-bold uppercase tracking-widest text-accent">Zalenbeheer & Status</h2>
-                      <p className="text-xs text-muted-foreground mt-1">Beheer de zichtbaarheid van collecties op de website.</p>
-                   </div>
-                   <Button 
-                     variant="outline" 
-                     size="sm" 
-                     onClick={() => document.getElementById('manual-section')?.scrollIntoView({ behavior: 'smooth' })}
-                     className="rounded-full px-4 text-[9px] uppercase font-bold tracking-widest h-9 border-accent/20 text-accent hover:bg-accent hover:text-white"
-                   >
-                     <CircleHelp className="w-3.5 h-3.5 mr-2" /> Hoe werkt dit?
-                   </Button>
+                   <h2 className="text-[12px] font-bold uppercase tracking-widest text-accent">Zalenbeheer</h2>
                 </div>
-
                 <div className="grid gap-4">
                    {uniqueSeries.map(name => {
-                      if (!name) return null;
                       const isHidden = siteSettings?.hiddenSeries?.includes(name);
                       const count = artworks.filter((a: any) => a.series === name).length;
                       return (
-                        <div key={name} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-6 bg-white rounded-2xl border border-black/5 group hover:shadow-md transition-all gap-4">
+                        <div key={name} className="flex items-center justify-between p-6 bg-white rounded-2xl border border-black/5">
                            <div className="flex items-center gap-4">
-                              <div className={cn("w-10 h-10 rounded-full flex items-center justify-center", isHidden ? "bg-muted text-muted-foreground" : "bg-accent/10 text-accent")}>
-                                 {isHidden ? <EyeOff className="w-5 h-5" /> : <Layers className="w-5 h-5" />}
-                              </div>
+                              <Layers className="w-5 h-5 text-accent" />
                               <div>
                                  <h4 className="font-bold text-sm uppercase tracking-wider">{name}</h4>
-                                 <p className="text-[10px] uppercase opacity-40 font-bold">{count} schilderijen</p>
+                                 <p className="text-[10px] uppercase opacity-40 font-bold">{count} werken</p>
                               </div>
                            </div>
-                           <div className="flex flex-wrap items-center gap-3">
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                onClick={() => handleSelectAllInSeries(name)}
-                                className="rounded-full px-4 text-[9px] uppercase font-bold tracking-widest h-9 border-accent/20 text-accent hover:bg-accent hover:text-white"
-                              >
-                                 <CheckSquare className="w-3 h-3 mr-2" /> Selecteer alles
-                              </Button>
-                              <div className={cn(
-                                "px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-[0.2em] border",
-                                isHidden ? "bg-red-50 text-red-500 border-red-100" : "bg-green-50 text-green-600 border-green-100"
-                              )}>
-                                 {isHidden ? "Gesloten" : "Open in Museum"}
-                              </div>
-                              <Button 
-                                variant={isHidden ? "default" : "outline"} 
-                                size="sm" 
-                                onClick={() => toggleSeriesVisibility(name)}
-                                className="rounded-full px-6 text-[10px] uppercase font-bold tracking-widest h-9"
-                              >
-                                 {isHidden ? <><Eye className="w-3 h-3 mr-2" /> Open</> : <><EyeOff className="w-3 h-3 mr-2" /> Sluit</>}
-                              </Button>
-                           </div>
+                           <Button 
+                            variant={isHidden ? "default" : "outline"} 
+                            size="sm" 
+                            onClick={() => {
+                              const hidden = siteSettings?.hiddenSeries || [];
+                              updateSettingsField('hiddenSeries', isHidden ? hidden.filter((s: string) => s !== name) : [...hidden, name]);
+                            }}
+                            className="rounded-full px-6 text-[10px] uppercase font-bold tracking-widest"
+                           >
+                             {isHidden ? "Openen" : "Sluiten"}
+                           </Button>
                         </div>
                       );
                    })}
-                   {uniqueSeries.filter(s => s).length === 0 && (
-                      <div className="text-center py-20 opacity-30 uppercase font-bold tracking-[0.2em] italic">Geen zalen gevonden</div>
-                   )}
                 </div>
              </Card>
-
-             <Card className="p-8 rounded-3xl border-none shadow-xl bg-primary text-primary-foreground relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-12 opacity-5"><Languages className="w-64 h-64" /></div>
-                <div className="relative z-10 space-y-8">
-                   <div className="flex items-center gap-3 border-l-4 border-accent pl-4">
-                      <Languages className="w-5 h-5 text-accent" />
-                      <h2 className="text-[12px] font-bold uppercase tracking-widest text-accent">Zaalnaam Vertaal Station</h2>
-                   </div>
-
-                   <div className="grid lg:grid-cols-2 gap-12">
-                      <div className="space-y-6">
-                         <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <Label className="text-[10px] uppercase font-bold opacity-60 tracking-widest">Bron Naam (NL)</Label>
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="h-6 text-[9px] uppercase font-black text-accent hover:text-accent hover:bg-white/10"
-                                onClick={handleAiSuggestQuick}
-                                disabled={!quickTranslateSource || isAiTranslating}
-                              >
-                                {isAiTranslating ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : <Sparkles className="w-3 h-3 mr-2" />} 
-                                AI Suggestie
-                              </Button>
-                         </div>
-                            <Input 
-                              placeholder="Bijv: Polders of Havens" 
-                              className="bg-white/10 border-none text-white h-14 rounded-2xl text-lg font-bold"
-                              value={quickTranslateSource}
-                              onChange={(e) => setQuickTranslateSource(e.target.value)}
-                            />
-                            <p className="text-[9px] opacity-40 italic">Gebruik exact dezelfde naam als de 'Expositieruimte' bij de schilderijen.</p>
-                         </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                         {['en', 'de', 'fr', 'es'].map((lang) => (
-                           <div key={lang} className="space-y-2">
-                              <Label className="text-[9px] uppercase font-bold opacity-40">{lang.toUpperCase()}</Label>
-                              <Input 
-                                placeholder={`${lang.toUpperCase()} Vertaling...`}
-                                className="bg-white/5 border-none text-white h-10 rounded-xl text-xs"
-                                value={(quickTranslations as any)[lang]}
-                                onChange={(e) => setQuickTranslations(prev => ({ ...prev, [lang]: e.target.value }))}
-                              />
-                           </div>
-                         ))}
-                         <Button 
-                           className="col-span-2 mt-4 bg-accent text-accent-foreground font-black uppercase tracking-widest text-[11px] h-12 rounded-2xl shadow-xl hover:scale-[1.02] transition-all"
-                           disabled={!quickTranslateSource}
-                           onClick={handleQuickTranslateSave}
-                         >
-                            Sla 4 Vertalingen Op
-                         </Button>
-                      </div>
+          </TabsContent>
+          
+          <TabsContent value="branding" className="space-y-8">
+             <Card className="p-8 rounded-3xl border-none shadow-xl bg-white/50">
+                <div className="flex items-center gap-3 border-l-4 border-accent pl-4 mb-8">
+                   <SettingsIcon className="w-4 h-4 text-accent" />
+                   <h3 className="text-[11px] font-bold uppercase tracking-widest text-accent">Asset Hosting & CDN</h3>
+                </div>
+                <div className="space-y-6">
+                   <div className="space-y-2">
+                      <Label className="text-[10px] uppercase font-bold opacity-40 tracking-widest">CDN Basis URL</Label>
+                      <Input 
+                        placeholder="bijv: https://cdn.mijn-museum.nl/" 
+                        defaultValue={siteSettings?.cdnBaseUrl || ''} 
+                        onBlur={(e) => updateSettingsField('cdnBaseUrl', e.target.value)}
+                        className="h-12 border-black/10"
+                      />
+                      <p className="text-[9px] opacity-40 italic">Laat leeg om Firebase Storage te gebruiken. Gebruik een URL die eindigt op een /</p>
                    </div>
                 </div>
              </Card>
           </TabsContent>
-          {/* ... andere TabsContent blokken ... */}
         </Tabs>
       </main>
 
       <Dialog open={!!editingId} onOpenChange={() => setEditingId(null)}>
-        <DialogContent className="max-w-none w-screen h-screen p-0 flex flex-col bg-background border-none rounded-none overflow-hidden fixed inset-0 translate-x-0 translate-y-0 left-0 top-0 z-[100]">
+        <DialogContent className="max-w-none w-screen h-screen p-0 flex flex-col bg-background border-none rounded-none overflow-hidden fixed inset-0 z-[100]">
           <DialogTitle className="sr-only">Editor - {editingArtwork?.title}</DialogTitle>
           <div className="flex flex-col md:flex-row h-full overflow-hidden">
             <div className="flex-1 bg-black/5 flex flex-col overflow-hidden">
               <div className="h-14 md:h-20 border-b border-black/5 bg-white/80 backdrop-blur-md px-8 flex items-center justify-between shrink-0">
-                 <div className="flex items-center gap-4">
-                    <button onClick={() => setEditingId(null)} className="p-2 hover:bg-black/5 rounded-full transition-colors"><ArrowLeft className="w-5 h-5" /></button>
-                    <div className="flex items-center gap-1 bg-black/5 rounded-full p-1 ml-2">
-                       <button onClick={() => navigateEditing('prev')} className="p-2 hover:bg-white rounded-full transition-all shadow-sm"><ChevronLeft className="w-4 h-4" /></button>
-                       <span className="text-[10px] font-bold px-2 opacity-40">{filteredArtworks.findIndex(a => a.id === editingId) + 1} / {filteredArtworks.length}</span>
-                       <button onClick={() => navigateEditing('next')} className="p-2 hover:bg-white rounded-full transition-all shadow-sm"><ChevronRight className="w-4 h-4" /></button>
-                    </div>
-                    <h2 className="text-sm font-bold uppercase tracking-widest truncate ml-4">{editingArtwork?.displayTitle || editingArtwork?.title}</h2>
-                 </div>
-                 <div className="flex items-center gap-4">
-                    {editingArtwork?.featured && <Star className="w-4 h-4 text-accent fill-accent" />}
-                    {editingArtwork?.series && (
-                      <span className="text-[10px] font-bold uppercase tracking-widest opacity-30">{editingArtwork?.series}</span>
-                    )}
-                 </div>
+                 <button onClick={() => setEditingId(null)} className="p-2 hover:bg-black/5 rounded-full"><ArrowLeft className="w-5 h-5" /></button>
+                 <h2 className="text-sm font-bold uppercase tracking-widest truncate">{editingArtwork?.displayTitle || editingArtwork?.title}</h2>
+                 <div className="w-10" />
               </div>
-              <div className="flex-1 flex items-center justify-center p-6 md:p-12 overflow-hidden relative">
-                <div className="relative group max-w-full max-h-full overflow-hidden no-copy">
-                  <img 
-                    src={editingArtwork?.imageUrl} 
-                    className="max-h-[70vh] w-auto object-contain shadow-[0_50px_100px_-20px_rgba(0,0,0,0.3)] bg-white p-2" 
-                    alt="Master Preview" 
-                    style={{ 
-                      filter: `brightness(${editingArtwork?.brightness || 1})`,
-                      clipPath: editingArtwork?.cropTop ? `inset(${editingArtwork.cropTop}% ${editingArtwork.cropRight}% ${editingArtwork.cropBottom}% ${editingArtwork.cropLeft}%)` : 'none'
-                    }}
-                  />
-                  <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-                     <Maximize2 className="text-white w-12 h-12" />
-                  </div>
-                </div>
+              <div className="flex-1 flex items-center justify-center p-6 overflow-hidden relative">
+                <img 
+                  src={editingArtwork?.imageUrl} 
+                  className="max-h-[70vh] w-auto object-contain shadow-2xl bg-white p-2" 
+                  alt="Preview" 
+                />
               </div>
             </div>
 
-            <div className="w-full md:w-[450px] lg:w-[600px] shrink-0 bg-white border-l border-black/5 flex flex-col overflow-y-auto shadow-2xl z-10">
+            <div className="w-full md:w-[450px] shrink-0 bg-white border-l border-black/5 flex flex-col overflow-y-auto shadow-2xl">
               <div className="p-8 space-y-12 pb-32">
                 <div className="space-y-6">
                   <div className="flex items-center gap-3 border-l-4 border-accent pl-4">
@@ -797,24 +461,12 @@ export default function AdminPage() {
                   </div>
                   <div className="space-y-4">
                     <div className="space-y-2">
-                       <Label className="text-[10px] uppercase font-bold opacity-40 tracking-widest">Publieke Titel</Label>
-                       <Input 
-                         key={`title-${editingId}`}
-                         defaultValue={editingArtwork?.displayTitle || ''} 
-                         onBlur={(e) => updateArtworkField(editingId!, 'displayTitle', e.target.value)} 
-                         placeholder="De naam zoals bezoekers hem zien"
-                         className="h-12 border-black/10 focus:border-accent"
-                       />
+                       <Label className="text-[10px] uppercase font-bold opacity-40">Publieke Titel</Label>
+                       <Input defaultValue={editingArtwork?.displayTitle || ''} onBlur={(e) => updateArtworkField(editingId!, 'displayTitle', e.target.value)} className="h-12" />
                     </div>
                     <div className="space-y-2">
-                       <Label className="text-[10px] uppercase font-bold opacity-40 tracking-widest">Expositieruimte / Collectie (Zaal)</Label>
-                       <Input 
-                         key={`series-${editingId}`}
-                         defaultValue={editingArtwork?.series || ''} 
-                         onBlur={(e) => updateArtworkField(editingId!, 'series', e.target.value)} 
-                         placeholder="Bijv: Polders of Archief"
-                         className="h-12 border-black/10 focus:border-accent font-bold"
-                       />
+                       <Label className="text-[10px] uppercase font-bold opacity-40">Zaal / Collectie</Label>
+                       <Input defaultValue={editingArtwork?.series || ''} onBlur={(e) => updateArtworkField(editingId!, 'series', e.target.value)} placeholder="bijv. Polders" className="h-12" />
                     </div>
                   </div>
                 </div>
@@ -822,149 +474,33 @@ export default function AdminPage() {
                 <div className="space-y-6">
                   <div className="flex items-center gap-3 border-l-4 border-primary pl-4">
                      <Tag className="w-4 h-4 text-primary" />
-                     <h3 className="text-[11px] font-bold uppercase tracking-widest text-primary">Tags & Curator Filters</h3>
+                     <h3 className="text-[11px] font-bold uppercase tracking-widest text-primary">Tags</h3>
                   </div>
-                  
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-3 bg-black/5 p-3 rounded-xl">
-                        <Tags className="w-4 h-4 opacity-30" />
-                        <Input 
-                          key={`tags-input-${editingId}`}
-                          value={editingArtwork?.tags?.join(', ') || ''} 
-                          onChange={(e) => updateArtworkField(editingId!, 'tags', e.target.value.split(',').map((t: string) => t.trim()).filter(Boolean))} 
-                          placeholder="zee, groet, licht"
-                          className="bg-transparent border-none p-0 focus-visible:ring-0"
-                        />
-                    </div>
-
-                    <div className="bg-accent/5 rounded-2xl p-6 space-y-6 border border-accent/10">
-                       <div className="flex items-center gap-2 mb-2">
-                          <Sparkles className="w-3.5 h-3.5 text-accent" />
-                          <span className="text-[9px] font-black uppercase tracking-widest text-accent">Snelkeuze Menu</span>
-                       </div>
-
-                       <div className="space-y-6">
-                          {Object.entries(QUICK_TAG_CATEGORIES).map(([cat, tags]) => (
-                            <div key={cat} className="space-y-2">
-                               <Label className="text-[8px] uppercase font-bold opacity-40 block">{cat}</Label>
-                               <div className="flex flex-wrap gap-1.5">
-                                  {tags.map(tag => {
-                                    const isActive = editingArtwork?.tags?.includes(tag);
-                                    return (
-                                      <button
-                                        key={tag}
-                                        onClick={() => toggleTagInArtwork(editingId!, editingArtwork?.tags, tag)}
-                                        className={cn(
-                                          "px-3 py-1 rounded-full text-[10px] font-bold transition-all border",
-                                          isActive 
-                                            ? "bg-accent text-accent-foreground border-accent" 
-                                            : "bg-white border-black/10 text-muted-foreground hover:border-accent/40"
-                                        )}
-                                      >
-                                        {tag}
-                                      </button>
-                                    );
-                                  })}
-                               </div>
-                            </div>
-                          ))}
-                       </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-6">
-                  <div className="flex items-center gap-3 border-l-4 border-primary pl-4">
-                     <Info className="w-4 h-4 text-primary" />
-                     <h3 className="text-[11px] font-bold uppercase tracking-widest text-primary">Specificaties</h3>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                       <Label className="text-[10px] uppercase font-bold opacity-40 tracking-widest">Jaartal</Label>
-                       <Input 
-                         key={`year-${editingId}`} 
-                         defaultValue={editingArtwork?.year || ''} 
-                         onBlur={(e) => updateArtworkField(editingId!, 'year', e.target.value)} 
-                         placeholder="bijv. 1954" 
-                         autoComplete="off"
-                       />
-                    </div>
-                    <div className="space-y-2">
-                       <Label className="text-[10px] uppercase font-bold opacity-40 tracking-widest">Afmetingen</Label>
-                       <Input key={`dims-${editingId}`} defaultValue={editingArtwork?.dimensions || ''} onBlur={(e) => updateArtworkField(editingId!, 'dimensions', e.target.value)} placeholder="bijv. 45x50 cm" />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                     <Label className="text-[10px] uppercase font-bold opacity-40 tracking-widest">Techniek / Medium</Label>
-                     <Input key={`medium-${editingId}`} defaultValue={editingArtwork?.medium || ''} onBlur={(e) => updateArtworkField(editingId!, 'medium', e.target.value)} placeholder="bijv. Olieverf op doek" />
+                  <div className="flex flex-wrap gap-2">
+                    {Object.values(QUICK_TAG_CATEGORIES).flat().map(tag => {
+                      const isActive = editingArtwork?.tags?.includes(tag);
+                      return (
+                        <button key={tag} onClick={() => toggleTagInArtwork(editingId!, editingArtwork?.tags, tag)} className={cn("px-3 py-1 rounded-full text-[10px] font-bold border", isActive ? "bg-accent text-accent-foreground border-accent" : "bg-white text-muted-foreground")}>
+                          {tag}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
                 <div className="space-y-6 bg-accent/5 p-6 rounded-3xl border border-accent/10">
                   <div className="flex items-center justify-between mb-4">
-                     <div className="flex items-center gap-3 border-l-4 border-accent pl-4">
-                        <ShoppingBag className="w-4 h-4 text-accent" />
-                        <h3 className="text-[11px] font-bold uppercase tracking-widest text-accent">Commercieel</h3>
-                     </div>
+                     <h3 className="text-[11px] font-bold uppercase tracking-widest text-accent">Commercieel</h3>
                      <Switch checked={editingArtwork?.inShop} onCheckedChange={(val) => updateArtworkField(editingId!, 'inShop', val)} />
                   </div>
-                  
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                       <Label className="text-[9px] uppercase font-bold opacity-40">Kaart (€)</Label>
-                       <Input key={`p-card-${editingId}`} type="number" step="0.10" defaultValue={editingArtwork?.pricePostcard || 2.50} onBlur={(e) => updateArtworkField(editingId!, 'pricePostcard', parseFloat(e.target.value))} />
-                    </div>
-                    <div className="space-y-2">
-                       <Label className="text-[9px] uppercase font-bold opacity-40">Poster (€)</Label>
-                       <Input key={`p-post-${editingId}`} type="number" step="1" defaultValue={editingArtwork?.pricePoster || 24.00} onBlur={(e) => updateArtworkField(editingId!, 'pricePoster', parseFloat(e.target.value))} />
-                    </div>
-                    <div className="space-y-2">
-                       <Label className="text-[9px] uppercase font-bold opacity-40">Art Print (€)</Label>
-                       <Input key={`p-print-${editingId}`} type="number" step="1" defaultValue={editingArtwork?.pricePrint || 85.00} onBlur={(e) => updateArtworkField(editingId!, 'pricePrint', parseFloat(e.target.value))} />
-                    </div>
-                    <div className="space-y-2">
-                       <Label className="text-[9px] uppercase font-bold opacity-40">Canvas 100x100 (€)</Label>
-                       <Input key={`p-canvas-${editingId}`} type="number" step="1" defaultValue={editingArtwork?.priceCanvas || 245.00} onBlur={(e) => updateArtworkField(editingId!, 'priceCanvas', parseFloat(e.target.value))} />
-                    </div>
-                    <div className="space-y-2">
-                       <Label className="text-[9px] uppercase font-bold opacity-40">Digitaal (€)</Label>
-                       <Input key={`p-digi-${editingId}`} type="number" step="1" defaultValue={editingArtwork?.priceDigital || 15.00} onBlur={(e) => updateArtworkField(editingId!, 'priceDigital', parseFloat(e.target.value))} />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <Label className="text-[10px] uppercase font-bold opacity-40 tracking-widest flex items-center gap-2"><FileText className="w-3 h-3" /> Verhaal bij het werk</Label>
-                  <Textarea 
-                    key={`desc-${editingId}`}
-                    defaultValue={editingArtwork?.description || ''} 
-                    onBlur={(e) => updateArtworkField(editingId!, 'description', e.target.value)} 
-                    placeholder="Vertel hier meer over de context of historie van dit werk..."
-                    className="min-h-[150px] border-black/10 focus:border-accent resize-none rounded-2xl p-6"
-                  />
-                </div>
-
-                <div className="pt-8 border-t border-black/5 space-y-4">
-                   <div className="flex items-center justify-between p-4 bg-black/5 rounded-2xl border border-black/5">
-                      <div className="flex items-center gap-3">
-                         <Star className={cn("w-4 h-4", editingArtwork?.featured ? "text-accent fill-accent" : "opacity-20")} />
-                         <Label className="text-[10px] uppercase font-bold tracking-widest opacity-60">Featured (Homepage)</Label>
+                    {['Postcard', 'Poster', 'Print', 'Canvas', 'Digital'].map(p => (
+                      <div key={p} className="space-y-1">
+                        <Label className="text-[9px] uppercase font-bold opacity-40">{p === 'Canvas' ? 'Canvas 100x100' : p}</Label>
+                        <Input type="number" defaultValue={(editingArtwork as any)[`price${p}`] || 0} onBlur={(e) => updateArtworkField(editingId!, `price${p}`, parseFloat(e.target.value))} className="h-9" />
                       </div>
-                      <Switch checked={editingArtwork?.featured} onCheckedChange={(val) => updateArtworkField(editingId!, 'featured', val)} />
-                   </div>
-                   
-                   <Button 
-                     variant="destructive" 
-                     className="w-full h-14 rounded-2xl uppercase font-bold tracking-widest text-[10px] flex items-center gap-3" 
-                     onClick={() => { if(confirm('Dit werk permanent uit het archief verwijderen?')) { 
-                       if (firestore && editingId) {
-                         deleteDoc(doc(firestore, 'artworks', editingId)); 
-                         setEditingId(null); 
-                       }
-                     }}}
-                   >
-                     <Trash2 className="w-4 h-4" /> Verwijder uit Collectie
-                   </Button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
