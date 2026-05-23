@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
-import { collection, doc, deleteDoc, query, updateDoc, setDoc } from 'firebase/firestore';
+import { collection, doc, deleteDoc, query, updateDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
@@ -22,7 +22,8 @@ import {
   Lock,
   Tag as TagIcon,
   Crop,
-  Sun
+  Sun,
+  Plus
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -58,6 +59,7 @@ export default function AdminPage() {
   
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isCreating, setIsCreating] = useState(false);
 
   useEffect(() => {
     const auth = sessionStorage.getItem('admin_auth');
@@ -130,6 +132,33 @@ export default function AdminPage() {
     return doc(firestore, 'settings', 'site');
   }, [firestore, isAuthorized]);
   const { data: siteSettings } = useDoc(siteSettingsRef);
+
+  const handleAddNew = async () => {
+    if (!firestore) return;
+    setIsCreating(true);
+    try {
+      const newDoc = await addDoc(collection(firestore, 'artworks'), {
+        title: 'Nieuw Werk',
+        displayTitle: '',
+        series: 'Nog in te delen',
+        year: '',
+        imageUrl: '',
+        brightness: 1,
+        cropTop: 0,
+        cropBottom: 0,
+        cropLeft: 0,
+        cropRight: 0,
+        tags: [],
+        createdAt: serverTimestamp()
+      });
+      setEditingId(newDoc.id);
+      toast({ title: "Schilderij toegevoegd", description: "U kunt nu de details invullen." });
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsCreating(false);
+    }
+  };
 
   const updateArtworkField = (id: string, field: string, value: any) => {
     if (!firestore || !id) return;
@@ -222,14 +251,24 @@ export default function AdminPage() {
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                </div>
-               <Button 
-                variant={isSelectionMode ? "accent" : "outline"} 
-                onClick={() => { setIsSelectionMode(!isSelectionMode); setSelectedIds([]); }}
-                className="rounded-full h-12 px-6 uppercase font-bold tracking-widest text-[10px]"
-               >
-                 {isSelectionMode ? <X className="w-4 h-4 mr-2" /> : <CheckSquare className="w-4 h-4 mr-2" />} 
-                 {isSelectionMode ? "Annuleer" : "Selecteer Groep"}
-               </Button>
+               <div className="flex gap-2">
+                 <Button 
+                   onClick={handleAddNew} 
+                   disabled={isCreating}
+                   className="rounded-full h-12 px-6 bg-accent text-accent-foreground uppercase font-bold tracking-widest text-[10px]"
+                 >
+                   {isCreating ? <Loader2 className="animate-spin w-4 h-4" /> : <Plus className="w-4 h-4 mr-2" />} 
+                   Nieuw Schilderij
+                 </Button>
+                 <Button 
+                  variant={isSelectionMode ? "accent" : "outline"} 
+                  onClick={() => { setIsSelectionMode(!isSelectionMode); setSelectedIds([]); }}
+                  className="rounded-full h-12 px-6 uppercase font-bold tracking-widest text-[10px]"
+                 >
+                   {isSelectionMode ? <X className="w-4 h-4 mr-2" /> : <CheckSquare className="w-4 h-4 mr-2" />} 
+                   {isSelectionMode ? "Annuleer" : "Selecteer Groep"}
+                 </Button>
+               </div>
             </div>
 
             <div className="space-y-16">
@@ -255,7 +294,13 @@ export default function AdminPage() {
                         >
                           {art.featured && <Star className="absolute top-2 left-2 w-3 h-3 text-accent fill-accent z-10" />}
                           <div className="aspect-square bg-muted/20">
-                            <img src={art.imageUrl} className="w-full h-full object-cover transition-transform group-hover:scale-105" alt={art.title} />
+                            {art.imageUrl ? (
+                              <img src={art.imageUrl} className="w-full h-full object-cover transition-transform group-hover:scale-105" alt={art.title} />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center opacity-20">
+                                <Palette className="w-8 h-8" />
+                              </div>
+                            )}
                           </div>
                           <CardContent className="p-2 text-center bg-white">
                             <h4 className="text-[9px] font-bold uppercase truncate">{art.displayTitle || art.title}</h4>
@@ -296,7 +341,7 @@ export default function AdminPage() {
                
                {/* Image Container - Grid centering is most stable */}
                <div className="flex-1 grid place-items-center p-8 md:p-20 overflow-hidden relative">
-                  {editingArtwork?.imageUrl && (
+                  {editingArtwork?.imageUrl ? (
                     <div className="relative max-w-full max-h-full shadow-2xl bg-white p-2 md:p-4 rounded-sm border border-black/5 overflow-hidden">
                       <img 
                         src={editingArtwork.imageUrl} 
@@ -307,6 +352,11 @@ export default function AdminPage() {
                           clipPath: `inset(${editingArtwork.cropTop || 0}% ${editingArtwork.cropRight || 0}% ${editingArtwork.cropBottom || 0}% ${editingArtwork.cropLeft || 0}%)`
                         }}
                       />
+                    </div>
+                  ) : (
+                    <div className="text-center space-y-4 opacity-30">
+                      <Palette className="w-20 h-20 mx-auto" />
+                      <p className="text-[10px] font-black uppercase tracking-[0.3em]">Voeg een afbeelding URL toe</p>
                     </div>
                   )}
                </div>
@@ -322,6 +372,10 @@ export default function AdminPage() {
                        <h3 className="text-[11px] font-bold uppercase tracking-widest text-accent">Identiteit & Locatie</h3>
                     </div>
                     <div className="space-y-5">
+                      <div className="space-y-2">
+                         <Label className="text-[10px] uppercase font-bold opacity-40">Afbeelding URL (Storage)</Label>
+                         <Input defaultValue={editingArtwork.imageUrl || ''} onBlur={(e) => updateArtworkField(editingId!, 'imageUrl', e.target.value)} className="h-12 rounded-xl" placeholder="https://..." />
+                      </div>
                       <div className="space-y-2">
                          <Label className="text-[10px] uppercase font-bold opacity-40">Publieke Titel</Label>
                          <Input defaultValue={editingArtwork.displayTitle || ''} onBlur={(e) => updateArtworkField(editingId!, 'displayTitle', e.target.value)} className="h-12 rounded-xl" />
