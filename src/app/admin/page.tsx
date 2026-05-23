@@ -22,7 +22,6 @@ import {
   CheckSquare,
   X,
   Lock,
-  Tag,
   CreditCard
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -300,8 +299,8 @@ export default function AdminPage() {
         <DialogContent className="max-w-none w-screen h-screen p-0 flex flex-col bg-background border-none rounded-none overflow-hidden fixed inset-0 z-[100] outline-none shadow-none">
           <DialogTitle className="sr-only">Editor - {editingArtwork?.title}</DialogTitle>
           <div className="flex flex-col md:flex-row h-full w-full overflow-hidden">
-            {/* Linker paneel: Preview - Gecentreerd via Flex */}
-            <div className="flex-1 flex flex-col min-h-0 bg-black/5 border-r border-black/5 relative overflow-hidden">
+            {/* Linker paneel: Preview - Gegarandeerde Centrering */}
+            <div className="flex-1 flex flex-col min-h-0 bg-black/10 relative overflow-hidden">
               <div className="h-20 border-b border-black/5 bg-white/80 backdrop-blur-md px-8 flex items-center justify-between shrink-0 z-20">
                  <button onClick={() => setEditingId(null)} className="p-2 hover:bg-black/5 rounded-full transition-colors"><ArrowLeft className="w-5 h-5" /></button>
                  <div className="flex flex-col items-center">
@@ -313,9 +312,9 @@ export default function AdminPage() {
                  <div className="w-10" />
               </div>
               
-              {/* Afbeelding Container: Forceren van Centrering */}
-              <div className="flex-1 flex items-center justify-center p-8 relative overflow-hidden bg-[url('https://www.transparenttextures.com/patterns/pinstriped-suit.png')]">
-                 <div className="relative max-w-full max-h-full flex items-center justify-center">
+              {/* Afbeelding Container: Absolute Centrering via flex en inset-0 */}
+              <div className="flex-1 relative bg-[url('https://www.transparenttextures.com/patterns/pinstriped-suit.png')]">
+                 <div className="absolute inset-0 flex items-center justify-center p-8 md:p-16">
                    {editingArtwork?.imageUrl && (
                      <img 
                        src={editingArtwork.imageUrl} 
