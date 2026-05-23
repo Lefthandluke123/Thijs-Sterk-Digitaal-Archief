@@ -100,6 +100,7 @@ export default function AdminPage() {
 
     filteredArtworks.forEach((art: any) => {
       const title = art.displayTitle || art.title || "";
+      // Zoek naar Romeins cijfer in de titel voor groepering
       const romanMatch = title.match(/\b(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII|XIV|XV|XVI|XVII|XVIII|XIX|XX)\b/i);
       const roman = romanMatch ? romanMatch[0].toUpperCase() : "Nog in te delen";
       if (!groupsMap[roman]) groupsMap[roman] = [];
@@ -314,7 +315,7 @@ export default function AdminPage() {
               </div>
               
               {/* De afbeelding in het absolute midden van de resterende ruimte */}
-              <div className="flex-1 relative flex items-center justify-center p-8 bg-[url('https://www.transparenttextures.com/patterns/pinstriped-suit.png')]">
+              <div className="flex-1 relative grid place-items-center p-8 bg-[url('https://www.transparenttextures.com/patterns/pinstriped-suit.png')]">
                  <img 
                    src={editingArtwork?.imageUrl} 
                    className="max-h-full max-w-full w-auto h-auto object-contain shadow-[0_50px_100px_-20px_rgba(0,0,0,0.3)] bg-white p-2 md:p-6 rounded-sm border border-black/5" 
@@ -353,7 +354,7 @@ export default function AdminPage() {
                        <h3 className="text-[11px] font-bold uppercase tracking-widest text-accent">Winkelinstellingen</h3>
                        <div className="flex items-center gap-2">
                          <span className="text-[9px] font-bold opacity-40 uppercase">In Winkel</span>
-                         <Switch checked={editingArtwork.inShop} onCheckedChange={(val) => updateArtworkField(editingId!, 'inShop', val)} />
+                         <Switch checked={editingArtwork.inShop || false} onCheckedChange={(val) => updateArtworkField(editingId!, 'inShop', val)} />
                        </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
@@ -368,7 +369,7 @@ export default function AdminPage() {
                           <Label className="text-[9px] uppercase font-bold opacity-40">{p.label}</Label>
                           <Input 
                             type="number" 
-                            defaultValue={(editingArtwork as any)[`price${p.key}`] || 0} 
+                            defaultValue={(editingArtwork as any)?.[`price${p.key}`] || 0} 
                             onBlur={(e) => updateArtworkField(editingId!, `price${p.key}`, parseFloat(e.target.value) || 0)} 
                             className="h-10 rounded-lg bg-white" 
                           />
