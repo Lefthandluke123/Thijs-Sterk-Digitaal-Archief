@@ -34,13 +34,6 @@ import { useLanguage } from '@/components/language-provider';
 import { sortArtworksByTitle } from '@/lib/museum-utils';
 import { verifyAdminPassword } from '@/lib/admin-actions';
 
-const QUICK_TAG_CATEGORIES = {
-  "Periode": ["Vroeg werk", "45-50", "50-60", "60-70", "70-82"],
-  "Techniek": ["Olieverf", "Aquarel", "Gouache", "Monumentaal", "Glas in lood"],
-  "Plaats": ["Groet", "Schoorl", "Hargen", "Camperduin", "Holland", "Amsterdam", "Frankrijk", "Bretagne", "Griekenland"],
-  "Onderwerp": ["Havens", "Stillevens", "Bloemen", "Dieren", "Water", "Mensen", "Polder"]
-};
-
 export default function AdminPage() {
   const firestore = useFirestore();
   const { t } = useLanguage();
@@ -106,14 +99,14 @@ export default function AdminPage() {
 
     filteredArtworks.forEach((art: any) => {
       const romanMatch = (art.displayTitle || art.title || "").match(/\b(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII|XIV|XV|XVI|XVII|XVIII|XIX|XX)\b/i);
-      const roman = romanMatch ? romanMatch[0].toUpperCase() : "Geen Zaal";
+      const roman = romanMatch ? romanMatch[0].toUpperCase() : "Nog in te delen";
       if (!groupsMap[roman]) groupsMap[roman] = [];
       groupsMap[roman].push(art);
     });
 
     const sortedLabels = Object.keys(groupsMap).sort((a, b) => {
-      if (a === "Geen Zaal") return 1;
-      if (b === "Geen Zaal") return -1;
+      if (a === "Nog in te delen") return 1;
+      if (b === "Nog in te delen") return -1;
       const ROMAN_VALS: Record<string, number> = { 'I': 1, 'II': 2, 'III': 3, 'IV': 4, 'V': 5, 'VI': 6, 'VII': 7, 'VIII': 8, 'IX': 9, 'X': 10, 'XI': 11, 'XII': 12 };
       return (ROMAN_VALS[a] || 999) - (ROMAN_VALS[b] || 999);
     });
@@ -137,13 +130,6 @@ export default function AdminPage() {
     updateDoc(artRef, { [field]: value }).catch(async () => {
       errorEmitter.emit('permission-error', new FirestorePermissionError({ path: artRef.path, operation: 'update' }));
     });
-  };
-
-  const toggleTagInArtwork = (id: string, currentTags: string[] = [], tag: string) => {
-    const newTags = currentTags.includes(tag) 
-      ? currentTags.filter(t => t !== tag) 
-      : [...currentTags, tag];
-    updateArtworkField(id, 'tags', newTags);
   };
 
   const updateSettingsField = (field: string, value: any) => {
@@ -246,7 +232,7 @@ export default function AdminPage() {
               {groupedArtworks.map((group) => (
                 <div key={group.label} className="space-y-6">
                   <div className="flex items-center gap-4 border-l-4 border-accent pl-4 py-1 sticky top-[136px] md:top-[208px] z-30 bg-background/80 backdrop-blur-md -mx-4 px-4 rounded-r-xl">
-                    <h3 className="text-[12px] font-black uppercase tracking-[0.3em] text-accent">Zaal {group.label === 'Geen Zaal' ? 'Nog in te delen' : group.label}</h3>
+                    <h3 className="text-[12px] font-black uppercase tracking-[0.3em] text-accent">Zaal {group.label}</h3>
                     <div className="h-px bg-accent/20 flex-1" />
                   </div>
                   
@@ -309,7 +295,7 @@ export default function AdminPage() {
         <DialogContent className="max-w-none w-screen h-screen p-0 flex flex-col bg-background border-none rounded-none overflow-hidden fixed inset-0 z-[100] outline-none">
           <DialogTitle className="sr-only">Editor - {editingArtwork?.title}</DialogTitle>
           <div className="flex flex-col md:flex-row h-full w-full overflow-hidden">
-            {/* Linker paneel: Preview - Gecentreerd via Grid */}
+            {/* Linker paneel: Preview - Gecentreerd */}
             <div className="flex-1 bg-black/5 flex flex-col overflow-hidden relative border-r border-black/5 h-full">
               <div className="h-16 md:h-20 border-b border-black/5 bg-white/80 backdrop-blur-md px-8 flex items-center justify-between shrink-0 z-10">
                  <button onClick={() => setEditingId(null)} className="p-2 hover:bg-black/5 rounded-full transition-colors"><ArrowLeft className="w-5 h-5" /></button>
@@ -322,11 +308,11 @@ export default function AdminPage() {
                  <div className="w-10" />
               </div>
               
-              <div className="flex-1 grid place-items-center p-4 md:p-12 overflow-hidden bg-[url('https://www.transparenttextures.com/patterns/pinstriped-suit.png')] relative">
-                <div className="relative group max-h-full max-w-full">
+              <div className="flex-1 flex items-center justify-center p-4 md:p-12 overflow-hidden bg-[url('https://www.transparenttextures.com/patterns/pinstriped-suit.png')] relative min-h-0">
+                <div className="relative group max-h-full max-w-full flex items-center justify-center">
                   <img 
                     src={editingArtwork?.imageUrl} 
-                    className="max-h-[70vh] md:max-h-[80vh] max-w-full object-contain shadow-[0_50px_100px_-20px_rgba(0,0,0,0.3)] bg-white p-2 md:p-4 rounded-sm" 
+                    className="max-h-[70vh] md:max-h-[80vh] w-auto max-w-full object-contain shadow-[0_50px_100px_-20px_rgba(0,0,0,0.3)] bg-white p-2 md:p-4 rounded-sm" 
                     alt="Preview" 
                   />
                 </div>
