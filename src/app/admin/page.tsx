@@ -23,7 +23,8 @@ import {
   X,
   Lock,
   Tag,
-  Maximize2
+  Maximize2,
+  Plus
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -35,6 +36,13 @@ import { cn } from '@/lib/utils';
 import { useLanguage } from '@/components/language-provider';
 import { sortArtworksByTitle } from '@/lib/museum-utils';
 import { verifyAdminPassword } from '@/lib/admin-actions';
+
+const TAG_CATEGORIES = {
+  "Periode": ["Vroeg werk", "45-50", "50-60", "60-70", "70-82"],
+  "Techniek": ["Olieverf", "Aquarel", "Gouache", "Monumentaal", "Glas in lood"],
+  "Plaats": ["Groet", "Schoorl", "Hargen", "Camperduin", "Holland", "Amsterdam", "Frankrijk", "Bretagne", "Griekenland"],
+  "Onderwerp": ["Havens", "Stillevens", "Bloemen", "Dieren", "Water", "Mensen", "Polder"]
+};
 
 export default function AdminPage() {
   const firestore = useFirestore();
@@ -147,6 +155,15 @@ export default function AdminPage() {
   };
 
   const editingArtwork = useMemo(() => artworks.find(a => a.id === editingId), [artworks, editingId]);
+
+  const toggleTag = (tag: string) => {
+    if (!editingId || !editingArtwork) return;
+    const currentTags = editingArtwork.tags || [];
+    const newTags = currentTags.includes(tag) 
+      ? currentTags.filter((t: string) => t !== tag)
+      : [...currentTags, tag];
+    updateArtworkField(editingId, 'tags', newTags);
+  };
 
   if (!isAuthorized) {
     return (
@@ -324,7 +341,7 @@ export default function AdminPage() {
                  <div className="w-10" />
               </div>
               
-              {/* Afbeelding Container: Absolute Centrering */}
+              {/* Afbeelding Container: Gecentreerd in grid */}
               <div className="flex-1 relative overflow-hidden grid place-items-center p-8 md:p-16">
                  {editingArtwork?.imageUrl && (
                    <img 
@@ -371,75 +388,66 @@ export default function AdminPage() {
                     </div>
                   </div>
 
-                  {/* Tags Sectie */}
-                  <div className="space-y-6">
+                  {/* Tags Sectie voor Uw Zaal */}
+                  <div className="space-y-8">
                     <div className="flex items-center gap-3 border-l-4 border-accent pl-4">
                        <Tag className="w-4 h-4 text-accent" />
-                       <h3 className="text-[11px] font-bold uppercase tracking-widest text-accent">Tags & Categorieën</h3>
+                       <h3 className="text-[11px] font-bold uppercase tracking-widest text-accent">Uw Zaal Categorieën</h3>
                     </div>
-                    <div className="space-y-4 px-2">
-                       <div className="flex flex-wrap gap-2 min-h-[2rem]">
+                    
+                    <div className="space-y-6">
+                      {Object.entries(TAG_CATEGORIES).map(([cat, tags]) => (
+                        <div key={cat} className="space-y-3">
+                           <Label className="text-[9px] uppercase font-black tracking-widest opacity-40 block ml-2">{cat}</Label>
+                           <div className="flex flex-wrap gap-1.5">
+                              {tags.map(tag => {
+                                const isActive = editingArtwork.tags?.includes(tag);
+                                return (
+                                  <button
+                                    key={tag}
+                                    onClick={() => toggleTag(tag)}
+                                    className={cn(
+                                      "px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all border",
+                                      isActive 
+                                        ? "bg-accent text-accent-foreground border-accent shadow-sm" 
+                                        : "bg-white text-muted-foreground border-black/5 hover:border-accent/40"
+                                    )}
+                                  >
+                                    {tag}
+                                  </button>
+                                );
+                              })}
+                           </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="pt-6 border-t border-black/5 space-y-4">
+                       <Label className="text-[9px] uppercase font-black tracking-widest opacity-40 block ml-2">Alle Tags</Label>
+                       <div className="flex flex-wrap gap-2">
                           {editingArtwork.tags?.map((tag: string) => (
-                            <Badge key={tag} variant="secondary" className="rounded-full px-3 py-1 flex items-center gap-2 bg-accent/10 text-accent border-none text-[10px] font-bold">
+                            <Badge key={tag} variant="secondary" className="rounded-full px-3 py-1 flex items-center gap-2 bg-accent/10 text-accent border-none text-[9px] font-bold">
                               {tag}
-                              <button 
-                                onClick={() => {
-                                  const newTags = editingArtwork.tags.filter((t: string) => t !== tag);
-                                  updateArtworkField(editingId!, 'tags', newTags);
-                                }}
-                                className="hover:text-destructive transition-colors"
-                              >
-                                <X className="w-3 h-3" />
-                              </button>
+                              <button onClick={() => toggleTag(tag)} className="hover:text-destructive transition-colors"><X className="w-3 h-3" /></button>
                             </Badge>
                           ))}
                        </div>
                        <div className="relative">
                           <Input 
-                            placeholder="Typ tag en druk op Enter..." 
+                            placeholder="Vrije tag toevoegen..." 
                             onKeyDown={(e) => {
                               if (e.key === 'Enter') {
                                 e.preventDefault();
                                 const val = e.currentTarget.value.trim();
-                                if (val && !editingArtwork.tags?.includes(val)) {
-                                  const newTags = [...(editingArtwork.tags || []), val];
-                                  updateArtworkField(editingId!, 'tags', newTags);
+                                if (val) {
+                                  toggleTag(val);
                                   e.currentTarget.value = '';
                                 }
                               }
                             }}
-                            className="h-12 rounded-xl border-black/10 focus:ring-accent"
+                            className="h-10 rounded-xl border-black/10 text-xs"
                           />
                        </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-6 bg-accent/5 p-6 rounded-3xl border border-accent/10">
-                    <div className="flex items-center justify-between mb-4">
-                       <h3 className="text-[11px] font-bold uppercase tracking-widest text-accent">Winkelinstellingen</h3>
-                       <div className="flex items-center gap-2">
-                         <span className="text-[9px] font-bold opacity-40 uppercase">In Winkel</span>
-                         <Switch checked={editingArtwork.inShop || false} onCheckedChange={(val) => updateArtworkField(editingId!, 'inShop', val)} />
-                       </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      {[
-                        { key: 'Postcard', label: 'Postcard' },
-                        { key: 'Poster', label: 'Poster 50x70' },
-                        { key: 'Print', label: 'Fine Art Print' },
-                        { key: 'Canvas', label: 'Canvas 100x100' },
-                        { key: 'Digital', label: 'Digitaal' }
-                      ].map(p => (
-                        <div key={p.key} className="space-y-1">
-                          <Label className="text-[9px] uppercase font-bold opacity-40">{p.label}</Label>
-                          <Input 
-                            type="number" 
-                            defaultValue={editingArtwork ? (editingArtwork as any)[`price${p.key}`] || 0 : 0} 
-                            onBlur={(e) => updateArtworkField(editingId!, `price${p.key}`, parseFloat(e.target.value) || 0)} 
-                            className="h-10 rounded-lg bg-white border-black/5" 
-                          />
-                        </div>
-                      ))}
                     </div>
                   </div>
 
