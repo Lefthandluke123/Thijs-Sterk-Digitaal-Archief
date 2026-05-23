@@ -5,7 +5,6 @@ service cloud.firestore {
     // Publieke leesrechten voor kunstwerken en instellingen
     match /artworks/{artworkId} {
       allow read: if true;
-      // Schrijven toestaan voor de admin-flow (beveiligd via de UI-wachtwoord-check)
       allow write: if true;
     }
     
@@ -20,13 +19,13 @@ service cloud.firestore {
       allow read: if true;
     }
     
-    // Mail collectie voor het contactformulier: alleen aanmaken is toegestaan
+    // Mail collectie voor het contactformulier
     match /mail/{mailId} {
       allow create: if true;
       allow read, update, delete: if false;
     }
 
-    // Interactie logs: alleen aanmaken
+    // Interactie logs
     match /interactions/{id} {
       allow create: if true;
       allow read, update, delete: if false;

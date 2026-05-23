@@ -26,7 +26,8 @@ import {
   X,
   Lock,
   Tag,
-  ChevronRight
+  ChevronRight,
+  Maximize2
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -47,7 +48,6 @@ const QUICK_TAG_CATEGORIES = {
 
 export default function AdminPage() {
   const firestore = useFirestore();
-  const storage = useStorage();
   const { t } = useLanguage();
   
   const [isAuthorized, setIsAuthorized] = useState(false);
@@ -317,24 +317,34 @@ export default function AdminPage() {
       </main>
 
       <Dialog open={!!editingId} onOpenChange={() => setEditingId(null)}>
-        <DialogContent className="max-w-none w-screen h-screen p-0 flex flex-col bg-background border-none rounded-none overflow-hidden fixed inset-0 z-[100]">
+        <DialogContent className="max-w-none w-screen h-screen p-0 flex flex-col bg-background border-none rounded-none overflow-hidden fixed inset-0 z-[100] outline-none">
           <DialogTitle className="sr-only">Editor - {editingArtwork?.title}</DialogTitle>
-          <div className="flex flex-col md:flex-row h-full overflow-hidden">
-            <div className="flex-1 bg-black/5 flex flex-col overflow-hidden">
-              <div className="h-14 md:h-20 border-b border-black/5 bg-white/80 backdrop-blur-md px-8 flex items-center justify-between shrink-0">
-                 <button onClick={() => setEditingId(null)} className="p-2 hover:bg-black/5 rounded-full"><ArrowLeft className="w-5 h-5" /></button>
-                 <h2 className="text-sm font-bold uppercase tracking-widest truncate">{editingArtwork?.displayTitle || editingArtwork?.title}</h2>
+          <div className="flex flex-col md:flex-row h-full w-full overflow-hidden">
+            {/* Linker paneel: Preview */}
+            <div className="flex-1 bg-black/5 flex flex-col overflow-hidden relative">
+              <div className="h-16 md:h-20 border-b border-black/5 bg-white/80 backdrop-blur-md px-8 flex items-center justify-between shrink-0 z-10">
+                 <button onClick={() => setEditingId(null)} className="p-2 hover:bg-black/5 rounded-full transition-colors"><ArrowLeft className="w-5 h-5" /></button>
+                 <div className="flex flex-col items-center">
+                   <h2 className="text-sm font-bold uppercase tracking-widest truncate max-w-xs md:max-w-md">{editingArtwork?.displayTitle || editingArtwork?.title}</h2>
+                   {editingArtwork?.series && editingArtwork.series !== 'Geen Zaal' && (
+                     <span className="text-[8px] font-black uppercase tracking-[0.2em] opacity-40">{editingArtwork.series}</span>
+                   )}
+                 </div>
                  <div className="w-10" />
               </div>
-              <div className="flex-1 flex items-center justify-center p-6 overflow-hidden relative">
-                <img 
-                  src={editingArtwork?.imageUrl} 
-                  className="max-h-[70vh] w-auto object-contain shadow-2xl bg-white p-2" 
-                  alt="Preview" 
-                />
+              <div className="flex-1 flex items-center justify-center p-4 md:p-12 overflow-hidden bg-[url('https://www.transparenttextures.com/patterns/pinstriped-suit.png')]">
+                <div className="relative group max-h-full max-w-full">
+                  <img 
+                    src={editingArtwork?.imageUrl} 
+                    className="max-h-[70vh] w-auto object-contain shadow-[0_50px_100px_-20px_rgba(0,0,0,0.3)] bg-white p-2 md:p-4 rounded-sm" 
+                    alt="Preview" 
+                  />
+                  <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                </div>
               </div>
             </div>
 
+            {/* Rechter paneel: Controls */}
             <div className="w-full md:w-[450px] shrink-0 bg-white border-l border-black/5 flex flex-col shadow-2xl overflow-y-auto">
               {editingArtwork && (
                 <div className="p-8 space-y-12 pb-32">
@@ -343,18 +353,18 @@ export default function AdminPage() {
                        <Palette className="w-4 h-4 text-accent" />
                        <h3 className="text-[11px] font-bold uppercase tracking-widest text-accent">Identiteit & Locatie</h3>
                     </div>
-                    <div className="space-y-4">
+                    <div className="space-y-5">
                       <div className="space-y-2">
                          <Label className="text-[10px] uppercase font-bold opacity-40">Publieke Titel</Label>
-                         <Input defaultValue={editingArtwork.displayTitle || ''} onBlur={(e) => updateArtworkField(editingId!, 'displayTitle', e.target.value)} className="h-12" />
+                         <Input defaultValue={editingArtwork.displayTitle || ''} onBlur={(e) => updateArtworkField(editingId!, 'displayTitle', e.target.value)} className="h-12 rounded-xl" />
                       </div>
                       <div className="space-y-2">
                          <Label className="text-[10px] uppercase font-bold opacity-40">Zaal / Collectie</Label>
-                         <Input defaultValue={editingArtwork.series || ''} onBlur={(e) => updateArtworkField(editingId!, 'series', e.target.value)} className="h-12" />
+                         <Input defaultValue={editingArtwork.series || ''} onBlur={(e) => updateArtworkField(editingId!, 'series', e.target.value)} className="h-12 rounded-xl" />
                       </div>
                       <div className="space-y-2">
                          <Label className="text-[10px] uppercase font-bold opacity-40">Jaartal</Label>
-                         <Input defaultValue={editingArtwork.year || ''} onBlur={(e) => updateArtworkField(editingId!, 'year', e.target.value)} className="h-12" />
+                         <Input defaultValue={editingArtwork.year || ''} onBlur={(e) => updateArtworkField(editingId!, 'year', e.target.value)} className="h-12 rounded-xl" />
                       </div>
                     </div>
                   </div>
@@ -368,7 +378,7 @@ export default function AdminPage() {
                       {Object.values(QUICK_TAG_CATEGORIES).flat().map(tag => {
                         const isActive = editingArtwork.tags?.includes(tag);
                         return (
-                          <button key={tag} onClick={() => toggleTagInArtwork(editingId!, editingArtwork.tags, tag)} className={cn("px-3 py-1 rounded-full text-[10px] font-bold border", isActive ? "bg-accent text-accent-foreground border-accent" : "bg-white text-muted-foreground")}>
+                          <button key={tag} onClick={() => toggleTagInArtwork(editingId!, editingArtwork.tags, tag)} className={cn("px-3 py-1.5 rounded-full text-[10px] font-bold border transition-all", isActive ? "bg-accent text-accent-foreground border-accent shadow-md" : "bg-white text-muted-foreground hover:border-accent/40")}>
                             {tag}
                           </button>
                         );
@@ -379,21 +389,45 @@ export default function AdminPage() {
                   <div className="space-y-6 bg-accent/5 p-6 rounded-3xl border border-accent/10">
                     <div className="flex items-center justify-between mb-4">
                        <h3 className="text-[11px] font-bold uppercase tracking-widest text-accent">Winkelinstellingen</h3>
-                       <Switch checked={editingArtwork.inShop} onCheckedChange={(val) => updateArtworkField(editingId!, 'inShop', val)} />
+                       <div className="flex items-center gap-2">
+                         <span className="text-[9px] font-bold opacity-40 uppercase">In Winkel</span>
+                         <Switch checked={editingArtwork.inShop} onCheckedChange={(val) => updateArtworkField(editingId!, 'inShop', val)} />
+                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
-                      {['Postcard', 'Poster', 'Print', 'Canvas', 'Digital'].map(p => (
-                        <div key={p} className="space-y-1">
-                          <Label className="text-[9px] uppercase font-bold opacity-40">{p === 'Canvas' ? 'Canvas 100x100' : p}</Label>
+                      {[
+                        { key: 'Postcard', label: 'Postcard' },
+                        { key: 'Poster', label: 'Poster 50x70' },
+                        { key: 'Print', label: 'Fine Art Print' },
+                        { key: 'Canvas', label: 'Canvas 100x100' },
+                        { key: 'Digital', label: 'Digitaal' }
+                      ].map(p => (
+                        <div key={p.key} className="space-y-1">
+                          <Label className="text-[9px] uppercase font-bold opacity-40">{p.label}</Label>
                           <Input 
                             type="number" 
-                            defaultValue={editingArtwork ? (editingArtwork as any)[`price${p}`] || 0 : 0} 
-                            onBlur={(e) => updateArtworkField(editingId!, `price${p}`, parseFloat(e.target.value))} 
-                            className="h-9" 
+                            defaultValue={(editingArtwork as any)?.[`price${p.key}`] ?? 0} 
+                            onBlur={(e) => updateArtworkField(editingId!, `price${p.key}`, parseFloat(e.target.value) || 0)} 
+                            className="h-10 rounded-lg bg-white" 
                           />
                         </div>
                       ))}
                     </div>
+                  </div>
+
+                  <div className="pt-8 border-t border-black/5">
+                    <Button 
+                      variant="destructive" 
+                      className="w-full rounded-2xl h-14 uppercase font-bold tracking-widest text-[10px]"
+                      onClick={() => {
+                        if (confirm('Weet u zeker dat u dit werk wilt verwijderen uit het archief?')) {
+                          const ref = doc(firestore!, 'artworks', editingId!);
+                          deleteDoc(ref).then(() => setEditingId(null));
+                        }
+                      }}
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" /> Verwijder uit Archief
+                    </Button>
                   </div>
                 </div>
               )}

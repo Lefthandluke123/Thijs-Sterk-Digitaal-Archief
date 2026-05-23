@@ -40,10 +40,10 @@ export function useCollection<T = DocumentData>(collectionQuery: Query<T> | null
       },
       async (serverError: FirestoreError) => {
         if (serverError.code === 'permission-denied') {
-          // Probeer het pad te achterhalen voor betere foutmeldingen
-          const path = (collectionQuery as any).path || 'collection';
+          // Probeer het pad te achterhalen via de query metadata
+          const path = (collectionQuery as any)._query?.path?.segments?.join('/') || 'collection';
           const permissionError = new FirestorePermissionError({
-            path: path,
+            path: `/${path}`,
             operation: 'list',
           });
           errorEmitter.emit('permission-error', permissionError);
