@@ -1,11 +1,10 @@
-
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogTitle, DialogClose } from '@/components/ui/dialog';
-import { X, ChevronLeft, ChevronRight, Info, Mic, Play, Pause } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Info, Mic, Play, Pause, Video } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { DeepZoomViewer } from './deep-zoom-viewer';
+import { DeepZoomViewer, type DeepZoomHandle } from './deep-zoom-viewer';
 import { useLanguage } from '@/components/language-provider';
 import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
@@ -20,7 +19,9 @@ interface ArtworkViewerProps {
 export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewerProps) {
   const [showMetadata, setShowMetadata] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
   const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
+  const zoomRef = useRef<DeepZoomHandle>(null);
   
   const { language, t } = useLanguage();
   const firestore = useFirestore();
@@ -36,6 +37,7 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
       setShowMetadata(false);
       if (audio) audio.pause();
       setIsPlaying(false);
+      setIsAnimating(false);
     }
   }, [artwork, audio]);
 
@@ -44,6 +46,7 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
       audio.pause();
       setIsPlaying(false);
     }
+    // Prioriteer gekozen taal, val terug op NL
     const currentAudioUrl = artwork?.audioUrls?.[language] || artwork?.audioUrls?.['nl'];
     if (currentAudioUrl) {
       const newAudio = new Audio(currentAudioUrl);
@@ -69,6 +72,10 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
     return siteSettings.seriesTranslations?.[language]?.[name] || name;
   };
 
+  const startDemo = () => {
+    zoomRef.current?.startReveal();
+  };
+
   return (
     <Dialog open={!!artwork} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-black border-none rounded-none overflow-hidden outline-none shadow-none fixed inset-0 translate-x-0 translate-y-0 left-0 top-0 z-[100]">
@@ -77,13 +84,16 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
         <div className="relative flex-1 bg-black overflow-hidden">
           {artwork && (
             <DeepZoomViewer 
+              ref={zoomRef}
               imageUrl={artwork.imageUrl} 
               title={artwork.displayTitle || artwork.title} 
               brightness={artwork.brightness}
+              onRevealStart={() => setIsAnimating(true)}
+              onRevealEnd={() => setIsAnimating(false)}
             />
           )}
 
-          <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-8 pointer-events-none z-20">
+          <div className={cn("absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-8 pointer-events-none z-20 transition-opacity", isAnimating ? "opacity-0" : "opacity-100")}>
             {onPrev && (
               <button onClick={(e) => { e.stopPropagation(); onPrev(); }} className="p-5 rounded-full bg-black/20 backdrop-blur-md pointer-events-auto hover:bg-black/40 transition-all shadow-2xl border border-white/10 group/btn" title={t('viewer_prev')}><ChevronLeft className="w-10 h-10 text-white opacity-40 group-hover/btn:opacity-100 transition-opacity" /></button>
             )}
@@ -92,18 +102,27 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
             )}
           </div>
 
-          <div className="absolute top-8 right-8 z-[110] flex items-center gap-4">
+          <div className={cn("absolute top-8 right-8 z-[110] flex items-center gap-4 transition-opacity", isAnimating ? "opacity-0 pointer-events-none" : "opacity-100")}>
+             <button 
+                onClick={startDemo} 
+                className="p-4 rounded-full bg-accent text-accent-foreground backdrop-blur-xl border-2 border-white/20 hover:scale-110 active:scale-95 transition-all shadow-2xl flex items-center gap-3"
+                title={t('viewer_social_reveal')}
+             >
+                <Video className="w-5 h-5" />
+                <span className="text-[10px] font-black uppercase tracking-widest hidden lg:inline">{t('viewer_social_reveal')}</span>
+             </button>
+
              {audio && (
                <button onClick={toggleAudio} className={cn("p-4 rounded-full backdrop-blur-xl border border-white/10 transition-all flex items-center gap-3 shadow-2xl", isPlaying ? "bg-accent text-accent-foreground" : "bg-black/40 text-white")}>
                   {isPlaying ? <Pause className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-                  <span className="text-[10px] font-black uppercase tracking-widest hidden md:inline">{isPlaying ? "Aan het vertellen..." : "Luister naar het verhaal"}</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest hidden md:inline">{isPlaying ? t('viewer_telling') : t('viewer_listen_story')}</span>
                </button>
              )}
              <button onClick={() => setShowMetadata(!showMetadata)} className={cn("p-4 rounded-full backdrop-blur-xl border border-white/10 transition-all shadow-2xl", showMetadata ? "bg-accent text-accent-foreground" : "bg-black/40 text-white hover:bg-black/60")} title={showMetadata ? t('viewer_hide_info') : t('viewer_show_info')}><Info className="w-5 h-5" /></button>
              <DialogClose className="p-4 bg-black/40 backdrop-blur-xl rounded-full text-white hover:bg-destructive transition-all shadow-2xl border border-white/10"><X className="w-5 h-5 opacity-60" /></DialogClose>
           </div>
 
-          <div className={cn("absolute bottom-0 left-0 right-0 bg-background/90 backdrop-blur-xl border-t border-border/10 flex flex-col items-center justify-center overflow-y-auto text-center transition-all duration-700 ease-in-out z-[105]", showMetadata ? "h-[18vh] opacity-100 py-6 px-12 translate-y-0" : "h-0 opacity-0 pointer-events-none translate-y-12")}>
+          <div className={cn("absolute bottom-0 left-0 right-0 bg-background/90 backdrop-blur-xl border-t border-border/10 flex flex-col items-center justify-center overflow-y-auto text-center transition-all duration-700 ease-in-out z-[105]", (showMetadata && !isAnimating) ? "h-[18vh] opacity-100 py-6 px-12 translate-y-0" : "h-0 opacity-0 pointer-events-none translate-y-12")}>
             <div className="max-w-4xl mx-auto space-y-3">
               <h2 className="text-xl md:text-3xl font-headline font-light italic text-foreground tracking-tight">{artwork?.displayTitle || artwork?.title}</h2>
               <div className="text-[12px] md:text-[13px] font-bold tracking-[0.15em] text-accent flex flex-wrap gap-x-6 gap-y-2 justify-center items-center">

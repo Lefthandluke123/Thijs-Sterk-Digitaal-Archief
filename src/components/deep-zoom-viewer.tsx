@@ -1,8 +1,7 @@
-
 "use client";
 
-import React, { useEffect, useRef, useState } from 'react';
-import { Loader2, ZoomIn, ZoomOut } from 'lucide-react';
+import React, { useEffect, useRef, useState, useImperativeHandle, forwardRef } from 'react';
+import { Loader2, ZoomIn, ZoomOut, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface DeepZoomViewerProps {
@@ -10,17 +9,64 @@ interface DeepZoomViewerProps {
   title: string;
   brightness?: number;
   className?: string;
+  onRevealStart?: () => void;
+  onRevealEnd?: () => void;
 }
 
-export function DeepZoomViewer({ imageUrl, title, brightness = 1, className }: DeepZoomViewerProps) {
+export interface DeepZoomHandle {
+  startReveal: () => void;
+}
+
+export const DeepZoomViewer = forwardRef<DeepZoomHandle, DeepZoomViewerProps>(
+  ({ imageUrl, title, brightness = 1, className, onRevealStart, onRevealEnd }, ref) => {
   const viewerRef = useRef<HTMLDivElement>(null);
   const osdRef = useRef<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isZoomedIn, setIsZoomedIn] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
 
-  // De verbeterde toggle functie die direct de viewport aanstuurt
+  useImperativeHandle(ref, () => ({
+    startReveal: () => {
+      handleRevealAnimation();
+    }
+  }));
+
+  const handleRevealAnimation = async () => {
+    if (!osdRef.current || isAnimating) return;
+    
+    const viewport = osdRef.current.viewport;
+    if (!viewport) return;
+
+    setIsAnimating(true);
+    onRevealStart?.();
+
+    // 1. Zoom eerst extreem in op het centrum (of een willekeurig detail)
+    const homeZoom = viewport.getHomeZoom();
+    const targetZoom = homeZoom * 10;
+    
+    // We animeren naar een detail-view
+    viewport.zoomTo(targetZoom, viewport.getCenter(), false);
+    
+    // 2. Wacht even op het detail
+    await new Promise(resolve => setTimeout(resolve, 2500));
+    
+    // 3. Zoom langzaam uit naar het volledige beeld (Home)
+    // We passen de animationTime tijdelijk aan voor een vloeiende "reveal"
+    const originalAnimTime = osdRef.current.animationTime;
+    osdRef.current.animationTime = 4.0; // Langzame, statige beweging
+    
+    viewport.goHome(false);
+
+    // 4. Reset en rond af
+    setTimeout(() => {
+      osdRef.current.animationTime = originalAnimTime;
+      setIsAnimating(false);
+      onRevealEnd?.();
+    }, 4500);
+  };
+
   const handleToggleZoom = () => {
-    if (!osdRef.current) return;
+    if (!osdRef.current || isAnimating) return;
     
     const viewport = osdRef.current.viewport;
     if (!viewport) return;
@@ -28,8 +74,6 @@ export function DeepZoomViewer({ imageUrl, title, brightness = 1, className }: D
     const currentZoom = viewport.getZoom();
     const homeZoom = viewport.getHomeZoom();
     
-    // Logica: als we dicht bij de start-zoom zijn, zoom dan flink in (5x).
-    // Anders, ga terug naar het volledige overzicht (Home).
     if (currentZoom <= homeZoom * 1.5) {
       viewport.zoomTo(homeZoom * 5, viewport.getCenter(), false);
     } else {
@@ -46,7 +90,6 @@ export function DeepZoomViewer({ imageUrl, title, brightness = 1, className }: D
       try {
         const OpenSeadragon = (await import('openseadragon')).default;
         
-        // Voorkom dubbele initialisatie
         if (osdRef.current) {
           osdRef.current.destroy();
         }
@@ -95,7 +138,6 @@ export function DeepZoomViewer({ imageUrl, title, brightness = 1, className }: D
           }
         });
 
-        // Luister naar zoom-events om de staat van de knop bij te werken
         osdInstance.addHandler('zoom', () => {
           const viewport = osdInstance.viewport;
           if (viewport) {
@@ -152,21 +194,19 @@ export function DeepZoomViewer({ imageUrl, title, brightness = 1, className }: D
         }
       `}} />
 
-      {/* Custom Controls Overlay */}
       <div className="absolute top-8 left-8 flex flex-col gap-4 md:gap-6 z-[160] pointer-events-none">
-        <div className="bg-black/60 backdrop-blur-xl border border-white/10 p-3 md:p-5 rounded-2xl shadow-2xl pointer-events-auto">
+        <div className={cn("bg-black/60 backdrop-blur-xl border border-white/10 p-3 md:p-5 rounded-2xl shadow-2xl pointer-events-auto transition-opacity", isAnimating ? "opacity-0" : "opacity-100")}>
           <p className="text-[8px] md:text-[10px] font-black uppercase tracking-[0.3em] text-accent mb-1">Collectie Thijs Sterk</p>
           <p className="text-white text-xs md:text-sm font-light italic truncate max-w-[180px] md:max-w-[240px]">{title}</p>
         </div>
 
-        {/* De herstelde Zoom Knop (+/-) - Responsief kleiner op mobiel */}
         <button 
           onClick={(e) => { 
             e.preventDefault(); 
             e.stopPropagation(); 
             handleToggleZoom(); 
           }}
-          className="w-14 h-14 md:w-20 md:h-20 bg-accent hover:bg-accent/90 text-accent-foreground rounded-2xl md:rounded-3xl flex items-center justify-center shadow-[0_20px_50px_rgba(0,0,0,0.4)] border-2 border-white/20 transition-all hover:scale-110 active:scale-90 pointer-events-auto group/zoom"
+          className={cn("w-14 h-14 md:w-20 md:h-20 bg-accent hover:bg-accent/90 text-accent-foreground rounded-2xl md:rounded-3xl flex items-center justify-center shadow-[0_20px_50px_rgba(0,0,0,0.4)] border-2 border-white/20 transition-all hover:scale-110 active:scale-90 pointer-events-auto group/zoom", isAnimating && "opacity-0 pointer-events-none")}
           title={isZoomedIn ? "Terug naar overzicht (-)" : "Zoom in op details (+)"}
         >
           {isZoomedIn ? (
@@ -177,10 +217,12 @@ export function DeepZoomViewer({ imageUrl, title, brightness = 1, className }: D
         </button>
       </div>
 
-      {/* Touch/Mouse Hint bij hover */}
       <div className="absolute bottom-8 left-8 bg-black/40 backdrop-blur-md px-5 py-2.5 rounded-full border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
         <p className="text-[10px] font-black uppercase tracking-widest text-white/80">Scroll of dubbelklik voor vrije zoom</p>
       </div>
     </div>
   );
 }
+);
+
+DeepZoomViewer.displayName = "DeepZoomViewer";
