@@ -24,15 +24,27 @@
         "cropRight": { "type": "number" },
         "brightness": { "type": "number" },
         "featured": { "type": "boolean" },
-        "inShop": { "type": "boolean", "description": "Of dit werk in de winkel te koop is" },
-        "pricePostcard": { "type": "number" },
-        "pricePoster": { "type": "number" },
-        "pricePrint": { "type": "number" },
-        "priceCanvas": { "type": "number", "description": "Prijs voor Canvas 100x100cm" },
-        "priceDigital": { "type": "number" },
+        "inShop": { "type": "boolean" },
+        "audioUrls": { 
+          "type": "object",
+          "description": "Map van taalcode naar audio URL (bijv. { 'nl': '...', 'en': '...' })"
+        },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["title", "imageUrl"]
+    },
+    "SharedRoom": {
+      "title": "SharedRoom",
+      "description": "Een door een gebruiker of curator samengestelde kamer (expositie).",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "artworkIds": { "type": "array", "items": { "type": "string" } },
+        "creatorName": { "type": "string" },
+        "audioUrls": { "type": "object" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
     },
     "Order": {
       "title": "Order",
@@ -58,7 +70,7 @@
         "siteTitle": { "type": "string" },
         "siteSubtitle": { "type": "string" },
         "logoUrl": { "type": "string" },
-        "cdnBaseUrl": { "type": "string", "description": "Basis URL voor externe asset hosting (CDN)" },
+        "cdnBaseUrl": { "type": "string" },
         "adminEmail": { "type": "string" },
         "stripeEnabled": { "type": "boolean" },
         "stripePublicKey": { "type": "string" },
@@ -75,6 +87,7 @@
   "auth": { "providers": ["google"] },
   "firestore": {
     "/artworks/{artworkId}": { "schema": "Artwork", "description": "Collectie van alle kunstwerken" },
+    "/shared_rooms/{roomId}": { "schema": "SharedRoom", "description": "Gedeelde exposities" },
     "/orders/{orderId}": { "schema": "Order", "description": "Bestellingen uit de winkel" },
     "/settings/site": { "schema": "Settings", "description": "Website configuratie en branding" }
   }
