@@ -31,67 +31,67 @@ const TEAM_MEMBERS = [
     id: 'simon',
     name: 'Simon',
     role: 'Strategisch Adviseur',
-    focus: 'Visie, Business Model & Lange Termijn',
+    focus: 'Merkidentiteit & Strategie',
     icon: ShieldCheck,
     color: 'bg-blue-500',
     avatar: 'https://picsum.photos/seed/simon/200',
-    status: 'Evalueert merknaam-impact',
-    tasks: ['Positionering t.o.v. concurrentie', 'Exit-scenario planning', 'Partner deals evalueren']
+    status: "Begeleidt de transitie naar 'The Digital Retrospective'",
+    tasks: ['Positionering t.o.v. internationale archieven', 'Exit-scenario planning', 'Partner deals evalueren']
   },
   {
     id: 'bob',
     name: 'Bob',
     role: 'Bouwer & Architect',
-    focus: 'Code, Firebase & Deep Zoom Tech',
+    focus: 'Infrastructuur & Deep Zoom',
     icon: Hammer,
     color: 'bg-orange-500',
     avatar: 'https://picsum.photos/seed/bob/200',
-    status: 'Optimaliseert Deep Zoom',
-    tasks: ['Infrastructuur schalen', 'Beveiligingsregels scherpen', 'Nieuwe UI features']
+    status: 'Optimaliseert Social Reveal voor de Boss',
+    tasks: ['Deep Zoom stabiliteit bewaken', 'Social sharing previews verfijnen', 'UI voor Retrospective klaarmaken']
   },
   {
     id: 'clara',
     name: 'Clara',
     role: 'Conservator',
-    focus: 'Esthetiek, Poëzie & Museale Kwaliteit',
+    focus: 'Esthetiek & Poëtische Ziel',
     icon: Heart,
     color: 'bg-rose-500',
     avatar: 'https://picsum.photos/seed/clara/200',
-    status: 'Bewaakt de ziel',
-    tasks: ['Tone-of-voice controle', 'Sfeer-matching collecties', 'Curatie van hoofdcollectie']
+    status: 'Bewaakt de poëzie in de nieuwe merkidentiteit',
+    tasks: ['Check op sfeer-matching collecties', 'Tone-of-voice teksten "Licht en Ruimte"', 'Curatie van hoofdcollectie']
   },
   {
     id: 'leo',
     name: 'Leo',
     role: 'De Leraar',
-    focus: 'Kunsthistorie & Diepgaande Analyse',
+    focus: 'Kunsthistorische Duidelijkheid',
     icon: BookOpen,
     color: 'bg-emerald-500',
     avatar: 'https://picsum.photos/seed/leo/200',
-    status: 'Schrijft analyses',
-    tasks: ['Contextuele duiding', 'Historische feitencontrole', 'Educatieve content']
+    status: 'Schrijft het voorwoord voor het Retrospectief',
+    tasks: ['Contextuele duiding Sluizen Amstel', 'Historische feitencontrole biografie', 'Educatieve content voor scholen']
   },
   {
     id: 'mark',
     name: 'Marketeer',
     role: 'Marketeer',
-    focus: 'Social Reach & Conversie',
+    focus: 'Groei & Conversie',
     icon: TrendingUp,
     color: 'bg-purple-500',
     avatar: 'https://picsum.photos/seed/mark/200',
-    status: 'Vindt de naam te "veilig"',
-    tasks: ['SEO check "Thijs Sterk"', 'Subtitel-test voor FB ads', 'Shop optimalisatie']
+    status: 'Berekent de CTR-stijging van de nieuwe naam',
+    tasks: ['Facebook Ads voor de "Grand Opening"', 'SEO transitie plan', 'Shop optimalisatie voor prints']
   },
   {
     id: 'soof',
     name: 'Soof',
     role: 'PR & Relatiebeheer',
-    focus: 'Persbereik, Vernissages & De Gunfactor',
+    focus: 'Glans & Vernissages',
     icon: Sparkles,
     color: 'bg-yellow-500',
     avatar: 'https://picsum.photos/seed/soof/200',
-    status: 'Wil meer "Élan" in de titel',
-    tasks: ['Persbericht schrijven', 'Influencer outreach kunstsector', 'Digitale vernissage plannen']
+    status: "Ontwerpt de uitnodiging voor de 'Grand Opening'",
+    tasks: ['Persbericht "Mondiaal Retrospectief"', 'Influencer outreach kunstsector', 'Digitale vernissage draaiboek']
   }
 ];
 
@@ -147,13 +147,13 @@ export default function TeamDashboardPage() {
           </Link>
           <div className="flex flex-col">
             <h1 className="font-headline text-2xl">Team <span className="italic">Dashboard</span></h1>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-accent">Safe Harbor Curator Edition</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-accent">Safe Harbor: The Digital Retrospective</p>
           </div>
         </div>
         <div className="flex items-center gap-4">
           <Badge variant="outline" className="bg-white px-4 py-1.5 rounded-full border-black/10">
             <Zap className="w-3 h-3 mr-2 text-yellow-500 fill-yellow-500" />
-            6 Systemen Actief
+            Strategisch Beraad Actief
           </Badge>
         </div>
       </header>
@@ -216,22 +216,21 @@ export default function TeamDashboardPage() {
             </Card>
           ))}
 
-          {/* Add Project Summary Card */}
           <Card className="md:col-span-1 lg:col-span-1 border-2 border-dashed border-black/10 bg-transparent flex flex-col items-center justify-center p-12 text-center space-y-6 rounded-[2rem]">
              <div className="w-20 h-20 rounded-full bg-white shadow-lg flex items-center justify-center">
-                <ShieldCheck className="w-10 h-10 text-accent" />
+                <Heart className="w-10 h-10 text-rose-500" />
              </div>
              <div className="space-y-2">
-                <h3 className="font-headline text-xl">Museum Status</h3>
-                <p className="text-xs opacity-40 uppercase font-black tracking-widest">Alle systemen nominaal</p>
+                <h3 className="font-headline text-xl">Retrospective Status</h3>
+                <p className="text-xs opacity-40 uppercase font-black tracking-widest">Clara's visie geïntegreerd</p>
              </div>
              <div className="w-full bg-white/50 p-6 rounded-2xl space-y-4 text-left">
                 <div className="flex justify-between items-center">
-                   <span className="text-[10px] font-black uppercase tracking-widest opacity-40">Gezondheid</span>
-                   <span className="text-[10px] font-bold text-green-600">100%</span>
+                   <span className="text-[10px] font-black uppercase tracking-widest opacity-40">Poëtische Balans</span>
+                   <span className="text-[10px] font-bold text-rose-600">Optimaal</span>
                 </div>
                 <div className="h-1.5 w-full bg-black/5 rounded-full overflow-hidden">
-                   <div className="h-full w-full bg-accent" />
+                   <div className="h-full w-full bg-rose-500" />
                 </div>
              </div>
           </Card>
