@@ -1,9 +1,11 @@
+
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
-import { useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, useDoc, useStorage } from '@/firebase';
 import { collection, doc, deleteDoc, query, updateDoc, addDoc, serverTimestamp } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
@@ -23,7 +25,8 @@ import {
   Tag as TagIcon,
   Crop,
   Sun,
-  Plus
+  Plus,
+  Upload
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -46,6 +49,7 @@ const TAG_CATEGORIES = {
 
 export default function AdminPage() {
   const firestore = useFirestore();
+  const storage = useStorage();
   const { t } = useLanguage();
   
   const [isAuthorized, setIsAuthorized] = useState(false);
@@ -60,6 +64,7 @@ export default function AdminPage() {
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isCreating, setIsCreating] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     const auth = sessionStorage.getItem('admin_auth');
@@ -152,7 +157,7 @@ export default function AdminPage() {
         createdAt: serverTimestamp()
       });
       setEditingId(newDoc.id);
-      toast({ title: "Schilderij toegevoegd", description: "U kunt nu de details invullen." });
+      toast({ title: "Schilderij toegevoegd", description: "U kunt nu de details invullen of een bestand uploaden." });
     } catch (e) {
       console.error(e);
     } finally {
@@ -166,6 +171,25 @@ export default function AdminPage() {
     updateDoc(artRef, { [field]: value }).catch(async () => {
       errorEmitter.emit('permission-error', new FirestorePermissionError({ path: artRef.path, operation: 'update' }));
     });
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, artworkId: string) => {
+    const file = e.target.files?.[0];
+    if (!file || !storage || !artworkId) return;
+
+    setIsUploading(true);
+    try {
+      const fileRef = ref(storage, `artworks/${Date.now()}_${file.name}`);
+      await uploadBytes(fileRef, file);
+      const downloadURL = await getDownloadURL(fileRef);
+      updateArtworkField(artworkId, 'imageUrl', downloadURL);
+      toast({ title: "Afbeelding geüpload", description: "De afbeelding is succesvol toegevoegd aan het archief." });
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast({ variant: "destructive", title: "Upload mislukt", description: "Er ging iets mis tijdens het uploaden van de afbeelding." });
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const editingArtwork = useMemo(() => artworks.find(a => a.id === editingId), [artworks, editingId]);
@@ -356,7 +380,7 @@ export default function AdminPage() {
                   ) : (
                     <div className="text-center space-y-4 opacity-30">
                       <Palette className="w-20 h-20 mx-auto" />
-                      <p className="text-[10px] font-black uppercase tracking-[0.3em]">Voeg een afbeelding URL toe</p>
+                      <p className="text-[10px] font-black uppercase tracking-[0.3em]">Voeg een afbeelding toe (Upload of URL)</p>
                     </div>
                   )}
                </div>
@@ -373,8 +397,37 @@ export default function AdminPage() {
                     </div>
                     <div className="space-y-5">
                       <div className="space-y-2">
-                         <Label className="text-[10px] uppercase font-bold opacity-40">Afbeelding URL (Storage)</Label>
-                         <Input defaultValue={editingArtwork.imageUrl || ''} onBlur={(e) => updateArtworkField(editingId!, 'imageUrl', e.target.value)} className="h-12 rounded-xl" placeholder="https://..." />
+                         <Label className="text-[10px] uppercase font-bold opacity-40">Afbeelding (Upload of URL)</Label>
+                         <div className="flex gap-2">
+                           <Input 
+                             defaultValue={editingArtwork.imageUrl || ''} 
+                             onBlur={(e) => updateArtworkField(editingId!, 'imageUrl', e.target.value)} 
+                             className="h-12 rounded-xl flex-1" 
+                             placeholder="Plak URL of gebruik de knop..." 
+                           />
+                           <div className="relative">
+                             <input
+                               type="file"
+                               id="artwork-upload-input"
+                               className="hidden"
+                               accept="image/*"
+                               onChange={(e) => handleFileChange(e, editingId!)}
+                               disabled={isUploading}
+                             />
+                             <Button 
+                               asChild
+                               variant="outline" 
+                               className={cn(
+                                 "h-12 rounded-xl px-4 cursor-pointer border-2 border-accent/20 hover:border-accent transition-all",
+                                 isUploading && "opacity-50 pointer-events-none"
+                               )}
+                             >
+                               <label htmlFor="artwork-upload-input">
+                                 {isUploading ? <Loader2 className="animate-spin w-4 h-4 text-accent" /> : <Upload className="w-4 h-4 text-accent" />}
+                               </label>
+                             </Button>
+                           </div>
+                         </div>
                       </div>
                       <div className="space-y-2">
                          <Label className="text-[10px] uppercase font-bold opacity-40">Publieke Titel</Label>
