@@ -22,13 +22,15 @@ import {
   CheckSquare,
   X,
   Lock,
-  CreditCard
+  Tag,
+  Maximize2
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/components/language-provider';
 import { sortArtworksByTitle } from '@/lib/museum-utils';
@@ -149,7 +151,7 @@ export default function AdminPage() {
   if (!isAuthorized) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
-        <Card className="max-w-md w-full p-12 rounded-[2.5rem] shadow-2xl border-none space-y-8 animate-in fade-in duration-500">
+        <Card className="max-w-md w-full p-12 rounded-[2.5rem] shadow-2xl border-none space-y-8">
            <div className="text-center space-y-4">
               <div className="w-20 h-20 bg-accent/10 rounded-full flex items-center justify-center mx-auto">
                  <Lock className="w-10 h-10 text-accent" />
@@ -169,7 +171,7 @@ export default function AdminPage() {
                    disabled={isVerifying}
                  />
               </div>
-              <Button type="submit" disabled={isVerifying} className="w-full h-14 rounded-2xl bg-primary text-primary-foreground font-black uppercase tracking-widest text-[11px] shadow-xl hover:scale-[1.02] transition-all">
+              <Button type="submit" disabled={isVerifying} className="w-full h-14 rounded-2xl bg-primary text-primary-foreground font-black uppercase tracking-widest text-[11px] shadow-xl">
                  {isVerifying ? <Loader2 className="animate-spin w-4 h-4" /> : "Ontgrendel"}
               </Button>
            </form>
@@ -276,9 +278,18 @@ export default function AdminPage() {
              <Card className="p-8 rounded-3xl border-none shadow-xl bg-white/50">
                 <div className="flex items-center gap-3 border-l-4 border-accent pl-4 mb-8">
                    <SettingsIcon className="w-4 h-4 text-accent" />
-                   <h3 className="text-[11px] font-bold uppercase tracking-widest text-accent">Asset Hosting & CDN</h3>
+                   <h3 className="text-[11px] font-bold uppercase tracking-widest text-accent">Website Branding</h3>
                 </div>
                 <div className="space-y-6">
+                   <div className="space-y-2">
+                      <Label className="text-[10px] uppercase font-bold opacity-40 tracking-widest">Logo URL</Label>
+                      <Input 
+                        placeholder="https://..." 
+                        defaultValue={siteSettings?.logoUrl || ''} 
+                        onBlur={(e) => updateSettingsField('logoUrl', e.target.value)}
+                        className="h-12 border-black/10"
+                      />
+                   </div>
                    <div className="space-y-2">
                       <Label className="text-[10px] uppercase font-bold opacity-40 tracking-widest">CDN Basis URL</Label>
                       <Input 
@@ -287,7 +298,6 @@ export default function AdminPage() {
                         onBlur={(e) => updateSettingsField('cdnBaseUrl', e.target.value)}
                         className="h-12 border-black/10"
                       />
-                      <p className="text-[9px] opacity-40 italic">Laat leeg om Firebase Storage te gebruiken.</p>
                    </div>
                 </div>
              </Card>
@@ -301,12 +311,12 @@ export default function AdminPage() {
         >
           <DialogTitle className="sr-only">Editor - {editingArtwork?.title}</DialogTitle>
           <div className="flex flex-col md:flex-row h-full w-full overflow-hidden">
-            {/* Linker paneel: Preview - Gegarandeerde Centrering via Flex-paneel */}
-            <div className="flex-1 flex flex-col min-h-0 bg-black/10 relative overflow-hidden">
-              <div className="h-20 border-b border-black/5 bg-white/80 backdrop-blur-md px-8 flex items-center justify-between shrink-0 z-20">
+            {/* Linker paneel: Preview - Gecentreerd via Grid */}
+            <div className="flex-1 flex flex-col min-h-0 bg-black/5 relative overflow-hidden border-r border-black/5">
+              <div className="h-16 md:h-20 border-b border-black/5 bg-white/80 backdrop-blur-md px-8 flex items-center justify-between shrink-0 z-20">
                  <button onClick={() => setEditingId(null)} className="p-2 hover:bg-black/5 rounded-full transition-colors"><ArrowLeft className="w-5 h-5" /></button>
-                 <div className="flex flex-col items-center">
-                   <h2 className="text-sm font-bold uppercase tracking-widest truncate max-w-xs md:max-w-md">{editingArtwork?.displayTitle || editingArtwork?.title}</h2>
+                 <div className="flex flex-col items-center text-center px-4 overflow-hidden">
+                   <h2 className="text-sm font-bold uppercase tracking-widest truncate w-full">{editingArtwork?.displayTitle || editingArtwork?.title}</h2>
                    {editingArtwork?.series && (
                      <span className="text-[8px] font-black uppercase tracking-[0.2em] opacity-40">{editingArtwork.series}</span>
                    )}
@@ -314,12 +324,12 @@ export default function AdminPage() {
                  <div className="w-10" />
               </div>
               
-              {/* Afbeelding Container: Stabiele Centrering */}
-              <div className="flex-1 flex items-center justify-center p-8 md:p-16 bg-[url('https://www.transparenttextures.com/patterns/pinstriped-suit.png')] overflow-hidden">
+              {/* Afbeelding Container: Absolute Centrering */}
+              <div className="flex-1 relative overflow-hidden grid place-items-center p-8 md:p-16">
                  {editingArtwork?.imageUrl && (
                    <img 
                      src={editingArtwork.imageUrl} 
-                     className="max-h-full max-w-full w-auto h-auto object-contain shadow-[0_50px_100px_-20px_rgba(0,0,0,0.3)] bg-white p-2 md:p-6 rounded-sm border border-black/5 block mx-auto" 
+                     className="max-h-full max-w-full w-auto h-auto object-contain shadow-2xl bg-white p-4 rounded-sm border border-black/5 block transition-all" 
                      alt="Preview" 
                    />
                  )}
@@ -327,7 +337,7 @@ export default function AdminPage() {
             </div>
 
             {/* Rechter paneel: Controls */}
-            <div className="w-full md:w-[450px] bg-white flex flex-col shadow-2xl overflow-y-auto border-l border-black/5 z-10 h-full">
+            <div className="w-full md:w-[450px] bg-white flex flex-col shadow-2xl overflow-y-auto z-10 h-full">
               {editingArtwork && (
                 <div className="p-8 space-y-12 pb-32">
                   <div className="space-y-6">
@@ -344,10 +354,63 @@ export default function AdminPage() {
                          <Label className="text-[10px] uppercase font-bold opacity-40">Zaal / Collectie</Label>
                          <Input defaultValue={editingArtwork.series || ''} onBlur={(e) => updateArtworkField(editingId!, 'series', e.target.value)} className="h-12 rounded-xl" />
                       </div>
-                      <div className="space-y-2">
-                         <Label className="text-[10px] uppercase font-bold opacity-40">Jaartal</Label>
-                         <Input defaultValue={editingArtwork.year || ''} onBlur={(e) => updateArtworkField(editingId!, 'year', e.target.value)} className="h-12 rounded-xl" />
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                           <Label className="text-[10px] uppercase font-bold opacity-40">Jaartal</Label>
+                           <Input defaultValue={editingArtwork.year || ''} onBlur={(e) => updateArtworkField(editingId!, 'year', e.target.value)} className="h-12 rounded-xl" />
+                        </div>
+                        <div className="space-y-2">
+                           <Label className="text-[10px] uppercase font-bold opacity-40">Techniek/Medium</Label>
+                           <Input defaultValue={editingArtwork.medium || ''} onBlur={(e) => updateArtworkField(editingId!, 'medium', e.target.value)} className="h-12 rounded-xl" />
+                        </div>
                       </div>
+                      <div className="space-y-2">
+                         <Label className="text-[10px] uppercase font-bold opacity-40">Afmetingen</Label>
+                         <Input defaultValue={editingArtwork.dimensions || ''} onBlur={(e) => updateArtworkField(editingId!, 'dimensions', e.target.value)} className="h-12 rounded-xl" placeholder="bijv. 60 x 80 cm" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Tags Sectie */}
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-3 border-l-4 border-accent pl-4">
+                       <Tag className="w-4 h-4 text-accent" />
+                       <h3 className="text-[11px] font-bold uppercase tracking-widest text-accent">Tags & Categorieën</h3>
+                    </div>
+                    <div className="space-y-4 px-2">
+                       <div className="flex flex-wrap gap-2 min-h-[2rem]">
+                          {editingArtwork.tags?.map((tag: string) => (
+                            <Badge key={tag} variant="secondary" className="rounded-full px-3 py-1 flex items-center gap-2 bg-accent/10 text-accent border-none text-[10px] font-bold">
+                              {tag}
+                              <button 
+                                onClick={() => {
+                                  const newTags = editingArtwork.tags.filter((t: string) => t !== tag);
+                                  updateArtworkField(editingId!, 'tags', newTags);
+                                }}
+                                className="hover:text-destructive transition-colors"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </Badge>
+                          ))}
+                       </div>
+                       <div className="relative">
+                          <Input 
+                            placeholder="Typ tag en druk op Enter..." 
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                const val = e.currentTarget.value.trim();
+                                if (val && !editingArtwork.tags?.includes(val)) {
+                                  const newTags = [...(editingArtwork.tags || []), val];
+                                  updateArtworkField(editingId!, 'tags', newTags);
+                                  e.currentTarget.value = '';
+                                }
+                              }
+                            }}
+                            className="h-12 rounded-xl border-black/10 focus:ring-accent"
+                          />
+                       </div>
                     </div>
                   </div>
 
@@ -373,14 +436,18 @@ export default function AdminPage() {
                             type="number" 
                             defaultValue={editingArtwork ? (editingArtwork as any)[`price${p.key}`] || 0 : 0} 
                             onBlur={(e) => updateArtworkField(editingId!, `price${p.key}`, parseFloat(e.target.value) || 0)} 
-                            className="h-10 rounded-lg bg-white" 
+                            className="h-10 rounded-lg bg-white border-black/5" 
                           />
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  <div className="pt-8 border-t border-black/5">
+                  <div className="pt-8 border-t border-black/5 flex flex-col gap-4">
+                    <div className="flex items-center justify-between px-2">
+                       <span className="text-[10px] font-bold uppercase opacity-40">Hoofdcollectie / Featured</span>
+                       <Switch checked={editingArtwork.featured || false} onCheckedChange={(val) => updateArtworkField(editingId!, 'featured', val)} />
+                    </div>
                     <Button 
                       variant="destructive" 
                       className="w-full rounded-2xl h-14 uppercase font-bold tracking-widest text-[10px]"
