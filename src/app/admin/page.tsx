@@ -76,14 +76,6 @@ export default function AdminPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [batchSeriesName, setBatchSeriesName] = useState('');
 
-  const [quickTranslateSource, setQuickTranslateSource] = useState('');
-  const [quickTranslations, setQuickTranslations] = useState({ en: '', de: '', fr: '', es: '' });
-  const [isAiTranslating, setIsAiTranslating] = useState(false);
-
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadStatus, setUploadStatus] = useState('');
-
   useEffect(() => {
     const auth = sessionStorage.getItem('admin_auth');
     if (auth === 'true') {
@@ -94,10 +86,7 @@ export default function AdminPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsVerifying(true);
-    
-    // De verificatie gebeurt nu veilig op de server
     const isValid = await verifyAdminPassword(password);
-    
     if (isValid) {
       setIsAuthorized(true);
       sessionStorage.setItem('admin_auth', 'true');
@@ -148,16 +137,14 @@ export default function AdminPage() {
 
     filteredArtworks.forEach((art: any) => {
       const romanMatch = (art.displayTitle || art.title || "").match(/\b(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII|XIV|XV|XVI|XVII|XVIII|XIX|XX)\b/i);
-      const roman = romanMatch ? romanMatch[0].toUpperCase() : "Diversen";
-      
+      const roman = romanMatch ? romanMatch[0].toUpperCase() : "Ongecategoriseerd";
       if (!groupsMap[roman]) groupsMap[roman] = [];
       groupsMap[roman].push(art);
     });
 
-    // Sorteren van groepen op basis van de Romeinse waarde
     const sortedLabels = Object.keys(groupsMap).sort((a, b) => {
-      if (a === "Diversen") return 1;
-      if (b === "Diversen") return -1;
+      if (a === "Ongecategoriseerd") return 1;
+      if (b === "Ongecategoriseerd") return -1;
       const ROMAN_VALS: Record<string, number> = { 'I': 1, 'II': 2, 'III': 3, 'IV': 4, 'V': 5, 'VI': 6, 'VII': 7, 'VIII': 8, 'IX': 9, 'X': 10, 'XI': 11, 'XII': 12 };
       return (ROMAN_VALS[a] || 999) - (ROMAN_VALS[b] || 999);
     });
@@ -198,23 +185,6 @@ export default function AdminPage() {
     updateArtworkField(id, 'tags', newTags);
   };
 
-  const handleBatchMove = async (targetSeries?: string) => {
-    const finalSeries = targetSeries || batchSeriesName;
-    if (!firestore || selectedIds.length === 0 || !finalSeries) return;
-    const batch = writeBatch(firestore);
-    selectedIds.forEach(id => {
-      const ref = doc(firestore, 'artworks', id);
-      batch.update(ref, { series: finalSeries });
-    });
-    try {
-      await batch.commit();
-      toast({ title: `${selectedIds.length} werken verplaatst naar "${finalSeries}"` });
-      setSelectedIds([]);
-      setIsSelectionMode(false);
-      setBatchSeriesName('');
-    } catch (e) { console.error(e); }
-  };
-
   const updateSettingsField = (field: string, value: any) => {
     if (!firestore) return;
     const settingsRef = doc(firestore, 'settings', 'site');
@@ -223,41 +193,22 @@ export default function AdminPage() {
     );
   };
 
-  const handleAiSuggestQuick = async () => {
-    if (!quickTranslateSource) return;
-    setIsAiTranslating(true);
-    try {
-      const langs = ['en', 'de', 'fr', 'es'];
-      const newTranslations = { ...quickTranslations };
-      for (const lang of langs) {
-        const result = await translateMuseumText({
-          text: quickTranslateSource,
-          targetLanguage: lang,
-          context: "Zaalnaam in een digitaal museum."
-        });
-        (newTranslations as any)[lang] = result.translatedText;
-      }
-      setQuickTranslations(newTranslations);
-    } catch (e: any) { toast({ variant: "destructive", title: "AI Fout", description: e.message }); }
-    finally { setIsAiTranslating(false); }
-  };
-
   const editingArtwork = useMemo(() => artworks.find(a => a.id === editingId), [artworks, editingId]);
 
   if (!isAuthorized) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
-        <Card className="max-w-md w-full p-12 rounded-[2.5rem] shadow-2xl border-none space-y-8 animate-in fade-in zoom-in duration-500">
+        <Card className="max-w-md w-full p-12 rounded-[2.5rem] shadow-2xl border-none space-y-8 animate-in fade-in duration-500">
            <div className="text-center space-y-4">
               <div className="w-20 h-20 bg-accent/10 rounded-full flex items-center justify-center mx-auto">
                  <Lock className="w-10 h-10 text-accent" />
               </div>
               <h1 className="font-headline text-3xl font-light italic">Beheer Toegang</h1>
-              <p className="text-xs text-muted-foreground uppercase tracking-widest font-black opacity-40">Veiligheid eerst</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-widest font-black opacity-40">Beveiligd Archief</p>
            </div>
            <form onSubmit={handleLogin} className="space-y-6">
               <div className="space-y-2">
-                 <Label className="text-[10px] uppercase tracking-widest font-black opacity-60 ml-2">Wachtwoord</Label>
+                 <Label className="text-[10px] uppercase tracking-widest font-black opacity-60 ml-2">Toegangscode</Label>
                  <Input 
                    type="password" 
                    value={password} 
@@ -268,7 +219,7 @@ export default function AdminPage() {
                  />
               </div>
               <Button type="submit" disabled={isVerifying} className="w-full h-14 rounded-2xl bg-primary text-primary-foreground font-black uppercase tracking-widest text-[11px] shadow-xl hover:scale-[1.02] transition-all">
-                 {isVerifying ? <Loader2 className="animate-spin w-4 h-4" /> : "Ontgrendel Archief"}
+                 {isVerifying ? <Loader2 className="animate-spin w-4 h-4" /> : "Ontgrendel"}
               </Button>
            </form>
            <Link href="/" className="block text-center text-[10px] font-black uppercase tracking-widest opacity-40 hover:opacity-100 transition-opacity">
@@ -287,7 +238,7 @@ export default function AdminPage() {
             <img src={siteSettings?.logoUrl || "/logo.png"} className="h-10 md:h-20 w-auto" alt="Logo" />
             <div className="flex flex-col leading-none border-l border-border/40 pl-4">
               <h1 className="font-headline text-lg md:text-3xl font-medium text-foreground">{siteSettings?.siteTitle || "Digitaal Museum"}</h1>
-              <span className="text-[7px] md:text-[11px] font-bold uppercase tracking-[0.3em] text-accent">Curator Edition &bull; Beveiligd</span>
+              <span className="text-[7px] md:text-[11px] font-bold uppercase tracking-[0.3em] text-accent">Curator Edition</span>
             </div>
           </Link>
         </div>
@@ -304,11 +255,10 @@ export default function AdminPage() {
       <main className="flex-1 p-8 max-w-7xl mx-auto w-full relative">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
           <TabsList className="bg-muted/50 p-1 rounded-full w-fit mx-auto flex flex-wrap justify-center h-auto border border-black/5">
-            <TabsTrigger value="archive" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest">Schilderijen [{artworks.length}]</TabsTrigger>
-            <TabsTrigger value="rooms" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest">Zalen & Beheer</TabsTrigger>
-            <TabsTrigger value="orders" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest">Bestellingen [{orders?.length || 0}]</TabsTrigger>
+            <TabsTrigger value="archive" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest">Schilderijen</TabsTrigger>
+            <TabsTrigger value="rooms" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest">Zalen</TabsTrigger>
+            <TabsTrigger value="orders" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest">Bestellingen</TabsTrigger>
             <TabsTrigger value="branding" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest">Identiteit</TabsTrigger>
-            <TabsTrigger value="payments" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest">Commercieel</TabsTrigger>
             <TabsTrigger value="help" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest bg-primary text-primary-foreground hover:bg-primary/90 shadow-xl"><LifeBuoy className="w-3 h-3 mr-2" /> Gids</TabsTrigger>
           </TabsList>
 
@@ -317,7 +267,7 @@ export default function AdminPage() {
                <div className="relative flex-1">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-30" />
                   <Input 
-                    placeholder="Doorzoek de collectie op titel of zaal..." 
+                    placeholder="Doorzoek de collectie..." 
                     className="pl-12 h-12 bg-white/50 border-none rounded-full shadow-sm"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -339,7 +289,6 @@ export default function AdminPage() {
                   <div className="flex items-center gap-4 border-l-4 border-accent pl-4 py-1 sticky top-[136px] md:top-[208px] z-30 bg-background/80 backdrop-blur-md -mx-4 px-4 rounded-r-xl">
                     <h3 className="text-[12px] font-black uppercase tracking-[0.3em] text-accent">Zaal {group.label}</h3>
                     <div className="h-px bg-accent/20 flex-1" />
-                    <span className="text-[9px] font-bold opacity-40 uppercase tracking-widest">{group.items.length} werken</span>
                   </div>
                   
                   <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
@@ -374,42 +323,6 @@ export default function AdminPage() {
             </div>
           </TabsContent>
 
-          <TabsContent value="rooms" className="space-y-12">
-             <Card className="p-8 rounded-3xl border-none shadow-xl bg-white/50 backdrop-blur-md">
-                <div className="flex items-center justify-between mb-8 border-l-4 border-accent pl-4">
-                   <h2 className="text-[12px] font-bold uppercase tracking-widest text-accent">Zalenbeheer</h2>
-                </div>
-                <div className="grid gap-4">
-                   {uniqueSeries.map(name => {
-                      const isHidden = siteSettings?.hiddenSeries?.includes(name);
-                      const count = artworks.filter((a: any) => a.series === name).length;
-                      return (
-                        <div key={name} className="flex items-center justify-between p-6 bg-white rounded-2xl border border-black/5">
-                           <div className="flex items-center gap-4">
-                              <Layers className="w-5 h-5 text-accent" />
-                              <div>
-                                 <h4 className="font-bold text-sm uppercase tracking-wider">{name}</h4>
-                                 <p className="text-[10px] uppercase opacity-40 font-bold">{count} werken</p>
-                              </div>
-                           </div>
-                           <Button 
-                            variant={isHidden ? "default" : "outline"} 
-                            size="sm" 
-                            onClick={() => {
-                              const hidden = siteSettings?.hiddenSeries || [];
-                              updateSettingsField('hiddenSeries', isHidden ? hidden.filter((s: string) => s !== name) : [...hidden, name]);
-                            }}
-                            className="rounded-full px-6 text-[10px] uppercase font-bold tracking-widest"
-                           >
-                             {isHidden ? "Openen" : "Sluiten"}
-                           </Button>
-                        </div>
-                      );
-                   })}
-                </div>
-             </Card>
-          </TabsContent>
-          
           <TabsContent value="branding" className="space-y-8">
              <Card className="p-8 rounded-3xl border-none shadow-xl bg-white/50">
                 <div className="flex items-center gap-3 border-l-4 border-accent pl-4 mb-8">
@@ -420,12 +333,12 @@ export default function AdminPage() {
                    <div className="space-y-2">
                       <Label className="text-[10px] uppercase font-bold opacity-40 tracking-widest">CDN Basis URL</Label>
                       <Input 
-                        placeholder="bijv: https://cdn.mijn-museum.nl/" 
+                        placeholder="https://cdn.mijn-museum.nl/" 
                         defaultValue={siteSettings?.cdnBaseUrl || ''} 
                         onBlur={(e) => updateSettingsField('cdnBaseUrl', e.target.value)}
                         className="h-12 border-black/10"
                       />
-                      <p className="text-[9px] opacity-40 italic">Laat leeg om Firebase Storage te gebruiken. Gebruik een URL die eindigt op een /</p>
+                      <p className="text-[9px] opacity-40 italic">Laat leeg om Firebase Storage te gebruiken.</p>
                    </div>
                 </div>
              </Card>
@@ -452,57 +365,68 @@ export default function AdminPage() {
               </div>
             </div>
 
-            <div className="w-full md:w-[450px] shrink-0 bg-white border-l border-black/5 flex flex-col overflow-y-auto shadow-2xl">
-              <div className="p-8 space-y-12 pb-32">
-                <div className="space-y-6">
-                  <div className="flex items-center gap-3 border-l-4 border-accent pl-4">
-                     <Palette className="w-4 h-4 text-accent" />
-                     <h3 className="text-[11px] font-bold uppercase tracking-widest text-accent">Identiteit & Locatie</h3>
-                  </div>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                       <Label className="text-[10px] uppercase font-bold opacity-40">Publieke Titel</Label>
-                       <Input defaultValue={editingArtwork?.displayTitle || ''} onBlur={(e) => updateArtworkField(editingId!, 'displayTitle', e.target.value)} className="h-12" />
+            <div className="w-full md:w-[450px] shrink-0 bg-white border-l border-black/5 flex flex-col shadow-2xl overflow-y-auto">
+              {editingArtwork && (
+                <div className="p-8 space-y-12 pb-32">
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-3 border-l-4 border-accent pl-4">
+                       <Palette className="w-4 h-4 text-accent" />
+                       <h3 className="text-[11px] font-bold uppercase tracking-widest text-accent">Identiteit & Locatie</h3>
                     </div>
-                    <div className="space-y-2">
-                       <Label className="text-[10px] uppercase font-bold opacity-40">Zaal / Collectie</Label>
-                       <Input defaultValue={editingArtwork?.series || ''} onBlur={(e) => updateArtworkField(editingId!, 'series', e.target.value)} placeholder="bijv. Polders" className="h-12" />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-6">
-                  <div className="flex items-center gap-3 border-l-4 border-primary pl-4">
-                     <Tag className="w-4 h-4 text-primary" />
-                     <h3 className="text-[11px] font-bold uppercase tracking-widest text-primary">Tags</h3>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {Object.values(QUICK_TAG_CATEGORIES).flat().map(tag => {
-                      const isActive = editingArtwork?.tags?.includes(tag);
-                      return (
-                        <button key={tag} onClick={() => toggleTagInArtwork(editingId!, editingArtwork?.tags, tag)} className={cn("px-3 py-1 rounded-full text-[10px] font-bold border", isActive ? "bg-accent text-accent-foreground border-accent" : "bg-white text-muted-foreground")}>
-                          {tag}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="space-y-6 bg-accent/5 p-6 rounded-3xl border border-accent/10">
-                  <div className="flex items-center justify-between mb-4">
-                     <h3 className="text-[11px] font-bold uppercase tracking-widest text-accent">Commercieel</h3>
-                     <Switch checked={editingArtwork?.inShop} onCheckedChange={(val) => updateArtworkField(editingId!, 'inShop', val)} />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    {['Postcard', 'Poster', 'Print', 'Canvas', 'Digital'].map(p => (
-                      <div key={p} className="space-y-1">
-                        <Label className="text-[9px] uppercase font-bold opacity-40">{p === 'Canvas' ? 'Canvas 100x100' : p}</Label>
-                        <Input type="number" defaultValue={(editingArtwork as any)[`price${p}`] || 0} onBlur={(e) => updateArtworkField(editingId!, `price${p}`, parseFloat(e.target.value))} className="h-9" />
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                         <Label className="text-[10px] uppercase font-bold opacity-40">Publieke Titel</Label>
+                         <Input defaultValue={editingArtwork.displayTitle || ''} onBlur={(e) => updateArtworkField(editingId!, 'displayTitle', e.target.value)} className="h-12" />
                       </div>
-                    ))}
+                      <div className="space-y-2">
+                         <Label className="text-[10px] uppercase font-bold opacity-40">Zaal / Collectie</Label>
+                         <Input defaultValue={editingArtwork.series || ''} onBlur={(e) => updateArtworkField(editingId!, 'series', e.target.value)} className="h-12" />
+                      </div>
+                      <div className="space-y-2">
+                         <Label className="text-[10px] uppercase font-bold opacity-40">Jaartal</Label>
+                         <Input defaultValue={editingArtwork.year || ''} onBlur={(e) => updateArtworkField(editingId!, 'year', e.target.value)} className="h-12" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-3 border-l-4 border-primary pl-4">
+                       <Tag className="w-4 h-4 text-primary" />
+                       <h3 className="text-[11px] font-bold uppercase tracking-widest text-primary">Tags</h3>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {Object.values(QUICK_TAG_CATEGORIES).flat().map(tag => {
+                        const isActive = editingArtwork.tags?.includes(tag);
+                        return (
+                          <button key={tag} onClick={() => toggleTagInArtwork(editingId!, editingArtwork.tags, tag)} className={cn("px-3 py-1 rounded-full text-[10px] font-bold border", isActive ? "bg-accent text-accent-foreground border-accent" : "bg-white text-muted-foreground")}>
+                            {tag}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="space-y-6 bg-accent/5 p-6 rounded-3xl border border-accent/10">
+                    <div className="flex items-center justify-between mb-4">
+                       <h3 className="text-[11px] font-bold uppercase tracking-widest text-accent">Winkelinstellingen</h3>
+                       <Switch checked={editingArtwork.inShop} onCheckedChange={(val) => updateArtworkField(editingId!, 'inShop', val)} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      {['Postcard', 'Poster', 'Print', 'Canvas', 'Digital'].map(p => (
+                        <div key={p} className="space-y-1">
+                          <Label className="text-[9px] uppercase font-bold opacity-40">{p === 'Canvas' ? 'Canvas 100x100' : p}</Label>
+                          <Input 
+                            type="number" 
+                            defaultValue={(editingArtwork as any)?.[`price${p}`] || 0} 
+                            onBlur={(e) => updateArtworkField(editingId!, `price${p}`, parseFloat(e.target.value))} 
+                            className="h-9" 
+                          />
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </DialogContent>
