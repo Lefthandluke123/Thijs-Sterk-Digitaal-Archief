@@ -179,7 +179,7 @@ function NavbarContent() {
               title={t('nav_guide_click')}
             >
               <BookOpen className="w-4 h-4 transition-transform group-hover:rotate-12" />
-              <span>{t('guide_welcome').split('&')[0].trim()}</span>
+              <span>Guide</span>
             </button>
 
             <DropdownMenu>

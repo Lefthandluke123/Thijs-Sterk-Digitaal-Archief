@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -31,56 +30,56 @@ const TEAM_MEMBERS = [
     id: 'simon',
     name: 'Simon',
     role: 'Strategisch Adviseur',
-    focus: 'Merkidentiteit & Strategie',
+    focus: 'Branding & Identiteit',
     icon: ShieldCheck,
     color: 'bg-blue-500',
     avatar: 'https://picsum.photos/seed/simon/200',
-    status: "Begeleidt de transitie naar 'The Digital Retrospective'",
-    tasks: ['Positionering t.o.v. internationale archieven', 'Exit-scenario planning', 'Partner deals evalueren']
+    status: "Transitie naar 'Digital Retrospective' voltooid",
+    tasks: ['Positionering t.o.v. internationale archieven', 'Monitoring merkconsistentie', 'Partner deals evalueren']
   },
   {
     id: 'bob',
     name: 'Bob',
     role: 'Bouwer & Architect',
-    focus: 'Infrastructuur & Deep Zoom',
+    focus: 'Core Engine & Deep Zoom',
     icon: Hammer,
     color: 'bg-orange-500',
     avatar: 'https://picsum.photos/seed/bob/200',
-    status: 'Optimaliseert Social Reveal voor de Boss',
-    tasks: ['Deep Zoom stabiliteit bewaken', 'Social sharing previews verfijnen', 'UI voor Retrospective klaarmaken']
+    status: 'Optimaliseert interactie voor Retrospective',
+    tasks: ['Deep Zoom stabiliteit bewaken', 'Metadata injectie voor Facebook verfijnen', 'UI Identity Shift borgen']
   },
   {
     id: 'clara',
     name: 'Clara',
     role: 'Conservator',
-    focus: 'Esthetiek & Poëtische Ziel',
+    focus: 'Atmosfeer & Verstilling',
     icon: Heart,
     color: 'bg-rose-500',
     avatar: 'https://picsum.photos/seed/clara/200',
-    status: 'Bewaakt de poëzie in de nieuwe merkidentiteit',
-    tasks: ['Check op sfeer-matching collecties', 'Tone-of-voice teksten "Licht en Ruimte"', 'Curatie van hoofdcollectie']
+    status: 'Bewaakt Licht, Ruimte en Water essentie',
+    tasks: ['Check op sfeer-matching collecties', 'Narratief over horizon en strijklicht', 'Curatie van retrospectief archief']
   },
   {
     id: 'leo',
     name: 'Leo',
     role: 'De Leraar',
-    focus: 'Kunsthistorische Duidelijkheid',
+    focus: 'Historische Context',
     icon: BookOpen,
     color: 'bg-emerald-500',
     avatar: 'https://picsum.photos/seed/leo/200',
-    status: 'Schrijft het voorwoord voor het Retrospectief',
-    tasks: ['Contextuele duiding Sluizen Amstel', 'Historische feitencontrole biografie', 'Educatieve content voor scholen']
+    status: 'Valideert feiten voor het Retrospectief',
+    tasks: ['Contextuele duiding monumentaal werk', 'Historische feitencontrole archief', 'Educatieve ontsluiting']
   },
   {
     id: 'mark',
     name: 'Marketeer',
     role: 'Marketeer',
-    focus: 'Groei & Conversie',
+    focus: 'Bereik & Conversie',
     icon: TrendingUp,
     color: 'bg-purple-500',
     avatar: 'https://picsum.photos/seed/mark/200',
-    status: 'Berekent de CTR-stijging van de nieuwe naam',
-    tasks: ['Facebook Ads voor de "Grand Opening"', 'SEO transitie plan', 'Shop optimalisatie voor prints']
+    status: 'Optimaliseert social ads voor Digital Retrospective',
+    tasks: ['Facebook Ads voor de Retrospective', 'SEO strategie voor merknaam', 'Shop conversie prints']
   },
   {
     id: 'soof',
@@ -90,8 +89,8 @@ const TEAM_MEMBERS = [
     icon: Sparkles,
     color: 'bg-yellow-500',
     avatar: 'https://picsum.photos/seed/soof/200',
-    status: "Ontwerpt de uitnodiging voor de 'Grand Opening'",
-    tasks: ['Persbericht "Mondiaal Retrospectief"', 'Influencer outreach kunstsector', 'Digitale vernissage draaiboek']
+    status: "Bereidt de 'Global Vernissage' voor",
+    tasks: ['Persbericht "Mondiaal Retrospectief"', 'Influencer outreach kunstsector', 'VIP previews organiseren']
   }
 ];
 
@@ -153,7 +152,7 @@ export default function TeamDashboardPage() {
         <div className="flex items-center gap-4">
           <Badge variant="outline" className="bg-white px-4 py-1.5 rounded-full border-black/10">
             <Zap className="w-3 h-3 mr-2 text-yellow-500 fill-yellow-500" />
-            Strategisch Beraad Actief
+            Branding Shift Active
           </Badge>
         </div>
       </header>
@@ -222,15 +221,15 @@ export default function TeamDashboardPage() {
              </div>
              <div className="space-y-2">
                 <h3 className="font-headline text-xl">Retrospective Status</h3>
-                <p className="text-xs opacity-40 uppercase font-black tracking-widest">Clara's visie geïntegreerd</p>
+                <p className="text-xs opacity-40 uppercase font-black tracking-widest">Licht & Ruimte geborgd</p>
              </div>
              <div className="w-full bg-white/50 p-6 rounded-2xl space-y-4 text-left">
                 <div className="flex justify-between items-center">
-                   <span className="text-[10px] font-black uppercase tracking-widest opacity-40">Poëtische Balans</span>
-                   <span className="text-[10px] font-bold text-rose-600">Optimaal</span>
+                   <span className="text-[10px] font-black uppercase tracking-widest opacity-40">Horizon-check</span>
+                   <span className="text-[10px] font-bold text-green-600">Optimaal</span>
                 </div>
                 <div className="h-1.5 w-full bg-black/5 rounded-full overflow-hidden">
-                   <div className="h-full w-full bg-rose-500" />
+                   <div className="h-full w-full bg-green-500" />
                 </div>
              </div>
           </Card>

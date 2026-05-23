@@ -9,21 +9,21 @@ import { Suspense } from 'react';
 import { Loader2 } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Thijs Sterk (1913-1982) | Schilder van Licht, Ruimte en Water',
-  description: 'Het officiële digitale retrospectief van Thijs Sterk. Ontdek zijn meesterlijke landschappen, monumentale wandkunst en verstilde dorpsgezichten uit Groet en Schoorl.',
-  keywords: ['Thijs Sterk', 'Nederlandse kunst', 'Schilderkunst 20e eeuw', 'Licht en Ruimte', 'Landschappen', 'Groet Schoorl', 'Kunstcollectie', 'Atmosferisch schilderen'],
+  title: 'Thijs Sterk (1913-1982) | The Digital Retrospective',
+  description: 'The official digital retrospective of Thijs Sterk. Explore his masterly landscapes, monumental murals and silent village scenes from North Holland.',
+  keywords: ['Thijs Sterk', 'The Digital Retrospective', 'Licht en Ruimte', 'Landschappen', 'Groet Schoorl', 'Digital Archive', 'Atmosferisch schilderen'],
   authors: [{ name: 'Erven Thijs Sterk' }],
   openGraph: {
-    title: 'Thijs Sterk Museum - Digitaal Retrospectief',
-    description: 'Ontdek de wereld van Thijs Sterk. Een leven gewijd aan het vastleggen van de essentie van licht en ruimte.',
+    title: 'Thijs Sterk - The Digital Retrospective',
+    description: 'Discover the essence of light, space, and water. The official digital archive and retrospective.',
     type: 'website',
     locale: 'nl_NL',
-    siteName: 'Thijs Sterk Digitaal Museum',
+    siteName: 'Thijs Sterk Digital Retrospective',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Thijs Sterk (1913-1982) | Schilder van Licht en Ruimte',
-    description: 'De officiële collectie en biografie van Thijs Sterk.',
+    title: 'Thijs Sterk (1913-1982) | Light, Space and Water',
+    description: 'The official digital archive of Thijs Sterk.',
   },
 };
 
