@@ -4,12 +4,19 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { doc, collection, query, where, documentId } from 'firebase/firestore';
-import { Loader2, ArrowRight, ArrowLeft, Mic, Play, Pause, Maximize2, Video } from 'lucide-react';
+import { Loader2, ArrowRight, ArrowLeft, Mic, Play, Pause, Video, Facebook, Share2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useLanguage } from '@/components/language-provider';
 import { DeepZoomViewer, type DeepZoomHandle } from '@/components/deep-zoom-viewer';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { toast } from '@/hooks/use-toast';
 
 export default function SharedRoomPage() {
   const { id } = useParams();
@@ -65,6 +72,18 @@ export default function SharedRoomPage() {
     zoomRef.current?.startReveal();
   };
 
+  const handleShareFacebook = () => {
+    const shareUrl = window.location.href;
+    const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
+    window.open(fbUrl, '_blank', 'width=600,height=400');
+    toast({ title: t('viewer_shared_fb') });
+  };
+
+  const copyShareLink = () => {
+    navigator.clipboard.writeText(window.location.href);
+    toast({ title: "Link gekopieerd!" });
+  };
+
   if (roomLoading || artLoading) return <div className="h-screen bg-black flex items-center justify-center"><Loader2 className="w-10 h-10 animate-spin text-accent" /></div>;
   if (!room) return <div className="h-screen bg-black flex flex-col items-center justify-center text-white gap-8"><p className="font-headline text-3xl italic opacity-40">Expositie niet gevonden</p><Link href="/" className="text-[11px] font-black uppercase tracking-widest border-b border-white/20 pb-1">Terug naar hoofdpagina</Link></div>;
 
@@ -79,6 +98,25 @@ export default function SharedRoomPage() {
       </div>
 
       <div className={cn("absolute top-10 right-10 z-50 flex items-center gap-4 transition-opacity", isAnimating ? "opacity-0 pointer-events-none" : "opacity-100")}>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="flex items-center gap-3 px-6 py-3 rounded-full backdrop-blur-xl border border-white/10 bg-white/5 hover:bg-white/10 transition-all shadow-2xl">
+              <Share2 className="w-4 h-4" />
+              <span className="text-[10px] font-black uppercase tracking-widest">{t('viewer_share')}</span>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="bg-black/90 backdrop-blur-2xl border-white/10 text-white p-2 min-w-[200px] rounded-2xl shadow-2xl">
+             <DropdownMenuItem onClick={handleShareFacebook} className="flex items-center gap-3 p-4 rounded-xl cursor-pointer focus:bg-accent focus:text-accent-foreground transition-all">
+                <Facebook className="w-4 h-4 text-[#1877F2]" />
+                <span className="text-[11px] font-bold uppercase tracking-widest">Facebook</span>
+             </DropdownMenuItem>
+             <DropdownMenuItem onClick={copyShareLink} className="flex items-center gap-3 p-4 rounded-xl cursor-pointer focus:bg-accent focus:text-accent-foreground transition-all">
+                <Share2 className="w-4 h-4 text-accent" />
+                <span className="text-[11px] font-bold uppercase tracking-widest">{t('viewer_copy_link')}</span>
+             </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
         <button 
           onClick={startReveal}
           className="flex items-center gap-3 px-6 py-3 rounded-full backdrop-blur-xl border-2 border-white/20 bg-accent text-accent-foreground hover:scale-110 active:scale-95 transition-all shadow-2xl"

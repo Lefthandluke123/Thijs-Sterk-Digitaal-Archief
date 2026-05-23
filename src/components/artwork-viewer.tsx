@@ -2,12 +2,19 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogTitle, DialogClose } from '@/components/ui/dialog';
-import { X, ChevronLeft, ChevronRight, Info, Mic, Play, Pause, Video } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Info, Mic, Play, Pause, Video, Share2, Facebook, Link as LinkIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DeepZoomViewer, type DeepZoomHandle } from './deep-zoom-viewer';
 import { useLanguage } from '@/components/language-provider';
 import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { doc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { toast } from '@/hooks/use-toast';
 
 interface ArtworkViewerProps {
   artwork: any | null;
@@ -46,7 +53,6 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
       audio.pause();
       setIsPlaying(false);
     }
-    // Prioriteer gekozen taal, val terug op NL
     const currentAudioUrl = artwork?.audioUrls?.[language] || artwork?.audioUrls?.['nl'];
     if (currentAudioUrl) {
       const newAudio = new Audio(currentAudioUrl);
@@ -76,6 +82,42 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
     zoomRef.current?.startReveal();
   };
 
+  const handleShareFacebook = async () => {
+    if (!artwork || !firestore) return;
+    
+    // Maak eerst een gedeelde kamer aan voor dit specifieke werk voor de beste preview
+    try {
+      const docRef = await addDoc(collection(firestore, 'shared_rooms'), {
+        title: artwork.displayTitle || artwork.title,
+        artworkIds: [artwork.id],
+        createdAt: serverTimestamp(),
+        lang: language
+      });
+      
+      const shareUrl = `${window.location.origin}/shared/${docRef.id}`;
+      const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
+      window.open(fbUrl, '_blank', 'width=600,height=400');
+      toast({ title: t('viewer_shared_fb') });
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const copyShareLink = async () => {
+    if (!artwork || !firestore) return;
+    try {
+      const docRef = await addDoc(collection(firestore, 'shared_rooms'), {
+        title: artwork.displayTitle || artwork.title,
+        artworkIds: [artwork.id],
+        createdAt: serverTimestamp(),
+        lang: language
+      });
+      const shareUrl = `${window.location.origin}/shared/${docRef.id}`;
+      navigator.clipboard.writeText(shareUrl);
+      toast({ title: "Link gekopieerd!", description: "Perfect voor Instagram of WhatsApp." });
+    } catch (e) { console.error(e); }
+  };
+
   return (
     <Dialog open={!!artwork} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-black border-none rounded-none overflow-hidden outline-none shadow-none fixed inset-0 translate-x-0 translate-y-0 left-0 top-0 z-[100]">
@@ -103,6 +145,25 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
           </div>
 
           <div className={cn("absolute top-8 right-8 z-[110] flex items-center gap-4 transition-opacity", isAnimating ? "opacity-0 pointer-events-none" : "opacity-100")}>
+             <DropdownMenu>
+               <DropdownMenuTrigger asChild>
+                 <button className="p-4 rounded-full bg-white/10 backdrop-blur-xl border border-white/10 hover:bg-white/20 transition-all shadow-2xl flex items-center gap-3 text-white">
+                    <Share2 className="w-5 h-5" />
+                    <span className="text-[10px] font-black uppercase tracking-widest hidden lg:inline">{t('viewer_share')}</span>
+                 </button>
+               </DropdownMenuTrigger>
+               <DropdownMenuContent align="end" className="bg-black/90 backdrop-blur-2xl border-white/10 text-white p-2 min-w-[200px] rounded-2xl shadow-2xl">
+                 <DropdownMenuItem onClick={handleShareFacebook} className="flex items-center gap-3 p-4 rounded-xl cursor-pointer focus:bg-accent focus:text-accent-foreground transition-all">
+                    <Facebook className="w-4 h-4 text-[#1877F2]" />
+                    <span className="text-[11px] font-bold uppercase tracking-widest">Facebook</span>
+                 </DropdownMenuItem>
+                 <DropdownMenuItem onClick={copyShareLink} className="flex items-center gap-3 p-4 rounded-xl cursor-pointer focus:bg-accent focus:text-accent-foreground transition-all">
+                    <LinkIcon className="w-4 h-4 text-accent" />
+                    <span className="text-[11px] font-bold uppercase tracking-widest">{t('viewer_copy_link')}</span>
+                 </DropdownMenuItem>
+               </DropdownMenuContent>
+             </DropdownMenu>
+
              <button 
                 onClick={startDemo} 
                 className="p-4 rounded-full bg-accent text-accent-foreground backdrop-blur-xl border-2 border-white/20 hover:scale-110 active:scale-95 transition-all shadow-2xl flex items-center gap-3"
