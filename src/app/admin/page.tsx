@@ -324,7 +324,7 @@ export default function AdminPage() {
 
       <Dialog open={!!editingId} onOpenChange={() => setEditingId(null)}>
         <DialogContent 
-          className="max-w-none w-screen h-screen p-0 flex flex-col bg-background border-none rounded-none overflow-hidden fixed top-0 left-0 translate-x-0 translate-y-0 z-[100] outline-none shadow-none"
+          className="max-w-none w-screen h-screen p-0 flex flex-col bg-background border-none rounded-none overflow-hidden fixed inset-0 translate-x-0 translate-y-0 z-[100] outline-none shadow-none"
         >
           <DialogTitle className="sr-only">Editor - {editingArtwork?.title}</DialogTitle>
           <div className="flex flex-col md:flex-row h-full w-full overflow-hidden">
@@ -374,7 +374,7 @@ export default function AdminPage() {
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                            <Label className="text-[10px] uppercase font-bold opacity-40">Jaartal</Label>
-                           <Input defaultValue={editingArtwork.year || ''} onBlur={(e) => updateArtworkField(editingId!, 'year', e.target.value)} className="h-12 rounded-xl" />
+                           <Input defaultValue={editingArtwork.year || ''} onBlur={(e) => updateArtworkField(editingId!, 'year', e.target.value)} className="h-12 rounded-xl" placeholder="bijv. 1954" />
                         </div>
                         <div className="space-y-2">
                            <Label className="text-[10px] uppercase font-bold opacity-40">Techniek/Medium</Label>
