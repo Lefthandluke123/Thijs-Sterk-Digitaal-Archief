@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -6,7 +7,8 @@ import {
   onSnapshot, 
   QuerySnapshot, 
   DocumentData,
-  FirestoreError
+  FirestoreError,
+  CollectionReference
 } from 'firebase/firestore';
 import { errorEmitter } from '../error-emitter';
 import { FirestorePermissionError } from '../errors';
@@ -38,8 +40,10 @@ export function useCollection<T = DocumentData>(collectionQuery: Query<T> | null
       },
       async (serverError: FirestoreError) => {
         if (serverError.code === 'permission-denied') {
+          // Probeer het pad te achterhalen voor betere foutmeldingen
+          const path = (collectionQuery as any).path || 'collection';
           const permissionError = new FirestorePermissionError({
-            path: 'collection', // Gebruik generieke naam om circular issues tijdens SSR te voorkomen
+            path: path,
             operation: 'list',
           });
           errorEmitter.emit('permission-error', permissionError);

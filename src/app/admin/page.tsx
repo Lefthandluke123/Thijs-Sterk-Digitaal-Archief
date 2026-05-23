@@ -1,11 +1,10 @@
 
 "use client";
 
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useFirestore, useCollection, useMemoFirebase, useDoc, useStorage } from '@/firebase';
-import { collection, doc, serverTimestamp, deleteDoc, addDoc, query, updateDoc, setDoc, writeBatch } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { collection, doc, deleteDoc, query, updateDoc, setDoc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
@@ -23,32 +22,20 @@ import {
   Star,
   LifeBuoy,
   FileText,
-  Maximize2,
   CheckSquare,
-  Square,
-  FolderInput,
   X,
   Lock,
-  EyeOff,
-  Eye,
-  Archive,
-  Layers,
-  Sparkles,
   Tag,
-  ChevronDown,
-  ChevronLeft,
   ChevronRight
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/components/language-provider';
 import { sortArtworksByTitle } from '@/lib/museum-utils';
-import { translateMuseumText } from '@/ai/flows/translate-flow';
 import { verifyAdminPassword } from '@/lib/admin-actions';
 
 const QUICK_TAG_CATEGORIES = {
@@ -74,7 +61,6 @@ export default function AdminPage() {
   
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [batchSeriesName, setBatchSeriesName] = useState('');
 
   useEffect(() => {
     const auth = sessionStorage.getItem('admin_auth');
@@ -113,14 +99,7 @@ export default function AdminPage() {
 
   const artworks = useMemo(() => {
     if (!rawArtworks) return [];
-    const seen = new Set();
-    const unique = rawArtworks.filter(art => {
-      const url = (art as any).imageUrl;
-      if (!url || seen.has(url)) return false;
-      seen.add(url);
-      return true;
-    });
-    return [...unique].sort(sortArtworksByTitle);
+    return [...rawArtworks].sort(sortArtworksByTitle);
   }, [rawArtworks]);
 
   const filteredArtworks = useMemo(() => {
@@ -137,14 +116,14 @@ export default function AdminPage() {
 
     filteredArtworks.forEach((art: any) => {
       const romanMatch = (art.displayTitle || art.title || "").match(/\b(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII|XIV|XV|XVI|XVII|XVIII|XIX|XX)\b/i);
-      const roman = romanMatch ? romanMatch[0].toUpperCase() : "Ongecategoriseerd";
+      const roman = romanMatch ? romanMatch[0].toUpperCase() : "Geen Zaal";
       if (!groupsMap[roman]) groupsMap[roman] = [];
       groupsMap[roman].push(art);
     });
 
     const sortedLabels = Object.keys(groupsMap).sort((a, b) => {
-      if (a === "Ongecategoriseerd") return 1;
-      if (b === "Ongecategoriseerd") return -1;
+      if (a === "Geen Zaal") return 1;
+      if (b === "Geen Zaal") return -1;
       const ROMAN_VALS: Record<string, number> = { 'I': 1, 'II': 2, 'III': 3, 'IV': 4, 'V': 5, 'VI': 6, 'VII': 7, 'VIII': 8, 'IX': 9, 'X': 10, 'XI': 11, 'XII': 12 };
       return (ROMAN_VALS[a] || 999) - (ROMAN_VALS[b] || 999);
     });
@@ -161,14 +140,6 @@ export default function AdminPage() {
     return doc(firestore, 'settings', 'site');
   }, [firestore, isAuthorized]);
   const { data: siteSettings } = useDoc(siteSettingsRef);
-
-  const uniqueSeries = useMemo(() => {
-    const series = new Set<string>();
-    artworks.forEach((art: any) => {
-      if (art.series) series.add(art.series);
-    });
-    return Array.from(series).sort();
-  }, [artworks]);
 
   const updateArtworkField = (id: string, field: string, value: any) => {
     if (!firestore || !id) return;
@@ -256,7 +227,6 @@ export default function AdminPage() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
           <TabsList className="bg-muted/50 p-1 rounded-full w-fit mx-auto flex flex-wrap justify-center h-auto border border-black/5">
             <TabsTrigger value="archive" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest">Schilderijen</TabsTrigger>
-            <TabsTrigger value="rooms" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest">Zalen</TabsTrigger>
             <TabsTrigger value="orders" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest">Bestellingen</TabsTrigger>
             <TabsTrigger value="branding" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest">Identiteit</TabsTrigger>
             <TabsTrigger value="help" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest bg-primary text-primary-foreground hover:bg-primary/90 shadow-xl"><LifeBuoy className="w-3 h-3 mr-2" /> Gids</TabsTrigger>
@@ -310,7 +280,7 @@ export default function AdminPage() {
                           </div>
                           <CardContent className="p-2 text-center bg-white">
                             <h4 className="text-[9px] font-bold uppercase truncate">{art.displayTitle || art.title}</h4>
-                            {art.series && art.series !== 'Nieuwe Uploads' && (
+                            {art.series && art.series !== 'Geen Zaal' && (
                               <p className="text-[7px] uppercase font-bold mt-1 opacity-40">{art.series}</p>
                             )}
                           </CardContent>
@@ -417,7 +387,7 @@ export default function AdminPage() {
                           <Label className="text-[9px] uppercase font-bold opacity-40">{p === 'Canvas' ? 'Canvas 100x100' : p}</Label>
                           <Input 
                             type="number" 
-                            defaultValue={(editingArtwork as any)?.[`price${p}`] || 0} 
+                            defaultValue={editingArtwork ? (editingArtwork as any)[`price${p}`] || 0 : 0} 
                             onBlur={(e) => updateArtworkField(editingId!, `price${p}`, parseFloat(e.target.value))} 
                             className="h-9" 
                           />
