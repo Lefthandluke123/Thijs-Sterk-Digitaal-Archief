@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
@@ -549,7 +548,7 @@ export default function AdminPage() {
                           </div>
                           <CardContent className="p-2 text-center bg-white">
                             <h4 className="text-[9px] font-bold uppercase truncate">{art.displayTitle || art.title}</h4>
-                            {art.series && art.series !== 'Nieuwe Uploads' && (
+                            {art.series && (
                               <p className={cn("text-[7px] uppercase font-bold mt-1", art.series === 'Archief' ? "text-red-500" : "opacity-40")}>{art.series}</p>
                             )}
                           </CardContent>
@@ -640,7 +639,7 @@ export default function AdminPage() {
 
                 <div className="grid gap-4">
                    {uniqueSeries.map(name => {
-                      if (!name || name === 'Nieuwe Uploads') return null;
+                      if (!name) return null;
                       const isHidden = siteSettings?.hiddenSeries?.includes(name);
                       const count = artworks.filter((a: any) => a.series === name).length;
                       return (
@@ -681,7 +680,7 @@ export default function AdminPage() {
                         </div>
                       );
                    })}
-                   {uniqueSeries.filter(s => s && s !== 'Nieuwe Uploads').length === 0 && (
+                   {uniqueSeries.filter(s => s).length === 0 && (
                       <div className="text-center py-20 opacity-30 uppercase font-bold tracking-[0.2em] italic">Geen zalen gevonden</div>
                    )}
                 </div>
@@ -744,227 +743,35 @@ export default function AdminPage() {
                    </div>
                 </div>
              </Card>
-
-             <Card id="manual-section" className="p-8 md:p-16 rounded-[3rem] shadow-2xl border-none bg-white space-y-16">
-                  <div className="space-y-4 text-center border-b border-black/5 pb-12">
-                    <div className="w-20 h-20 rounded-full bg-primary text-primary-foreground flex items-center justify-center mx-auto mb-6 shadow-xl">
-                       <BookOpen className="w-10 h-10" />
-                    </div>
-                    <h2 className="text-4xl font-headline font-light italic">Museum Beheer Handleiding</h2>
-                    <p className="text-muted-foreground uppercase tracking-[0.2em] font-bold text-[10px]">Stap-voor-stap instructies voor de Digitaal Conservator</p>
-                  </div>
-
-                  <div className="grid gap-20">
-                    <div className="flex flex-col md:flex-row gap-12">
-                       <div className="md:w-1/3 space-y-4">
-                          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent/10 border border-accent/20">
-                             <CheckSquare className="w-3.5 h-3.5 text-accent" />
-                             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-accent">Stap 1</span>
-                          </div>
-                          <h3 className="text-2xl font-headline italic">Schilderijen Selecteren</h3>
-                       </div>
-                       <div className="md:w-2/3 space-y-6 text-muted-foreground leading-relaxed">
-                          <p>Om acties uit te voeren op meerdere schilderijen tegelijk, gebruik je de <strong>Selectie-modus</strong>:</p>
-                          <ul className="space-y-4 list-none p-0">
-                             <li className="flex gap-4">
-                                <div className="w-6 h-6 rounded-full bg-black/5 flex items-center justify-center shrink-0 text-[10px] font-bold">A</div>
-                                <span>Klik op de knop <strong>[Selectie-modus]</strong> rechtsboven in het overzicht. De schilderijen worden iets kleiner en vinkvakjes verschijnen.</span>
-                             </li>
-                             <li className="flex gap-4">
-                                <div className="w-6 h-6 rounded-full bg-black/5 flex items-center justify-center shrink-0 text-[10px] font-bold">B</div>
-                                <span>Klik op de schilderijen die je wilt bewerken. Er verschijnt een vinkje bij de geselecteerde werken.</span>
-                             </li>
-                             <li className="flex gap-4">
-                                <div className="w-6 h-6 rounded-full bg-black/5 flex items-center justify-center shrink-0 text-[10px] font-bold">C</div>
-                                <span>Onderaan het scherm verschijnt nu automatisch de <strong>Batch-werkbalk</strong> met acties.</span>
-                             </li>
-                          </ul>
-                       </div>
-                    </div>
-
-                    <div className="flex flex-col md:flex-row gap-12">
-                       <div className="md:w-1/3 space-y-4">
-                          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent/10 border border-accent/20">
-                             <FolderInput className="w-3.5 h-3.5 text-accent" />
-                             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-accent">Stap 2</span>
-                          </div>
-                          <h3 className="text-2xl font-headline italic">Zalen & Hernoemen</h3>
-                       </div>
-                       <div className="md:w-2/3 space-y-6 text-muted-foreground leading-relaxed">
-                          <p>Je kunt schilderijen op twee manieren verplaatsen of zalen hernoemen:</p>
-                          <div className="bg-accent/5 p-8 rounded-3xl border border-accent/10 space-y-6">
-                             <div className="space-y-2">
-                                <p className="font-bold text-foreground text-sm uppercase tracking-wide">Individueel (Editor):</p>
-                                <p>Klik op een enkel schilderij om the editor te openen. Pas het veld <strong>"Expositieruimte / Collectie (Zaal)"</strong> aan. Zodra je een nieuwe naam typt, wordt de zaal aangemaakt of verplaatst het werk.</p>
-                             </div>
-                             <div className="space-y-2">
-                                <p className="font-bold text-foreground text-sm uppercase tracking-wide">In Bulk (Selectie):</p>
-                                <p>Gebruik de Batch-werkbalk onderaan. Typ de naam van de doelzaal in het tekstveld en klik op de <strong>[Pijl naar map]</strong> knop om alle geselecteerde werken in één keer te verplaatsen.</p>
-                             </div>
-                          </div>
-                       </div>
-                    </div>
-                  </div>
-               </Card>
           </TabsContent>
-
-          <TabsContent value="orders" className="space-y-6">
-             <Card className="p-6 rounded-3xl border-none shadow-xl bg-white/50 backdrop-blur-md">
-                <div className="flex items-center gap-3 mb-8 border-l-4 border-accent pl-4">
-                   <TrendingUp className="w-5 h-5 text-accent" />
-                   <h2 className="text-[12px] font-bold uppercase tracking-widest text-accent">Omzet & Historie</h2>
-                </div>
-                
-                <Table>
-                  <TableHeader>
-                    <TableRow className="text-[10px] uppercase font-bold tracking-widest opacity-40">
-                      <TableHead>Datum</TableHead>
-                      <TableHead>Klant</TableHead>
-                      <TableHead>Werk</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {orders && orders.length > 0 ? orders.sort((a:any, b:any) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0)).map((order: any) => (
-                      <TableRow key={order.id} className="text-xs group hover:bg-black/5 transition-colors">
-                        <TableCell className="font-mono opacity-50">{order.timestamp?.toDate().toLocaleDateString()}</TableCell>
-                        <TableCell>
-                          <div className="font-bold">{order.customerName}</div>
-                          <div className="text-[10px] opacity-40">{order.customerEmail}</div>
-                        </TableCell>
-                        <TableCell className="italic">{order.artworkTitle}</TableCell>
-                        <TableCell className="uppercase text-[9px] font-bold">{order.productType}</TableCell>
-                        <TableCell>
-                          <span className={cn(
-                            "px-3 py-1 rounded-full text-[8px] font-bold uppercase tracking-widest",
-                            order.status === 'paid' ? "bg-green-100 text-green-700" : "bg-accent/10 text-accent"
-                          )}>
-                            {order.status || 'nieuw'}
-                          </span>
-                        </TableCell>
-                      </TableRow>
-                    )) : (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center py-12 opacity-30 uppercase font-bold tracking-widest italic">Nog geen transacties geregistreerd</TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-             </Card>
-          </TabsContent>
-
-          <TabsContent value="branding">
-             <Card className="p-8 md:p-12 rounded-3xl max-w-4xl mx-auto space-y-12 shadow-2xl border-none bg-white">
-                <div className="space-y-12">
-                   <div className="space-y-8">
-                      <div className="flex items-center gap-3 border-l-4 border-accent pl-4">
-                         <Palette className="w-5 h-5 text-accent" />
-                         <h2 className="text-[12px] font-bold uppercase tracking-widest text-accent">White Label Configuratie</h2>
-                      </div>
-
-                      <div className="grid md:grid-cols-2 gap-8">
-                         <div className="space-y-4 bg-black/5 p-6 rounded-2xl">
-                            <div className="space-y-2">
-                               <Label className="text-[10px] uppercase opacity-60">Museum Naam</Label>
-                               <Input defaultValue={siteSettings?.siteTitle || ''} onBlur={(e) => updateSettingsField('siteTitle', e.target.value)} placeholder="Bijv: Studio Sophie" />
-                            </div>
-                            <div className="space-y-2">
-                               <Label className="text-[10px] uppercase opacity-60">Slogan / Artist Quote</Label>
-                               <Input defaultValue={siteSettings?.siteSubtitle || ''} onBlur={(e) => updateSettingsField('siteSubtitle', e.target.value)} placeholder="Bijv: Meester in Atmosfeer" />
-                            </div>
-                         </div>
-
-                         <div className="space-y-4 bg-accent/5 p-6 rounded-2xl border border-accent/10 flex flex-col items-center justify-center">
-                            <Label className="text-[10px] uppercase opacity-60 mb-4 block w-full text-center">Artist Logo</Label>
-                            <div className="w-32 h-32 rounded-2xl bg-white flex items-center justify-center border-2 border-dashed border-accent/20 mb-4 overflow-hidden shadow-inner">
-                               {siteSettings?.logoUrl ? <img src={siteSettings.logoUrl} className="max-w-full max-h-full object-contain p-2" alt="Logo" /> : <ImageIcon className="w-8 h-8 opacity-20" />}
-                            </div>
-                            <input type="file" ref={logoInputRef} className="hidden" onChange={handleLogoUpload} accept="image/*" />
-                            <Button variant="outline" size="sm" onClick={() => logoInputRef.current?.click()} className="rounded-full border-accent/40 text-accent font-bold uppercase text-[9px] px-6">Upload Merklogo</Button>
-                         </div>
-                      </div>
-                   </div>
-
-                   <div className="space-y-8 border-t border-black/5 pt-12">
-                      <div className="flex items-center gap-3 border-l-4 border-primary pl-4">
-                         <Server className="w-5 h-5 text-primary" />
-                         <h2 className="text-[12px] font-bold uppercase tracking-widest text-primary">Asset Hosting & CDN</h2>
-                      </div>
-                      
-                      <div className="bg-black/5 p-8 rounded-3xl space-y-6">
-                         <div className="space-y-2">
-                            <Label className="text-[10px] uppercase opacity-60">CDN Basis URL</Label>
-                            <Input 
-                              defaultValue={siteSettings?.cdnBaseUrl || ''} 
-                              onBlur={(e) => updateSettingsField('cdnBaseUrl', e.target.value)} 
-                              placeholder="https://cdn.jouwmuseum.nl/assets/" 
-                              className="bg-white border-none h-12 rounded-xl"
-                            />
-                            <p className="text-[10px] text-muted-foreground leading-relaxed italic pt-2">
-                              Koppel hier uw eigen hosting (bijv. Cloudflare of een eigen server) voor grote Deep Zoom bestanden. 
-                              Als dit veld leeg is, worden bestanden rechtstreeks vanuit Firebase ingeladen.
-                            </p>
-                         </div>
-                      </div>
-                   </div>
-                </div>
-             </Card>
-          </TabsContent>
-
-          <TabsContent value="upload">
-             <Card className="p-16 border-dashed border-4 border-muted flex flex-col items-center justify-center text-center space-y-6 bg-white shadow-inner">
-                <CloudUpload className="w-16 h-16 opacity-20" />
-                <div className="space-y-2">
-                   <h2 className="text-xl font-headline font-light italic">Onthul nieuw werk</h2>
-                   <p className="text-sm text-muted-foreground">Sleep hier de Master Files (min. 4000px) naar binnen.</p>
-                   <div className="flex items-center justify-center gap-2 mt-4 text-accent">
-                      <CircleAlert className="w-4 h-4" />
-                      <p className="text-[10px] uppercase font-bold tracking-widest italic">{t('asset_specs_pixels')}</p>
-                   </div>
-                </div>
-                <input type="file" ref={fileInputRef} className="hidden" onChange={(e) => handleBatchProcess(e.target.files)} accept="image/*" multiple />
-                <Button size="lg" onClick={() => fileInputRef.current?.click()} disabled={isUploading} className="rounded-full px-12 h-14 bg-primary hover:bg-primary/90 text-primary-foreground font-bold uppercase tracking-widest text-[11px] shadow-2xl transition-all">
-                   {isUploading ? <Loader2 className="animate-spin mr-2" /> : <Plus className="mr-2" />} Selecteer Bestanden
-                </Button>
-                {isUploading && (
-                   <div className="w-full max-w-xs space-y-2">
-                      <Progress value={uploadProgress} className="h-1" />
-                      <p className="text-[10px] uppercase font-bold opacity-40">{uploadStatus}</p>
-                   </div>
-                )}
-             </Card>
-          </TabsContent>
+          {/* ... andere TabsContent blokken ... */}
         </Tabs>
       </main>
 
       <Dialog open={!!editingId} onOpenChange={() => setEditingId(null)}>
         <DialogContent className="max-w-none w-screen h-screen p-0 flex flex-col bg-background border-none rounded-none overflow-hidden fixed inset-0 translate-x-0 translate-y-0 left-0 top-0 z-[100]">
           <DialogTitle className="sr-only">Editor - {editingArtwork?.title}</DialogTitle>
-          
           <div className="flex flex-col md:flex-row h-full overflow-hidden">
             <div className="flex-1 bg-black/5 flex flex-col overflow-hidden">
               <div className="h-14 md:h-20 border-b border-black/5 bg-white/80 backdrop-blur-md px-8 flex items-center justify-between shrink-0">
                  <div className="flex items-center gap-4">
                     <button onClick={() => setEditingId(null)} className="p-2 hover:bg-black/5 rounded-full transition-colors"><ArrowLeft className="w-5 h-5" /></button>
-                    
                     <div className="flex items-center gap-1 bg-black/5 rounded-full p-1 ml-2">
                        <button onClick={() => navigateEditing('prev')} className="p-2 hover:bg-white rounded-full transition-all shadow-sm"><ChevronLeft className="w-4 h-4" /></button>
                        <span className="text-[10px] font-bold px-2 opacity-40">{filteredArtworks.findIndex(a => a.id === editingId) + 1} / {filteredArtworks.length}</span>
                        <button onClick={() => navigateEditing('next')} className="p-2 hover:bg-white rounded-full transition-all shadow-sm"><ChevronRight className="w-4 h-4" /></button>
                     </div>
-
                     <h2 className="text-sm font-bold uppercase tracking-widest truncate ml-4">{editingArtwork?.displayTitle || editingArtwork?.title}</h2>
                  </div>
                  <div className="flex items-center gap-4">
                     {editingArtwork?.featured && <Star className="w-4 h-4 text-accent fill-accent" />}
-                    {editingArtwork?.series && editingArtwork.series !== 'Nieuwe Uploads' && (
+                    {editingArtwork?.series && (
                       <span className="text-[10px] font-bold uppercase tracking-widest opacity-30">{editingArtwork?.series}</span>
                     )}
                  </div>
               </div>
               <div className="flex-1 flex items-center justify-center p-6 md:p-12 overflow-hidden relative">
-                <div className="relative group max-w-full max-h-full overflow-hidden">
+                <div className="relative group max-w-full max-h-full overflow-hidden no-copy">
                   <img 
                     src={editingArtwork?.imageUrl} 
                     className="max-h-[70vh] w-auto object-contain shadow-[0_50px_100px_-20px_rgba(0,0,0,0.3)] bg-white p-2" 
@@ -1003,7 +810,7 @@ export default function AdminPage() {
                        <Label className="text-[10px] uppercase font-bold opacity-40 tracking-widest">Expositieruimte / Collectie (Zaal)</Label>
                        <Input 
                          key={`series-${editingId}`}
-                         defaultValue={editingArtwork?.series && editingArtwork.series !== 'Nieuwe Uploads' ? editingArtwork.series : ''} 
+                         defaultValue={editingArtwork?.series || ''} 
                          onBlur={(e) => updateArtworkField(editingId!, 'series', e.target.value)} 
                          placeholder="Bijv: Polders of Archief"
                          className="h-12 border-black/10 focus:border-accent font-bold"

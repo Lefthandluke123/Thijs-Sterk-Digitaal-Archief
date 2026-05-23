@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    --background: 85 45% 82%; /* Iets kleuriger, frisser groen */
+    --background: 85 45% 82%;
     --foreground: 201 45% 5%;
     --card: 85 45% 84%;
     --card-foreground: 201 45% 5%;
@@ -16,7 +16,7 @@
     --secondary-foreground: 201 45% 8%;
     --muted: 85 25% 60%;
     --muted-foreground: 201 35% 20%;
-    --accent: 35 90% 22%; /* Rijk brons voor krachtig contrast */
+    --accent: 35 90% 22%;
     --accent-foreground: 0 0% 100%;
     --border: 85 25% 50%;
     --input: 85 25% 50%;
@@ -36,12 +36,19 @@
     @apply font-headline text-foreground font-medium;
   }
   
+  /* Maximale Foto Bescherming */
   img {
     -webkit-user-drag: none;
     -khtml-user-drag: none;
     -moz-user-drag: none;
     -o-user-drag: none;
     user-select: none;
+    -webkit-touch-callout: none; /* Schakelt 'opslaan' menu uit op iOS */
     pointer-events: auto;
+  }
+  
+  .no-copy {
+    user-select: none;
+    -webkit-user-drag: none;
   }
 }
