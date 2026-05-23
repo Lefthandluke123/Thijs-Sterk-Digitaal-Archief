@@ -3,7 +3,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
-import { useFirestore, useCollection, useMemoFirebase, useDoc, useStorage } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, doc, deleteDoc, query, updateDoc, setDoc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -21,12 +21,10 @@ import {
   Settings as SettingsIcon,
   Star,
   LifeBuoy,
-  FileText,
   CheckSquare,
   X,
   Lock,
   Tag,
-  ChevronRight,
   Maximize2
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -105,8 +103,9 @@ export default function AdminPage() {
   const filteredArtworks = useMemo(() => {
     return artworks.filter((art: any) => {
       const displayTitle = art.displayTitle || art.title || "";
+      const series = art.series || "";
       return displayTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
-             (art.series?.toLowerCase() || "").includes(searchQuery.toLowerCase());
+             series.toLowerCase().includes(searchQuery.toLowerCase());
     });
   }, [artworks, searchQuery]);
 
@@ -257,7 +256,7 @@ export default function AdminPage() {
               {groupedArtworks.map((group) => (
                 <div key={group.label} className="space-y-6">
                   <div className="flex items-center gap-4 border-l-4 border-accent pl-4 py-1 sticky top-[136px] md:top-[208px] z-30 bg-background/80 backdrop-blur-md -mx-4 px-4 rounded-r-xl">
-                    <h3 className="text-[12px] font-black uppercase tracking-[0.3em] text-accent">Zaal {group.label}</h3>
+                    <h3 className="text-[12px] font-black uppercase tracking-[0.3em] text-accent">Zaal {group.label === 'Geen Zaal' ? 'Nog in te delen' : group.label}</h3>
                     <div className="h-px bg-accent/20 flex-1" />
                   </div>
                   
@@ -280,7 +279,7 @@ export default function AdminPage() {
                           </div>
                           <CardContent className="p-2 text-center bg-white">
                             <h4 className="text-[9px] font-bold uppercase truncate">{art.displayTitle || art.title}</h4>
-                            {art.series && art.series !== 'Geen Zaal' && (
+                            {art.series && (
                               <p className="text-[7px] uppercase font-bold mt-1 opacity-40">{art.series}</p>
                             )}
                           </CardContent>
@@ -320,23 +319,23 @@ export default function AdminPage() {
         <DialogContent className="max-w-none w-screen h-screen p-0 flex flex-col bg-background border-none rounded-none overflow-hidden fixed inset-0 z-[100] outline-none">
           <DialogTitle className="sr-only">Editor - {editingArtwork?.title}</DialogTitle>
           <div className="flex flex-col md:flex-row h-full w-full overflow-hidden">
-            {/* Linker paneel: Preview */}
+            {/* Linker paneel: Preview - GECENTREERD */}
             <div className="flex-1 bg-black/5 flex flex-col overflow-hidden relative">
               <div className="h-16 md:h-20 border-b border-black/5 bg-white/80 backdrop-blur-md px-8 flex items-center justify-between shrink-0 z-10">
                  <button onClick={() => setEditingId(null)} className="p-2 hover:bg-black/5 rounded-full transition-colors"><ArrowLeft className="w-5 h-5" /></button>
                  <div className="flex flex-col items-center">
                    <h2 className="text-sm font-bold uppercase tracking-widest truncate max-w-xs md:max-w-md">{editingArtwork?.displayTitle || editingArtwork?.title}</h2>
-                   {editingArtwork?.series && editingArtwork.series !== 'Geen Zaal' && (
+                   {editingArtwork?.series && (
                      <span className="text-[8px] font-black uppercase tracking-[0.2em] opacity-40">{editingArtwork.series}</span>
                    )}
                  </div>
                  <div className="w-10" />
               </div>
               <div className="flex-1 flex items-center justify-center p-4 md:p-12 overflow-hidden bg-[url('https://www.transparenttextures.com/patterns/pinstriped-suit.png')]">
-                <div className="relative group max-h-full max-w-full">
+                <div className="relative group flex items-center justify-center w-full h-full">
                   <img 
                     src={editingArtwork?.imageUrl} 
-                    className="max-h-[70vh] w-auto object-contain shadow-[0_50px_100px_-20px_rgba(0,0,0,0.3)] bg-white p-2 md:p-4 rounded-sm" 
+                    className="max-h-full max-w-full object-contain shadow-[0_50px_100px_-20px_rgba(0,0,0,0.3)] bg-white p-2 md:p-4 rounded-sm" 
                     alt="Preview" 
                   />
                   <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
@@ -406,7 +405,7 @@ export default function AdminPage() {
                           <Label className="text-[9px] uppercase font-bold opacity-40">{p.label}</Label>
                           <Input 
                             type="number" 
-                            defaultValue={(editingArtwork as any)?.[`price${p.key}`] ?? 0} 
+                            defaultValue={editingArtwork?.[`price${p.key}` as keyof typeof editingArtwork] ?? 0} 
                             onBlur={(e) => updateArtworkField(editingId!, `price${p.key}`, parseFloat(e.target.value) || 0)} 
                             className="h-10 rounded-lg bg-white" 
                           />
