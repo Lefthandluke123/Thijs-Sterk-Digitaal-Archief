@@ -14,17 +14,13 @@ import {
   Loader2, 
   ArrowLeft,
   Search,
-  Languages,
   Palette,
-  Settings as SettingsIcon,
   Star,
   LifeBuoy,
   CheckSquare,
   X,
   Lock,
-  Tag,
-  Maximize2,
-  Plus
+  Tag as TagIcon
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -146,14 +142,6 @@ export default function AdminPage() {
     });
   };
 
-  const updateSettingsField = (field: string, value: any) => {
-    if (!firestore) return;
-    const settingsRef = doc(firestore, 'settings', 'site');
-    setDoc(settingsRef, { [field]: value }, { merge: true }).catch(async () => 
-      errorEmitter.emit('permission-error', new FirestorePermissionError({ path: settingsRef.path, operation: 'update' }))
-    );
-  };
-
   const editingArtwork = useMemo(() => artworks.find(a => a.id === editingId), [artworks, editingId]);
 
   const toggleTag = (tag: string) => {
@@ -213,10 +201,7 @@ export default function AdminPage() {
           </Link>
         </div>
         <div className="flex items-center gap-4">
-           <Link href="/admin/translate" className="text-[10px] md:text-[13px] font-bold uppercase tracking-widest text-muted-foreground hover:text-accent flex items-center gap-2">
-             <Languages className="w-3.5 h-3.5" /> Vertaal Station
-           </Link>
-           <Link href="/" className="text-[10px] md:text-[13px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground border-l border-border pl-4 flex items-center gap-2">
+           <Link href="/" className="text-[10px] md:text-[13px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground flex items-center gap-2">
              <ArrowLeft className="w-3.5 h-3.5" /> Naar Website
            </Link>
         </div>
@@ -226,7 +211,6 @@ export default function AdminPage() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
           <TabsList className="bg-muted/50 p-1 rounded-full w-fit mx-auto flex flex-wrap justify-center h-auto border border-black/5">
             <TabsTrigger value="archive" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest">Schilderijen</TabsTrigger>
-            <TabsTrigger value="branding" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest">Identiteit</TabsTrigger>
             <TabsTrigger value="help" className="rounded-full px-6 text-[11px] uppercase font-bold tracking-widest bg-primary text-primary-foreground hover:bg-primary/90 shadow-xl"><LifeBuoy className="w-3 h-3 mr-2" /> Gids</TabsTrigger>
           </TabsList>
 
@@ -290,35 +274,6 @@ export default function AdminPage() {
               ))}
             </div>
           </TabsContent>
-
-          <TabsContent value="branding" className="space-y-8">
-             <Card className="p-8 rounded-3xl border-none shadow-xl bg-white/50">
-                <div className="flex items-center gap-3 border-l-4 border-accent pl-4 mb-8">
-                   <SettingsIcon className="w-4 h-4 text-accent" />
-                   <h3 className="text-[11px] font-bold uppercase tracking-widest text-accent">Website Branding</h3>
-                </div>
-                <div className="space-y-6">
-                   <div className="space-y-2">
-                      <Label className="text-[10px] uppercase font-bold opacity-40 tracking-widest">Logo URL</Label>
-                      <Input 
-                        placeholder="https://..." 
-                        defaultValue={siteSettings?.logoUrl || ''} 
-                        onBlur={(e) => updateSettingsField('logoUrl', e.target.value)}
-                        className="h-12 border-black/10"
-                      />
-                   </div>
-                   <div className="space-y-2">
-                      <Label className="text-[10px] uppercase font-bold opacity-40 tracking-widest">CDN Basis URL</Label>
-                      <Input 
-                        placeholder="https://cdn.mijn-museum.nl/" 
-                        defaultValue={siteSettings?.cdnBaseUrl || ''} 
-                        onBlur={(e) => updateSettingsField('cdnBaseUrl', e.target.value)}
-                        className="h-12 border-black/10"
-                      />
-                   </div>
-                </div>
-             </Card>
-          </TabsContent>
         </Tabs>
       </main>
 
@@ -328,29 +283,33 @@ export default function AdminPage() {
         >
           <DialogTitle className="sr-only">Editor - {editingArtwork?.title}</DialogTitle>
           <div className="flex flex-col md:flex-row h-full w-full overflow-hidden">
-            {/* Linker paneel: Preview - Gecentreerd via Grid */}
-            <div className="flex-1 flex flex-col min-h-0 bg-black/5 relative overflow-hidden border-r border-black/5">
-              <div className="h-16 md:h-20 border-b border-black/5 bg-white/80 backdrop-blur-md px-8 flex items-center justify-between shrink-0 z-20">
-                 <button onClick={() => setEditingId(null)} className="p-2 hover:bg-black/5 rounded-full transition-colors"><ArrowLeft className="w-5 h-5" /></button>
-                 <div className="flex flex-col items-center text-center px-4 overflow-hidden">
-                   <h2 className="text-sm font-bold uppercase tracking-widest truncate w-full">{editingArtwork?.displayTitle || editingArtwork?.title}</h2>
-                   {editingArtwork?.series && (
-                     <span className="text-[8px] font-black uppercase tracking-[0.2em] opacity-40">{editingArtwork.series}</span>
-                   )}
-                 </div>
-                 <div className="w-10" />
-              </div>
-              
-              {/* Afbeelding Container: Gecentreerd in grid */}
-              <div className="flex-1 relative overflow-hidden grid place-items-center p-8 md:p-16">
-                 {editingArtwork?.imageUrl && (
-                   <img 
-                     src={editingArtwork.imageUrl} 
-                     className="max-h-full max-w-full w-auto h-auto object-contain shadow-2xl bg-white p-4 rounded-sm border border-black/5 block transition-all" 
-                     alt="Preview" 
-                   />
-                 )}
-              </div>
+            {/* Linker paneel: Preview area - Robust centering */}
+            <div className="flex-1 flex flex-col bg-black/5 relative border-r border-black/5 overflow-hidden">
+               {/* Fixed Header in Preview */}
+               <div className="h-16 md:h-20 border-b border-black/5 bg-white/80 backdrop-blur-md px-8 flex items-center justify-between shrink-0 z-20">
+                  <button onClick={() => setEditingId(null)} className="p-2 hover:bg-black/5 rounded-full transition-colors"><ArrowLeft className="w-5 h-5" /></button>
+                  <div className="flex flex-col items-center text-center px-4 overflow-hidden">
+                    <h2 className="text-sm font-bold uppercase tracking-widest truncate w-full">{editingArtwork?.displayTitle || editingArtwork?.title}</h2>
+                    {editingArtwork?.series && (
+                      <span className="text-[8px] font-black uppercase tracking-[0.2em] opacity-40">{editingArtwork.series}</span>
+                    )}
+                  </div>
+                  <div className="w-10" />
+               </div>
+               
+               {/* Image Container - Grid centering is most stable */}
+               <div className="flex-1 grid place-items-center p-8 md:p-20 overflow-hidden relative">
+                  {editingArtwork?.imageUrl && (
+                    <div className="relative max-w-full max-h-full shadow-2xl bg-white p-2 md:p-4 rounded-sm border border-black/5">
+                      <img 
+                        src={editingArtwork.imageUrl} 
+                        className="max-h-[70vh] md:max-h-[75vh] w-auto h-auto object-contain block" 
+                        alt="Preview" 
+                        style={{ filter: `brightness(${editingArtwork.brightness || 1})` }}
+                      />
+                    </div>
+                  )}
+               </div>
             </div>
 
             {/* Rechter paneel: Controls */}
@@ -374,7 +333,12 @@ export default function AdminPage() {
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                            <Label className="text-[10px] uppercase font-bold opacity-40">Jaartal</Label>
-                           <Input defaultValue={editingArtwork.year || ''} onBlur={(e) => updateArtworkField(editingId!, 'year', e.target.value)} className="h-12 rounded-xl" placeholder="bijv. 1954" />
+                           <Input 
+                             defaultValue={editingArtwork.year || ''} 
+                             onBlur={(e) => updateArtworkField(editingId!, 'year', e.target.value)} 
+                             className="h-12 rounded-xl" 
+                             placeholder="bijv. 1954" 
+                           />
                         </div>
                         <div className="space-y-2">
                            <Label className="text-[10px] uppercase font-bold opacity-40">Techniek/Medium</Label>
@@ -388,10 +352,10 @@ export default function AdminPage() {
                     </div>
                   </div>
 
-                  {/* Tags Sectie voor Uw Zaal */}
+                  {/* Tags Sectie voor Uw Zaal (Curator Pagina) */}
                   <div className="space-y-8">
                     <div className="flex items-center gap-3 border-l-4 border-accent pl-4">
-                       <Tag className="w-4 h-4 text-accent" />
+                       <TagIcon className="w-4 h-4 text-accent" />
                        <h3 className="text-[11px] font-bold uppercase tracking-widest text-accent">Uw Zaal Categorieën</h3>
                     </div>
                     
@@ -423,7 +387,7 @@ export default function AdminPage() {
                     </div>
 
                     <div className="pt-6 border-t border-black/5 space-y-4">
-                       <Label className="text-[9px] uppercase font-black tracking-widest opacity-40 block ml-2">Alle Tags</Label>
+                       <Label className="text-[9px] uppercase font-black tracking-widest opacity-40 block ml-2">Geactiveerde Tags</Label>
                        <div className="flex flex-wrap gap-2">
                           {editingArtwork.tags?.map((tag: string) => (
                             <Badge key={tag} variant="secondary" className="rounded-full px-3 py-1 flex items-center gap-2 bg-accent/10 text-accent border-none text-[9px] font-bold">
@@ -431,22 +395,6 @@ export default function AdminPage() {
                               <button onClick={() => toggleTag(tag)} className="hover:text-destructive transition-colors"><X className="w-3 h-3" /></button>
                             </Badge>
                           ))}
-                       </div>
-                       <div className="relative">
-                          <Input 
-                            placeholder="Vrije tag toevoegen..." 
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                e.preventDefault();
-                                const val = e.currentTarget.value.trim();
-                                if (val) {
-                                  toggleTag(val);
-                                  e.currentTarget.value = '';
-                                }
-                              }
-                            }}
-                            className="h-10 rounded-xl border-black/10 text-xs"
-                          />
                        </div>
                     </div>
                   </div>
