@@ -35,8 +35,8 @@ const TEAM_MEMBERS = [
     icon: ShieldCheck,
     color: 'bg-blue-500',
     avatar: 'https://picsum.photos/seed/simon/200',
-    status: 'Analyseert marktwaarde',
-    tasks: ['Pricing strategie bewaken', 'Exit-scenario planning', 'Partner deals evalueren']
+    status: 'Evalueert merknaam-impact',
+    tasks: ['Positionering t.o.v. concurrentie', 'Exit-scenario planning', 'Partner deals evalueren']
   },
   {
     id: 'bob',
@@ -79,8 +79,8 @@ const TEAM_MEMBERS = [
     icon: TrendingUp,
     color: 'bg-purple-500',
     avatar: 'https://picsum.photos/seed/mark/200',
-    status: 'Plant Social Reveals',
-    tasks: ['FB/Insta advertentiebeheer', 'Shop optimalisatie', 'Nieuwsbrief strategie']
+    status: 'Vindt de naam te "veilig"',
+    tasks: ['SEO check "Thijs Sterk"', 'Subtitel-test voor FB ads', 'Shop optimalisatie']
   },
   {
     id: 'soof',
@@ -90,8 +90,8 @@ const TEAM_MEMBERS = [
     icon: Sparkles,
     color: 'bg-yellow-500',
     avatar: 'https://picsum.photos/seed/soof/200',
-    status: 'Regelt de champagne',
-    tasks: ['Persberichten schrijven', 'VIP tours organiseren', 'Bloggers benaderen']
+    status: 'Wil meer "Élan" in de titel',
+    tasks: ['Persbericht schrijven', 'Influencer outreach kunstsector', 'Digitale vernissage plannen']
   }
 ];
 
