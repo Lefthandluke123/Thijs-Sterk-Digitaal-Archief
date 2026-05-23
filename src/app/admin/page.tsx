@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -17,15 +16,13 @@ import {
   Search,
   Languages,
   Palette,
-  CreditCard,
   Settings as SettingsIcon,
   Star,
   LifeBuoy,
   CheckSquare,
   X,
   Lock,
-  Tag,
-  Maximize2
+  Tag
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -312,7 +309,7 @@ export default function AdminPage() {
         <DialogContent className="max-w-none w-screen h-screen p-0 flex flex-col bg-background border-none rounded-none overflow-hidden fixed inset-0 z-[100] outline-none">
           <DialogTitle className="sr-only">Editor - {editingArtwork?.title}</DialogTitle>
           <div className="flex flex-col md:flex-row h-full w-full overflow-hidden">
-            {/* Linker paneel: Preview - Nu gegarandeerd gecentreerd */}
+            {/* Linker paneel: Preview - Gecentreerd via Grid */}
             <div className="flex-1 bg-black/5 flex flex-col overflow-hidden relative border-r border-black/5 h-full">
               <div className="h-16 md:h-20 border-b border-black/5 bg-white/80 backdrop-blur-md px-8 flex items-center justify-between shrink-0 z-10">
                  <button onClick={() => setEditingId(null)} className="p-2 hover:bg-black/5 rounded-full transition-colors"><ArrowLeft className="w-5 h-5" /></button>
@@ -324,15 +321,14 @@ export default function AdminPage() {
                  </div>
                  <div className="w-10" />
               </div>
-              {/* De afbeelding wordt hier gecentreerd met flex-center op de container */}
-              <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-12 overflow-hidden bg-[url('https://www.transparenttextures.com/patterns/pinstriped-suit.png')] relative">
-                <div className="relative group max-h-full max-w-full flex items-center justify-center">
+              
+              <div className="flex-1 grid place-items-center p-4 md:p-12 overflow-hidden bg-[url('https://www.transparenttextures.com/patterns/pinstriped-suit.png')] relative">
+                <div className="relative group max-h-full max-w-full">
                   <img 
                     src={editingArtwork?.imageUrl} 
                     className="max-h-[70vh] md:max-h-[80vh] max-w-full object-contain shadow-[0_50px_100px_-20px_rgba(0,0,0,0.3)] bg-white p-2 md:p-4 rounded-sm" 
                     alt="Preview" 
                   />
-                  <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
                 </div>
               </div>
             </div>
@@ -359,23 +355,6 @@ export default function AdminPage() {
                          <Label className="text-[10px] uppercase font-bold opacity-40">Jaartal</Label>
                          <Input defaultValue={editingArtwork.year || ''} onBlur={(e) => updateArtworkField(editingId!, 'year', e.target.value)} className="h-12 rounded-xl" />
                       </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-6">
-                    <div className="flex items-center gap-3 border-l-4 border-primary pl-4">
-                       <Tag className="w-4 h-4 text-primary" />
-                       <h3 className="text-[11px] font-bold uppercase tracking-widest text-primary">Tags</h3>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {Object.values(QUICK_TAG_CATEGORIES).flat().map(tag => {
-                        const isActive = editingArtwork.tags?.includes(tag);
-                        return (
-                          <button key={tag} onClick={() => toggleTagInArtwork(editingId!, editingArtwork.tags, tag)} className={cn("px-3 py-1.5 rounded-full text-[10px] font-bold border transition-all", isActive ? "bg-accent text-accent-foreground border-accent shadow-md" : "bg-white text-muted-foreground hover:border-accent/40")}>
-                            {tag}
-                          </button>
-                        );
-                      })}
                     </div>
                   </div>
 
