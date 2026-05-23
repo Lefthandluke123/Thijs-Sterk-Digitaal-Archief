@@ -549,7 +549,7 @@ export default function AdminPage() {
                           </div>
                           <CardContent className="p-2 text-center bg-white">
                             <h4 className="text-[9px] font-bold uppercase truncate">{art.displayTitle || art.title}</h4>
-                            {art.series && (
+                            {art.series && art.series !== 'Nieuwe Uploads' && (
                               <p className={cn("text-[7px] uppercase font-bold mt-1", art.series === 'Archief' ? "text-red-500" : "opacity-40")}>{art.series}</p>
                             )}
                           </CardContent>
@@ -640,7 +640,7 @@ export default function AdminPage() {
 
                 <div className="grid gap-4">
                    {uniqueSeries.map(name => {
-                      if (!name) return null;
+                      if (!name || name === 'Nieuwe Uploads') return null;
                       const isHidden = siteSettings?.hiddenSeries?.includes(name);
                       const count = artworks.filter((a: any) => a.series === name).length;
                       return (
@@ -681,7 +681,7 @@ export default function AdminPage() {
                         </div>
                       );
                    })}
-                   {uniqueSeries.filter(s => s).length === 0 && (
+                   {uniqueSeries.filter(s => s && s !== 'Nieuwe Uploads').length === 0 && (
                       <div className="text-center py-20 opacity-30 uppercase font-bold tracking-[0.2em] italic">Geen zalen gevonden</div>
                    )}
                 </div>
@@ -958,7 +958,7 @@ export default function AdminPage() {
                  </div>
                  <div className="flex items-center gap-4">
                     {editingArtwork?.featured && <Star className="w-4 h-4 text-accent fill-accent" />}
-                    {editingArtwork?.series && (
+                    {editingArtwork?.series && editingArtwork.series !== 'Nieuwe Uploads' && (
                       <span className="text-[10px] font-bold uppercase tracking-widest opacity-30">{editingArtwork?.series}</span>
                     )}
                  </div>
@@ -1003,7 +1003,7 @@ export default function AdminPage() {
                        <Label className="text-[10px] uppercase font-bold opacity-40 tracking-widest">Expositieruimte / Collectie (Zaal)</Label>
                        <Input 
                          key={`series-${editingId}`}
-                         defaultValue={editingArtwork?.series || ''} 
+                         defaultValue={editingArtwork?.series && editingArtwork.series !== 'Nieuwe Uploads' ? editingArtwork.series : ''} 
                          onBlur={(e) => updateArtworkField(editingId!, 'series', e.target.value)} 
                          placeholder="Bijv: Polders of Archief"
                          className="h-12 border-black/10 focus:border-accent font-bold"
