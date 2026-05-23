@@ -29,7 +29,9 @@ import {
   Upload,
   Mic,
   Languages,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Users,
+  LayoutDashboard
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -68,12 +70,9 @@ export default function AdminPage() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [authError, setAuthError] = useState(false);
 
-  const [activeTab, setActiveTab] = useState('archive');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   
-  const [isSelectionMode, setIsSelectionMode] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isCreating, setIsCreating] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isUploadingAudio, setIsUploadingAudio] = useState<string | null>(null);
@@ -257,7 +256,7 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col pt-32">
-      <header className="h-32 border-b border-border bg-background/95 backdrop-blur-sm sticky top-0 z-40 px-8 flex items-center justify-between">
+      <header className="h-32 border-b border-border bg-background/95 backdrop-blur-sm fixed top-0 left-0 right-0 z-40 px-8 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-4">
           <img src={siteSettings?.logoUrl || "/logo.png"} className="h-20 w-auto" alt="Logo" />
           <div className="flex flex-col leading-none border-l border-border/40 pl-4">
@@ -265,7 +264,14 @@ export default function AdminPage() {
             <span className="text-[11px] font-bold uppercase tracking-[0.3em] text-accent">Curator Edition</span>
           </div>
         </Link>
-        <Link href="/" className="text-[13px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2"><ArrowLeft className="w-4 h-4" /> Naar Website</Link>
+        <div className="flex items-center gap-6">
+          <Link href="/admin/team" className="text-[11px] font-black uppercase tracking-widest text-accent flex items-center gap-2 bg-accent/10 px-6 py-3 rounded-full hover:bg-accent hover:text-accent-foreground transition-all">
+            <Users className="w-4 h-4" /> Team Hub
+          </Link>
+          <Link href="/" className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+            <ArrowLeft className="w-3 h-3" /> Website
+          </Link>
+        </div>
       </header>
 
       <main className="flex-1 p-8 max-w-7xl mx-auto w-full">
