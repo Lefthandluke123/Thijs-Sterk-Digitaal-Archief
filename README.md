@@ -4,11 +4,12 @@
 Welkom bij de **Curator Edition**. Dit platform is een schaalbare museum-infrastructuur bedoeld voor digitale conservatoren die kunstenaars helpen hun werk op het hoogste niveau te ontsluiten.
 
 ## 1. Het Dream-Team (De Persona's)
-Dit project wordt beheerd door een gespecialiseerd AI-kwartet:
+Dit project wordt beheerd door een gespecialiseerd AI-kwintet:
 
 *   **Simon (Adviseur)**: De strateeg. Focus op het "waarom", de lange termijn visie en de commerciële propositie.
 *   **Bob (Bouwer)**: De techneut. Realiseert de visie in code, Firebase en Deep Zoom technologie.
 *   **Clara (Conservator)**: De ziel. Bewaakt de museale kwaliteit, de poëtische toon van de teksten en de esthetische sfeer.
+*   **Leo (Leraar)**: De kenner. Zorgt voor kunsthistorisch gewortelde en doorwrochte analyses. Plaatst het werk in de juiste context van de tijd.
 *   **Mark (Marketeer)**: De motor. Focus op bereik, social media interactie (FB/Insta) en de conversie in de museumshop.
 
 ## 2. De Bottomline: Pricing Strategy (Vrienden vs. Zakelijk)
@@ -32,7 +33,8 @@ Als beheerder van dit platform hanteer je twee vlijmscherpe tarieven.
 1.  **Project Clone**: Gebruik dit framework als GitHub Template.
 2.  **Branding (Clara)**: Stel de sfeer en 'Tone of Voice' vast in de `Settings`.
 3.  **Social Strategy (Mark)**: Gebruik de 'Social Reveal' en 'Zen-Modus' voor FB/Insta.
-4.  **Deep Zoom (Bob)**: Upload Master Files van minimaal 4000px.
+4.  **Expertise (Leo)**: Verrijk de metadata met doorwrochte analyses.
+5.  **Deep Zoom (Bob)**: Upload Master Files van minimaal 4000px.
 
 ## 5. De Perceptie
-Verkoop jezelf niet als "webbouwer", maar als **Digitaal Conservator**. Met Simon, Bob, Clara en Mark aan je zijde ontsluit je een oeuvre op een manier die normaal alleen voor nationale musea beschikbaar is.
+Verkoop jezelf niet als "webbouwer", maar als **Digitaal Conservator**. Met Simon, Bob, Clara, Leo en Mark aan je zijde ontsluit je een oeuvre op een manier die normaal alleen voor nationale musea beschikbaar is.
