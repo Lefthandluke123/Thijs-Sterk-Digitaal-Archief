@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -26,7 +25,8 @@ import {
   Crop,
   Sun,
   Plus,
-  Upload
+  Upload,
+  Image as ImageIcon
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -40,9 +40,11 @@ import { useLanguage } from '@/components/language-provider';
 import { sortArtworksByTitle } from '@/lib/museum-utils';
 import { verifyAdminPassword } from '@/lib/admin-actions';
 
+// Bijgewerkte categorieën met Monumentaal en Glas in lood
 const TAG_CATEGORIES = {
   "Periode": ["Vroeg werk", "45-50", "50-60", "60-70", "70-82"],
-  "Techniek": ["Olieverf", "Aquarel", "Gouache", "Monumentaal", "Glas in lood"],
+  "Techniek": ["Olieverf", "Aquarel", "Gouache"],
+  "Monumentaal": ["Monumentaal", "Glas in lood"],
   "Plaats": ["Groet", "Schoorl", "Hargen", "Camperduin", "Holland", "Amsterdam", "Frankrijk", "Bretagne", "Griekenland"],
   "Onderwerp": ["Havens", "Stillevens", "Bloemen", "Dieren", "Water", "Mensen", "Polder"]
 };
@@ -183,10 +185,10 @@ export default function AdminPage() {
       await uploadBytes(fileRef, file);
       const downloadURL = await getDownloadURL(fileRef);
       updateArtworkField(artworkId, 'imageUrl', downloadURL);
-      toast({ title: "Afbeelding geüpload", description: "De afbeelding is succesvol toegevoegd aan het archief." });
+      toast({ title: "Bestand geüpload", description: "De afbeelding is succesvol toegevoegd." });
     } catch (error) {
       console.error("Upload error:", error);
-      toast({ variant: "destructive", title: "Upload mislukt", description: "Er ging iets mis tijdens het uploaden van de afbeelding." });
+      toast({ variant: "destructive", title: "Upload mislukt", description: "Er ging iets mis tijdens het uploaden." });
     } finally {
       setIsUploading(false);
     }
@@ -349,9 +351,8 @@ export default function AdminPage() {
         >
           <DialogTitle className="sr-only">Editor - {editingArtwork?.title}</DialogTitle>
           <div className="flex flex-col md:flex-row h-full w-full overflow-hidden">
-            {/* Linker paneel: Preview area - Robust centering */}
+            {/* Linker paneel: Preview area - Gegarandeerde Centrering */}
             <div className="flex-1 flex flex-col bg-black/5 relative border-r border-black/5 overflow-hidden">
-               {/* Fixed Header in Preview */}
                <div className="h-16 md:h-20 border-b border-black/5 bg-white/80 backdrop-blur-md px-8 flex items-center justify-between shrink-0 z-20">
                   <button onClick={() => setEditingId(null)} className="p-2 hover:bg-black/5 rounded-full transition-colors"><ArrowLeft className="w-5 h-5" /></button>
                   <div className="flex flex-col items-center text-center px-4 overflow-hidden">
@@ -363,8 +364,8 @@ export default function AdminPage() {
                   <div className="w-10" />
                </div>
                
-               {/* Image Container - Grid centering is most stable */}
-               <div className="flex-1 grid place-items-center p-8 md:p-20 overflow-hidden relative">
+               {/* Grid Centrering voor stabiele preview */}
+               <div className="flex-1 grid place-items-center p-8 md:p-20 overflow-hidden relative min-h-0">
                   {editingArtwork?.imageUrl ? (
                     <div className="relative max-w-full max-h-full shadow-2xl bg-white p-2 md:p-4 rounded-sm border border-black/5 overflow-hidden">
                       <img 
@@ -379,8 +380,8 @@ export default function AdminPage() {
                     </div>
                   ) : (
                     <div className="text-center space-y-4 opacity-30">
-                      <Palette className="w-20 h-20 mx-auto" />
-                      <p className="text-[10px] font-black uppercase tracking-[0.3em]">Voeg een afbeelding toe (Upload of URL)</p>
+                      <ImageIcon className="w-20 h-20 mx-auto" />
+                      <p className="text-[10px] font-black uppercase tracking-[0.3em]">Selecteer een bestand of voer een URL in</p>
                     </div>
                   )}
                </div>
@@ -393,7 +394,7 @@ export default function AdminPage() {
                   <div className="space-y-6">
                     <div className="flex items-center gap-3 border-l-4 border-accent pl-4">
                        <Palette className="w-4 h-4 text-accent" />
-                       <h3 className="text-[11px] font-bold uppercase tracking-widest text-accent">Identiteit & Locatie</h3>
+                       <h3 className="text-[11px] font-bold uppercase tracking-widest text-accent">Identiteit & Archief</h3>
                     </div>
                     <div className="space-y-5">
                       <div className="space-y-2">
@@ -403,7 +404,7 @@ export default function AdminPage() {
                              defaultValue={editingArtwork.imageUrl || ''} 
                              onBlur={(e) => updateArtworkField(editingId!, 'imageUrl', e.target.value)} 
                              className="h-12 rounded-xl flex-1" 
-                             placeholder="Plak URL of gebruik de knop..." 
+                             placeholder="URL..." 
                            />
                            <div className="relative">
                              <input
@@ -444,7 +445,7 @@ export default function AdminPage() {
                              defaultValue={editingArtwork.year || ''} 
                              onBlur={(e) => updateArtworkField(editingId!, 'year', e.target.value)} 
                              className="h-12 rounded-xl" 
-                             placeholder="bijv. 1954" 
+                             placeholder="Laten leeg bij onbekend" 
                            />
                         </div>
                         <div className="space-y-2">
@@ -459,7 +460,7 @@ export default function AdminPage() {
                     </div>
                   </div>
 
-                  {/* Visuele Instellingen: Crop & Brightness */}
+                  {/* 4-zijdige Crop & Helderheid */}
                   <div className="space-y-8">
                     <div className="flex items-center gap-3 border-l-4 border-accent pl-4">
                        <Crop className="w-4 h-4 text-accent" />
@@ -502,11 +503,11 @@ export default function AdminPage() {
                     </div>
                   </div>
 
-                  {/* Tags Sectie voor Uw Zaal (Curator Pagina) */}
+                  {/* Tags Sectie voor Curator Pagina */}
                   <div className="space-y-8">
                     <div className="flex items-center gap-3 border-l-4 border-accent pl-4">
                        <TagIcon className="w-4 h-4 text-accent" />
-                       <h3 className="text-[11px] font-bold uppercase tracking-widest text-accent">Uw Zaal Categorieën</h3>
+                       <h3 className="text-[11px] font-bold uppercase tracking-widest text-accent">Zaal Tags (Curator)</h3>
                     </div>
                     
                     <div className="space-y-6">
@@ -534,18 +535,6 @@ export default function AdminPage() {
                            </div>
                         </div>
                       ))}
-                    </div>
-
-                    <div className="pt-6 border-t border-black/5 space-y-4">
-                       <Label className="text-[9px] uppercase font-black tracking-widest opacity-40 block ml-2">Geactiveerde Tags</Label>
-                       <div className="flex flex-wrap gap-2">
-                          {editingArtwork.tags?.map((tag: string) => (
-                            <Badge key={tag} variant="secondary" className="rounded-full px-3 py-1 flex items-center gap-2 bg-accent/10 text-accent border-none text-[9px] font-bold">
-                              {tag}
-                              <button onClick={() => toggleTag(tag)} className="hover:text-destructive transition-colors"><X className="w-3 h-3" /></button>
-                            </Badge>
-                          ))}
-                       </div>
                     </div>
                   </div>
 

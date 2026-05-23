@@ -11,9 +11,11 @@ import { FirestorePermissionError } from '@/firebase/errors';
 import { ArtworkViewer } from '@/components/artwork-viewer';
 import { useLanguage } from '@/components/language-provider';
 
+// Tags in sync met Admin
 const TAG_CATEGORIES = {
   "Periode": ["Vroeg werk", "45-50", "50-60", "60-70", "70-82"],
-  "Techniek": ["Olieverf", "Aquarel", "Gouache", "Monumentaal", "Glas in lood"],
+  "Techniek": ["Olieverf", "Aquarel", "Gouache"],
+  "Monumentaal": ["Monumentaal", "Glas in lood"],
   "Plaats": ["Groet", "Schoorl", "Hargen", "Camperduin", "Holland", "Amsterdam", "Frankrijk", "Bretagne", "Griekenland"],
   "Onderwerp": ["Havens", "Stillevens", "Bloemen", "Dieren", "Water", "Mensen", "Polder"]
 };
