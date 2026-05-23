@@ -20,7 +20,9 @@ import {
   CheckSquare,
   X,
   Lock,
-  Tag as TagIcon
+  Tag as TagIcon,
+  Crop,
+  Sun
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,6 +30,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
+import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/components/language-provider';
 import { sortArtworksByTitle } from '@/lib/museum-utils';
@@ -104,21 +107,15 @@ export default function AdminPage() {
     const groupsMap: Record<string, any[]> = {};
 
     filteredArtworks.forEach((art: any) => {
-      const title = art.displayTitle || art.title || "";
-      const romanMatch = title.match(/\b(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII|XIV|XV|XVI|XVII|XVIII|XIX|XX)\b/i);
-      const roman = romanMatch ? romanMatch[0].toUpperCase() : "Nog in te delen";
-      if (!groupsMap[roman]) groupsMap[roman] = [];
-      groupsMap[roman].push(art);
+      const series = art.series || "Nog in te delen";
+      if (!groupsMap[series]) groupsMap[series] = [];
+      groupsMap[series].push(art);
     });
 
     const sortedLabels = Object.keys(groupsMap).sort((a, b) => {
       if (a === "Nog in te delen") return 1;
       if (b === "Nog in te delen") return -1;
-      const ROMAN_VALS: Record<string, number> = { 
-        'I': 1, 'II': 2, 'III': 3, 'IV': 4, 'V': 5, 'VI': 6, 'VII': 7, 'VIII': 8, 'IX': 9, 'X': 10, 
-        'XI': 11, 'XII': 12, 'XIII': 13, 'XIV': 14, 'XV': 15, 'XVI': 16, 'XVII': 17, 'XVIII': 18, 'XIX': 19, 'XX': 20 
-      };
-      return (ROMAN_VALS[a] || 999) - (ROMAN_VALS[b] || 999);
+      return a.localeCompare(b);
     });
 
     sortedLabels.forEach(label => {
@@ -239,7 +236,7 @@ export default function AdminPage() {
               {groupedArtworks.map((group) => (
                 <div key={group.label} className="space-y-6">
                   <div className="flex items-center gap-4 border-l-4 border-accent pl-4 py-1 sticky top-[136px] md:top-[208px] z-30 bg-background/80 backdrop-blur-md -mx-4 px-4 rounded-r-xl">
-                    <h3 className="text-[12px] font-black uppercase tracking-[0.3em] text-accent">Zaal {group.label}</h3>
+                    <h3 className="text-[12px] font-black uppercase tracking-[0.3em] text-accent">{group.label}</h3>
                     <div className="h-px bg-accent/20 flex-1" />
                   </div>
                   
@@ -300,12 +297,15 @@ export default function AdminPage() {
                {/* Image Container - Grid centering is most stable */}
                <div className="flex-1 grid place-items-center p-8 md:p-20 overflow-hidden relative">
                   {editingArtwork?.imageUrl && (
-                    <div className="relative max-w-full max-h-full shadow-2xl bg-white p-2 md:p-4 rounded-sm border border-black/5">
+                    <div className="relative max-w-full max-h-full shadow-2xl bg-white p-2 md:p-4 rounded-sm border border-black/5 overflow-hidden">
                       <img 
                         src={editingArtwork.imageUrl} 
-                        className="max-h-[70vh] md:max-h-[75vh] w-auto h-auto object-contain block" 
+                        className="max-h-[70vh] md:max-h-[75vh] w-auto h-auto object-contain block transition-all" 
                         alt="Preview" 
-                        style={{ filter: `brightness(${editingArtwork.brightness || 1})` }}
+                        style={{ 
+                          filter: `brightness(${editingArtwork.brightness || 1})`,
+                          clipPath: `inset(${editingArtwork.cropTop || 0}% ${editingArtwork.cropRight || 0}% ${editingArtwork.cropBottom || 0}% ${editingArtwork.cropLeft || 0}%)`
+                        }}
                       />
                     </div>
                   )}
@@ -348,6 +348,49 @@ export default function AdminPage() {
                       <div className="space-y-2">
                          <Label className="text-[10px] uppercase font-bold opacity-40">Afmetingen</Label>
                          <Input defaultValue={editingArtwork.dimensions || ''} onBlur={(e) => updateArtworkField(editingId!, 'dimensions', e.target.value)} className="h-12 rounded-xl" placeholder="bijv. 60 x 80 cm" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Visuele Instellingen: Crop & Brightness */}
+                  <div className="space-y-8">
+                    <div className="flex items-center gap-3 border-l-4 border-accent pl-4">
+                       <Crop className="w-4 h-4 text-accent" />
+                       <h3 className="text-[11px] font-bold uppercase tracking-widest text-accent">Beelduitsnede & Licht</h3>
+                    </div>
+                    
+                    <div className="space-y-8">
+                      <div className="space-y-4">
+                         <div className="flex justify-between items-center px-1">
+                           <Label className="text-[10px] uppercase font-bold opacity-40">Helderheid</Label>
+                           <Sun className="w-3 h-3 opacity-30" />
+                         </div>
+                         <Slider 
+                           value={[editingArtwork.brightness || 1]} 
+                           min={0.5} 
+                           max={1.5} 
+                           step={0.05} 
+                           onValueChange={([val]) => updateArtworkField(editingId!, 'brightness', val)} 
+                         />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-x-8 gap-y-8 pt-4">
+                         <div className="space-y-3">
+                           <Label className="text-[9px] uppercase font-black opacity-30">Uitsnede Boven</Label>
+                           <Slider value={[editingArtwork.cropTop || 0]} max={50} step={1} onValueChange={([val]) => updateArtworkField(editingId!, 'cropTop', val)} />
+                         </div>
+                         <div className="space-y-3">
+                           <Label className="text-[9px] uppercase font-black opacity-30">Uitsnede Onder</Label>
+                           <Slider value={[editingArtwork.cropBottom || 0]} max={50} step={1} onValueChange={([val]) => updateArtworkField(editingId!, 'cropBottom', val)} />
+                         </div>
+                         <div className="space-y-3">
+                           <Label className="text-[9px] uppercase font-black opacity-30">Uitsnede Links</Label>
+                           <Slider value={[editingArtwork.cropLeft || 0]} max={50} step={1} onValueChange={([val]) => updateArtworkField(editingId!, 'cropLeft', val)} />
+                         </div>
+                         <div className="space-y-3">
+                           <Label className="text-[9px] uppercase font-black opacity-30">Uitsnede Rechts</Label>
+                           <Slider value={[editingArtwork.cropRight || 0]} max={50} step={1} onValueChange={([val]) => updateArtworkField(editingId!, 'cropRight', val)} />
+                         </div>
                       </div>
                     </div>
                   </div>
