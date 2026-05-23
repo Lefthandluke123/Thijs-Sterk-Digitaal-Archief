@@ -296,10 +296,12 @@ export default function AdminPage() {
       </main>
 
       <Dialog open={!!editingId} onOpenChange={() => setEditingId(null)}>
-        <DialogContent className="max-w-none w-screen h-screen p-0 flex flex-col bg-background border-none rounded-none overflow-hidden fixed inset-0 z-[100] outline-none shadow-none">
+        <DialogContent 
+          className="max-w-none w-screen h-screen p-0 flex flex-col bg-background border-none rounded-none overflow-hidden fixed top-0 left-0 translate-x-0 translate-y-0 z-[100] outline-none shadow-none"
+        >
           <DialogTitle className="sr-only">Editor - {editingArtwork?.title}</DialogTitle>
           <div className="flex flex-col md:flex-row h-full w-full overflow-hidden">
-            {/* Linker paneel: Preview - Gegarandeerde Centrering */}
+            {/* Linker paneel: Preview - Gegarandeerde Centrering via Flex-paneel */}
             <div className="flex-1 flex flex-col min-h-0 bg-black/10 relative overflow-hidden">
               <div className="h-20 border-b border-black/5 bg-white/80 backdrop-blur-md px-8 flex items-center justify-between shrink-0 z-20">
                  <button onClick={() => setEditingId(null)} className="p-2 hover:bg-black/5 rounded-full transition-colors"><ArrowLeft className="w-5 h-5" /></button>
@@ -312,17 +314,15 @@ export default function AdminPage() {
                  <div className="w-10" />
               </div>
               
-              {/* Afbeelding Container: Absolute Centrering via flex en inset-0 */}
-              <div className="flex-1 relative bg-[url('https://www.transparenttextures.com/patterns/pinstriped-suit.png')]">
-                 <div className="absolute inset-0 flex items-center justify-center p-8 md:p-16">
-                   {editingArtwork?.imageUrl && (
-                     <img 
-                       src={editingArtwork.imageUrl} 
-                       className="max-h-full max-w-full w-auto h-auto object-contain shadow-[0_50px_100px_-20px_rgba(0,0,0,0.3)] bg-white p-2 md:p-6 rounded-sm border border-black/5" 
-                       alt="Preview" 
-                     />
-                   )}
-                 </div>
+              {/* Afbeelding Container: Stabiele Centrering */}
+              <div className="flex-1 flex items-center justify-center p-8 md:p-16 bg-[url('https://www.transparenttextures.com/patterns/pinstriped-suit.png')] overflow-hidden">
+                 {editingArtwork?.imageUrl && (
+                   <img 
+                     src={editingArtwork.imageUrl} 
+                     className="max-h-full max-w-full w-auto h-auto object-contain shadow-[0_50px_100px_-20px_rgba(0,0,0,0.3)] bg-white p-2 md:p-6 rounded-sm border border-black/5 block mx-auto" 
+                     alt="Preview" 
+                   />
+                 )}
               </div>
             </div>
 
@@ -371,7 +371,7 @@ export default function AdminPage() {
                           <Label className="text-[9px] uppercase font-bold opacity-40">{p.label}</Label>
                           <Input 
                             type="number" 
-                            defaultValue={(editingArtwork as any)?.[`price${p.key}`] || 0} 
+                            defaultValue={editingArtwork ? (editingArtwork as any)[`price${p.key}`] || 0 : 0} 
                             onBlur={(e) => updateArtworkField(editingId!, `price${p.key}`, parseFloat(e.target.value) || 0)} 
                             className="h-10 rounded-lg bg-white" 
                           />
