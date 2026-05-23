@@ -1,10 +1,11 @@
+
 "use client";
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { doc, collection, query, where, documentId } from 'firebase/firestore';
-import { Loader2, ArrowRight, ArrowLeft, Mic, Play, Pause, Video, Facebook, Share2, ZoomIn } from 'lucide-react';
+import { Loader2, ArrowRight, ArrowLeft, Mic, Play, Pause, Video, Facebook, Share2, ZoomIn, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -49,9 +50,9 @@ export default function SharedRoomPage() {
 
   useEffect(() => {
     if (room) {
-      // Toon een korte hint na 2 seconden voor mensen die via FB binnenkomen
-      const timer = setTimeout(() => setShowHint(true), 2000);
-      const hideTimer = setTimeout(() => setShowHint(false), 7000);
+      // Toon een welkomst-hint voor social media bezoekers
+      const timer = setTimeout(() => setShowHint(true), 1500);
+      const hideTimer = setTimeout(() => setShowHint(false), 8000);
       return () => { clearTimeout(timer); clearTimeout(hideTimer); };
     }
   }, [room]);
@@ -86,35 +87,45 @@ export default function SharedRoomPage() {
     const shareUrl = window.location.href;
     const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
     window.open(fbUrl, '_blank', 'width=600,height=400');
-    toast({ title: t('viewer_shared_fb') });
   };
 
   const copyShareLink = () => {
     navigator.clipboard.writeText(window.location.href);
-    toast({ title: "Link gekopieerd!" });
+    toast({ title: "Link naar deze kamer gekopieerd!" });
   };
 
   if (roomLoading || artLoading) return <div className="h-screen bg-black flex items-center justify-center"><Loader2 className="w-10 h-10 animate-spin text-accent" /></div>;
-  if (!room) return <div className="h-screen bg-black flex flex-col items-center justify-center text-white gap-8"><p className="font-headline text-3xl italic opacity-40">Expositie niet gevonden</p><Link href="/" className="text-[11px] font-black uppercase tracking-widest border-b border-white/20 pb-1">Terug naar hoofdpagina</Link></div>;
+  if (!room) return <div className="h-screen bg-black flex flex-col items-center justify-center text-white gap-8"><p className="font-headline text-3xl italic opacity-40">Kamer niet gevonden</p><Link href="/" className="text-[11px] font-black uppercase tracking-widest border-b border-white/20 pb-1">Terug naar het Museum</Link></div>;
 
   return (
-    <main className="h-screen w-screen bg-black overflow-hidden flex flex-col text-white">
+    <main className="h-screen w-screen bg-black overflow-hidden flex flex-col text-white selection:bg-accent selection:text-white">
       {/* Social Media Welcome Hint */}
       <div className={cn(
-        "fixed top-32 left-1/2 -translate-x-1/2 z-[60] transition-all duration-1000 pointer-events-none",
-        showHint ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-10"
+        "fixed top-1/4 left-1/2 -translate-x-1/2 z-[60] transition-all duration-1000 pointer-events-none",
+        showHint ? "opacity-100 translate-y-0 scale-100" : "opacity-0 -translate-y-10 scale-90"
       )}>
-        <div className="bg-accent/90 backdrop-blur-xl px-8 py-4 rounded-2xl shadow-2xl border border-white/20 flex items-center gap-4">
-          <ZoomIn className="w-5 h-5 animate-pulse" />
-          <p className="text-[11px] font-black uppercase tracking-widest">{t('viewer_hint_zoom')}</p>
+        <div className="bg-accent/90 backdrop-blur-2xl px-10 py-6 rounded-[2rem] shadow-[0_40px_100px_rgba(0,0,0,0.8)] border border-white/20 flex flex-col items-center gap-4 text-center">
+          <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+             <ZoomIn className="w-6 h-6 animate-pulse" />
+          </div>
+          <div className="space-y-1">
+            <h4 className="text-xs font-black uppercase tracking-widest">Welkom in de Zen-Modus</h4>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-70">{t('viewer_hint_zoom')}</p>
+          </div>
         </div>
       </div>
 
       <div className={cn("absolute top-10 left-10 z-50 flex items-center gap-6 transition-opacity", isAnimating ? "opacity-0" : "opacity-100")}>
-        <Link href="/" className="p-4 rounded-full bg-white/5 backdrop-blur-xl border border-white/10 hover:bg-white/10 transition-all"><ArrowLeft className="w-5 h-5" /></Link>
+        <Link href="/" className="p-4 rounded-full bg-white/5 backdrop-blur-xl border border-white/10 hover:bg-white/10 transition-all group" title="Museum Verlaat">
+          <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+        </Link>
         <div className="flex flex-col">
-          <h1 className="font-headline text-2xl italic leading-tight">{room.title}</h1>
-          <p className="text-[9px] font-black uppercase tracking-[0.3em] opacity-40">Gedeelde Kamer &bull; Thijs Sterk</p>
+          <h1 className="font-headline text-2xl md:text-3xl italic leading-tight text-white/90">{room.title}</h1>
+          <div className="flex items-center gap-3">
+             <span className="text-[9px] font-black uppercase tracking-[0.3em] text-accent">Privé Expositie</span>
+             <span className="w-1 h-1 bg-white/20 rounded-full" />
+             <span className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30">Thijs Sterk Archief</span>
+          </div>
         </div>
       </div>
 
@@ -122,42 +133,42 @@ export default function SharedRoomPage() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="flex items-center gap-3 px-6 py-3 rounded-full backdrop-blur-xl border border-white/10 bg-white/5 hover:bg-white/10 transition-all shadow-2xl">
-              <Share2 className="w-4 h-4" />
-              <span className="text-[10px] font-black uppercase tracking-widest">{t('viewer_share')}</span>
+              <Share2 className="w-4 h-4 text-accent" />
+              <span className="text-[10px] font-black uppercase tracking-widest hidden md:inline">{t('viewer_share')}</span>
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="bg-black/90 backdrop-blur-2xl border-white/10 text-white p-2 min-w-[200px] rounded-2xl shadow-2xl">
-             <DropdownMenuItem onClick={handleShareFacebook} className="flex items-center gap-3 p-4 rounded-xl cursor-pointer focus:bg-accent focus:text-accent-foreground transition-all">
+             <DropdownMenuItem onClick={handleShareFacebook} className="flex items-center gap-3 p-4 rounded-xl cursor-pointer focus:bg-accent transition-all">
                 <Facebook className="w-4 h-4 text-[#1877F2]" />
-                <span className="text-[11px] font-bold uppercase tracking-widest">Facebook</span>
+                <span className="text-[11px] font-bold uppercase tracking-widest">Deel op Facebook</span>
              </DropdownMenuItem>
-             <DropdownMenuItem onClick={copyShareLink} className="flex items-center gap-3 p-4 rounded-xl cursor-pointer focus:bg-accent focus:text-accent-foreground transition-all">
+             <DropdownMenuItem onClick={copyShareLink} className="flex items-center gap-3 p-4 rounded-xl cursor-pointer focus:bg-accent transition-all">
                 <Share2 className="w-4 h-4 text-accent" />
-                <span className="text-[11px] font-bold uppercase tracking-widest">{t('viewer_copy_link')}</span>
+                <span className="text-[11px] font-bold uppercase tracking-widest">Kopieer Link</span>
              </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
         <button 
           onClick={startReveal}
-          className="flex items-center gap-3 px-6 py-3 rounded-full backdrop-blur-xl border-2 border-white/20 bg-accent text-accent-foreground hover:scale-110 active:scale-95 transition-all shadow-2xl"
+          className="flex items-center gap-3 px-6 py-3 rounded-full backdrop-blur-xl border-2 border-white/20 bg-accent text-accent-foreground hover:scale-105 active:scale-95 transition-all shadow-2xl group"
         >
-          <Video className="w-4 h-4" />
-          <span className="text-[10px] font-black uppercase tracking-widest">{t('viewer_social_reveal')}</span>
+          <Video className="w-4 h-4 group-hover:rotate-12 transition-transform" />
+          <span className="text-[10px] font-black uppercase tracking-widest hidden md:inline">{t('viewer_social_reveal')}</span>
         </button>
 
         {audio && (
-          <button onClick={toggleAudio} className={cn("flex items-center gap-3 px-6 py-3 rounded-full backdrop-blur-xl border border-white/10 transition-all", isPlaying ? "bg-accent text-accent-foreground" : "bg-white/5 hover:bg-white/10")}>
+          <button onClick={toggleAudio} className={cn("flex items-center gap-3 px-6 py-3 rounded-full backdrop-blur-xl border border-white/10 transition-all", isPlaying ? "bg-white text-black" : "bg-white/5 hover:bg-white/10")}>
             {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-            <span className="text-[10px] font-black uppercase tracking-widest">{isPlaying ? t('viewer_telling') : t('viewer_listen_story')}</span>
+            <span className="text-[10px] font-black uppercase tracking-widest hidden md:inline">{isPlaying ? t('viewer_telling') : t('viewer_listen_story')}</span>
           </button>
         )}
       </div>
 
       <div className="flex-1 relative flex items-center justify-center">
         <div className={cn("absolute inset-x-10 top-1/2 -translate-y-1/2 flex justify-between pointer-events-none z-50 transition-opacity", isAnimating ? "opacity-0" : "opacity-100")}>
-          <button onClick={() => setCurrentIndex(p => Math.max(0, p - 1))} disabled={currentIndex === 0} className={cn("p-8 rounded-full bg-white/5 backdrop-blur-xl pointer-events-auto transition-all disabled:opacity-0", currentIndex > 0 && "hover:bg-white/10")}><ArrowLeft className="w-10 h-10 opacity-30" /></button>
-          <button onClick={() => setCurrentIndex(p => Math.min(sortedArtworks.length - 1, p + 1))} disabled={currentIndex === sortedArtworks.length - 1} className={cn("p-8 rounded-full bg-white/5 backdrop-blur-xl pointer-events-auto transition-all disabled:opacity-0", currentIndex < sortedArtworks.length - 1 && "hover:bg-white/10")}><ArrowRight className="w-10 h-10 opacity-30" /></button>
+          <button onClick={() => setCurrentIndex(p => Math.max(0, p - 1))} disabled={currentIndex === 0} className={cn("p-8 rounded-full bg-white/5 backdrop-blur-xl pointer-events-auto transition-all disabled:opacity-0", currentIndex > 0 && "hover:bg-white/10 active:scale-90")}><ArrowLeft className="w-10 h-10 opacity-30" /></button>
+          <button onClick={() => setCurrentIndex(p => Math.min(sortedArtworks.length - 1, p + 1))} disabled={currentIndex === sortedArtworks.length - 1} className={cn("p-8 rounded-full bg-white/5 backdrop-blur-xl pointer-events-auto transition-all disabled:opacity-0", currentIndex < sortedArtworks.length - 1 && "hover:bg-white/10 active:scale-90")}><ArrowRight className="w-10 h-10 opacity-30" /></button>
         </div>
 
         {activeArtwork && (
@@ -171,26 +182,36 @@ export default function SharedRoomPage() {
                 onRevealEnd={() => setIsAnimating(false)}
              />
              
-             <div className={cn("absolute bottom-24 left-0 right-0 text-center space-y-3 pointer-events-none transition-opacity", isAnimating ? "opacity-0" : "opacity-100")}>
-               <h2 className="text-3xl md:text-5xl font-headline font-light italic text-white drop-shadow-2xl">{activeArtwork.displayTitle || activeArtwork.title}</h2>
-               <div className="flex items-center justify-center gap-4 text-[10px] font-black uppercase tracking-[0.4em] text-white/60">
-                 <span>{activeArtwork.year}</span>
-                 <span className="w-1 h-1 bg-white/30 rounded-full" />
-                 <span>{activeArtwork.medium}</span>
+             <div className={cn("absolute bottom-32 left-0 right-0 text-center space-y-4 pointer-events-none transition-opacity", isAnimating ? "opacity-0" : "opacity-100")}>
+               <h2 className="text-4xl md:text-6xl font-headline font-light italic text-white drop-shadow-[0_10px_30px_rgba(0,0,0,0.8)]">{activeArtwork.displayTitle || activeArtwork.title}</h2>
+               <div className="flex items-center justify-center gap-6 text-[10px] font-black uppercase tracking-[0.4em] text-white/50">
+                 <span className="bg-black/40 px-4 py-1.5 rounded-full backdrop-blur-md border border-white/5">{activeArtwork.year}</span>
+                 <span className="w-1.5 h-1.5 bg-accent rounded-full shadow-[0_0_10px_var(--accent)]" />
+                 <span className="bg-black/40 px-4 py-1.5 rounded-full backdrop-blur-md border border-white/5">{activeArtwork.medium}</span>
                </div>
              </div>
           </div>
         )}
       </div>
 
-      <div className={cn("h-24 bg-white/[0.02] backdrop-blur-md border-t border-white/5 px-10 flex items-center justify-between shrink-0 transition-opacity", isAnimating ? "opacity-0 pointer-events-none" : "opacity-100")}>
-        <p className="text-[10px] font-black uppercase tracking-[0.4em] opacity-20">Werken {currentIndex + 1} van {sortedArtworks.length}</p>
-        <div className="flex gap-1">
+      <div className={cn("h-28 bg-black/80 backdrop-blur-2xl border-t border-white/10 px-10 flex items-center justify-between shrink-0 transition-opacity", isAnimating ? "opacity-0 pointer-events-none" : "opacity-100")}>
+        <div className="flex flex-col gap-1">
+           <p className="text-[9px] font-black uppercase tracking-[0.4em] text-white/40">Expositie Voortgang</p>
+           <p className="text-[11px] font-bold uppercase tracking-widest text-accent">{currentIndex + 1} / {sortedArtworks.length}</p>
+        </div>
+        <div className="flex gap-2">
           {sortedArtworks.map((_, i) => (
-            <div key={i} className={cn("h-1 transition-all duration-500", i === currentIndex ? "w-12 bg-accent" : "w-4 bg-white/10")} />
+            <button 
+              key={i} 
+              onClick={() => setCurrentIndex(i)}
+              className={cn("h-1.5 rounded-full transition-all duration-700", i === currentIndex ? "w-16 bg-accent" : "w-4 bg-white/10 hover:bg-white/20")} 
+            />
           ))}
         </div>
-        <Link href="/" className="text-[10px] font-black uppercase tracking-widest text-accent hover:text-white transition-colors">Volledig Museum</Link>
+        <Link href="/" className="group flex items-center gap-3 bg-white/5 hover:bg-accent hover:text-accent-foreground transition-all px-8 py-4 rounded-full border border-white/10 shadow-2xl">
+           <span className="text-[10px] font-black uppercase tracking-widest">Volledig Museum</span>
+           <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+        </Link>
       </div>
     </main>
   );
