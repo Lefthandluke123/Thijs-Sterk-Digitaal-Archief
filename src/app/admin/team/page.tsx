@@ -18,7 +18,8 @@ import {
   Loader2,
   CheckCircle2,
   Zap,
-  MessageSquare
+  MessageSquare,
+  Sparkles
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/hooks/use-toast';
@@ -34,7 +35,7 @@ const TEAM_MEMBERS = [
     icon: ShieldCheck,
     color: 'bg-blue-500',
     avatar: 'https://picsum.photos/seed/simon/200',
-    status: 'Analysert marktwaarde',
+    status: 'Analyseert marktwaarde',
     tasks: ['Pricing strategie bewaken', 'Exit-scenario planning', 'Partner deals evalueren']
   },
   {
@@ -80,6 +81,17 @@ const TEAM_MEMBERS = [
     avatar: 'https://picsum.photos/seed/mark/200',
     status: 'Plant Social Reveals',
     tasks: ['FB/Insta advertentiebeheer', 'Shop optimalisatie', 'Nieuwsbrief strategie']
+  },
+  {
+    id: 'soof',
+    name: 'Soof',
+    role: 'PR & Relatiebeheer',
+    focus: 'Persbereik, Vernissages & De Gunfactor',
+    icon: Sparkles,
+    color: 'bg-yellow-500',
+    avatar: 'https://picsum.photos/seed/soof/200',
+    status: 'Regelt de champagne',
+    tasks: ['Persberichten schrijven', 'VIP tours organiseren', 'Bloggers benaderen']
   }
 ];
 
@@ -141,7 +153,7 @@ export default function TeamDashboardPage() {
         <div className="flex items-center gap-4">
           <Badge variant="outline" className="bg-white px-4 py-1.5 rounded-full border-black/10">
             <Zap className="w-3 h-3 mr-2 text-yellow-500 fill-yellow-500" />
-            5 Systemen Actief
+            6 Systemen Actief
           </Badge>
         </div>
       </header>
