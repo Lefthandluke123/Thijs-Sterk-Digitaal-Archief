@@ -85,17 +85,18 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
   const handleShareFacebook = async () => {
     if (!artwork || !firestore) return;
     
-    // Maak eerst een gedeelde kamer aan voor dit specifieke werk voor de beste preview
     try {
       const docRef = await addDoc(collection(firestore, 'shared_rooms'), {
         title: artwork.displayTitle || artwork.title,
         artworkIds: [artwork.id],
         createdAt: serverTimestamp(),
-        lang: language
+        lang: language,
+        sharedFrom: 'viewer'
       });
       
       const shareUrl = `${window.location.origin}/shared/${docRef.id}`;
-      const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
+      // Facebook Sharing URL met parameters voor betere preview
+      const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(`Bekijk dit meesterwerk van Thijs Sterk in Deep Zoom: ${artwork.displayTitle || artwork.title}`)}`;
       window.open(fbUrl, '_blank', 'width=600,height=400');
       toast({ title: t('viewer_shared_fb') });
     } catch (e) {
@@ -110,11 +111,15 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
         title: artwork.displayTitle || artwork.title,
         artworkIds: [artwork.id],
         createdAt: serverTimestamp(),
-        lang: language
+        lang: language,
+        sharedFrom: 'viewer'
       });
       const shareUrl = `${window.location.origin}/shared/${docRef.id}`;
       navigator.clipboard.writeText(shareUrl);
-      toast({ title: "Link gekopieerd!", description: "Perfect voor Instagram of WhatsApp." });
+      toast({ 
+        title: "Deep Zoom Link gereed!", 
+        description: "De link naar de interactieve Zen-Modus is gekopieerd." 
+      });
     } catch (e) { console.error(e); }
   };
 
@@ -147,8 +152,8 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
           <div className={cn("absolute top-8 right-8 z-[110] flex items-center gap-4 transition-opacity", isAnimating ? "opacity-0 pointer-events-none" : "opacity-100")}>
              <DropdownMenu>
                <DropdownMenuTrigger asChild>
-                 <button className="p-4 rounded-full bg-white/10 backdrop-blur-xl border border-white/10 hover:bg-white/20 transition-all shadow-2xl flex items-center gap-3 text-white">
-                    <Share2 className="w-5 h-5" />
+                 <button className="p-4 rounded-full bg-white/10 backdrop-blur-xl border border-white/10 hover:bg-white/20 transition-all shadow-2xl flex items-center gap-3 text-white group">
+                    <Share2 className="w-5 h-5 group-hover:scale-110 transition-transform" />
                     <span className="text-[10px] font-black uppercase tracking-widest hidden lg:inline">{t('viewer_share')}</span>
                  </button>
                </DropdownMenuTrigger>
@@ -166,7 +171,7 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
 
              <button 
                 onClick={startDemo} 
-                className="p-4 rounded-full bg-accent text-accent-foreground backdrop-blur-xl border-2 border-white/20 hover:scale-110 active:scale-95 transition-all shadow-2xl flex items-center gap-3"
+                className="p-4 rounded-full bg-accent text-accent-foreground backdrop-blur-xl border-2 border-white/20 hover:scale-110 active:scale-95 transition-all shadow-2xl flex items-center gap-3 animate-in zoom-in duration-500"
                 title={t('viewer_social_reveal')}
              >
                 <Video className="w-5 h-5" />

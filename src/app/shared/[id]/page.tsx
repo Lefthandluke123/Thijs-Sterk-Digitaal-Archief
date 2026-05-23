@@ -4,7 +4,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { doc, collection, query, where, documentId } from 'firebase/firestore';
-import { Loader2, ArrowRight, ArrowLeft, Mic, Play, Pause, Video, Facebook, Share2 } from 'lucide-react';
+import { Loader2, ArrowRight, ArrowLeft, Mic, Play, Pause, Video, Facebook, Share2, ZoomIn } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -26,6 +26,7 @@ export default function SharedRoomPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [showHint, setShowHint] = useState(false);
   const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
   const zoomRef = useRef<DeepZoomHandle>(null);
 
@@ -45,6 +46,15 @@ export default function SharedRoomPage() {
   }, [artworks, room]);
 
   const activeArtwork: any = sortedArtworks[currentIndex];
+
+  useEffect(() => {
+    if (room) {
+      // Toon een korte hint na 2 seconden voor mensen die via FB binnenkomen
+      const timer = setTimeout(() => setShowHint(true), 2000);
+      const hideTimer = setTimeout(() => setShowHint(false), 7000);
+      return () => { clearTimeout(timer); clearTimeout(hideTimer); };
+    }
+  }, [room]);
 
   useEffect(() => {
     if (audio) {
@@ -89,6 +99,17 @@ export default function SharedRoomPage() {
 
   return (
     <main className="h-screen w-screen bg-black overflow-hidden flex flex-col text-white">
+      {/* Social Media Welcome Hint */}
+      <div className={cn(
+        "fixed top-32 left-1/2 -translate-x-1/2 z-[60] transition-all duration-1000 pointer-events-none",
+        showHint ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-10"
+      )}>
+        <div className="bg-accent/90 backdrop-blur-xl px-8 py-4 rounded-2xl shadow-2xl border border-white/20 flex items-center gap-4">
+          <ZoomIn className="w-5 h-5 animate-pulse" />
+          <p className="text-[11px] font-black uppercase tracking-widest">{t('viewer_hint_zoom')}</p>
+        </div>
+      </div>
+
       <div className={cn("absolute top-10 left-10 z-50 flex items-center gap-6 transition-opacity", isAnimating ? "opacity-0" : "opacity-100")}>
         <Link href="/" className="p-4 rounded-full bg-white/5 backdrop-blur-xl border border-white/10 hover:bg-white/10 transition-all"><ArrowLeft className="w-5 h-5" /></Link>
         <div className="flex flex-col">
