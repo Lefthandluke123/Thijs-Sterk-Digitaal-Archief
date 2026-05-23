@@ -100,7 +100,6 @@ export default function AdminPage() {
 
     filteredArtworks.forEach((art: any) => {
       const title = art.displayTitle || art.title || "";
-      // Zoek naar Romeins cijfer in de titel voor groepering
       const romanMatch = title.match(/\b(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII|XIV|XV|XVI|XVII|XVIII|XIX|XX)\b/i);
       const roman = romanMatch ? romanMatch[0].toUpperCase() : "Nog in te delen";
       if (!groupsMap[roman]) groupsMap[roman] = [];
@@ -300,9 +299,9 @@ export default function AdminPage() {
       <Dialog open={!!editingId} onOpenChange={() => setEditingId(null)}>
         <DialogContent className="max-w-none w-screen h-screen p-0 flex flex-col bg-background border-none rounded-none overflow-hidden fixed inset-0 z-[100] outline-none shadow-none">
           <DialogTitle className="sr-only">Editor - {editingArtwork?.title}</DialogTitle>
-          <div className="grid grid-cols-1 md:grid-cols-[1fr_450px] h-full w-full overflow-hidden relative">
-            {/* Linker paneel: Preview - Gegarandeerd Gecentreerd */}
-            <div className="bg-black/5 flex flex-col min-h-0 border-r border-black/5 h-full relative overflow-hidden">
+          <div className="flex flex-col md:flex-row h-full w-full overflow-hidden">
+            {/* Linker paneel: Preview - Gecentreerd via Flex */}
+            <div className="flex-1 flex flex-col min-h-0 bg-black/5 border-r border-black/5 relative overflow-hidden">
               <div className="h-20 border-b border-black/5 bg-white/80 backdrop-blur-md px-8 flex items-center justify-between shrink-0 z-20">
                  <button onClick={() => setEditingId(null)} className="p-2 hover:bg-black/5 rounded-full transition-colors"><ArrowLeft className="w-5 h-5" /></button>
                  <div className="flex flex-col items-center">
@@ -314,18 +313,22 @@ export default function AdminPage() {
                  <div className="w-10" />
               </div>
               
-              {/* De afbeelding in het absolute midden van de resterende ruimte */}
-              <div className="flex-1 relative grid place-items-center p-8 bg-[url('https://www.transparenttextures.com/patterns/pinstriped-suit.png')]">
-                 <img 
-                   src={editingArtwork?.imageUrl} 
-                   className="max-h-full max-w-full w-auto h-auto object-contain shadow-[0_50px_100px_-20px_rgba(0,0,0,0.3)] bg-white p-2 md:p-6 rounded-sm border border-black/5" 
-                   alt="Preview" 
-                 />
+              {/* Afbeelding Container: Forceren van Centrering */}
+              <div className="flex-1 flex items-center justify-center p-8 relative overflow-hidden bg-[url('https://www.transparenttextures.com/patterns/pinstriped-suit.png')]">
+                 <div className="relative max-w-full max-h-full flex items-center justify-center">
+                   {editingArtwork?.imageUrl && (
+                     <img 
+                       src={editingArtwork.imageUrl} 
+                       className="max-h-full max-w-full w-auto h-auto object-contain shadow-[0_50px_100px_-20px_rgba(0,0,0,0.3)] bg-white p-2 md:p-6 rounded-sm border border-black/5" 
+                       alt="Preview" 
+                     />
+                   )}
+                 </div>
               </div>
             </div>
 
             {/* Rechter paneel: Controls */}
-            <div className="bg-white flex flex-col shadow-2xl overflow-y-auto border-l border-black/5 z-10 h-full">
+            <div className="w-full md:w-[450px] bg-white flex flex-col shadow-2xl overflow-y-auto border-l border-black/5 z-10 h-full">
               {editingArtwork && (
                 <div className="p-8 space-y-12 pb-32">
                   <div className="space-y-6">
