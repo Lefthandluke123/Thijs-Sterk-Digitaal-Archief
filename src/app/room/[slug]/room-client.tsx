@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useRef, useState } from 'react';
@@ -12,7 +13,7 @@ interface RoomClientProps {
 
 /**
  * @fileOverview Client Component voor de museumzaal.
- * Gebruikt de Deep Zoom viewer voor een meeslepende ervaring.
+ * Gebruikt de Deep Zoom viewer voor een meeslepende, gecentreerde ervaring.
  */
 export function RoomClient({ artworks }: RoomClientProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -81,10 +82,10 @@ export function RoomClient({ artworks }: RoomClientProps) {
         </button>
       </div>
 
-      {/* Viewer Engine */}
-      <div className="flex-1 relative">
+      {/* Viewer Engine - De container is nu gegarandeerd schermvullend */}
+      <div className="flex-1 relative w-full h-full">
         <DeepZoomViewer 
-          key={item.id} // Re-init viewer when changing artwork
+          key={item.id} 
           ref={zoomRef}
           imageUrl={item.image || item.imageUrl}
           title={item.title}

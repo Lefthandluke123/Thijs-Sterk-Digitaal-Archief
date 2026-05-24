@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useRef, useState, useImperativeHandle, forwardRef } from 'react';
@@ -77,6 +78,7 @@ export const DeepZoomViewer = forwardRef<DeepZoomHandle, DeepZoomViewerProps>(
 
   useEffect(() => {
     let osdInstance: any = null;
+    let resizeObserver: ResizeObserver | null = null;
 
     const initOpenSeadragon = async () => {
       if (!viewerRef.current) return;
@@ -109,6 +111,7 @@ export const DeepZoomViewer = forwardRef<DeepZoomHandle, DeepZoomViewerProps>(
           showNavigator: true,
           navigatorPosition: "BOTTOM_RIGHT",
           navigatorAutoFade: true,
+          autoResize: true,
           gestureSettingsMouse: {
             clickToZoom: true,
             dblClickToZoom: true,
@@ -127,10 +130,12 @@ export const DeepZoomViewer = forwardRef<DeepZoomHandle, DeepZoomViewerProps>(
         osdInstance.addHandler('open', () => {
           setIsLoading(false);
           
-          // CRITICAL FIX: Force viewport to center and fit screen on load
-          if (osdInstance.viewport) {
-            osdInstance.viewport.goHome(true);
-          }
+          // Forceer centrering bij openen
+          setTimeout(() => {
+            if (osdInstance.viewport) {
+              osdInstance.viewport.goHome(true);
+            }
+          }, 100);
 
           const canvas = osdInstance.canvas as HTMLCanvasElement;
           if (canvas) {
@@ -146,6 +151,14 @@ export const DeepZoomViewer = forwardRef<DeepZoomHandle, DeepZoomViewerProps>(
             setIsZoomedIn(currentZoom > homeZoom * 1.5);
           }
         });
+
+        // ResizeObserver is cruciaal voor centrering in dynamische layouts
+        resizeObserver = new ResizeObserver(() => {
+          if (osdInstance && osdInstance.viewport) {
+            osdInstance.viewport.goHome(true);
+          }
+        });
+        resizeObserver.observe(viewerRef.current);
 
         osdInstance.addHandler('open-failed', () => {
           setIsLoading(false);
@@ -164,6 +177,9 @@ export const DeepZoomViewer = forwardRef<DeepZoomHandle, DeepZoomViewerProps>(
         osdInstance.destroy();
         osdRef.current = null;
       }
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
     };
   }, [imageUrl, brightness]);
 
@@ -177,7 +193,8 @@ export const DeepZoomViewer = forwardRef<DeepZoomHandle, DeepZoomViewerProps>(
       
       <div 
         ref={viewerRef} 
-        className="w-full h-full cursor-crosshair"
+        className="w-full h-full cursor-crosshair block"
+        style={{ width: '100%', height: '100%', display: 'block' }}
         aria-label={`Deep Zoom viewer voor ${title}`}
       />
 
