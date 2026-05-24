@@ -111,8 +111,7 @@ function NavbarContent() {
           
           <div className="hidden lg:flex items-center gap-1 xl:gap-2">
             <NavLink href="/" active={pathname === "/"}>{t('nav_home')}</NavLink>
-            <NavLink href="/exhibition" active={pathname === "/exhibition"} important><Sparkles className="w-3.5 h-3.5" /> {t('nav_tour')}</NavLink>
-
+            
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className={cn("px-5 py-2.5 rounded-full text-[15px] font-bold tracking-wider uppercase transition-all duration-300 flex items-center gap-1 outline-none hover:bg-black/5", pathname.includes('/room') ? "bg-primary text-primary-foreground shadow-xl" : "text-foreground")}>
@@ -167,7 +166,6 @@ function NavbarContent() {
                   </div>
                   <div className="flex-1 overflow-y-auto p-6 space-y-4">
                      <Link href="/" className="flex items-center gap-4 p-5 rounded-2xl bg-black/5 text-[14px] font-bold uppercase tracking-wider">{t('nav_home')}</Link>
-                     <Link href="/exhibition" className="flex items-center gap-4 p-5 rounded-2xl bg-accent text-accent-foreground text-[14px] font-bold uppercase tracking-wider">{t('nav_tour')}</Link>
                      <div className="pt-4 border-t border-border/10">
                        <p className="text-[10px] font-black uppercase tracking-widest mb-4 px-4 opacity-40">Zalen</p>
                        {rooms?.map((r: any) => (
