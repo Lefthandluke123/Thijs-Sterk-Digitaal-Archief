@@ -1,10 +1,8 @@
-
 import React from 'react';
 import { Metadata, ResolvingMetadata } from 'next';
-import { initializeFirebase } from '@/firebase';
-import { doc, getDoc } from 'firebase/firestore';
-import { ArtworkClientPage } from './artwork-client';
 import { notFound } from 'next/navigation';
+import { ArtworkClientPage } from './artwork-client';
+import { getArtworkServer } from '@/lib/firestore-server';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -12,7 +10,7 @@ interface Props {
 
 /**
  * @fileOverview Server Component voor individuele kunstwerk-pagina's.
- * Verantwoordelijk voor SEO en Open Graph meta-tags.
+ * Haalt data op via de REST API om client-SDK errors op de server te voorkomen.
  */
 
 export async function generateMetadata(
@@ -20,20 +18,17 @@ export async function generateMetadata(
   parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { id } = await params;
-  const { firestore } = initializeFirebase();
   
-  const docRef = doc(firestore, 'artworks', id);
-  const snapshot = await getDoc(docRef);
+  // Gebruik de REST helper in plaats van de Client SDK
+  const artwork = await getArtworkServer(id);
   
-  if (!snapshot.exists()) {
-    return { title: 'Artwork Not Found | Thijs Sterk' };
+  if (!artwork) {
+    return { title: 'Schilderij niet gevonden | Thijs Sterk' };
   }
 
-  const artwork = snapshot.data();
   const title = artwork.displayTitle || artwork.title || 'Schilderij';
   const description = `${artwork.medium || 'Schilderij'} uit ${artwork.year || 'onbekend jaar'}. Deel van de collectie ${artwork.series || 'Thijs Sterk'}.`;
   
-  // Gebruik de baseUrl van de site voor de volledige URL
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://thijssterk.nl';
 
   return {
@@ -66,16 +61,13 @@ export async function generateMetadata(
 
 export default async function ArtworkPage({ params }: Props) {
   const { id } = await params;
-  const { firestore } = initializeFirebase();
   
-  const docRef = doc(firestore, 'artworks', id);
-  const snapshot = await getDoc(docRef);
+  // Haal data op de server op voor een razendsnelle eerste render
+  const artwork = await getArtworkServer(id);
 
-  if (!snapshot.exists()) {
+  if (!artwork) {
     notFound();
   }
-
-  const artwork = { ...snapshot.data(), id: snapshot.id };
 
   return <ArtworkClientPage artwork={artwork} />;
 }
