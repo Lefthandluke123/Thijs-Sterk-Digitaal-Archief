@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { notFound } from 'next/navigation';
 import { getRoomBySlugServer, getArtworksByRoomSlugServer } from '@/lib/firestore-server';
@@ -8,64 +9,34 @@ interface Props {
   params: Promise<{ slug: string }>;
 }
 
-/**
- * @fileOverview Server Component voor een dynamische museumzaal.
- * Haalt zaal-data en gekoppelde kunstwerken op uit Firestore.
- */
-
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const room = await getRoomBySlugServer(slug);
-  
   if (!room) return { title: 'Zaal niet gevonden' };
-  
-  return {
-    title: `${room.title} | The Digital Retrospective`,
-    description: room.description || `Verken de werken in ${room.title} van Thijs Sterk.`,
-    openGraph: {
-      title: room.title,
-      description: room.description,
-      type: 'website',
-    },
-  };
+  return { title: `${room.title} | The Digital Retrospective` };
 }
 
+/**
+ * @fileOverview Server Component voor de museumzaal.
+ * De container is hier tot het minimum beperkt om conflicten met de fixed RoomClient te voorkomen.
+ */
 export default async function RoomPage({ params }: Props) {
   const { slug } = await params;
   
-  // Haal data op via REST API (Server-side safe)
   const room = await getRoomBySlugServer(slug);
   if (!room) notFound();
 
   const artworks = await getArtworksByRoomSlugServer(slug);
 
   return (
-    <main className="min-h-screen bg-background pt-32 pb-64">
-      <div className="container mx-auto px-6 max-w-7xl">
-        <header className="mb-32 text-center space-y-8 animate-in fade-in slide-in-from-top-4 duration-1000">
-          <div className="inline-flex items-center gap-3 px-6 py-2 rounded-full bg-accent/10 border border-accent/20">
-            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-accent">Gecureerde Zaal</span>
-          </div>
-          <h1 className="font-headline text-5xl md:text-8xl font-light italic text-accent leading-tight">
-            {room.title}
-          </h1>
-          {room.description && (
-            <p className="text-xl md:text-2xl text-muted-foreground font-light max-w-3xl mx-auto leading-relaxed">
-              {room.description}
-            </p>
-          )}
-          <div className="h-px w-24 bg-accent/20 mx-auto" />
-        </header>
-
-        {artworks && artworks.length > 0 ? (
-          <RoomClient artworks={artworks} />
-        ) : (
-          <div className="py-32 text-center opacity-30 italic font-light space-y-4">
-            <p className="text-3xl">Deze zaal wordt momenteel ingericht.</p>
-            <p className="text-[10px] font-black uppercase tracking-[0.5em]">De curator is onderweg</p>
-          </div>
-        )}
-      </div>
-    </main>
+    <div className="relative min-h-screen">
+      {artworks && artworks.length > 0 ? (
+        <RoomClient artworks={artworks} />
+      ) : (
+        <div className="h-screen flex items-center justify-center italic opacity-30">
+          Deze zaal wordt momenteel ingericht.
+        </div>
+      )}
+    </div>
   );
 }
