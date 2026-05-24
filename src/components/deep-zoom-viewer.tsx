@@ -1,7 +1,7 @@
-
 "use client";
 
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface DeepZoomViewerProps {
@@ -9,39 +9,106 @@ interface DeepZoomViewerProps {
   title: string;
   brightness?: number;
   className?: string;
-  onRevealStart?: () => void;
-  onRevealEnd?: () => void;
-}
-
-export interface DeepZoomHandle {
-  startReveal: () => void;
 }
 
 /**
- * @fileOverview Vereenvoudigde museum-viewer voor kunstwerken.
- * Vervangt de complexe Deep Zoom engine voor maximale stabiliteit en perfecte centrering.
+ * @fileOverview Stabiele OpenSeadragon Deep Zoom viewer.
+ * SSR-safe door dynamische import van OpenSeadragon binnen useEffect.
  */
-export const DeepZoomViewer = React.forwardRef<DeepZoomHandle, DeepZoomViewerProps>(
-  ({ imageUrl, title, brightness = 1, className }, ref) => {
-    
-    // Behoud de interface voor compatibiliteit met bestaande componenten
-    React.useImperativeHandle(ref, () => ({
-      startReveal: () => {
-        // De simpele viewer heeft geen complexe reveal animatie nodig
+export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({ 
+  imageUrl, 
+  title, 
+  brightness = 1, 
+  className 
+}) => {
+  const viewerRef = useRef<HTMLDivElement>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Alleen uitvoeren in de browser
+    if (typeof window === 'undefined' || !viewerRef.current || !imageUrl) return;
+
+    let viewerInstance: any = null;
+    let resizeObserver: ResizeObserver | null = null;
+
+    const initOSD = async () => {
+      try {
+        // Dynamisch laden van OpenSeadragon om SSR "document is not defined" te voorkomen
+        const OSDModule = await import('openseadragon');
+        const OpenSeadragon = OSDModule.default;
+
+        if (!viewerRef.current) return;
+
+        viewerInstance = OpenSeadragon({
+          element: viewerRef.current,
+          prefixUrl: "https://cdnjs.cloudflare.com/ajax/libs/openseadragon/4.1.0/images/",
+          tileSources: {
+            type: 'image',
+            url: imageUrl,
+          },
+          showNavigationControl: false,
+          gestureSettingsMouse: {
+            scrollToZoom: true,
+            clickToZoom: true,
+            dblClickToZoom: true,
+          },
+          animationTime: 1.5,
+          blendTime: 0.5,
+          constrainDuringPan: true,
+          visibilityRatio: 1,
+          minZoomImageRatio: 1,
+          defaultZoomLevel: 0,
+        });
+
+        viewerInstance.addHandler('open', () => {
+          setLoading(false);
+          requestAnimationFrame(() => {
+            if (viewerInstance && viewerInstance.viewport) {
+              viewerInstance.viewport.goHome(true);
+              console.log(`[DEEP ZOOM] Initialized and Centered: ${title}`);
+            }
+          });
+        });
+
+        // Resize Observer om centrering te behouden bij vensterwijzigingen
+        resizeObserver = new ResizeObserver(() => {
+          if (viewerInstance && viewerInstance.viewport) {
+            viewerInstance.viewport.goHome(true);
+          }
+        });
+        resizeObserver.observe(viewerRef.current);
+
+      } catch (err) {
+        console.error('[DEEP ZOOM] Error initializing OpenSeadragon:', err);
       }
-    }));
+    };
 
-    return (
-      <div className={cn("w-full h-full flex items-center justify-center bg-black/5 p-4 md:p-12", className)}>
-        <img 
-          src={imageUrl} 
-          alt={title}
-          className="max-w-full max-h-full object-contain shadow-[0_50px_100px_-30px_rgba(0,0,0,0.5)] transition-all duration-1000 hover:scale-[1.01] animate-in fade-in zoom-in-95"
-          style={{ filter: `brightness(${brightness})` }}
-        />
-      </div>
-    );
-  }
-);
+    initOSD();
 
-DeepZoomViewer.displayName = "DeepZoomViewer";
+    return () => {
+      if (resizeObserver) resizeObserver.disconnect();
+      if (viewerInstance) {
+        viewerInstance.destroy();
+        viewerInstance = null;
+      }
+    };
+  }, [imageUrl, title]);
+
+  return (
+    <div className={cn("relative w-full h-full bg-black/5 overflow-hidden", className)}>
+      {loading && (
+        <div className="absolute inset-0 flex items-center justify-center z-10 bg-background/20 backdrop-blur-sm">
+          <Loader2 className="w-10 h-10 animate-spin text-accent/40" />
+        </div>
+      )}
+      <div 
+        ref={viewerRef} 
+        className="w-full h-full" 
+        style={{ 
+          filter: `brightness(${brightness})`,
+          display: 'block' 
+        }} 
+      />
+    </div>
+  );
+};

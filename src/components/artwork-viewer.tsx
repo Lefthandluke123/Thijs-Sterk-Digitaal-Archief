@@ -1,12 +1,22 @@
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { X, ChevronLeft, ChevronRight, Info, Mic, Pause } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/components/language-provider';
 import { ShareButton } from './share-button';
 import { usePathname } from 'next/navigation';
+
+// Laad DeepZoomViewer dynamisch om SSR issues met OpenSeadragon te voorkomen
+const DeepZoomViewer = dynamic(() => import('./deep-zoom-viewer').then(mod => mod.DeepZoomViewer), { 
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full flex items-center justify-center bg-black/5">
+      <div className="w-8 h-8 border-4 border-accent border-t-transparent rounded-full animate-spin" />
+    </div>
+  )
+});
 
 interface ArtworkViewerProps {
   artwork: any | null;
@@ -16,9 +26,8 @@ interface ArtworkViewerProps {
 }
 
 /**
- * @fileOverview Gestroomlijnde Artwork Viewer zonder Portals.
+ * @fileOverview Gestroomlijnde Artwork Viewer met Deep Zoom.
  * Gebruikt een directe grid-centrering op de volledige viewport.
- * Uitgesloten op /room en /art routes om dubbele lagen te voorkomen.
  */
 export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewerProps) {
   const [showMetadata, setShowMetadata] = useState(false);
@@ -79,24 +88,17 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
       }}
       onClick={onClose}
     >
-      {/* Centered Image */}
-      {displayImage && (
-        <img 
-          key={artwork.id}
-          src={displayImage} 
-          alt={artwork.displayTitle || artwork.title} 
-          onClick={(e) => e.stopPropagation()}
-          style={{ 
-            maxWidth: '90vw', 
-            maxHeight: '80vh', 
-            objectFit: 'contain', 
-            display: 'block',
-            boxShadow: '0 60px 120px -20px rgba(0,0,0,0.45)',
-            filter: `brightness(${artwork.brightness || 1})`,
-            transition: 'all 0.5s ease-in-out'
-          }}
-        />
-      )}
+      {/* Deep Zoom Viewer Container */}
+      <div className="w-[90vw] h-[80vh] flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+        {displayImage && (
+          <DeepZoomViewer 
+            key={artwork.id}
+            imageUrl={displayImage} 
+            title={artwork.displayTitle || artwork.title} 
+            brightness={artwork.brightness || 1}
+          />
+        )}
+      </div>
 
       {/* UI Overlay Top */}
       <div className="absolute top-8 right-8 z-[10000] flex items-center gap-4 pointer-events-auto" onClick={(e) => e.stopPropagation()}>

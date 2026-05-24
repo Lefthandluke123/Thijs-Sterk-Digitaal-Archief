@@ -1,10 +1,20 @@
-
 "use client";
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { ArrowLeft, Info, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+// Laad DeepZoomViewer dynamisch om SSR issues met OpenSeadragon te voorkomen
+const DeepZoomViewer = dynamic(() => import('@/components/deep-zoom-viewer').then(mod => mod.DeepZoomViewer), { 
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full flex items-center justify-center bg-black/5">
+      <div className="w-8 h-8 border-4 border-accent border-t-transparent rounded-full animate-spin" />
+    </div>
+  )
+});
 
 interface RoomClientProps {
   artworks: any[];
@@ -12,8 +22,7 @@ interface RoomClientProps {
 }
 
 /**
- * @fileOverview Museum-zaal component met Absolute Grid Centering.
- * Geoptimaliseerd om geen dubbele lagen of portal-interferentie toe te staan.
+ * @fileOverview Museum-zaal component met stabiele Deep Zoom integratie.
  */
 export function RoomClient({ artworks, roomTitle }: RoomClientProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -42,7 +51,7 @@ export function RoomClient({ artworks, roomTitle }: RoomClientProps) {
   const displayImage = item.image || item.imageUrl || item.url;
 
   return (
-    <div 
+    <main 
       style={{ 
         position: 'fixed', 
         inset: 0, 
@@ -53,6 +62,11 @@ export function RoomClient({ artworks, roomTitle }: RoomClientProps) {
         overflow: 'hidden' 
       }}
     >
+      {/* Debug Label */}
+      <div className="fixed bottom-4 right-4 z-[200] bg-black/80 text-white text-[8px] px-2 py-1 rounded-full uppercase font-bold tracking-widest opacity-30 pointer-events-none">
+        ROOM VIEWER ACTIVE
+      </div>
+
       {/* UI Overlay Top */}
       <div className="absolute top-0 left-0 right-0 z-[120] p-6 md:p-10 flex items-center justify-between pointer-events-none">
         <div className="flex items-center gap-6 pointer-events-auto">
@@ -97,23 +111,17 @@ export function RoomClient({ artworks, roomTitle }: RoomClientProps) {
         </button>
       </div>
 
-      {/* THE MAIN IMAGE - NAKED CENTERING */}
-      {displayImage && (
-        <img 
-          key={item.id}
-          src={displayImage} 
-          alt={item.title}
-          style={{ 
-            maxWidth: '90vw', 
-            maxHeight: '80vh', 
-            objectFit: 'contain', 
-            display: 'block',
-            boxShadow: '0 60px 120px -20px rgba(0,0,0,0.45)',
-            filter: `brightness(${item.brightness || 1})`,
-            transition: 'opacity 1s ease-in-out'
-          }}
-        />
-      )}
+      {/* DEEP ZOOM VIEWER - Hard gecentreerd */}
+      <div className="w-[90vw] h-[80vh] flex items-center justify-center">
+        {displayImage && (
+          <DeepZoomViewer 
+            key={item.id}
+            imageUrl={displayImage} 
+            title={item.title}
+            brightness={item.brightness || 1}
+          />
+        )}
+      </div>
 
       {/* Metadata Panel */}
       <div className={cn(
@@ -160,11 +168,6 @@ export function RoomClient({ artworks, roomTitle }: RoomClientProps) {
           />
         ))}
       </div>
-
-      {/* DEBUG LABEL */}
-      <div className="absolute bottom-4 right-4 z-[200] pointer-events-none">
-        <span className="bg-red-600 text-white text-[8px] font-bold px-2 py-1 rounded uppercase tracking-tighter">ROOM VIEWER ACTIVE</span>
-      </div>
-    </div>
+    </main>
   );
 }
