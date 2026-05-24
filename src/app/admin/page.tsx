@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -31,7 +30,8 @@ import {
   Star,
   ShoppingBag,
   ExternalLink,
-  Edit3
+  Edit3,
+  Check
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -100,40 +100,58 @@ export default function AdminPage() {
 
   const handleAddArtwork = async () => {
     if (!firestore) return;
-    const newDoc = await addDoc(collection(firestore, 'artworks'), {
-      title: 'Nieuw Werk',
-      slug: `werk-${Date.now()}`,
-      image: '',
-      roomSlug: rooms?.[0]?.slug || '',
-      createdAt: serverTimestamp(),
-      tags: [],
-      year: '',
-      medium: 'Olieverf op doek',
-      description: '',
-      brightness: 1,
-      featured: false,
-      inShop: false
-    });
-    setEditingArtworkId(newDoc.id);
+    try {
+      const newDoc = await addDoc(collection(firestore, 'artworks'), {
+        title: 'Nieuw Werk',
+        slug: `werk-${Date.now()}`,
+        image: '',
+        roomSlug: rooms?.[0]?.slug || '',
+        createdAt: serverTimestamp(),
+        tags: [],
+        year: '',
+        medium: 'Olieverf op doek',
+        description: '',
+        brightness: 1,
+        featured: false,
+        inShop: false
+      });
+      setEditingArtworkId(newDoc.id);
+      toast({ title: "Werk aangemaakt", description: "U kunt nu de details invullen." });
+    } catch (e) {
+      toast({ variant: "destructive", title: "Fout", description: "Kon werk niet aanmaken." });
+    }
   };
 
   const handleAddRoom = async () => {
     if (!firestore) return;
-    const newDoc = await addDoc(collection(firestore, 'rooms'), {
-      title: 'Nieuwe Zaal',
-      slug: `zaal-${Date.now()}`,
-      description: '',
-      order: (rooms?.length || 0) + 1
-    });
-    setEditingRoomId(newDoc.id);
+    try {
+      const newDoc = await addDoc(collection(firestore, 'rooms'), {
+        title: 'Nieuwe Zaal',
+        slug: `zaal-${Date.now()}`,
+        description: '',
+        order: (rooms?.length || 0) + 1
+      });
+      setEditingRoomId(newDoc.id);
+      toast({ title: "Zaal aangemaakt", description: "U kunt nu de zaal inrichten." });
+    } catch (e) {
+      toast({ variant: "destructive", title: "Fout", description: "Kon zaal niet aanmaken." });
+    }
   };
 
   const updateField = (col: string, id: string, field: string, value: any) => {
     if (!firestore) return;
     const ref = doc(firestore, col, id);
-    updateDoc(ref, { [field]: value }).catch(err => {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({ path: ref.path, operation: 'update' }));
-    });
+    updateDoc(ref, { [field]: value })
+      .then(() => {
+        toast({ 
+          title: "Opgeslagen", 
+          description: "Wijziging is succesvol doorgevoerd.",
+          duration: 2000
+        });
+      })
+      .catch(err => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: ref.path, operation: 'update' }));
+      });
   };
 
   const toggleSelection = (id: string) => {
@@ -621,7 +639,10 @@ export default function AdminPage() {
                     className="w-full h-14 rounded-2xl" 
                     onClick={() => { 
                       if(confirm('Weet u zeker dat u dit werk wilt verwijderen?')) {
-                        deleteDoc(doc(firestore!, 'artworks', editingArtworkId!)).then(() => setEditingArtworkId(null)); 
+                        deleteDoc(doc(firestore!, 'artworks', editingArtworkId!)).then(() => {
+                          setEditingArtworkId(null);
+                          toast({ title: "Verwijderd", description: "Het kunstwerk is uit het archief verwijderd." });
+                        }); 
                       }
                     }}
                   >
@@ -685,7 +706,10 @@ export default function AdminPage() {
                   className="w-full h-14 rounded-2xl" 
                   onClick={() => { 
                     if(confirm('Let op: hiermee verwijdert u de zaal. Kunstwerken blijven bestaan maar raken ontkoppeld. Zeker weten?')) {
-                      deleteDoc(doc(firestore!, 'rooms', editingRoomId!)).then(() => setEditingRoomId(null)); 
+                      deleteDoc(doc(firestore!, 'rooms', editingRoomId!)).then(() => {
+                        setEditingRoomId(null); 
+                        toast({ title: "Zaal verwijderd", description: "De zaal is succesvol verwijderd uit het systeem." });
+                      });
                     }
                   }}
                 >
