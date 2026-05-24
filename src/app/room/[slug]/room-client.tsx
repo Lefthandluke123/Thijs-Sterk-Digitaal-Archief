@@ -12,8 +12,8 @@ interface RoomClientProps {
 }
 
 /**
- * @fileOverview Museum-zaal component met Ultra-Explicit Centering.
- * Gebruikt inline grid-styles om elke mogelijke CSS-override te omzeilen.
+ * @fileOverview Museum-zaal component met Absolute Grid Centering.
+ * Geoptimaliseerd om geen dubbele lagen of portal-interferentie toe te staan.
  */
 export function RoomClient({ artworks, roomTitle }: RoomClientProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -48,8 +48,8 @@ export function RoomClient({ artworks, roomTitle }: RoomClientProps) {
         inset: 0, 
         zIndex: 100, 
         backgroundColor: '#f4f4f2', 
-        display: 'flex', 
-        flexDirection: 'column', 
+        display: 'grid', 
+        placeItems: 'center', 
         overflow: 'hidden' 
       }}
     >
@@ -97,34 +97,23 @@ export function RoomClient({ artworks, roomTitle }: RoomClientProps) {
         </button>
       </div>
 
-      {/* ULTRA-CENTERED IMAGE ENGINE */}
-      <div 
-        style={{ 
-          flex: 1, 
-          width: '100%', 
-          height: '100%', 
-          display: 'grid', 
-          placeItems: 'center', 
-          padding: '2rem' 
-        }}
-      >
-        {displayImage && (
-          <img 
-            key={item.id}
-            src={displayImage} 
-            alt={item.title}
-            style={{ 
-              maxWidth: '90vw', 
-              maxHeight: '80vh', 
-              objectFit: 'contain', 
-              display: 'block',
-              boxShadow: '0 60px 120px -20px rgba(0,0,0,0.45)',
-              filter: `brightness(${item.brightness || 1})`,
-              transition: 'opacity 1s ease-in-out'
-            }}
-          />
-        )}
-      </div>
+      {/* THE MAIN IMAGE - NAKED CENTERING */}
+      {displayImage && (
+        <img 
+          key={item.id}
+          src={displayImage} 
+          alt={item.title}
+          style={{ 
+            maxWidth: '90vw', 
+            maxHeight: '80vh', 
+            objectFit: 'contain', 
+            display: 'block',
+            boxShadow: '0 60px 120px -20px rgba(0,0,0,0.45)',
+            filter: `brightness(${item.brightness || 1})`,
+            transition: 'opacity 1s ease-in-out'
+          }}
+        />
+      )}
 
       {/* Metadata Panel */}
       <div className={cn(
@@ -174,7 +163,7 @@ export function RoomClient({ artworks, roomTitle }: RoomClientProps) {
 
       {/* DEBUG LABEL */}
       <div className="absolute bottom-4 right-4 z-[200] pointer-events-none">
-        <span className="bg-red-500 text-white text-[8px] font-bold px-2 py-1 rounded uppercase tracking-tighter">LAYER: ROOM CLIENT</span>
+        <span className="bg-red-600 text-white text-[8px] font-bold px-2 py-1 rounded uppercase tracking-tighter">ROOM VIEWER ACTIVE</span>
       </div>
     </div>
   );

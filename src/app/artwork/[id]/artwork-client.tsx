@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 
 /**
  * @fileOverview Client Component voor de artwork detail weergave.
- * Nu met Ultra-Explicit Centering via inline styles.
+ * Nu met Ultra-Explicit Grid Centering op de volledige viewport.
  */
 export function ArtworkClientPage({ artwork }: { artwork: any }) {
   const { language } = useLanguage();
@@ -47,8 +47,8 @@ export function ArtworkClientPage({ artwork }: { artwork: any }) {
         inset: 0, 
         zIndex: 100, 
         backgroundColor: '#f4f4f2', 
-        display: 'flex', 
-        flexDirection: 'column', 
+        display: 'grid', 
+        placeItems: 'center', 
         overflow: 'hidden' 
       }}
     >
@@ -100,33 +100,22 @@ export function ArtworkClientPage({ artwork }: { artwork: any }) {
         </div>
       </div>
 
-      {/* ULTRA-CENTERED IMAGE ENGINE */}
-      <div 
-        style={{ 
-          flex: 1, 
-          width: '100%', 
-          height: '100%', 
-          display: 'grid', 
-          placeItems: 'center', 
-          padding: '2rem' 
-        }}
-      >
-        {displayImage && (
-          <img 
-            src={displayImage} 
-            alt={artwork.displayTitle || artwork.title}
-            style={{ 
-              maxWidth: '90vw', 
-              maxHeight: '80vh', 
-              objectFit: 'contain', 
-              display: 'block',
-              boxShadow: '0 60px 120px -20px rgba(0,0,0,0.45)',
-              filter: `brightness(${artwork.brightness || 1})`,
-              transition: 'all 1s ease-in-out'
-            }}
-          />
-        )}
-      </div>
+      {/* THE MAIN IMAGE - NAKED CENTERING */}
+      {displayImage && (
+        <img 
+          src={displayImage} 
+          alt={artwork.displayTitle || artwork.title}
+          style={{ 
+            maxWidth: '90vw', 
+            maxHeight: '80vh', 
+            objectFit: 'contain', 
+            display: 'block',
+            boxShadow: '0 60px 120px -20px rgba(0,0,0,0.45)',
+            filter: `brightness(${artwork.brightness || 1})`,
+            transition: 'all 1s ease-in-out'
+          }}
+        />
+      )}
 
       {/* Metadata Panel */}
       <div className={cn(
@@ -163,7 +152,7 @@ export function ArtworkClientPage({ artwork }: { artwork: any }) {
 
       {/* DEBUG LABEL */}
       <div className="absolute bottom-4 right-4 z-[200] pointer-events-none">
-        <span className="bg-orange-500 text-white text-[8px] font-bold px-2 py-1 rounded uppercase tracking-tighter">LAYER: ARTWORK CLIENT</span>
+        <span className="bg-blue-600 text-white text-[8px] font-bold px-2 py-1 rounded uppercase tracking-tighter">ARTWORK PAGE VIEWER</span>
       </div>
     </main>
   );
