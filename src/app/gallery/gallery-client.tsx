@@ -96,12 +96,12 @@ export function GalleryClient({ initialRoomSlug }: { initialRoomSlug: string | n
                   className="group relative cursor-pointer animate-in fade-in slide-in-from-bottom-4 duration-700" 
                   onClick={() => setSelectedArtwork(item)}
                 >
-                  <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-secondary/10 shadow-lg transition-all duration-700 hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.2)] group-hover:-translate-y-2 flex items-center justify-center">
+                  <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-secondary/10 shadow-lg transition-all duration-700 hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.2)] group-hover:-translate-y-2 flex items-center justify-center p-2">
                     {displayImage ? (
                       <img 
                         src={displayImage} 
                         alt={item.title} 
-                        className="w-full h-full object-cover transition-all duration-1000 ease-out group-hover:scale-110"
+                        className="max-w-full max-h-full object-contain transition-all duration-1000 ease-out group-hover:scale-110"
                         style={{ filter: `brightness(${item.brightness || 1})` }}
                       />
                     ) : (
@@ -126,12 +126,6 @@ export function GalleryClient({ initialRoomSlug }: { initialRoomSlug: string | n
                 </article>
               );
             })}
-            {(!artworks || artworks.length === 0) && (
-              <div className="col-span-full py-32 text-center space-y-4 opacity-30 border-2 border-dashed border-accent/20 rounded-[3rem]">
-                <p className="italic font-light text-2xl">Deze zaal wordt momenteel ingericht.</p>
-                <p className="text-[10px] font-black uppercase tracking-[0.4em]">Kom binnenkort terug</p>
-              </div>
-            )}
           </div>
         )}
       </div>

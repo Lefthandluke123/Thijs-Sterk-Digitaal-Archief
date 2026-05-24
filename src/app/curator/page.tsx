@@ -162,17 +162,17 @@ export default function CuratorPage() {
           <div className="mt-24 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 animate-in fade-in slide-in-from-bottom-8 duration-700">
             {filteredArtworks.map((item: any) => (
               <div key={item.id} className="group cursor-pointer space-y-4" onClick={() => setSelectedArtwork(item)}>
-                <div className="relative aspect-[4/5] overflow-hidden rounded-sm bg-muted/20 shadow-lg transition-all duration-700 group-hover:shadow-2xl flex items-center justify-center">
+                <div className="relative aspect-[4/5] overflow-hidden rounded-sm bg-muted/20 shadow-lg transition-all duration-700 group-hover:shadow-2xl flex items-center justify-center p-2">
                   <img 
                     src={item.image || item.imageUrl} 
-                    className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" 
+                    className="max-w-full max-h-full object-contain transition-transform duration-1000 group-hover:scale-110" 
                     style={{ 
                       filter: `brightness(${item.brightness || 1})`, 
                       clipPath: `inset(${item.cropTop || 0}% ${item.cropRight || 0}% ${item.cropBottom || 0}% ${item.cropLeft || 0}%)` 
                     }} 
                     alt={item.title}
                   />
-                  <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                  <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity pointer-events-none">
                     <Maximize2 className="text-white w-8 h-8" />
                   </div>
                 </div>

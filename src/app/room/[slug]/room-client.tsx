@@ -11,12 +11,11 @@ interface RoomClientProps {
 
 /**
  * @fileOverview Client Component voor de weergave van een zaal-collectie.
- * Geoptimaliseerd voor een cinematic museum-presentatie met strikte viewport-centrering.
- * Verwijdert absolute positionering op de afbeelding om top-left bias te voorkomen.
+ * Geforceerde verticale en horizontale centrering voor een monumentale museum-ervaring.
  */
 export function RoomClient({ artworks }: RoomClientProps) {
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center gap-32 md:gap-64 px-4">
+    <div className="w-full flex flex-col items-center gap-32 md:gap-64 px-4">
       {artworks.map((item, index) => (
         <Link 
           key={item.id} 
@@ -25,26 +24,26 @@ export function RoomClient({ artworks }: RoomClientProps) {
           style={{ animationDelay: `${index * 150}ms` }}
         >
           <article className="flex flex-col items-center justify-center space-y-12">
-            {/* Museum-style Frame Container - Now using direct flex centering */}
-            <div className="relative w-full aspect-[4/3] md:aspect-[16/10] overflow-hidden rounded-[2rem] md:rounded-[4rem] bg-black shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] border-4 border-white/5 transition-all duration-1000 group-hover:scale-[1.01] group-hover:shadow-[0_80px_150px_-30px_rgba(0,0,0,0.7)] flex items-center justify-center">
+            {/* Museum-style Frame Container - Geforceerde Flex Centrering */}
+            <div className="relative w-full aspect-[4/3] md:aspect-[16/10] overflow-hidden rounded-[2rem] md:rounded-[4rem] bg-black shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] border-4 border-white/5 transition-all duration-1000 group-hover:scale-[1.01] group-hover:shadow-[0_80px_150px_-30px_rgba(0,0,0,0.7)] flex items-center justify-center p-4 md:p-12">
               
-              {/* Centered Image Engine - Direct flex child, no absolute positioning */}
+              {/* Centered Image - Gebruikt object-contain om vervorming te voorkomen en centrering te garanderen */}
               <img 
                 src={item.image || item.imageUrl} 
                 alt={item.title} 
-                className="max-w-[90%] max-h-[90%] object-contain transition-all duration-1000 ease-out group-hover:scale-105"
+                className="max-w-full max-h-full object-contain block mx-auto transition-all duration-1000 ease-out group-hover:scale-105"
                 style={{ filter: `brightness(${item.brightness || 1})` }}
               />
 
-              {/* Interaction Overlay - Absolute is only for UI layers */}
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-700 flex items-center justify-center opacity-0 group-hover:opacity-100">
+              {/* Interaction Overlay */}
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-700 flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
                 <div className="p-6 md:p-10 rounded-full bg-white/10 backdrop-blur-3xl border border-white/20 transform scale-90 group-hover:scale-100 transition-transform duration-500">
                   <Maximize2 className="text-white w-8 h-8 md:w-12 md:h-12" />
                 </div>
               </div>
             </div>
             
-            {/* Artwork Metadata - Centered Content */}
+            {/* Artwork Metadata */}
             <div className="text-center space-y-6 max-w-2xl px-6">
               <div className="space-y-3">
                 <h3 className="font-headline text-3xl md:text-6xl italic text-foreground leading-tight tracking-tight">
