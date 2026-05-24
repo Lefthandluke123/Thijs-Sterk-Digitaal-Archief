@@ -11,8 +11,8 @@ interface RoomClientProps {
 }
 
 /**
- * @fileOverview Client Component voor de museumzaal.
- * Gebruikt een stabiele, gecentreerde layout voor een rustige museum-ervaring.
+ * @fileOverview Museum-zaal component met een gegarandeerd gecentreerde weergave.
+ * Gebruikt Grid-centering om de hardnekkige linksboven-bug te elimineren.
  */
 export function RoomClient({ artworks }: RoomClientProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -32,11 +32,13 @@ export function RoomClient({ artworks }: RoomClientProps) {
     setShowMetadata(false);
   };
 
+  const displayImage = item.image || item.imageUrl || item.url;
+
   return (
     <div className="fixed inset-0 bg-[#f4f4f2] z-50 flex flex-col overflow-hidden">
       {/* UI Overlay Top */}
-      <div className="absolute top-0 left-0 right-0 z-50 p-6 md:p-10 flex items-center justify-between">
-        <div className="flex items-center gap-6">
+      <div className="absolute top-0 left-0 right-0 z-[60] p-6 md:p-10 flex items-center justify-between pointer-events-none">
+        <div className="flex items-center gap-6 pointer-events-auto">
           <Link 
             href="/gallery" 
             className="p-4 rounded-full bg-white/80 backdrop-blur-md border border-black/5 hover:bg-accent hover:text-accent-foreground transition-all group shadow-lg"
@@ -54,7 +56,7 @@ export function RoomClient({ artworks }: RoomClientProps) {
         <button 
           onClick={() => setShowMetadata(!showMetadata)}
           className={cn(
-            "p-4 rounded-full backdrop-blur-md border border-black/5 transition-all shadow-lg",
+            "p-4 rounded-full backdrop-blur-md border border-black/5 transition-all shadow-lg pointer-events-auto",
             showMetadata ? "bg-accent text-accent-foreground" : "bg-white/80 text-foreground"
           )}
         >
@@ -78,15 +80,21 @@ export function RoomClient({ artworks }: RoomClientProps) {
         </button>
       </div>
 
-      {/* Gecentreerde Afbeelding Container */}
-      <div className="flex-1 w-full h-full flex items-center justify-center p-8 md:p-24 relative overflow-hidden">
-        <img 
-          key={item.id}
-          src={item.image || item.imageUrl} 
-          alt={item.title}
-          className="max-w-full max-h-full object-contain shadow-[0_60px_120px_-20px_rgba(0,0,0,0.45)] transition-all duration-1000 animate-in fade-in zoom-in-95 select-none pointer-events-none"
-          style={{ filter: `brightness(${item.brightness || 1})` }}
-        />
+      {/* Gecentreerde Afbeelding Container - De Nucleaire Fix */}
+      <div className="relative w-full h-full grid place-items-center p-8 md:p-24 overflow-hidden">
+        {displayImage && (
+          <img 
+            key={item.id}
+            src={displayImage} 
+            alt={item.title}
+            className="max-w-full max-h-full object-contain shadow-[0_60px_120px_-20px_rgba(0,0,0,0.45)] transition-all duration-1000 animate-in fade-in zoom-in-95 select-none pointer-events-none block"
+            style={{ 
+              filter: `brightness(${item.brightness || 1})`,
+              maxHeight: '80vh',
+              maxWidth: '90vw'
+            }}
+          />
+        )}
       </div>
 
       {/* Metadata Panel */}

@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 
 /**
  * @fileOverview Client Component voor de artwork detail weergave.
- * Geoptimaliseerd voor een rustige, gecentreerde museum-ervaring.
+ * Geoptimaliseerd voor een rustige, gecentreerde museum-ervaring via Grid-centering.
  */
 export function ArtworkClientPage({ artwork }: { artwork: any }) {
   const { language } = useLanguage();
@@ -38,12 +38,13 @@ export function ArtworkClientPage({ artwork }: { artwork: any }) {
   };
 
   const backLink = artwork.roomSlug ? `/room/${artwork.roomSlug}` : "/gallery";
+  const displayImage = artwork.imageUrl || artwork.image || artwork.url;
 
   return (
     <main className="fixed inset-0 bg-[#f4f4f2] overflow-hidden flex flex-col z-50">
       {/* UI Overlay Top */}
-      <div className="absolute top-0 left-0 right-0 z-50 p-6 md:p-10 flex items-center justify-between">
-        <div className="flex items-center gap-6">
+      <div className="absolute top-0 left-0 right-0 z-[60] p-6 md:p-10 flex items-center justify-between pointer-events-none">
+        <div className="flex items-center gap-6 pointer-events-auto">
           <Link 
             href={backLink} 
             className="p-4 rounded-full bg-white/80 backdrop-blur-md border border-black/5 hover:bg-accent hover:text-accent-foreground transition-all group shadow-lg"
@@ -58,7 +59,7 @@ export function ArtworkClientPage({ artwork }: { artwork: any }) {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 pointer-events-auto">
           <ShareButton 
             title={artwork.displayTitle || artwork.title}
             description={artwork.description}
@@ -89,19 +90,25 @@ export function ArtworkClientPage({ artwork }: { artwork: any }) {
         </div>
       </div>
 
-      {/* Centered Image Engine */}
-      <div className="flex-1 w-full h-full flex items-center justify-center p-8 md:p-24 relative overflow-hidden">
-        <img 
-          src={artwork.imageUrl || artwork.image} 
-          alt={artwork.displayTitle || artwork.title}
-          className="max-w-full max-h-full object-contain shadow-[0_60px_120px_-20px_rgba(0,0,0,0.45)] transition-all duration-1000 animate-in fade-in zoom-in-95 select-none"
-          style={{ filter: `brightness(${artwork.brightness || 1})` }}
-        />
+      {/* Centered Image Engine - De Nucleaire Fix */}
+      <div className="relative w-full h-full grid place-items-center p-8 md:p-24 overflow-hidden">
+        {displayImage && (
+          <img 
+            src={displayImage} 
+            alt={artwork.displayTitle || artwork.title}
+            className="max-w-full max-h-full object-contain shadow-[0_60px_120px_-20px_rgba(0,0,0,0.45)] transition-all duration-1000 animate-in fade-in zoom-in-95 select-none block"
+            style={{ 
+              filter: `brightness(${artwork.brightness || 1})`,
+              maxHeight: '80vh',
+              maxWidth: '90vw'
+            }}
+          />
+        )}
       </div>
 
       {/* Metadata Panel */}
       <div className={cn(
-        "absolute bottom-0 left-0 right-0 bg-background/95 backdrop-blur-2xl border-t border-black/5 flex flex-col items-center justify-center text-center transition-all duration-700 ease-in-out z-40 overflow-y-auto",
+        "absolute bottom-0 left-0 right-0 bg-background/95 backdrop-blur-2xl border-t border-black/5 flex flex-col items-center justify-center text-center transition-all duration-700 ease-in-out z-[55] overflow-y-auto",
         showMetadata ? "h-auto min-h-[30vh] opacity-100 py-12 translate-y-0" : "h-0 opacity-0 pointer-events-none translate-y-12"
       )}>
         <div className="max-w-4xl mx-auto space-y-6 px-10">

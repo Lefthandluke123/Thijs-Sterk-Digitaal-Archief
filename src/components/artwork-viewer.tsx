@@ -17,7 +17,7 @@ interface ArtworkViewerProps {
 
 /**
  * @fileOverview Vereenvoudigde, stabiele viewer voor het bekijken van kunstwerken in een modal.
- * Focus op perfecte centrering en visuele rust.
+ * Focus op perfecte centrering via Grid-centering.
  */
 export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewerProps) {
   const [showMetadata, setShowMetadata] = useState(false);
@@ -57,23 +57,26 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
   };
 
   const artworkUrl = artwork ? `${window.location.origin}/art/${artwork.slug || artwork.id}` : '';
+  const displayImage = artwork?.image || artwork?.imageUrl || artwork?.url;
 
   return (
     <Dialog open={!!artwork} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-[#f4f4f2] border-none rounded-none overflow-hidden outline-none shadow-none fixed inset-0 z-[100]">
         <DialogTitle className="sr-only">Artwork Viewer</DialogTitle>
         
-        <div className="relative flex-1 bg-black/5 overflow-hidden flex items-center justify-center">
-          {artwork && (
-            <div className="w-full h-full flex items-center justify-center p-8 md:p-24 relative">
-              <img 
-                key={artwork.id}
-                src={artwork.image || artwork.imageUrl} 
-                alt={artwork.displayTitle || artwork.title} 
-                className="max-w-full max-h-full object-contain shadow-[0_60px_120px_-20px_rgba(0,0,0,0.45)] transition-all duration-1000 animate-in fade-in zoom-in-95 select-none"
-                style={{ filter: `brightness(${artwork.brightness || 1})` }}
-              />
-            </div>
+        <div className="relative w-full h-full grid place-items-center p-8 md:p-24 overflow-hidden bg-black/5">
+          {displayImage && (
+            <img 
+              key={artwork.id}
+              src={displayImage} 
+              alt={artwork.displayTitle || artwork.title} 
+              className="max-w-full max-h-full object-contain shadow-[0_60px_120px_-20px_rgba(0,0,0,0.45)] transition-all duration-1000 animate-in fade-in zoom-in-95 select-none block"
+              style={{ 
+                filter: `brightness(${artwork.brightness || 1})`,
+                maxHeight: '80vh',
+                maxWidth: '90vw'
+              }}
+            />
           )}
 
           {/* Navigation Controls */}
