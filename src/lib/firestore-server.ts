@@ -37,7 +37,6 @@ const mapDocument = (doc: any) => {
   });
   
   // Zorg dat afbeeldings-URL's altijd absoluut zijn en unificeer veldnamen
-  // We geven de voorkeur aan 'image' conform backend.json
   const rawImage = data.image || data.imageUrl || data.url;
   
   if (rawImage) {
@@ -46,7 +45,7 @@ const mapDocument = (doc: any) => {
       finalUrl = `https://firebasestorage.googleapis.com/v0/b/${firebaseConfig.storageBucket}/o/${encodeURIComponent(rawImage)}?alt=media`;
     }
     data.image = finalUrl;
-    data.imageUrl = finalUrl; // Voor achterwaartse compatibiliteit in bestaande componenten
+    data.imageUrl = finalUrl; 
   }
   
   return data;

@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo } from 'react';
@@ -45,7 +46,7 @@ export default function CuratorPage() {
     if (!dbArtworks) return [];
     const seen = new Set();
     return dbArtworks.filter(art => {
-      const url = (art as any).imageUrl;
+      const url = (art as any).image || (art as any).imageUrl;
       if (!url || seen.has(url)) return false;
       seen.add(url);
       return true;
@@ -70,7 +71,6 @@ export default function CuratorPage() {
 
     setIsSharing(true);
     
-    // Turbo-Share: Genereer de ID direct aan de client-zijde
     const roomsCollection = collection(firestore, 'shared_rooms');
     const newRoomRef = doc(roomsCollection);
     const roomId = newRoomRef.id;
@@ -84,7 +84,6 @@ export default function CuratorPage() {
       lang: language
     };
 
-    // Non-blocking schrijven naar Firestore
     setDoc(newRoomRef, roomData)
       .catch(async (err) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
@@ -94,7 +93,6 @@ export default function CuratorPage() {
         }));
       });
 
-    // Toon de link onmiddellijk (Instant UX)
     setShareDialog(url);
     setIsSharing(false);
     toast({ title: "Privékamer gereed!", description: "De link is direct gegenereerd." });
@@ -167,7 +165,7 @@ export default function CuratorPage() {
               <div key={item.id} className="group cursor-pointer space-y-4" onClick={() => setSelectedArtwork(item)}>
                 <div className="relative aspect-[4/5] overflow-hidden rounded-sm bg-muted/20 shadow-lg transition-all duration-700 group-hover:shadow-2xl">
                   <img 
-                    src={item.imageUrl} 
+                    src={item.image || item.imageUrl} 
                     className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" 
                     style={{ 
                       filter: `brightness(${item.brightness || 1})`, 

@@ -3,14 +3,11 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogTitle, DialogClose } from '@/components/ui/dialog';
-import { X, ChevronLeft, ChevronRight, Info, Mic, Pause, Play, Maximize2 } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Info, Mic, Pause } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DeepZoomViewer, type DeepZoomHandle } from './deep-zoom-viewer';
 import { useLanguage } from '@/components/language-provider';
-import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
 import { ShareButton } from './share-button';
-import Link from 'next/link';
 
 interface ArtworkViewerProps {
   artwork: any | null;
@@ -59,7 +56,7 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
     setIsPlaying(!isPlaying);
   };
 
-  const artworkUrl = artwork ? `${window.location.origin}/artwork/${artwork.id}` : '';
+  const artworkUrl = artwork ? `${window.location.origin}/art/${artwork.slug || artwork.id}` : '';
 
   return (
     <Dialog open={!!artwork} onOpenChange={(open) => !open && onClose()}>
@@ -70,8 +67,8 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
           {artwork && (
             <DeepZoomViewer 
               ref={zoomRef}
-              imageUrl={artwork.image} 
-              title={artwork.title} 
+              imageUrl={artwork.image || artwork.imageUrl} 
+              title={artwork.displayTitle || artwork.title} 
               brightness={artwork.brightness}
               onRevealStart={() => setIsAnimating(true)}
               onRevealEnd={() => setIsAnimating(false)}
@@ -90,7 +87,7 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
           <div className={cn("absolute top-8 right-8 z-[110] flex items-center gap-4 transition-opacity", isAnimating ? "opacity-0 pointer-events-none" : "opacity-100")}>
              {artwork && (
                <ShareButton 
-                 title={artwork.title}
+                 title={artwork.displayTitle || artwork.title}
                  description={artwork.description}
                  url={artworkUrl}
                />
@@ -110,7 +107,7 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
 
           <div className={cn("absolute bottom-0 left-0 right-0 bg-background/90 backdrop-blur-xl border-t border-border/10 flex flex-col items-center justify-center overflow-y-auto text-center transition-all duration-700 ease-in-out z-[105]", (showMetadata && !isAnimating) ? "h-[18vh] opacity-100 py-6 px-12 translate-y-0" : "h-0 opacity-0 pointer-events-none translate-y-12")}>
             <div className="max-w-4xl mx-auto space-y-3">
-              <h2 className="text-xl md:text-3xl font-headline font-light italic text-foreground tracking-tight">{artwork?.title}</h2>
+              <h2 className="text-xl md:text-3xl font-headline font-light italic text-foreground tracking-tight">{artwork?.displayTitle || artwork?.title}</h2>
               <div className="text-[12px] md:text-[13px] font-bold tracking-[0.15em] text-accent flex flex-wrap gap-x-6 gap-y-2 justify-center items-center">
                 <span className="uppercase opacity-70">Zaal: {artwork?.roomSlug}</span>
                 <span className="w-1 h-1 rounded-full bg-accent/30 hidden md:inline" />

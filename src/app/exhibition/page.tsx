@@ -1,19 +1,18 @@
 
 "use client";
 
-import React, { useState, useMemo, useEffect, Suspense, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy } from 'firebase/firestore';
 import { ArtworkViewer } from '@/components/artwork-viewer';
-import { Loader2, MousePointer2, ChevronLeft, ChevronRight, Layers, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/components/language-provider';
 
 function ExhibitionContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { t } = useLanguage();
   const firestore = useFirestore();
 
   const currentRoomSlug = searchParams.get('room');
@@ -69,7 +68,7 @@ function ExhibitionContent() {
               <div key={art.id} className="relative group shrink-0" onClick={() => setSelectedArtwork(art)}>
                 <div className="relative flex flex-col bg-white shadow-2xl border border-black/[0.03] cursor-pointer transition-all duration-700 hover:scale-[1.01]">
                    <div className="p-8 pb-4">
-                      <img src={art.image} className="max-h-[50vh] w-auto object-contain block mx-auto" style={{ filter: `brightness(${art.brightness || 1})` }} />
+                      <img src={art.image || art.imageUrl} className="max-h-[50vh] w-auto object-contain block mx-auto" style={{ filter: `brightness(${art.brightness || 1})` }} alt={art.title} />
                    </div>
                    <div className="px-8 py-6 border-t border-black/[0.03] bg-white">
                       <h3 className="text-black text-[9px] font-bold uppercase tracking-[0.2em] mb-1 truncate">{art.title}</h3>
