@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { Metadata, ResolvingMetadata } from 'next';
+import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { ArtworkClientPage } from '@/app/artwork/[id]/artwork-client';
 import { getArtworkBySlugServer } from '@/lib/firestore-server';
@@ -8,6 +9,10 @@ interface Props {
   params: Promise<{ slug: string }>;
 }
 
+/**
+ * @fileOverview Server Component voor de individuele schilderij-pagina.
+ * Genereert dynamische metadata voor SEO en social sharing.
+ */
 export async function generateMetadata(
   { params }: Props
 ): Promise<Metadata> {
@@ -26,22 +31,34 @@ export async function generateMetadata(
 
   return {
     title: `${title} | The Digital Retrospective`,
-    description: artwork.description,
+    description: artwork.description || `${artwork.medium || 'Schilderij'} van Thijs Sterk uit ${artwork.year || 'onbekend jaar'}.`,
     openGraph: {
       title: `${title} - Thijs Sterk`,
+      description: artwork.description,
       images: [{ url: imageUrl }],
+      url: `${baseUrl}/art/${slug}`,
+      type: 'article',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: title,
+      description: artwork.description,
+      images: [imageUrl],
     },
   };
 }
 
 export default async function ArtPage({ params }: Props) {
   const { slug } = await params;
+  
+  // Haal artwork op via Firestore REST API op de server
   const artwork = await getArtworkBySlugServer(slug);
 
   if (!artwork) {
     notFound();
   }
 
-  // Reuse existing client component
+  // Render de client component met de opgehaalde data
+  // We zorgen dat imageUrl consistent is
   return <ArtworkClientPage artwork={{ ...artwork, imageUrl: artwork.image || artwork.imageUrl }} />;
 }
