@@ -4,7 +4,6 @@ import { firebaseConfig } from '@/firebase/config';
 /**
  * @fileOverview Server-side Firestore data fetching via REST API.
  * Geoptimaliseerd voor robuustheid en SEO-previews (Open Graph).
- * Herstelt de verwerking van runQuery resultaten die een stream van objecten retourneren.
  */
 
 const PROJECT_ID = firebaseConfig.projectId;
@@ -55,13 +54,12 @@ const mapDocument = (doc: any) => {
 export async function getRoomsServer() {
   try {
     const res = await fetch(`${BASE_URL}/rooms`, {
-      next: { revalidate: 60 }
+      next: { revalidate: 30 }
     });
     if (!res.ok) return [];
     const json = await res.json();
     return (json.documents || []).map(mapDocument).sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
   } catch (e) {
-    console.error('getRoomsServer error:', e);
     return [];
   }
 }
@@ -85,14 +83,13 @@ export async function getRoomBySlugServer(slug: string) {
           limit: 1
         }
       }),
-      next: { revalidate: 60 }
+      next: { revalidate: 30 }
     });
     const json = await res.json();
-    // De REST API retourneert een array; we zoeken het eerste item met een 'document' property
-    const firstResult = Array.isArray(json) ? json.find(item => !!item.document) : null;
-    return firstResult?.document ? mapDocument(firstResult.document) : null;
+    // Een runQuery response is een array. Zoek het item dat een 'document' property heeft.
+    const result = Array.isArray(json) ? json.find(item => item.document) : null;
+    return result?.document ? mapDocument(result.document) : null;
   } catch (e) {
-    console.error('getRoomBySlugServer error:', e);
     return null;
   }
 }
@@ -115,7 +112,7 @@ export async function getArtworksByRoomSlugServer(roomSlug: string) {
           }
         }
       }),
-      next: { revalidate: 60 }
+      next: { revalidate: 30 }
     });
     const json = await res.json();
     if (!Array.isArray(json)) return [];
@@ -123,7 +120,6 @@ export async function getArtworksByRoomSlugServer(roomSlug: string) {
       .filter((j: any) => j.document)
       .map((j: any) => mapDocument(j.document));
   } catch (e) {
-    console.error('getArtworksByRoomSlugServer error:', e);
     return [];
   }
 }
@@ -147,14 +143,12 @@ export async function getArtworkBySlugServer(slug: string) {
           limit: 1
         }
       }),
-      next: { revalidate: 60 }
+      next: { revalidate: 30 }
     });
     const json = await res.json();
-    // Zoek naar het document in de resultatenstroom
-    const firstResult = Array.isArray(json) ? json.find(item => !!item.document) : null;
-    return firstResult?.document ? mapDocument(firstResult.document) : null;
+    const result = Array.isArray(json) ? json.find(item => item.document) : null;
+    return result?.document ? mapDocument(result.document) : null;
   } catch (e) {
-    console.error('getArtworkBySlugServer error:', e);
     return null;
   }
 }
@@ -162,13 +156,12 @@ export async function getArtworkBySlugServer(slug: string) {
 export async function getArtworkServer(id: string) {
   try {
     const res = await fetch(`${BASE_URL}/artworks/${id}`, {
-      next: { revalidate: 60 }
+      next: { revalidate: 30 }
     });
     if (!res.ok) return null;
     const json = await res.json();
     return mapDocument(json);
   } catch (e) {
-    console.error('getArtworkServer error:', e);
     return null;
   }
 }
