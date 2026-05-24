@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -38,32 +39,35 @@ export function Hero() {
   return (
     <section className="relative min-h-[85vh] flex flex-col items-center justify-center pt-32 pb-16 px-4 overflow-hidden">
       <div className="container mx-auto z-10 text-center">
-        <h1 className="font-headline text-4xl md:text-7xl lg:text-8xl font-medium tracking-tight text-foreground mb-10 max-w-6xl mx-auto leading-[1.05]">
+        <h1 className="font-headline text-4xl md:text-7xl lg:text-8xl font-medium tracking-tight text-foreground mb-16 max-w-6xl mx-auto leading-[1.05]">
           {heroTitle.split(' ').map((word, i, arr) => 
             i >= arr.length - 3 ? <span key={i} className="italic text-accent">{word} </span> : word + ' '
           )}
         </h1>
         
-        <div className="flex flex-col items-center justify-center gap-8">
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-8 w-full">
-            <Button size="lg" className="rounded-full px-16 bg-primary hover:bg-primary/90 text-primary-foreground font-bold uppercase tracking-[0.25em] text-[13px] h-16 shadow-2xl transition-all" asChild>
-              <Link href="/gallery">
-                <Sparkles className="mr-3 w-6 h-6" />
-                {t('hero_start_walk')}
-              </Link>
-            </Button>
+        <div className="flex flex-col items-center justify-center gap-12">
+          {/* Hoofdactie: Retrospective Overzicht */}
+          <Button size="lg" className="rounded-full px-16 bg-primary hover:bg-primary/90 text-primary-foreground font-bold uppercase tracking-[0.25em] text-[13px] h-16 shadow-2xl transition-all" asChild>
+            <Link href="/gallery">
+              <Sparkles className="mr-3 w-6 h-6" />
+              {t('hero_start_walk')}
+            </Link>
+          </Button>
+
+          {/* Secundaire actie: Curator Mode met contextuele tekst */}
+          <div className="flex flex-col items-center gap-6 max-w-lg">
             <Button variant="outline" size="lg" className="rounded-full px-16 border-2 border-foreground/30 text-foreground hover:bg-black/5 font-bold uppercase tracking-[0.25em] text-[13px] h-16 transition-all" asChild>
               <Link href="/curator">
                 <Layout className="mr-3 w-6 h-6" />
                 {t('hero_your_room')}
               </Link>
             </Button>
-          </div>
-          
-          <div className="mt-4 animate-in fade-in slide-in-from-top-2 duration-1000">
-             <p className="text-[11px] font-black uppercase tracking-[0.4em] text-accent opacity-60 max-w-lg mx-auto leading-relaxed">
-               Kies uw eigen rondleiding langs het werk van Thijs op basis van thema&apos;s
-             </p>
+            
+            <div className="animate-in fade-in slide-in-from-top-2 duration-1000">
+               <p className="text-[11px] font-black uppercase tracking-[0.4em] text-accent opacity-60 leading-relaxed">
+                 Kies uw eigen rondleiding langs het werk van Thijs op basis van thema&apos;s
+               </p>
+            </div>
           </div>
         </div>
       </div>
