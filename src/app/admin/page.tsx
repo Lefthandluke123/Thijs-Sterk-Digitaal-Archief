@@ -30,7 +30,8 @@ import {
   FolderInput,
   Star,
   ShoppingBag,
-  MoreHorizontal
+  ExternalLink,
+  Edit3
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -266,7 +267,7 @@ export default function AdminPage() {
           <LayoutDashboard className="w-6 h-6 text-accent" />
           <div>
             <h1 className="font-headline text-2xl">CMS <span className="italic">Manager</span></h1>
-            <p className="text-[10px] font-black uppercase tracking-widest opacity-40 text-accent">Single Source of Truth Architecture</p>
+            <p className="text-[10px] font-black uppercase tracking-widest opacity-40 text-accent">Real-time Global Archive</p>
           </div>
         </div>
         <div className="flex items-center gap-6">
@@ -381,7 +382,7 @@ export default function AdminPage() {
             ) : (
               <div className="grid md:grid-cols-3 gap-6">
                 {rooms?.map((room: any) => (
-                  <Card key={room.id} className="p-8 rounded-[2rem] border-none shadow-md bg-white space-y-4 hover:shadow-xl transition-all cursor-pointer" onClick={() => setEditingRoomId(room.id)}>
+                  <Card key={room.id} className="p-8 rounded-[2rem] border-none shadow-md bg-white space-y-6 hover:shadow-xl transition-all group">
                     <div className="flex justify-between items-start">
                       <h3 className="font-headline text-2xl italic">{room.title}</h3>
                       <span className="text-[10px] font-black bg-accent/10 text-accent px-3 py-1 rounded-full">#{room.order}</span>
@@ -389,6 +390,26 @@ export default function AdminPage() {
                     <p className="text-sm text-muted-foreground line-clamp-2 min-h-[3rem]">
                       {room.description || 'Geen omschrijving.'}
                     </p>
+                    <div className="grid grid-cols-2 gap-2">
+                       <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="rounded-xl text-[10px] font-black uppercase tracking-widest"
+                        onClick={() => setEditingRoomId(room.id)}
+                       >
+                         <Edit3 className="w-3 h-3 mr-2" /> Bewerk
+                       </Button>
+                       <Button 
+                        variant="secondary" 
+                        size="sm" 
+                        className="rounded-xl text-[10px] font-black uppercase tracking-widest"
+                        asChild
+                       >
+                         <Link href={`/room/${room.slug}`} target="_blank">
+                           <ExternalLink className="w-3 h-3 mr-2" /> Live Preview
+                         </Link>
+                       </Button>
+                    </div>
                     <div className="pt-4 border-t flex items-center justify-between text-[10px] font-black uppercase tracking-widest opacity-40">
                       <span>Slug: {room.slug}</span>
                       <span>{artworks?.filter((a: any) => a.roomSlug === room.slug).length || 0} werken</span>
