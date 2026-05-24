@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -5,7 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import { Maximize2, Users, ArrowRight } from 'lucide-react';
+import { Maximize2 } from 'lucide-react';
 import { ArtworkViewer } from '@/components/artwork-viewer';
 import { useLanguage } from '@/components/language-provider';
 
@@ -97,33 +98,6 @@ export function ArtistBio() {
                 <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                   <Maximize2 className="text-white w-10 h-10 drop-shadow-2xl" />
                 </div>
-              </div>
-
-              <div className="mt-16 p-10 bg-background/60 backdrop-blur-2xl rounded-[3rem] border border-border/40 shadow-xl space-y-8">
-                 <div className="flex items-center gap-4 border-b border-border/40 pb-6">
-                    <Users className="w-6 h-6 text-accent" />
-                    <h3 className="font-black uppercase tracking-[0.3em] text-[12px] text-accent">Nalatenschap</h3>
-                 </div>
-                 <div className="grid gap-6">
-                    {[
-                      { name: "Hanneke Sterk", href: "/hanneke", role: "Archiefbeheer" },
-                      { name: "Beatrijs Sterk", href: "/beatrijs", role: "Documentatie" },
-                      { name: "Peter Bes", href: "/peter-bes", role: "Leerling" },
-                      { name: "Leo Duppen", href: "/leo-duppen", role: "Kunsthistoricus" }
-                    ].map((person) => (
-                      <Link 
-                        key={person.href} 
-                        href={person.href}
-                        className="flex items-center justify-between group/link p-3 hover:bg-white/40 rounded-2xl transition-all"
-                      >
-                         <div className="flex flex-col">
-                            <span className="text-base font-bold text-foreground">{person.name}</span>
-                            <span className="text-[10px] uppercase tracking-widest text-muted-foreground">{person.role}</span>
-                         </div>
-                         <ArrowRight className="w-5 h-5 text-accent opacity-0 group-hover/link:opacity-100 transition-all -translate-x-3 group-hover/link:translate-x-0" />
-                      </Link>
-                    ))}
-                 </div>
               </div>
             </div>
           </div>
