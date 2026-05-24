@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogTitle, DialogClose } from '@/components/ui/dialog';
-import { X, ChevronLeft, ChevronRight, Info, Mic, Play, Pause, Video, Share2, Facebook, Link as LinkIcon } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Info, Mic, Play, Pause, Video, Share2, Facebook, Link as LinkIcon, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DeepZoomViewer, type DeepZoomHandle } from './deep-zoom-viewer';
 import { useLanguage } from '@/components/language-provider';
@@ -29,6 +29,7 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
   const [showMetadata, setShowMetadata] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
   const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
   const zoomRef = useRef<DeepZoomHandle>(null);
   
@@ -47,6 +48,7 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
       if (audio) audio.pause();
       setIsPlaying(false);
       setIsAnimating(false);
+      setIsSharing(false);
     }
   }, [artwork, audio]);
 
@@ -87,8 +89,12 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
   const handleShareFacebook = () => {
     if (!artwork || !firestore) return;
     
+    setIsSharing(true);
+    toast({ title: "Moment...", description: "Facebook-koppeling wordt voorbereid." });
+
     const roomData = {
       title: artwork.displayTitle || artwork.title,
+      description: `Bekijk dit werk van Thijs Sterk in Deep Zoom.`,
       artworkIds: [artwork.id],
       createdAt: serverTimestamp(),
       lang: language,
@@ -97,12 +103,13 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
 
     addDoc(collection(firestore, 'shared_rooms'), roomData)
       .then((docRef) => {
+        setIsSharing(false);
         const shareUrl = `${window.location.origin}/shared/${docRef.id}`;
-        const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(`Bekijk dit meesterwerk van Thijs Sterk in Deep Zoom: ${artwork.displayTitle || artwork.title}`)}`;
+        const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(`Bekijk dit meesterwerk van Thijs Sterk in de interactieve Zen-Modus: ${artwork.displayTitle || artwork.title}`)}`;
         window.open(fbUrl, '_blank', 'width=600,height=400');
-        toast({ title: t('viewer_shared_fb') });
       })
       .catch(async (err) => {
+        setIsSharing(false);
         errorEmitter.emit('permission-error', new FirestorePermissionError({
           path: 'shared_rooms',
           operation: 'create',
@@ -114,8 +121,12 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
   const copyShareLink = () => {
     if (!artwork || !firestore) return;
     
+    setIsSharing(true);
+    toast({ title: "Moment...", description: "Interactieve link wordt gegenereerd." });
+
     const roomData = {
       title: artwork.displayTitle || artwork.title,
+      description: `Privé Deep Zoom sessie.`,
       artworkIds: [artwork.id],
       createdAt: serverTimestamp(),
       lang: language,
@@ -124,14 +135,16 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
 
     addDoc(collection(firestore, 'shared_rooms'), roomData)
       .then((docRef) => {
+        setIsSharing(false);
         const shareUrl = `${window.location.origin}/shared/${docRef.id}`;
         navigator.clipboard.writeText(shareUrl);
         toast({ 
-          title: "Deep Zoom Link gereed!", 
-          description: "De link naar de interactieve Zen-Modus is gekopieerd." 
+          title: "Gekopieerd!", 
+          description: "De link naar de interactieve Zen-Modus staat op uw klembord." 
         });
       })
       .catch(async (err) => {
+        setIsSharing(false);
         errorEmitter.emit('permission-error', new FirestorePermissionError({
           path: 'shared_rooms',
           operation: 'create',
@@ -169,8 +182,11 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
           <div className={cn("absolute top-8 right-8 z-[110] flex items-center gap-4 transition-opacity", isAnimating ? "opacity-0 pointer-events-none" : "opacity-100")}>
              <DropdownMenu>
                <DropdownMenuTrigger asChild>
-                 <button className="p-4 rounded-full bg-white/10 backdrop-blur-xl border border-white/10 hover:bg-white/20 transition-all shadow-2xl flex items-center gap-3 text-white group">
-                    <Share2 className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                 <button 
+                  disabled={isSharing}
+                  className="p-4 rounded-full bg-white/10 backdrop-blur-xl border border-white/10 hover:bg-white/20 transition-all shadow-2xl flex items-center gap-3 text-white group disabled:opacity-50"
+                 >
+                    {isSharing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Share2 className="w-5 h-5 group-hover:scale-110 transition-transform" />}
                     <span className="text-[10px] font-black uppercase tracking-widest hidden lg:inline">{t('viewer_share')}</span>
                  </button>
                </DropdownMenuTrigger>

@@ -1,4 +1,3 @@
-
 {
   "entities": {
     "Artwork": {
@@ -42,6 +41,8 @@
         "description": { "type": "string" },
         "artworkIds": { "type": "array", "items": { "type": "string" } },
         "creatorName": { "type": "string" },
+        "lang": { "type": "string" },
+        "sharedFrom": { "type": "string" },
         "audioUrls": { "type": "object" },
         "createdAt": { "type": "string", "format": "date-time" }
       }
