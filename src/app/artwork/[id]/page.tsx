@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Metadata, ResolvingMetadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -9,8 +10,8 @@ interface Props {
 }
 
 /**
- * @fileOverview Server Component voor individuele kunstwerk-pagina's.
- * Zorgt voor 100% crawler-vriendelijke Open Graph tags voor Facebook/Twitter.
+ * @fileOverview Server Component voor individuele kunstwerk-pagina's op basis van ID.
+ * Zorgt voor correcte scrapability voor social sharing.
  */
 
 export async function generateMetadata(
@@ -18,11 +19,8 @@ export async function generateMetadata(
   parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { id } = await params;
-  
-  // Haal data op via REST API (veilig voor server context)
   const artwork = await getArtworkServer(id);
   
-  // Gebruik de base URL van de omgeving of een betrouwbare fallback
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://thijssterk.nl';
   const defaultImage = 'https://firebasestorage.googleapis.com/v0/b/studio-7311695883-2090f.firebasestorage.app/o/artworks%2F1778851761923_x2p82k_maannacht%20copy.jpg?alt=media';
 
@@ -34,12 +32,8 @@ export async function generateMetadata(
   }
 
   const title = artwork.displayTitle || artwork.title || 'Schilderij';
-  const description = `${artwork.medium || 'Schilderij'} uit ${artwork.year || 'onbekend jaar'}. Deel van de collectie ${artwork.series || 'Thijs Sterk'}.`;
-  
-  // Facebook vereist absolute URLs voor afbeeldingen
-  const imageUrl = artwork.imageUrl?.startsWith('http') 
-    ? artwork.imageUrl 
-    : defaultImage;
+  const description = `${artwork.medium || 'Schilderij'} uit ${artwork.year || 'onbekend jaar'}. Deel van de collectie Thijs Sterk.`;
+  const imageUrl = artwork.imageUrl || artwork.image || defaultImage;
 
   return {
     title: `${title} | The Digital Retrospective`,
@@ -75,8 +69,6 @@ export async function generateMetadata(
 
 export default async function ArtworkPage({ params }: Props) {
   const { id } = await params;
-  
-  // Server-side fetch voor directe rendering zonder hydration mismatches
   const artwork = await getArtworkServer(id);
 
   if (!artwork) {

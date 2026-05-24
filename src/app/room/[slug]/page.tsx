@@ -10,27 +10,65 @@ interface Props {
 }
 
 /**
- * @fileOverview Server Component voor een museumzaal.
- * Haalt data op en geeft deze door aan de (nu herstelde) RoomClient.
+ * @fileOverview Server Component voor een museumzaal met uitgebreide SEO/OG metadata.
  */
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const room = await getRoomBySlugServer(slug);
+  const artworks = await getArtworksByRoomSlugServer(slug);
+  
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://thijssterk.nl';
+  const defaultImage = 'https://firebasestorage.googleapis.com/v0/b/studio-7311695883-2090f.firebasestorage.app/o/artworks%2F1778851761923_x2p82k_maannacht%20copy.jpg?alt=media';
+
+  if (!room) {
+    return { title: 'Zaal niet gevonden | Thijs Sterk' };
+  }
+
+  // Kies een representatieve afbeelding voor de zaal (featured of de eerste)
+  const displayImage = artworks?.find(a => a.featured)?.imageUrl || artworks?.[0]?.imageUrl || defaultImage;
+  const title = `${room.title} | The Digital Retrospective`;
+  const description = room.description || `Ontdek de collectie in de zaal ${room.title} van het Thijs Sterk Retrospectief.`;
+
   return {
-    title: room ? `${room.title} | Thijs Sterk` : 'Zaal | The Digital Retrospective',
+    title: title,
+    description: description,
+    metadataBase: new URL(baseUrl),
+    alternates: {
+      canonical: `/room/${slug}`,
+    },
+    openGraph: {
+      title: `${room.title} - Thijs Sterk`,
+      description: description,
+      url: `${baseUrl}/room/${slug}`,
+      siteName: 'Thijs Sterk Digital Retrospective',
+      images: [
+        {
+          url: displayImage,
+          width: 1200,
+          height: 630,
+          alt: room.title,
+        },
+      ],
+      locale: 'nl_NL',
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: title,
+      description: description,
+      images: [displayImage],
+    },
   };
 }
 
 export default async function RoomPage({ params }: Props) {
   const { slug } = await params;
   
-  // Haal data op via de server-side REST helper
   const room = await getRoomBySlugServer(slug);
   if (!room) notFound();
 
   const artworks = await getArtworksByRoomSlugServer(slug);
 
-  // Render de client-component die verantwoordelijk is voor de gecentreerde weergave
   return <RoomClient artworks={artworks} roomTitle={room.title} />;
 }

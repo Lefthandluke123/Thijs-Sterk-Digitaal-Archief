@@ -10,8 +10,8 @@ interface Props {
 }
 
 /**
- * @fileOverview Server Component voor de individuele schilderij-pagina.
- * Genereert dynamische metadata voor SEO en social sharing.
+ * @fileOverview Server Component voor individuele schilderij-pagina's op basis van slug.
+ * Genereert 100% crawler-vriendelijke Open Graph tags voor Facebook/Twitter.
  */
 export async function generateMetadata(
   { params }: Props
@@ -23,26 +23,41 @@ export async function generateMetadata(
   const defaultImage = 'https://firebasestorage.googleapis.com/v0/b/studio-7311695883-2090f.firebasestorage.app/o/artworks%2F1778851761923_x2p82k_maannacht%20copy.jpg?alt=media';
 
   if (!artwork) {
-    return { title: 'Schilderij niet gevonden' };
+    return { 
+      title: 'Schilderij niet gevonden',
+      robots: 'noindex'
+    };
   }
 
   const title = artwork.displayTitle || artwork.title || 'Schilderij';
-  const imageUrl = artwork.image || artwork.imageUrl || defaultImage;
+  const imageUrl = artwork.imageUrl || artwork.image || defaultImage;
+  const description = artwork.description || `${artwork.medium || 'Schilderij'} van Thijs Sterk uit ${artwork.year || 'onbekend jaar'}.`;
 
   return {
     title: `${title} | The Digital Retrospective`,
-    description: artwork.description || `${artwork.medium || 'Schilderij'} van Thijs Sterk uit ${artwork.year || 'onbekend jaar'}.`,
+    description: description,
+    metadataBase: new URL(baseUrl),
+    alternates: {
+      canonical: `/art/${slug}`,
+    },
     openGraph: {
       title: `${title} - Thijs Sterk`,
-      description: artwork.description,
-      images: [{ url: imageUrl }],
+      description: description,
+      images: [{ 
+        url: imageUrl,
+        width: 1200,
+        height: 900,
+        alt: title 
+      }],
       url: `${baseUrl}/art/${slug}`,
+      siteName: 'Thijs Sterk Digital Retrospective',
+      locale: 'nl_NL',
       type: 'article',
     },
     twitter: {
       card: 'summary_large_image',
       title: title,
-      description: artwork.description,
+      description: description,
       images: [imageUrl],
     },
   };
@@ -51,14 +66,11 @@ export async function generateMetadata(
 export default async function ArtPage({ params }: Props) {
   const { slug } = await params;
   
-  // Haal artwork op via Firestore REST API op de server
   const artwork = await getArtworkBySlugServer(slug);
 
   if (!artwork) {
     notFound();
   }
 
-  // Render de client component met de opgehaalde data
-  // We zorgen dat imageUrl consistent is
-  return <ArtworkClientPage artwork={{ ...artwork, imageUrl: artwork.image || artwork.imageUrl }} />;
+  return <ArtworkClientPage artwork={artwork} />;
 }
