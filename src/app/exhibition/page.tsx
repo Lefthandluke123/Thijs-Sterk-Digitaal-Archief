@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
@@ -66,11 +65,12 @@ function ExhibitionContent() {
           <div className="flex gap-[40vw] px-[50vw] items-center pt-8">
             {artworks?.map((art: any) => (
               <div key={art.id} className="relative group shrink-0" onClick={() => setSelectedArtwork(art)}>
-                <div className="relative flex flex-col bg-white shadow-2xl border border-black/[0.03] cursor-pointer transition-all duration-700 hover:scale-[1.01]">
-                   <div className="p-8 pb-4">
-                      <img src={art.image || art.imageUrl} className="max-h-[50vh] w-auto object-contain block mx-auto" style={{ filter: `brightness(${art.brightness || 1})` }} alt={art.title} />
+                {/* Horizontal Scroll Item Frame - Flex centering for vertical balance */}
+                <div className="relative flex flex-col bg-white shadow-2xl border border-black/[0.03] cursor-pointer transition-all duration-700 hover:scale-[1.01] items-center justify-center">
+                   <div className="p-8 pb-4 flex items-center justify-center">
+                      <img src={art.image || art.imageUrl} className="max-h-[50vh] w-auto object-contain block" style={{ filter: `brightness(${art.brightness || 1})` }} alt={art.title} />
                    </div>
-                   <div className="px-8 py-6 border-t border-black/[0.03] bg-white">
+                   <div className="w-full px-8 py-6 border-t border-black/[0.03] bg-white text-center">
                       <h3 className="text-black text-[9px] font-bold uppercase tracking-[0.2em] mb-1 truncate">{art.title}</h3>
                       <p className="text-accent text-[8px] font-bold uppercase tracking-widest">{art.year} &bull; {art.medium}</p>
                    </div>

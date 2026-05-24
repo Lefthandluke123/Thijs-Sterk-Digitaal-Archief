@@ -11,7 +11,8 @@ interface RoomClientProps {
 
 /**
  * @fileOverview Client Component voor de weergave van een zaal-collectie.
- * Geoptimaliseerd voor een cinematic, full-screen museum-presentatie met strikte centering.
+ * Geoptimaliseerd voor een cinematic museum-presentatie met strikte viewport-centrering.
+ * Verwijdert absolute positionering op de afbeelding om top-left bias te voorkomen.
  */
 export function RoomClient({ artworks }: RoomClientProps) {
   return (
@@ -24,20 +25,18 @@ export function RoomClient({ artworks }: RoomClientProps) {
           style={{ animationDelay: `${index * 150}ms` }}
         >
           <article className="flex flex-col items-center justify-center space-y-12">
-            {/* Museum-style Frame Container */}
-            <div className="relative w-full aspect-[4/3] md:aspect-[16/10] overflow-hidden rounded-[2rem] md:rounded-[4rem] bg-black shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] border-4 border-white/5 transition-all duration-1000 group-hover:scale-[1.01] group-hover:shadow-[0_80px_150px_-30px_rgba(0,0,0,0.7)]">
+            {/* Museum-style Frame Container - Now using direct flex centering */}
+            <div className="relative w-full aspect-[4/3] md:aspect-[16/10] overflow-hidden rounded-[2rem] md:rounded-[4rem] bg-black shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] border-4 border-white/5 transition-all duration-1000 group-hover:scale-[1.01] group-hover:shadow-[0_80px_150px_-30px_rgba(0,0,0,0.7)] flex items-center justify-center">
               
-              {/* Centered Image Engine - Removed padding to prevent top-left bias */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <img 
-                  src={item.image || item.imageUrl} 
-                  alt={item.title} 
-                  className="max-w-[90%] max-h-[90%] object-contain transition-all duration-1000 ease-out group-hover:scale-105"
-                  style={{ filter: `brightness(${item.brightness || 1})` }}
-                />
-              </div>
+              {/* Centered Image Engine - Direct flex child, no absolute positioning */}
+              <img 
+                src={item.image || item.imageUrl} 
+                alt={item.title} 
+                className="max-w-[90%] max-h-[90%] object-contain transition-all duration-1000 ease-out group-hover:scale-105"
+                style={{ filter: `brightness(${item.brightness || 1})` }}
+              />
 
-              {/* Interaction Overlay */}
+              {/* Interaction Overlay - Absolute is only for UI layers */}
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-700 flex items-center justify-center opacity-0 group-hover:opacity-100">
                 <div className="p-6 md:p-10 rounded-full bg-white/10 backdrop-blur-3xl border border-white/20 transform scale-90 group-hover:scale-100 transition-transform duration-500">
                   <Maximize2 className="text-white w-8 h-8 md:w-12 md:h-12" />

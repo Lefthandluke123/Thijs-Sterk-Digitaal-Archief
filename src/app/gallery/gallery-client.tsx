@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -97,7 +96,7 @@ export function GalleryClient({ initialRoomSlug }: { initialRoomSlug: string | n
                   className="group relative cursor-pointer animate-in fade-in slide-in-from-bottom-4 duration-700" 
                   onClick={() => setSelectedArtwork(item)}
                 >
-                  <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-secondary/10 shadow-lg transition-all duration-700 hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.2)] group-hover:-translate-y-2">
+                  <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-secondary/10 shadow-lg transition-all duration-700 hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.2)] group-hover:-translate-y-2 flex items-center justify-center">
                     {displayImage ? (
                       <img 
                         src={displayImage} 
