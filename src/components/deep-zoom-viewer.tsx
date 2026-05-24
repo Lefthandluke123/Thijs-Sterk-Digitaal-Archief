@@ -12,7 +12,7 @@ interface DeepZoomViewerProps {
 
 /**
  * @fileOverview Stabiele OpenSeadragon Deep Zoom viewer met cursor-klik vergroting.
- * Voorkomt SSR fouten en dwingt centrering af bij elke nieuwe afbeelding.
+ * Nu met Command-klik (of Ctrl-klik) ondersteuning voor uitzoomen.
  */
 export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({ 
   imageUrl, 
@@ -21,6 +21,30 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isZoomOutMode, setIsZoomOutMode] = useState(false);
+
+  // Monitor toetsenbord voor cursor-verandering
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey) setIsZoomOutMode(true);
+    };
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (!e.metaKey && !e.ctrlKey) setIsZoomOutMode(false);
+    };
+
+    window.addEventListener('keydown', handleKeyDown, { passive: true });
+    window.addEventListener('keyup', handleKeyUp, { passive: true });
+    
+    // Ook resetten als het venster focus verliest
+    const handleBlur = () => setIsZoomOutMode(false);
+    window.addEventListener('blur', handleBlur);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener('blur', handleBlur);
+    };
+  }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !containerRef.current || !imageUrl) return;
@@ -38,6 +62,8 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
           viewerRef.current.destroy();
         }
 
+        const zoomFactor = 2.5;
+
         viewerRef.current = OpenSeadragon({
           element: containerRef.current,
           prefixUrl: "https://cdnjs.cloudflare.com/ajax/libs/openseadragon/4.1.0/images/",
@@ -48,13 +74,12 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
           },
           showNavigationControl: false,
           
-          // --- Cursor-klik vergroting configuratie ---
           gestureSettingsMouse: {
             scrollToZoom: true,
-            clickToZoom: true,     // Activeert vergroting bij een enkele klik
-            dblClickToZoom: true,  // Dubbelklik voor snelle zoom
+            clickToZoom: true,     
+            dblClickToZoom: true,  
           },
-          zoomPerClick: 2.5,       // De factor waarmee we inzoomen per klik
+          zoomPerClick: zoomFactor,       
           
           animationTime: 1.2,
           blendTime: 0.1,
@@ -63,12 +88,12 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
           minZoomImageRatio: 1,
           defaultZoomLevel: 0,
           minZoomLevel: 0.5,
-          maxZoomLevel: 12,        // Diepe zoom voor maximale details
+          maxZoomLevel: 12,        
         });
 
         viewerRef.current.addHandler('open', () => {
           setLoading(false);
-          // Forceer centrering en 'fit to screen' direct na laden
+          // Forceer centrering direct na laden
           requestAnimationFrame(() => {
             if (viewerRef.current && viewerRef.current.viewport) {
               viewerRef.current.viewport.goHome(true);
@@ -76,7 +101,22 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
           });
         });
 
-        // Verander de cursor naar een vergrootglas in de viewer
+        // Custom click handler voor Command-Klik uitzoomen
+        viewerRef.current.addHandler('canvas-click', (event: any) => {
+          // Check of meta (Command op Mac) of ctrl is ingedrukt
+          if (event.originalEvent.metaKey || event.originalEvent.ctrlKey) {
+            // Stop de standaard zoom-in actie
+            event.preventDefaultAction = true;
+            
+            const viewport = viewerRef.current.viewport;
+            const currentZoom = viewport.getZoom();
+            // Zoom uit met dezelfde factor
+            viewport.zoomTo(currentZoom / zoomFactor, event.position);
+            viewport.applyConstraints();
+          }
+        });
+
+        // Initiële cursor
         if (viewerRef.current.canvas) {
           viewerRef.current.canvas.style.cursor = "zoom-in";
         }
@@ -95,6 +135,13 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
       }
     };
   }, [imageUrl]);
+
+  // Update de cursor live op basis van de toets-status
+  useEffect(() => {
+    if (viewerRef.current && viewerRef.current.canvas) {
+      viewerRef.current.canvas.style.cursor = isZoomOutMode ? "zoom-out" : "zoom-in";
+    }
+  }, [isZoomOutMode]);
 
   return (
     <div className="relative w-full h-full bg-black/5 overflow-hidden rounded-2xl shadow-2xl">
