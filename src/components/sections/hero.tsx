@@ -44,25 +44,33 @@ export function Hero() {
           )}
         </h1>
         
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-8">
-          <Button size="lg" className="rounded-full px-16 bg-primary hover:bg-primary/90 text-primary-foreground font-bold uppercase tracking-[0.25em] text-[13px] h-16 shadow-2xl transition-all" asChild>
-            <Link href="/gallery">
-              <Sparkles className="mr-3 w-6 h-6" />
-              {t('hero_start_walk')}
-            </Link>
-          </Button>
-          <Button variant="outline" size="lg" className="rounded-full px-16 border-2 border-foreground/30 text-foreground hover:bg-black/5 font-bold uppercase tracking-[0.25em] text-[13px] h-16 transition-all" asChild>
-            <Link href="/curator">
-              <Layout className="mr-3 w-6 h-6" />
-              {t('hero_your_room')}
-            </Link>
-          </Button>
+        <div className="flex flex-col items-center justify-center gap-8">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-8 w-full">
+            <Button size="lg" className="rounded-full px-16 bg-primary hover:bg-primary/90 text-primary-foreground font-bold uppercase tracking-[0.25em] text-[13px] h-16 shadow-2xl transition-all" asChild>
+              <Link href="/gallery">
+                <Sparkles className="mr-3 w-6 h-6" />
+                {t('hero_start_walk')}
+              </Link>
+            </Button>
+            <Button variant="outline" size="lg" className="rounded-full px-16 border-2 border-foreground/30 text-foreground hover:bg-black/5 font-bold uppercase tracking-[0.25em] text-[13px] h-16 transition-all" asChild>
+              <Link href="/curator">
+                <Layout className="mr-3 w-6 h-6" />
+                {t('hero_your_room')}
+              </Link>
+            </Button>
+          </div>
+          
+          <div className="mt-4 animate-in fade-in slide-in-from-top-2 duration-1000">
+             <p className="text-[11px] font-black uppercase tracking-[0.4em] text-accent opacity-60 max-w-lg mx-auto leading-relaxed">
+               Kies uw eigen rondleiding langs het werk van Thijs op basis van thema&apos;s
+             </p>
+          </div>
         </div>
       </div>
 
       <div className="container mx-auto mt-24 z-10 px-4 max-w-7xl">
         <div 
-          className="relative aspect-[21/9] w-full rounded-[3rem] overflow-hidden shadow-2xl border-2 border-white/20 cursor-pointer group"
+          className="relative aspect-[21/9] w-full rounded-[3rem] overflow-hidden shadow-[0_60px_100px_-20px_rgba(0,0,0,0.3)] border-2 border-white/20 cursor-pointer group"
           onClick={() => setSelectedArtwork(artwork || { imageUrl: heroImage, title: "Maannacht" })}
         >
           <Image
