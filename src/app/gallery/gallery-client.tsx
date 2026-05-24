@@ -1,12 +1,12 @@
 
 "use client";
 
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, where } from 'firebase/firestore';
 import { ArtworkViewer } from '@/components/artwork-viewer';
-import { Maximize2, Loader2, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Maximize2, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/components/language-provider';
 
@@ -17,7 +17,6 @@ export function GalleryClient({ initialRoomSlug }: { initialRoomSlug: string | n
   const firestore = useFirestore();
 
   const currentRoomSlug = searchParams.get('room') || initialRoomSlug;
-  
   const [selectedArtwork, setSelectedArtwork] = useState<any | null>(null);
 
   const roomsQuery = useMemoFirebase(() => {
@@ -25,6 +24,13 @@ export function GalleryClient({ initialRoomSlug }: { initialRoomSlug: string | n
     return query(collection(firestore, 'rooms'), orderBy('order', 'asc'));
   }, [firestore]);
   const { data: rooms, loading: roomsLoading } = useCollection(roomsQuery);
+
+  // Automatische redirect naar de eerste zaal als er geen slug is
+  useEffect(() => {
+    if (rooms && rooms.length > 0 && !currentRoomSlug) {
+      router.replace(`/gallery?room=${rooms[0].slug}`);
+    }
+  }, [rooms, currentRoomSlug, router]);
 
   const artworksQuery = useMemoFirebase(() => {
     if (!firestore || !currentRoomSlug) return null;
@@ -38,19 +44,28 @@ export function GalleryClient({ initialRoomSlug }: { initialRoomSlug: string | n
     router.push(`/gallery?room=${slug}`);
   };
 
-  if (roomsLoading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-accent" /></div>;
+  if (roomsLoading && !rooms) return <div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="animate-spin text-accent" /></div>;
 
   return (
     <main className="min-h-screen bg-background pt-32 pb-32">
       <div className="container mx-auto px-6 max-w-7xl">
         <header className="mb-20 text-center space-y-6">
-          <h1 className="font-headline text-5xl md:text-7xl font-light italic text-accent">{activeRoom?.title || "Kies een Zaal"}</h1>
-          <p className="text-xl text-muted-foreground font-light max-w-3xl mx-auto">{activeRoom?.description}</p>
+          <h1 className="font-headline text-5xl md:text-7xl font-light italic text-accent">{activeRoom?.title || t('gallery_select')}</h1>
+          {activeRoom?.description && (
+            <p className="text-xl text-muted-foreground font-light max-w-3xl mx-auto">{activeRoom?.description}</p>
+          )}
         </header>
 
-        <div className="flex gap-4 overflow-x-auto no-scrollbar pb-8 justify-center border-b mb-16">
+        <div className="flex gap-4 overflow-x-auto no-scrollbar pb-8 justify-center border-b mb-16 px-4">
            {rooms?.map((r: any) => (
-             <button key={r.id} onClick={() => handleRoomChange(r.slug)} className={cn("px-8 py-3 rounded-full text-[12px] font-black uppercase tracking-widest transition-all", currentRoomSlug === r.slug ? "bg-accent text-accent-foreground" : "bg-black/5 hover:bg-black/10")}>
+             <button 
+                key={r.id} 
+                onClick={() => handleRoomChange(r.slug)} 
+                className={cn(
+                  "px-8 py-3 rounded-full text-[12px] font-black uppercase tracking-widest transition-all whitespace-nowrap", 
+                  currentRoomSlug === r.slug ? "bg-accent text-accent-foreground shadow-lg scale-105" : "bg-black/5 hover:bg-black/10"
+                )}
+             >
                {r.title}
              </button>
            ))}
@@ -64,7 +79,7 @@ export function GalleryClient({ initialRoomSlug }: { initialRoomSlug: string | n
               const displayImage = item.image || item.imageUrl || item.url;
               return (
                 <article key={item.id} className="group relative cursor-pointer" onClick={() => setSelectedArtwork(item)}>
-                  <div className="relative aspect-[4/5] overflow-hidden rounded-sm bg-muted/20 shadow-md">
+                  <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-secondary/10 shadow-lg transition-all duration-700 hover:shadow-2xl">
                     {displayImage ? (
                       <img 
                         src={displayImage} 
@@ -78,15 +93,22 @@ export function GalleryClient({ initialRoomSlug }: { initialRoomSlug: string | n
                       </div>
                     )}
                     <div className="absolute inset-0 bg-background/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <Maximize2 className="text-white w-6 h-6" />
+                      <div className="p-4 rounded-full bg-white/20 backdrop-blur-md border border-white/20">
+                        <Maximize2 className="text-white w-6 h-6" />
+                      </div>
                     </div>
                   </div>
-                  <div className="mt-4 text-center">
-                    <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground group-hover:text-foreground truncate">{item.title}</h3>
+                  <div className="mt-6 text-center">
+                    <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground group-hover:text-accent transition-colors truncate">{item.title}</h3>
                   </div>
                 </article>
               );
             })}
+            {(!artworks || artworks.length === 0) && !artLoading && (
+              <div className="col-span-full py-20 text-center opacity-30 italic font-light">
+                {t('gallery_closed')}
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -53,7 +53,7 @@ const mapDocument = (doc: any) => {
 
 export async function getRoomsServer() {
   try {
-    const res = await fetch(`${BASE_URL}/rooms?mask.fieldPaths=title&mask.fieldPaths=slug&mask.fieldPaths=order`, {
+    const res = await fetch(`${BASE_URL}/rooms`, {
       next: { revalidate: 60 }
     });
     if (!res.ok) return [];
@@ -70,6 +70,7 @@ export async function getRoomBySlugServer(slug: string) {
     const url = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents:runQuery`;
     const res = await fetch(url, {
       method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         structuredQuery: {
           from: [{ collectionId: 'rooms' }],
@@ -86,7 +87,9 @@ export async function getRoomBySlugServer(slug: string) {
       next: { revalidate: 60 }
     });
     const json = await res.json();
-    return json[0]?.document ? mapDocument(json[0].document) : null;
+    // runQuery returns an array of { document: { ... } }
+    const firstResult = Array.isArray(json) ? json[0] : null;
+    return firstResult?.document ? mapDocument(firstResult.document) : null;
   } catch (e) {
     console.error('getRoomBySlugServer error:', e);
     return null;
@@ -98,6 +101,7 @@ export async function getArtworksByRoomSlugServer(roomSlug: string) {
     const url = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents:runQuery`;
     const res = await fetch(url, {
       method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         structuredQuery: {
           from: [{ collectionId: 'artworks' }],
@@ -113,7 +117,8 @@ export async function getArtworksByRoomSlugServer(roomSlug: string) {
       next: { revalidate: 60 }
     });
     const json = await res.json();
-    return (json || [])
+    if (!Array.isArray(json)) return [];
+    return json
       .filter((j: any) => j.document)
       .map((j: any) => mapDocument(j.document));
   } catch (e) {
@@ -127,6 +132,7 @@ export async function getArtworkBySlugServer(slug: string) {
     const url = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents:runQuery`;
     const res = await fetch(url, {
       method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         structuredQuery: {
           from: [{ collectionId: 'artworks' }],
@@ -143,7 +149,8 @@ export async function getArtworkBySlugServer(slug: string) {
       next: { revalidate: 60 }
     });
     const json = await res.json();
-    return json[0]?.document ? mapDocument(json[0].document) : null;
+    const firstResult = Array.isArray(json) ? json[0] : null;
+    return firstResult?.document ? mapDocument(firstResult.document) : null;
   } catch (e) {
     console.error('getArtworkBySlugServer error:', e);
     return null;
