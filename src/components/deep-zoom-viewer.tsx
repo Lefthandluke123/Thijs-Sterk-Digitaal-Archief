@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -10,8 +11,8 @@ interface DeepZoomViewerProps {
 }
 
 /**
- * @fileOverview Stabiele OpenSeadragon Deep Zoom viewer.
- * Voorkomt SSR fouten door dynamische import in useEffect.
+ * @fileOverview Stabiele OpenSeadragon Deep Zoom viewer met cursor-klik vergroting.
+ * Voorkomt SSR fouten en dwingt centrering af bij elke nieuwe afbeelding.
  */
 export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({ 
   imageUrl, 
@@ -26,12 +27,13 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
 
     const initOSD = async () => {
       try {
-        // Dynamisch laden om SSR ReferenceError: document is not defined te voorkomen
+        // Dynamisch laden om SSR ReferenceError te voorkomen
         const OSDModule = await import('openseadragon');
         const OpenSeadragon = OSDModule.default;
 
         if (!containerRef.current) return;
 
+        // Ruim vorige instance op
         if (viewerRef.current) {
           viewerRef.current.destroy();
         }
@@ -45,28 +47,39 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
             buildPyramid: true
           },
           showNavigationControl: false,
+          
+          // --- Cursor-klik vergroting configuratie ---
           gestureSettingsMouse: {
             scrollToZoom: true,
-            clickToZoom: true,
-            dblClickToZoom: true,
+            clickToZoom: true,     // Activeert vergroting bij een enkele klik
+            dblClickToZoom: true,  // Dubbelklik voor snelle zoom
           },
-          animationTime: 1.5,
-          blendTime: 0.5,
+          zoomPerClick: 2.5,       // De factor waarmee we inzoomen per klik
+          
+          animationTime: 1.2,
+          blendTime: 0.1,
           constrainDuringPan: true,
           visibilityRatio: 1,
           minZoomImageRatio: 1,
           defaultZoomLevel: 0,
+          minZoomLevel: 0.5,
+          maxZoomLevel: 12,        // Diepe zoom voor maximale details
         });
 
         viewerRef.current.addHandler('open', () => {
           setLoading(false);
-          // 🔥 Kritiek: Her-centreren zodra de afbeelding geladen is
+          // Forceer centrering en 'fit to screen' direct na laden
           requestAnimationFrame(() => {
             if (viewerRef.current && viewerRef.current.viewport) {
               viewerRef.current.viewport.goHome(true);
             }
           });
         });
+
+        // Verander de cursor naar een vergrootglas in de viewer
+        if (viewerRef.current.canvas) {
+          viewerRef.current.canvas.style.cursor = "zoom-in";
+        }
 
       } catch (err) {
         console.error('[DEEP ZOOM] Initialization failed:', err);
@@ -86,7 +99,7 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
   return (
     <div className="relative w-full h-full bg-black/5 overflow-hidden rounded-2xl shadow-2xl">
       {loading && (
-        <div className="absolute inset-0 flex items-center justify-center z-10 bg-background/20 backdrop-blur-sm">
+        <div className="absolute inset-0 flex items-center justify-center z-10 bg-background/10 backdrop-blur-sm">
           <Loader2 className="w-10 h-10 animate-spin text-accent/40" />
         </div>
       )}
