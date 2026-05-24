@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -9,10 +8,6 @@ interface Props {
   params: Promise<{ slug: string }>;
 }
 
-/**
- * @fileOverview Server Component voor individuele schilderij-pagina's op basis van slug.
- * Genereert 100% crawler-vriendelijke Open Graph tags voor Facebook/Twitter.
- */
 export async function generateMetadata(
   { params }: Props
 ): Promise<Metadata> {
@@ -34,7 +29,7 @@ export async function generateMetadata(
   const description = artwork.description || `${artwork.medium || 'Schilderij'} van Thijs Sterk uit ${artwork.year || 'onbekend jaar'}.`;
 
   return {
-    title: `${title} | The Digital Retrospective`,
+    title: `${title} | Het Retrospectief`,
     description: description,
     metadataBase: new URL(baseUrl),
     alternates: {
@@ -50,7 +45,7 @@ export async function generateMetadata(
         alt: title 
       }],
       url: `${baseUrl}/art/${slug}`,
-      siteName: 'Thijs Sterk Digital Retrospective',
+      siteName: 'Thijs Sterk Retrospectief',
       locale: 'nl_NL',
       type: 'article',
     },

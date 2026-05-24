@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Metadata, ResolvingMetadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -8,11 +7,6 @@ import { getArtworkServer } from '@/lib/firestore-server';
 interface Props {
   params: Promise<{ id: string }>;
 }
-
-/**
- * @fileOverview Server Component voor individuele kunstwerk-pagina's op basis van ID.
- * Zorgt voor correcte scrapability voor social sharing.
- */
 
 export async function generateMetadata(
   { params }: Props,
@@ -36,7 +30,7 @@ export async function generateMetadata(
   const imageUrl = artwork.imageUrl || artwork.image || defaultImage;
 
   return {
-    title: `${title} | The Digital Retrospective`,
+    title: `${title} | Het Retrospectief`,
     description: description,
     metadataBase: new URL(baseUrl),
     alternates: {
@@ -46,7 +40,7 @@ export async function generateMetadata(
       title: `${title} - Thijs Sterk`,
       description: description,
       url: `${baseUrl}/artwork/${id}`,
-      siteName: 'Thijs Sterk Digital Retrospective',
+      siteName: 'Thijs Sterk Retrospectief',
       images: [
         {
           url: imageUrl,

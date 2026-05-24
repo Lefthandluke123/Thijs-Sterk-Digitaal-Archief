@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { notFound } from 'next/navigation';
 import { RoomClient } from './room-client';
@@ -8,10 +7,6 @@ import { Metadata } from 'next';
 interface Props {
   params: Promise<{ slug: string }>;
 }
-
-/**
- * @fileOverview Server Component voor een museumzaal met uitgebreide SEO/OG metadata.
- */
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
@@ -25,10 +20,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return { title: 'Zaal niet gevonden | Thijs Sterk' };
   }
 
-  // Kies een representatieve afbeelding voor de zaal (featured of de eerste)
   const displayImage = artworks?.find(a => a.featured)?.imageUrl || artworks?.[0]?.imageUrl || defaultImage;
-  const title = `${room.title} | The Digital Retrospective`;
-  const description = room.description || `Ontdek de collectie in de zaal ${room.title} van het Thijs Sterk Retrospectief.`;
+  const title = `${room.title} | Het Retrospectief`;
+  const description = room.description || `Ontdek de collectie in de zaal ${room.title} van Thijs Sterk.`;
 
   return {
     title: title,
@@ -41,7 +35,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: `${room.title} - Thijs Sterk`,
       description: description,
       url: `${baseUrl}/room/${slug}`,
-      siteName: 'Thijs Sterk Digital Retrospective',
+      siteName: 'Thijs Sterk Retrospectief',
       images: [
         {
           url: displayImage,
