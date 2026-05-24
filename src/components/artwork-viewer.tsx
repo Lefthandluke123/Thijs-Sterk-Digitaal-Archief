@@ -8,7 +8,7 @@ import { useLanguage } from '@/components/language-provider';
 import { ShareButton } from './share-button';
 import { usePathname } from 'next/navigation';
 
-// Laad DeepZoomViewer dynamisch om SSR issues met OpenSeadragon te voorkomen
+// Laad DeepZoomViewer dynamisch om SSR issues te voorkomen
 const DeepZoomViewer = dynamic(() => import('./deep-zoom-viewer').then(mod => mod.DeepZoomViewer), { 
   ssr: false,
   loading: () => (
@@ -25,10 +25,6 @@ interface ArtworkViewerProps {
   onNext?: () => void;
 }
 
-/**
- * @fileOverview Gestroomlijnde Artwork Viewer met Deep Zoom.
- * Gebruikt een directe grid-centrering op de volledige viewport.
- */
 export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewerProps) {
   const [showMetadata, setShowMetadata] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -67,8 +63,8 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
     setIsPlaying(!isPlaying);
   };
 
-  // Harde uitsluiting: render nooit op specifieke detail-pagina's waar RoomClient of ArtworkClientPage actief is
-  if (!artwork || pathname.startsWith('/room') || pathname.startsWith('/art') || pathname.startsWith('/artwork')) {
+  // Uitsluiting voor specifieke routes waar de viewer niet gewenst is
+  if (!artwork || pathname.startsWith('/room') || pathname.startsWith('/artwork')) {
     return null;
   }
 
@@ -86,25 +82,20 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
         placeItems: 'center',
         overflow: 'hidden'
       }}
-      onClick={onClose}
     >
-      {/* Deep Zoom Viewer Container */}
-      <div className="w-[90vw] h-[80vh] flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+      <div className="w-[90vw] h-[80vh] flex items-center justify-center">
         {displayImage && (
           <DeepZoomViewer 
             key={artwork.id}
             imageUrl={displayImage} 
-            title={artwork.displayTitle || artwork.title} 
             brightness={artwork.brightness || 1}
           />
         )}
       </div>
 
-      {/* UI Overlay Top */}
-      <div className="absolute top-8 right-8 z-[10000] flex items-center gap-4 pointer-events-auto" onClick={(e) => e.stopPropagation()}>
+      <div className="absolute top-8 right-8 z-[10000] flex items-center gap-4">
          <ShareButton 
            title={artwork.displayTitle || artwork.title}
-           description={artwork.description}
            url={artworkUrl}
          />
 
@@ -116,35 +107,27 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
          )}
 
          <button onClick={() => setShowMetadata(!showMetadata)} className={cn("p-4 rounded-full backdrop-blur-md border border-black/5 transition-all shadow-lg", showMetadata ? "bg-accent text-accent-foreground" : "bg-white/80 text-foreground")}><Info className="w-5 h-5" /></button>
-         
          <button onClick={onClose} className="p-4 bg-white/80 backdrop-blur-md rounded-full text-foreground hover:bg-destructive hover:text-white transition-all border border-black/5 shadow-lg"><X className="w-5 h-5 opacity-60" /></button>
       </div>
 
-      {/* Navigation Controls */}
       <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-8 pointer-events-none z-[10000]">
         {onPrev && (
-          <button onClick={(e) => { e.stopPropagation(); onPrev(); }} className="p-5 rounded-full bg-white/40 backdrop-blur-md pointer-events-auto hover:bg-accent hover:text-accent-foreground transition-all border border-black/5 shadow-xl group/btn"><ChevronLeft className="w-10 h-10 text-foreground opacity-40 group-hover/btn:opacity-100 transition-opacity" /></button>
+          <button onClick={onPrev} className="p-5 rounded-full bg-white/40 backdrop-blur-md pointer-events-auto hover:bg-accent hover:text-accent-foreground transition-all border border-black/5 shadow-xl"><ChevronLeft className="w-10 h-10 opacity-40" /></button>
         )}
         {onNext && (
-          <button onClick={(e) => { e.stopPropagation(); onNext(); }} className="p-5 rounded-full bg-white/40 backdrop-blur-md pointer-events-auto hover:bg-accent hover:text-accent-foreground transition-all border border-black/5 shadow-xl group/btn"><ChevronRight className="w-10 h-10 text-foreground opacity-40 group-hover/btn:opacity-100 transition-opacity" /></button>
+          <button onClick={onNext} className="p-5 rounded-full bg-white/40 backdrop-blur-md pointer-events-auto hover:bg-accent hover:text-accent-foreground transition-all border border-black/5 shadow-xl"><ChevronRight className="w-10 h-10 opacity-40" /></button>
         )}
       </div>
 
-      {/* Metadata Panel */}
-      <div 
-        onClick={(e) => e.stopPropagation()}
-        className={cn("absolute bottom-0 left-0 right-0 bg-background/95 backdrop-blur-2xl border-t border-black/5 flex flex-col items-center justify-center overflow-y-auto text-center transition-all duration-700 ease-in-out z-[10010]", showMetadata ? "h-[22vh] opacity-100 py-6 px-12 translate-y-0" : "h-0 opacity-0 pointer-events-none translate-y-12")}
-      >
-        <div className="max-w-4xl mx-auto space-y-3">
-          <h2 className="text-xl md:text-3xl font-headline font-light italic text-foreground tracking-tight">{artwork.displayTitle || artwork.title}</h2>
-          <div className="text-[12px] md:text-[13px] font-bold tracking-[0.15em] text-accent flex flex-wrap gap-x-6 gap-y-2 justify-center items-center">
-            <span className="uppercase opacity-70">Zaal: {artwork.roomSlug}</span>
-            <span className="w-1 h-1 rounded-full bg-accent/30 hidden md:inline" />
-            <span className="italic">{artwork.year || 'Onbekend'}</span>
-            <span className="w-1 h-1 rounded-full bg-accent/30 hidden md:inline" />
-            <span className="uppercase tracking-widest">{artwork.medium}</span>
+      <div className={cn("absolute bottom-0 left-0 right-0 bg-background/95 backdrop-blur-2xl border-t border-black/5 flex flex-col items-center justify-center text-center transition-all duration-700 ease-in-out z-[10010]", showMetadata ? "h-[30vh] opacity-100 py-12 px-10 translate-y-0" : "h-0 opacity-0 pointer-events-none translate-y-12")}>
+        <div className="max-w-4xl mx-auto space-y-6">
+          <h2 className="text-2xl md:text-5xl font-headline font-light italic text-foreground leading-tight">{artwork.displayTitle || artwork.title}</h2>
+          <div className="text-[12px] font-bold tracking-[0.2em] text-accent flex flex-wrap gap-x-8 gap-y-2 justify-center items-center uppercase">
+            <span>{artwork.year || 'Onbekend'}</span>
+            <span className="w-1 h-1 rounded-full bg-accent/30" />
+            <span>{artwork.medium}</span>
           </div>
-          <p className="text-xs text-muted-foreground opacity-60 max-w-2xl mx-auto line-clamp-2">{artwork.description}</p>
+          <p className="text-sm md:text-base text-muted-foreground font-light leading-relaxed max-w-2xl mx-auto">{artwork.description}</p>
         </div>
       </div>
     </div>

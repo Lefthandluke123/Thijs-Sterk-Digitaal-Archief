@@ -21,9 +21,6 @@ interface RoomClientProps {
   roomTitle?: string;
 }
 
-/**
- * @fileOverview Museum-zaal component met stabiele Deep Zoom integratie.
- */
 export function RoomClient({ artworks, roomTitle }: RoomClientProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showMetadata, setShowMetadata] = useState(false);
@@ -62,12 +59,6 @@ export function RoomClient({ artworks, roomTitle }: RoomClientProps) {
         overflow: 'hidden' 
       }}
     >
-      {/* Debug Label */}
-      <div className="fixed bottom-4 right-4 z-[200] bg-black/80 text-white text-[8px] px-2 py-1 rounded-full uppercase font-bold tracking-widest opacity-30 pointer-events-none">
-        ROOM VIEWER ACTIVE
-      </div>
-
-      {/* UI Overlay Top */}
       <div className="absolute top-0 left-0 right-0 z-[120] p-6 md:p-10 flex items-center justify-between pointer-events-none">
         <div className="flex items-center gap-6 pointer-events-auto">
           <Link 
@@ -95,7 +86,6 @@ export function RoomClient({ artworks, roomTitle }: RoomClientProps) {
         </button>
       </div>
 
-      {/* Navigatie Pijlen */}
       <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 z-[110] flex justify-between px-8 pointer-events-none">
         <button 
           onClick={handlePrev} 
@@ -111,26 +101,23 @@ export function RoomClient({ artworks, roomTitle }: RoomClientProps) {
         </button>
       </div>
 
-      {/* DEEP ZOOM VIEWER - Hard gecentreerd */}
+      {/* Gecentreerde Container voor de Deep Zoom Viewer */}
       <div className="w-[90vw] h-[80vh] flex items-center justify-center">
         {displayImage && (
           <DeepZoomViewer 
             key={item.id}
             imageUrl={displayImage} 
-            title={item.title}
             brightness={item.brightness || 1}
           />
         )}
       </div>
 
-      {/* Metadata Panel */}
       <div className={cn(
         "absolute bottom-0 left-0 right-0 bg-background/95 backdrop-blur-2xl border-t border-black/5 flex flex-col items-center justify-center text-center transition-all duration-700 ease-in-out z-[130] overflow-y-auto",
         showMetadata ? "h-auto min-h-[30vh] opacity-100 py-12 translate-y-0" : "h-0 opacity-0 pointer-events-none translate-y-12"
       )}>
         <div className="max-w-4xl mx-auto space-y-6 px-10">
           <h2 className="text-2xl md:text-5xl font-headline font-light italic text-foreground leading-tight">{item.title}</h2>
-          
           <div className="text-[12px] font-bold tracking-[0.2em] text-accent flex flex-wrap gap-x-8 gap-y-2 justify-center items-center uppercase">
             {item.year && (
               <>
@@ -140,32 +127,20 @@ export function RoomClient({ artworks, roomTitle }: RoomClientProps) {
             )}
             <span>{item.medium || 'Olieverf op doek'}</span>
           </div>
-
           <p className="text-sm md:text-base text-muted-foreground font-light leading-relaxed max-w-2xl mx-auto">
             {item.description || 'Ontdek de essentie van licht en ruimte in dit meesterlijke werk van Thijs Sterk.'}
           </p>
-
           <div className="pt-8">
-             <button 
-              onClick={() => setShowMetadata(false)}
-              className="text-[10px] font-black uppercase tracking-[0.3em] text-accent hover:opacity-60 transition-opacity border-b border-accent/20 pb-1"
-             >
+             <button onClick={() => setShowMetadata(false)} className="text-[10px] font-black uppercase tracking-[0.3em] text-accent hover:opacity-60 transition-opacity border-b border-accent/20 pb-1">
                Sluit details
              </button>
           </div>
         </div>
       </div>
       
-      {/* Progress Indicator */}
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-[115] flex gap-2">
         {artworks.map((_, i) => (
-          <div 
-            key={i} 
-            className={cn(
-              "h-1 rounded-full transition-all duration-500",
-              i === currentIndex ? "w-12 bg-accent" : "w-4 bg-black/10"
-            )}
-          />
+          <div key={i} className={cn("h-1 rounded-full transition-all duration-500", i === currentIndex ? "w-12 bg-accent" : "w-4 bg-black/10")} />
         ))}
       </div>
     </main>
