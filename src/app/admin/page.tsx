@@ -4,7 +4,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, doc, deleteDoc, query, updateDoc, addDoc, serverTimestamp, orderBy, getDocs, where } from 'firebase/firestore';
+import { collection, doc, deleteDoc, query, updateDoc, addDoc, serverTimestamp, orderBy, getDocs, where, writeBatch } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
@@ -23,17 +23,25 @@ import {
   Settings as SettingsIcon,
   X,
   RefreshCw,
-  DatabaseZap
+  DatabaseZap,
+  CheckSquare,
+  Square,
+  CheckCircle2,
+  FolderInput,
+  Star,
+  ShoppingBag,
+  MoreHorizontal
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogTitle, DialogHeader } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogHeader, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { verifyAdminPassword } from '@/lib/admin-actions';
 import { cn } from '@/lib/utils';
 import placeholderData from '@/app/lib/placeholder-images.json';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export default function AdminPage() {
   const firestore = useFirestore();
@@ -42,11 +50,16 @@ export default function AdminPage() {
   const [password, setPassword] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [isMigrating, setIsMigrating] = useState(false);
+  const [isBulkOperating, setIsBulkOperating] = useState(false);
 
   const [editingArtworkId, setEditingArtworkId] = useState<string | null>(null);
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('artworks');
+  
+  // Bulk selection state
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [showBulkMoveDialog, setShowBulkMoveDialog] = useState(false);
 
   useEffect(() => {
     if (sessionStorage.getItem('admin_auth') === 'true') setIsAuthorized(true);
@@ -97,7 +110,8 @@ export default function AdminPage() {
       medium: 'Olieverf op doek',
       description: '',
       brightness: 1,
-      featured: false
+      featured: false,
+      inShop: false
     });
     setEditingArtworkId(newDoc.id);
   };
@@ -119,6 +133,57 @@ export default function AdminPage() {
     updateDoc(ref, { [field]: value }).catch(err => {
       errorEmitter.emit('permission-error', new FirestorePermissionError({ path: ref.path, operation: 'update' }));
     });
+  };
+
+  const toggleSelection = (id: string) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
+  const selectAllFiltered = () => {
+    if (selectedIds.length === filteredArtworks.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filteredArtworks.map((a: any) => a.id));
+    }
+  };
+
+  const runBulkAction = async (action: 'delete' | 'toggle_featured' | 'toggle_shop' | 'move', targetRoomSlug?: string) => {
+    if (!firestore || selectedIds.length === 0) return;
+    
+    if (action === 'delete' && !confirm(`Weet je zeker dat je ${selectedIds.length} werken wilt verwijderen? Dit kan niet ongedaan worden gemaakt.`)) {
+      return;
+    }
+
+    setIsBulkOperating(true);
+    const batch = writeBatch(firestore);
+
+    try {
+      for (const id of selectedIds) {
+        const ref = doc(firestore, 'artworks', id);
+        const art = artworks?.find((a: any) => a.id === id);
+        
+        if (action === 'delete') {
+          batch.delete(ref);
+        } else if (action === 'toggle_featured') {
+          batch.update(ref, { featured: !art?.featured });
+        } else if (action === 'toggle_shop') {
+          batch.update(ref, { inShop: !art?.inShop });
+        } else if (action === 'move' && targetRoomSlug) {
+          batch.update(ref, { roomSlug: targetRoomSlug });
+        }
+      }
+
+      await batch.commit();
+      toast({ title: "Bulk actie voltooid", description: `${selectedIds.length} werken bijgewerkt.` });
+      setSelectedIds([]);
+      setShowBulkMoveDialog(false);
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Bulk actie mislukt", description: err.message });
+    } finally {
+      setIsBulkOperating(false);
+    }
   };
 
   const runMigration = async () => {
@@ -233,8 +298,8 @@ export default function AdminPage() {
           </TabsList>
 
           <TabsContent value="artworks" className="space-y-8">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="relative flex-1">
+            <div className="flex flex-col md:flex-row gap-4 items-center">
+              <div className="relative flex-1 w-full">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-30" />
                 <Input 
                   placeholder="Zoek op titel of zaal..." 
@@ -243,9 +308,15 @@ export default function AdminPage() {
                   className="pl-12 h-14 rounded-2xl border-none bg-secondary/20" 
                 />
               </div>
-              <Button onClick={handleAddArtwork} className="h-14 px-8 rounded-2xl bg-accent hover:bg-accent/90 transition-all">
-                <Plus className="w-4 h-4 mr-2" /> Werk Toevoegen
-              </Button>
+              <div className="flex gap-2 w-full md:w-auto">
+                <Button variant="outline" onClick={selectAllFiltered} className="h-14 px-6 rounded-2xl border-2 uppercase font-black text-[10px] tracking-widest">
+                  {selectedIds.length === filteredArtworks.length ? <CheckSquare className="w-4 h-4 mr-2" /> : <Square className="w-4 h-4 mr-2" />}
+                  {selectedIds.length === filteredArtworks.length ? "Deselecteer" : "Selecteer Alles"}
+                </Button>
+                <Button onClick={handleAddArtwork} className="h-14 px-8 rounded-2xl bg-accent hover:bg-accent/90 transition-all flex-1 md:flex-initial">
+                  <Plus className="w-4 h-4 mr-2" /> Werk Toevoegen
+                </Button>
+              </div>
             </div>
 
             {artLoading ? (
@@ -254,20 +325,42 @@ export default function AdminPage() {
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
                 {filteredArtworks.map((art: any) => {
                   const displayImage = art.image || art.imageUrl || art.url;
+                  const isSelected = selectedIds.includes(art.id);
+                  
                   return (
-                    <Card key={art.id} className="group overflow-hidden cursor-pointer hover:ring-2 hover:ring-accent transition-all border-none shadow-md bg-white" onClick={() => setEditingArtworkId(art.id)}>
-                      <div className="aspect-square bg-muted/20 relative">
+                    <Card 
+                      key={art.id} 
+                      className={cn(
+                        "group relative overflow-hidden cursor-pointer transition-all border-none shadow-md bg-white",
+                        isSelected ? "ring-4 ring-primary scale-[0.98]" : "hover:ring-2 hover:ring-accent/50"
+                      )} 
+                    >
+                      <div className="absolute top-2 left-2 z-20" onClick={(e) => { e.stopPropagation(); toggleSelection(art.id); }}>
+                        <div className={cn(
+                          "w-6 h-6 rounded-full flex items-center justify-center shadow-lg border-2 transition-all",
+                          isSelected ? "bg-primary border-primary text-white" : "bg-white/80 border-white text-transparent group-hover:border-primary/40"
+                        )}>
+                          {isSelected && <CheckCircle2 className="w-4 h-4" />}
+                        </div>
+                      </div>
+
+                      <div className="aspect-square bg-muted/20 relative" onClick={() => setEditingArtworkId(art.id)}>
                         {displayImage ? (
                           <img src={displayImage} className="w-full h-full object-cover" alt={art.title} />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center opacity-20"><Palette className="w-8 h-8" /></div>
                         )}
-                        <div className="absolute top-2 right-2 bg-black/40 text-white text-[8px] px-2 py-1 rounded-full backdrop-blur-md uppercase font-bold">
-                          {art.roomSlug || 'geen zaal'}
+                        <div className="absolute top-2 right-2 flex flex-col gap-1 items-end">
+                           <div className="bg-black/40 text-white text-[8px] px-2 py-1 rounded-full backdrop-blur-md uppercase font-bold">
+                            {art.roomSlug || 'geen zaal'}
+                          </div>
+                          {art.featured && <div className="bg-yellow-500/80 text-white p-1 rounded-full"><Star className="w-3 h-3 fill-white" /></div>}
+                          {art.inShop && <div className="bg-blue-500/80 text-white p-1 rounded-full"><ShoppingBag className="w-3 h-3" /></div>}
                         </div>
                       </div>
-                      <div className="p-3">
+                      <div className="p-3" onClick={() => setEditingArtworkId(art.id)}>
                         <h3 className="text-[10px] font-bold uppercase truncate">{art.title}</h3>
+                        <p className="text-[8px] opacity-40 uppercase font-black tracking-widest mt-1">{art.year || 'Geen jaar'}</p>
                       </div>
                     </Card>
                   );
@@ -308,6 +401,94 @@ export default function AdminPage() {
         </Tabs>
       </div>
 
+      {/* Bulk Action Toolbar */}
+      {selectedIds.length > 0 && (
+        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[100] bg-primary text-primary-foreground px-8 py-4 rounded-[2.5rem] shadow-2xl flex items-center gap-6 animate-in slide-in-from-bottom-20 duration-500">
+          <div className="border-r border-white/20 pr-6 flex flex-col items-center">
+            <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Geselecteerd</span>
+            <span className="text-2xl font-headline italic">{selectedIds.length}</span>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => runBulkAction('toggle_featured')}
+              disabled={isBulkOperating}
+              className="rounded-full hover:bg-white/10"
+            >
+              <Star className="w-4 h-4 mr-2" /> Featured
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => runBulkAction('toggle_shop')}
+              disabled={isBulkOperating}
+              className="rounded-full hover:bg-white/10"
+            >
+              <ShoppingBag className="w-4 h-4 mr-2" /> Shop
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setShowBulkMoveDialog(true)}
+              disabled={isBulkOperating}
+              className="rounded-full hover:bg-white/10"
+            >
+              <FolderInput className="w-4 h-4 mr-2" /> Verplaats
+            </Button>
+            <Button 
+              variant="destructive" 
+              size="sm" 
+              onClick={() => runBulkAction('delete')}
+              disabled={isBulkOperating}
+              className="rounded-full bg-red-500/20 hover:bg-red-500 text-white"
+            >
+              <Trash2 className="w-4 h-4 mr-2" /> Verwijder
+            </Button>
+          </div>
+
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => setSelectedIds([])}
+            className="ml-2 w-8 h-8 rounded-full hover:bg-white/10"
+          >
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+      )}
+
+      {/* Bulk Move Dialog */}
+      <Dialog open={showBulkMoveDialog} onOpenChange={setShowBulkMoveDialog}>
+        <DialogContent className="max-w-md p-10 rounded-[3rem] border-none shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="font-headline text-3xl italic mb-6">Verplaats Selectie</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6">
+            <p className="text-sm text-muted-foreground italic">
+              Kies de doelzaal voor de {selectedIds.length} geselecteerde werken.
+            </p>
+            <div className="space-y-2">
+              <Label className="text-[10px] uppercase font-bold tracking-widest opacity-60">Zaal</Label>
+              <Select onValueChange={(v) => runBulkAction('move', v)}>
+                <SelectTrigger className="h-14 rounded-2xl bg-secondary/10 border-none">
+                  <SelectValue placeholder="Selecteer een zaal..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {rooms?.map((r: any) => (
+                    <SelectItem key={r.slug} value={r.slug}>{r.title}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter className="mt-8">
+            <Button variant="outline" className="w-full rounded-2xl h-14" onClick={() => setShowBulkMoveDialog(false)}>Annuleren</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Edit Artwork Dialog */}
       <Dialog open={!!editingArtworkId} onOpenChange={() => setEditingArtworkId(null)}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-10 rounded-[3rem] border-none shadow-2xl">
@@ -332,6 +513,23 @@ export default function AdminPage() {
                     onBlur={e => updateField('artworks', editingArtworkId!, 'image', e.target.value)} 
                     className="h-12 rounded-xl bg-secondary/10 border-none" 
                   />
+                </div>
+                
+                <div className="flex gap-4">
+                  <div className="flex items-center gap-2 bg-secondary/10 px-4 py-3 rounded-xl flex-1">
+                    <Checkbox 
+                      checked={editingArtwork.featured} 
+                      onCheckedChange={(checked) => updateField('artworks', editingArtworkId!, 'featured', checked)} 
+                    />
+                    <Label className="text-[10px] font-black uppercase tracking-widest cursor-pointer">Uitgelicht</Label>
+                  </div>
+                  <div className="flex items-center gap-2 bg-secondary/10 px-4 py-3 rounded-xl flex-1">
+                    <Checkbox 
+                      checked={editingArtwork.inShop} 
+                      onCheckedChange={(checked) => updateField('artworks', editingArtworkId!, 'inShop', checked)} 
+                    />
+                    <Label className="text-[10px] font-black uppercase tracking-widest cursor-pointer">In Winkel</Label>
+                  </div>
                 </div>
               </div>
               
