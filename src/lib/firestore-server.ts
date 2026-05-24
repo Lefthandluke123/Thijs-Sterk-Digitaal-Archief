@@ -110,6 +110,19 @@ export async function getArtworksByRoomSlugServer(roomSlug: string) {
   }
 }
 
+export async function getArtworkServer(id: string) {
+  try {
+    const res = await fetch(`${BASE_URL}/artworks/${id}`, {
+      next: { revalidate: 60 }
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    return mapDocument(json);
+  } catch (e) {
+    return null;
+  }
+}
+
 export async function getArtworkBySlugServer(slug: string) {
   try {
     const url = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents:runQuery`;
