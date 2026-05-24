@@ -21,12 +21,6 @@ export function Hero() {
   }, [firestore]);
   const { data: siteSettings } = useDoc(siteSettingsRef);
 
-  const roomsQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return query(collection(firestore, 'rooms'), orderBy('order', 'asc'), limit(1));
-  }, [firestore]);
-  const { data: firstRoom } = useCollection(roomsQuery);
-
   const featuredQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'artworks'), where('featured', '==', true), limit(1));
@@ -51,14 +45,12 @@ export function Hero() {
         </h1>
         
         <div className="flex flex-col sm:flex-row items-center justify-center gap-8">
-          {firstRoom?.[0] && (
-            <Button size="lg" className="rounded-full px-16 bg-primary hover:bg-primary/90 text-primary-foreground font-bold uppercase tracking-[0.25em] text-[13px] h-16 shadow-2xl transition-all" asChild>
-              <Link href={`/room/${firstRoom[0].slug}`}>
-                <Sparkles className="mr-3 w-6 h-6" />
-                {t('hero_start_walk')}
-              </Link>
-            </Button>
-          )}
+          <Button size="lg" className="rounded-full px-16 bg-primary hover:bg-primary/90 text-primary-foreground font-bold uppercase tracking-[0.25em] text-[13px] h-16 shadow-2xl transition-all" asChild>
+            <Link href="/gallery">
+              <Sparkles className="mr-3 w-6 h-6" />
+              {t('hero_start_walk')}
+            </Link>
+          </Button>
           <Button variant="outline" size="lg" className="rounded-full px-16 border-2 border-foreground/30 text-foreground hover:bg-black/5 font-bold uppercase tracking-[0.25em] text-[13px] h-16 transition-all" asChild>
             <Link href="/curator">
               <Layout className="mr-3 w-6 h-6" />
