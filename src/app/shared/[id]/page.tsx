@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { useLanguage } from '@/components/language-provider';
 import { DeepZoomViewer, type DeepZoomHandle } from '@/components/deep-zoom-viewer';
 import { toast } from '@/hooks/use-toast';
+import { ShareButton } from '@/components/share-button';
 
 export default function SharedRoomPage() {
   const { id } = useParams();
@@ -40,6 +41,7 @@ export default function SharedRoomPage() {
   }, [artworks, room]);
 
   const activeArtwork: any = sortedArtworks[currentIndex];
+  const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
 
   useEffect(() => {
     if (room) {
@@ -73,23 +75,6 @@ export default function SharedRoomPage() {
 
   const startReveal = () => {
     zoomRef.current?.startReveal();
-  };
-
-  const handleGlobalShare = async () => {
-    const url = window.location.href;
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: room?.title || "Mijn Expositie",
-          text: `Bekijk dit retrospectief archief van Thijs Sterk: ${room?.title}`,
-          url
-        });
-        return;
-      } catch (e) {}
-    }
-    // Fallback: copy link
-    navigator.clipboard.writeText(url);
-    toast({ title: "Link gekopieerd!" });
   };
 
   if (roomLoading || artLoading) return <div className="h-screen bg-black flex items-center justify-center"><Loader2 className="w-10 h-10 animate-spin text-accent" /></div>;
@@ -127,13 +112,11 @@ export default function SharedRoomPage() {
       </div>
 
       <div className={cn("absolute top-10 right-10 z-50 flex items-center gap-4 transition-opacity", isAnimating ? "opacity-0 pointer-events-none" : "opacity-100")}>
-        <button 
-          onClick={handleGlobalShare}
-          className="flex items-center gap-3 px-6 py-3 rounded-full backdrop-blur-xl border border-white/10 bg-white/5 hover:bg-white/10 transition-all shadow-2xl"
-        >
-          <Share2 className="w-4 h-4 text-accent" />
-          <span className="text-[10px] font-black uppercase tracking-widest hidden md:inline">{t('viewer_share')}</span>
-        </button>
+        <ShareButton 
+          title={room.title}
+          description={`Bekijk deze gecureerde expositie in The Digital Retrospective van Thijs Sterk.`}
+          url={shareUrl}
+        />
 
         <button 
           onClick={startReveal}

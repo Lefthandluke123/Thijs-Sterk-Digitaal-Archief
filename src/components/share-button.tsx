@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Share2, Loader2, Check } from 'lucide-react';
+import { Share2, Loader2, Check, Link as LinkIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
@@ -15,8 +15,7 @@ interface ShareButtonProps {
 }
 
 /**
- * @fileOverview Subtiele deel-component die switcht tussen native share en universele fallback.
- * De 'lelijke' blauwe branded knop is verwijderd voor een museale uitstraling.
+ * @fileOverview Subtle sharing component that prioritizes native share and falls back to a clean link copy or social popup.
  */
 export function ShareButton({ title, description, url, className }: ShareButtonProps) {
   const [isSharing, setIsSharing] = useState(false);
@@ -25,8 +24,8 @@ export function ShareButton({ title, description, url, className }: ShareButtonP
   const handleShare = async () => {
     setIsSharing(true);
     
-    // 1. Probeer Native Share (iOS/Android)
-    if (navigator.share) {
+    // 1. Try Native Share (iOS/Android)
+    if (typeof navigator !== 'undefined' && navigator.share) {
       try {
         await navigator.share({
           title: title,
@@ -42,7 +41,7 @@ export function ShareButton({ title, description, url, className }: ShareButtonP
       }
     }
 
-    // 2. Fallback naar Facebook popup (discreet via icon)
+    // 2. Fallback to Facebook popup (discreet)
     const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
     window.open(fbUrl, '_blank', 'width=600,height=500,location=no,menubar=no,status=no,toolbar=no');
     
@@ -80,7 +79,7 @@ export function ShareButton({ title, description, url, className }: ShareButtonP
           copied && "text-green-400"
         )}
       >
-        {copied ? <Check className="w-3 h-3 mr-2" /> : null}
+        {copied ? <Check className="w-3 h-3 mr-2" /> : <LinkIcon className="w-3 h-3 mr-2" />}
         {copied ? "Gekopieerd" : "Kopieer Link"}
       </Button>
     </div>

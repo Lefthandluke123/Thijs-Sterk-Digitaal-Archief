@@ -2,19 +2,17 @@ import { firebaseConfig } from '@/firebase/config';
 
 /**
  * @fileOverview Server-side Firestore data fetching via REST API.
- * Hiermee halen we data op in Server Components zonder de Firebase Client SDK te initialiseren.
- * Dit voorkomt "Attempted to call initializeFirebase() from the server" errors en 403's door bots.
+ * This fetches data in Server Components without initializing the Firebase Client SDK.
+ * It prevents "Attempted to call initializeFirebase() from the server" errors and is crawler-friendly.
  */
 
 export async function getArtworkServer(id: string) {
   const projectId = firebaseConfig.projectId;
-  // Gebruik de v1 REST API met een duidelijke referentie naar de document-ID
   const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/artworks/${id}`;
   
   try {
-    // We voegen een cache-busting of specifieke bot-vriendelijke headers toe indien nodig
     const res = await fetch(url, { 
-      next: { revalidate: 3600 }, // Langere cache op server voor crawlers (1 uur)
+      next: { revalidate: 3600 }, // Cache for 1 hour for bots/crawlers
       headers: { 
         'Content-Type': 'application/json',
         'Accept': 'application/json'
@@ -37,7 +35,7 @@ export async function getArtworkServer(id: string) {
 
     const artwork: any = { id };
     
-    // Recursieve helper om Firestore REST JSON om te zetten naar een plat JS object
+    // Recursive helper to transform Firestore REST JSON to plain JS object
     const extract = (val: any): any => {
       if (!val) return undefined;
       if ('stringValue' in val) return val.stringValue;
@@ -61,7 +59,7 @@ export async function getArtworkServer(id: string) {
       artwork[key] = extract(fields[key]);
     });
 
-    // Garandeer dat afbeelding-URL's absoluut zijn voor Facebook
+    // Ensure image URLs are absolute for Facebook crawler
     if (artwork.imageUrl && !artwork.imageUrl.startsWith('http')) {
       artwork.imageUrl = `https://firebasestorage.googleapis.com/v0/b/${firebaseConfig.storageBucket}/o/${encodeURIComponent(artwork.imageUrl)}?alt=media`;
     }
