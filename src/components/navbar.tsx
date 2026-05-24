@@ -26,7 +26,7 @@ import {
   Users
 } from 'lucide-react';
 import { useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
-import { collection, query, doc } from 'firebase/firestore';
+import { collection, query, doc, orderBy } from 'firebase/firestore';
 import { useLanguage } from '@/components/language-provider';
 import { MuseumGuide } from './museum-guide';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
@@ -40,20 +40,18 @@ function NavbarContent() {
   const firestore = useFirestore();
   const { language, setLanguage, t } = useLanguage();
 
-  const artworksQuery = useMemoFirebase(() => {
+  const roomsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'artworks'));
+    return query(collection(firestore, 'rooms'), orderBy('order', 'asc'));
   }, [firestore]);
 
-  const { data: dbArtworks } = useCollection(artworksQuery);
+  const { data: rooms } = useCollection(roomsQuery);
 
   const siteSettingsRef = useMemoFirebase(() => {
     if (!firestore) return null;
     return doc(firestore, 'settings', 'site');
   }, [firestore]);
   const { data: siteSettings } = useDoc(siteSettingsRef);
-
-  const hiddenSeries = useMemo(() => siteSettings?.hiddenSeries || [], [siteSettings]);
 
   const siteTitle = (language !== 'nl' && siteSettings?.[`siteTitle_${language}`])
     ? siteSettings[`siteTitle_${language}`]
@@ -62,36 +60,6 @@ function NavbarContent() {
   const siteSubtitle = (language !== 'nl' && siteSettings?.[`siteSubtitle_${language}`])
     ? siteSettings[`siteSubtitle_${language}`]
     : (siteSettings?.siteSubtitle || t('nav_museum_subtitle'));
-
-  const translateTerm = (text: string, category: 'series' | 'tag') => {
-    if (language === 'nl' || !siteSettings) return text;
-    const map = category === 'series' ? siteSettings.seriesTranslations : siteSettings.tagTranslations;
-    return map?.[language]?.[text] || text;
-  };
-
-  const seriesWithCounts = useMemo(() => {
-    if (!dbArtworks) return [];
-    const seen = new Set();
-    const uniqueArtworks = dbArtworks.filter(art => {
-      const url = (art as any).imageUrl;
-      if (!url || seen.has(url)) return false;
-      seen.add(url);
-      return true;
-    });
-    const counts: Record<string, number> = {};
-    uniqueArtworks.forEach(art => {
-      const seriesName = (art as any).series;
-      if (seriesName) counts[seriesName] = (counts[seriesName] || 0) + 1;
-    });
-    return Object.entries(counts)
-      .filter(([name]) => name !== "Nieuwe Uploads" && name !== "Geen zaal" && !hiddenSeries.includes(name))
-      .map(([name, count]) => ({ 
-        name, 
-        count,
-        translatedName: translateTerm(name, 'series')
-      }))
-      .sort((a, b) => a.translatedName.localeCompare(b.translatedName));
-  }, [dbArtworks, hiddenSeries, language, siteSettings]);
 
   useEffect(() => {
     setMounted(true);
@@ -125,7 +93,6 @@ function NavbarContent() {
           <Link 
             href="/"
             className="flex items-center gap-3 md:gap-8 group shrink-0 cursor-pointer"
-            title={t('nav_home')}
           >
             <img 
               src={siteSettings?.logoUrl || "/logo.png"} 
@@ -133,16 +100,12 @@ function NavbarContent() {
               className="h-8 md:h-20 w-auto object-contain transition-transform duration-700" 
             />
             <div className="flex flex-col leading-tight border-l-2 border-border/60 pl-3 md:pl-8 overflow-hidden">
-               <div className="flex items-center gap-2">
-                 <span className="font-headline font-medium text-lg md:text-3xl tracking-tight text-foreground transition-all duration-500 group-hover:text-accent">
-                   {siteTitle}
-                 </span>
-               </div>
-               <div className="relative overflow-hidden h-6 md:h-8">
-                 <span className="text-[7px] md:text-[11px] font-bold uppercase tracking-[0.3em] text-accent block transition-all duration-700 group-hover:translate-x-4 group-hover:tracking-[0.4em] group-hover:text-primary origin-left animate-fade-in-left">
-                   {siteSubtitle}
-                 </span>
-               </div>
+               <span className="font-headline font-medium text-lg md:text-3xl tracking-tight text-foreground transition-all duration-500 group-hover:text-accent">
+                 {siteTitle}
+               </span>
+               <span className="text-[7px] md:text-[11px] font-bold uppercase tracking-[0.3em] text-accent block transition-all duration-700 group-hover:translate-x-4">
+                 {siteSubtitle}
+               </span>
             </div>
           </Link>
           
@@ -152,15 +115,15 @@ function NavbarContent() {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className={cn("px-5 py-2.5 rounded-full text-[15px] font-bold tracking-wider uppercase transition-all duration-300 flex items-center gap-1 outline-none hover:bg-black/5", pathname.includes('/gallery') ? "bg-primary text-primary-foreground shadow-xl" : "text-foreground")}>
+                <button className={cn("px-5 py-2.5 rounded-full text-[15px] font-bold tracking-wider uppercase transition-all duration-300 flex items-center gap-1 outline-none hover:bg-black/5", pathname.includes('/room') ? "bg-primary text-primary-foreground shadow-xl" : "text-foreground")}>
                   {t('nav_galleries')} <ChevronDown className="w-4 h-4 opacity-50" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="bg-background/98 backdrop-blur-2xl border-border/40 rounded-2xl min-w-[260px] p-2 shadow-2xl">
-                {seriesWithCounts.map((s) => (
-                  <DropdownMenuItem key={s.name} asChild className="text-[13px] uppercase font-bold tracking-wide focus:bg-accent focus:text-accent-foreground rounded-xl cursor-pointer p-4 mb-1 transition-all">
-                    <Link href={`/gallery?series=${encodeURIComponent(s.name)}`} className="flex w-full items-center">
-                      {s.translatedName} <span className="ml-auto opacity-50 text-[10px]">[{s.count}]</span>
+              <DropdownMenuContent align="start" className="bg-background/98 backdrop-blur-2xl border-border/40 rounded-2xl min-w-[200px] p-2 shadow-2xl">
+                {rooms?.map((r: any) => (
+                  <DropdownMenuItem key={r.id} asChild className="text-[13px] uppercase font-bold tracking-wide focus:bg-accent focus:text-accent-foreground rounded-xl cursor-pointer p-4 mb-1">
+                    <Link href={`/room/${r.slug}`} className="flex w-full items-center">
+                      {r.title}
                     </Link>
                   </DropdownMenuItem>
                 ))}
@@ -173,24 +136,19 @@ function NavbarContent() {
 
             <div className="h-10 w-px bg-border/30 mx-2" />
 
-            <button 
-              onClick={() => setGuideOpen(true)}
-              className="px-5 py-2.5 rounded-full text-[15px] font-bold tracking-wider uppercase transition-all duration-300 flex items-center gap-2 hover:scale-105 hover:bg-accent/10 text-accent group"
-              title={t('nav_guide_click')}
-            >
-              <BookOpen className="w-4 h-4 transition-transform group-hover:rotate-12" />
-              <span>Guide</span>
+            <button onClick={() => setGuideOpen(true)} className="px-5 py-2.5 rounded-full text-[15px] font-bold tracking-wider uppercase transition-all duration-300 flex items-center gap-2 hover:bg-accent/10 text-accent group">
+              <BookOpen className="w-4 h-4" /> Guide
             </button>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-secondary/40 text-[12px] font-bold uppercase tracking-widest hover:bg-secondary/60 transition-all duration-300 border-2 border-border/20 ml-2">
+                <button className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-secondary/40 text-[12px] font-bold uppercase tracking-widest hover:bg-secondary/60 transition-all border-2 border-border/20 ml-2">
                   <Languages className="w-4 h-4 text-accent" /> {language.toUpperCase()}
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="bg-background/98 backdrop-blur-2xl border-border/40 rounded-2xl p-2 min-w-[160px] shadow-2xl">
                 {['nl', 'en', 'de', 'fr', 'es'].map((lang) => (
-                  <DropdownMenuItem key={lang} onClick={() => setLanguage(lang as any)} className="flex items-center gap-3 text-[12px] uppercase font-bold tracking-widest rounded-xl p-4 cursor-pointer focus:bg-accent focus:text-accent-foreground transition-all">
+                  <DropdownMenuItem key={lang} onClick={() => setLanguage(lang as any)} className="flex items-center gap-3 text-[12px] uppercase font-bold tracking-widest rounded-xl p-4 cursor-pointer focus:bg-accent focus:text-accent-foreground">
                     {lang.toUpperCase()} {language === lang && <div className="ml-auto w-2 h-2 rounded-full bg-accent" />}
                   </DropdownMenuItem>
                 ))}
@@ -199,43 +157,22 @@ function NavbarContent() {
           </div>
 
           <div className="lg:hidden flex items-center gap-4">
-            <button onClick={() => setGuideOpen(true)} className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center text-accent active:scale-90 transition-all border border-accent/20"><Info className="w-5 h-5" /></button>
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
               <SheetTrigger asChild><Button variant="outline" size="icon" className="w-10 h-10 rounded-full border-2 border-border/40"><Menu className="w-5 h-5" /></Button></SheetTrigger>
               <SheetContent side="right" className="w-[85vw] p-0 border-none bg-background shadow-2xl">
-                <SheetTitle className="sr-only">Navigatie Menu</SheetTitle>
+                <SheetTitle className="sr-only">Menu</SheetTitle>
                 <div className="flex flex-col h-full">
                   <div className="p-8 border-b border-border/20 bg-primary text-primary-foreground">
                     <span className="font-headline text-2xl font-medium italic">{siteTitle}</span>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] mt-2 text-accent">{siteSubtitle}</p>
                   </div>
                   <div className="flex-1 overflow-y-auto p-6 space-y-4">
                      <Link href="/" className="flex items-center gap-4 p-5 rounded-2xl bg-black/5 text-[14px] font-bold uppercase tracking-wider">{t('nav_home')}</Link>
-                     <Link href="/exhibition" className="flex items-center gap-4 p-5 rounded-2xl bg-accent text-accent-foreground text-[14px] font-bold uppercase tracking-wider shadow-lg">{t('nav_tour')}</Link>
-                     <Link href="/gallery" className="flex items-center gap-4 p-5 rounded-2xl bg-black/5 text-[14px] font-bold uppercase tracking-wider">{t('nav_galleries')}</Link>
-                     <Link href="/curator" className="flex items-center gap-4 p-5 rounded-2xl bg-black/5 text-[14px] font-bold uppercase tracking-wider">{t('nav_your_room')}</Link>
-                     <Link href="/#about" className="flex items-center gap-4 p-5 rounded-2xl bg-black/5 text-[14px] font-bold uppercase tracking-wider">{t('nav_about')}</Link>
-                     <Link href="/shop" className="flex items-center gap-4 p-5 rounded-2xl bg-black/5 text-[14px] font-bold uppercase tracking-wider">{t('nav_shop')}</Link>
-
-                     <div className="pt-8 border-t border-border/20 mt-4">
-                        <div className="flex items-center gap-3 mb-6 px-4">
-                          <Languages className="w-5 h-5 text-accent" />
-                          <span className="text-[12px] font-bold uppercase tracking-widest text-foreground">Taal / Language</span>
-                        </div>
-                        <div className="grid grid-cols-5 gap-3">
-                          {['nl', 'en', 'de', 'fr', 'es'].map((lang) => (
-                            <button
-                              key={lang}
-                              onClick={() => setLanguage(lang as any)}
-                              className={cn(
-                                "h-14 rounded-2xl text-[12px] font-bold uppercase transition-all flex items-center justify-center border-2",
-                                language === lang ? "bg-primary text-primary-foreground border-primary shadow-lg" : "bg-black/5 text-foreground border-transparent"
-                              )}
-                            >
-                              {lang.toUpperCase()}
-                            </button>
-                          ))}
-                        </div>
+                     <Link href="/exhibition" className="flex items-center gap-4 p-5 rounded-2xl bg-accent text-accent-foreground text-[14px] font-bold uppercase tracking-wider">{t('nav_tour')}</Link>
+                     <div className="pt-4 border-t border-border/10">
+                       <p className="text-[10px] font-black uppercase tracking-widest mb-4 px-4 opacity-40">Zalen</p>
+                       {rooms?.map((r: any) => (
+                         <Link key={r.id} href={`/room/${r.slug}`} className="flex items-center gap-4 p-5 rounded-2xl bg-black/5 text-[14px] font-bold uppercase tracking-wider mb-2">{r.title}</Link>
+                       ))}
                      </div>
                   </div>
                 </div>
