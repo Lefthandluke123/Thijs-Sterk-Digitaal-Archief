@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, orderBy, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Loader2, Maximize2, Play, Eraser, Share2, Copy } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -69,7 +69,12 @@ export default function CuratorPage() {
     }
 
     setIsSharing(true);
-    toast({ title: "Moment...", description: "Uw privékamer wordt klaargezet." });
+    
+    // Turbo-Share: Genereer de ID direct aan de client-zijde
+    const roomsCollection = collection(firestore, 'shared_rooms');
+    const newRoomRef = doc(roomsCollection);
+    const roomId = newRoomRef.id;
+    const url = `${window.location.origin}/shared/${roomId}`;
 
     const roomData = {
       title: roomTitle || "Mijn Expositie",
@@ -79,22 +84,20 @@ export default function CuratorPage() {
       lang: language
     };
 
-    addDoc(collection(firestore, 'shared_rooms'), roomData)
-      .then((docRef) => {
-        const url = `${window.location.origin}/shared/${docRef.id}`;
-        setShareDialog(url);
-        setIsSharing(false);
-        toast({ title: "Privékamer gereed!", description: "De link is gegenereerd." });
-      })
+    // Non-blocking schrijven naar Firestore
+    setDoc(newRoomRef, roomData)
       .catch(async (err) => {
-        setIsSharing(false);
-        const permissionError = new FirestorePermissionError({
-          path: 'shared_rooms',
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: newRoomRef.path,
           operation: 'create',
           requestResourceData: roomData
-        });
-        errorEmitter.emit('permission-error', permissionError);
+        }));
       });
+
+    // Toon de link onmiddellijk (Instant UX)
+    setShareDialog(url);
+    setIsSharing(false);
+    toast({ title: "Privékamer gereed!", description: "De link is direct gegenereerd." });
   };
 
   const copyToClipboard = (text: string) => {

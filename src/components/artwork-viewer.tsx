@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import { DeepZoomViewer, type DeepZoomHandle } from './deep-zoom-viewer';
 import { useLanguage } from '@/components/language-provider';
 import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, collection, setDoc, serverTimestamp } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import {
@@ -90,7 +90,12 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
     if (!artwork || !firestore) return;
     
     setIsSharing(true);
-    toast({ title: "Moment...", description: "Facebook-koppeling wordt voorbereid." });
+    
+    // Turbo-Share: Directe ID generatie
+    const roomsCollection = collection(firestore, 'shared_rooms');
+    const newRoomRef = doc(roomsCollection);
+    const roomId = newRoomRef.id;
+    const shareUrl = `${window.location.origin}/shared/${roomId}`;
 
     const roomData = {
       title: artwork.displayTitle || artwork.title,
@@ -101,28 +106,32 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
       sharedFrom: 'viewer'
     };
 
-    addDoc(collection(firestore, 'shared_rooms'), roomData)
-      .then((docRef) => {
-        setIsSharing(false);
-        const shareUrl = `${window.location.origin}/shared/${docRef.id}`;
-        const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(`Bekijk dit meesterwerk van Thijs Sterk in de interactieve Zen-Modus: ${artwork.displayTitle || artwork.title}`)}`;
-        window.open(fbUrl, '_blank', 'width=600,height=400');
-      })
+    // Non-blocking write
+    setDoc(newRoomRef, roomData)
       .catch(async (err) => {
-        setIsSharing(false);
         errorEmitter.emit('permission-error', new FirestorePermissionError({
-          path: 'shared_rooms',
+          path: newRoomRef.path,
           operation: 'create',
           requestResourceData: roomData
         }));
       });
+
+    // Directe actie voor de bezoeker
+    const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(`Bekijk dit meesterwerk van Thijs Sterk in de interactieve Zen-Modus: ${artwork.displayTitle || artwork.title}`)}`;
+    window.open(fbUrl, '_blank', 'width=600,height=400');
+    setIsSharing(false);
+    toast({ title: "Facebook-venster geopend" });
   };
 
   const copyShareLink = () => {
     if (!artwork || !firestore) return;
     
     setIsSharing(true);
-    toast({ title: "Moment...", description: "Interactieve link wordt gegenereerd." });
+
+    const roomsCollection = collection(firestore, 'shared_rooms');
+    const newRoomRef = doc(roomsCollection);
+    const roomId = newRoomRef.id;
+    const shareUrl = `${window.location.origin}/shared/${roomId}`;
 
     const roomData = {
       title: artwork.displayTitle || artwork.title,
@@ -133,24 +142,22 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
       sharedFrom: 'viewer'
     };
 
-    addDoc(collection(firestore, 'shared_rooms'), roomData)
-      .then((docRef) => {
-        setIsSharing(false);
-        const shareUrl = `${window.location.origin}/shared/${docRef.id}`;
-        navigator.clipboard.writeText(shareUrl);
-        toast({ 
-          title: "Gekopieerd!", 
-          description: "De link naar de interactieve Zen-Modus staat op uw klembord." 
-        });
-      })
+    setDoc(newRoomRef, roomData)
       .catch(async (err) => {
-        setIsSharing(false);
         errorEmitter.emit('permission-error', new FirestorePermissionError({
-          path: 'shared_rooms',
+          path: newRoomRef.path,
           operation: 'create',
           requestResourceData: roomData
         }));
       });
+
+    // Direct op klembord zetten
+    navigator.clipboard.writeText(shareUrl);
+    toast({ 
+      title: "Gekopieerd!", 
+      description: "De link naar de interactieve Zen-Modus staat op uw klembord." 
+    });
+    setIsSharing(false);
   };
 
   return (
