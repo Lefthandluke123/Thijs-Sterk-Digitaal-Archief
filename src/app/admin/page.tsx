@@ -126,10 +126,9 @@ export default function AdminPage() {
     setIsMigrating(true);
     
     try {
-      // 1. Zorg voor tenminste één zaal als die er niet is
       let defaultRoomSlug = "algemeen";
       if (!rooms || rooms.length === 0) {
-        const roomRef = await addDoc(collection(firestore, 'rooms'), {
+        await addDoc(collection(firestore, 'rooms'), {
           title: "Algemene Collectie",
           slug: "algemeen",
           description: "Gerecupereerde werken uit het archief.",
@@ -139,20 +138,19 @@ export default function AdminPage() {
         defaultRoomSlug = rooms[0].slug;
       }
 
-      // 2. Importeer kunstwerken
       const legacyArtworks = placeholderData.placeholderImages;
       let count = 0;
 
       for (const legacy of legacyArtworks) {
-        // Check of het al bestaat (op slug)
-        const q = query(collection(firestore, 'artworks'), where('slug', '==', legacy.id));
+        const normalizedSlug = legacy.id.toLowerCase().trim();
+        const q = query(collection(firestore, 'artworks'), where('slug', '==', normalizedSlug));
         const snap = await getDocs(q);
         
         if (snap.empty) {
           await addDoc(collection(firestore, 'artworks'), {
             title: legacy.title || "Naamloos",
-            slug: legacy.id,
-            image: legacy.imageUrl, // We gebruiken 'image' conform backend.json
+            slug: normalizedSlug,
+            image: legacy.imageUrl,
             roomSlug: defaultRoomSlug,
             tags: legacy.tags || [],
             year: legacy.year || "",
@@ -351,13 +349,13 @@ export default function AdminPage() {
                     <Label className="text-[10px] uppercase font-bold tracking-widest opacity-60">Slug (URL)</Label>
                     <Input 
                       defaultValue={editingArtwork.slug} 
-                      onBlur={e => updateField('artworks', editingArtworkId!, 'slug', e.target.value)} 
+                      onBlur={e => updateField('artworks', editingArtworkId!, 'slug', e.target.value.toLowerCase().trim())} 
                       className="h-12 rounded-xl bg-secondary/10 border-none" 
                     />
                   </div>
                   <div className="space-y-2">
                     <Label className="text-[10px] uppercase font-bold tracking-widest opacity-60">Zaal</Label>
-                    <Select value={editingArtwork.roomSlug} onValueChange={v => updateField('artworks', editingArtworkId!, 'roomSlug', v)}>
+                    <Select value={editingArtwork.roomSlug} onValueChange={v => updateField('artworks', editingArtworkId!, 'roomSlug', v.toLowerCase().trim())}>
                       <SelectTrigger className="h-12 rounded-xl bg-secondary/10 border-none">
                         <SelectValue placeholder="Kies een zaal" />
                       </SelectTrigger>
@@ -440,7 +438,7 @@ export default function AdminPage() {
                 <Label className="text-[10px] uppercase font-bold tracking-widest opacity-60">Slug</Label>
                 <Input 
                   defaultValue={editingRoom.slug} 
-                  onBlur={e => updateField('rooms', editingRoomId!, 'slug', e.target.value)} 
+                  onBlur={e => updateField('rooms', editingRoomId!, 'slug', e.target.value.toLowerCase().trim())} 
                   className="h-12 rounded-xl bg-secondary/10 border-none" 
                 />
               </div>

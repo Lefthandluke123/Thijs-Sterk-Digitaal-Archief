@@ -3,7 +3,7 @@ import { firebaseConfig } from '@/firebase/config';
 
 /**
  * @fileOverview Server-side Firestore data fetching via REST API.
- * Geoptimaliseerd voor betrouwbare parsing van runQuery resultaten.
+ * Geoptimaliseerd voor betrouwbare parsing van runQuery resultaten en slug normalisatie.
  */
 
 const PROJECT_ID = firebaseConfig.projectId;
@@ -64,16 +64,17 @@ export async function getRoomsServer() {
       .filter(Boolean)
       .sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
   } catch (e) {
-    console.error('getRoomsServer error:', e);
     return [];
   }
 }
 
 /**
  * Haalt een zaal op basis van slug via runQuery.
+ * Normaliseert de slug naar lowercase en trimt whitespace.
  */
 export async function getRoomBySlugServer(slug: string) {
   try {
+    const normalizedSlug = (slug || "").toLowerCase().trim();
     const url = `${BASE_URL}:runQuery`;
     const res = await fetch(url, {
       method: 'POST',
@@ -85,7 +86,7 @@ export async function getRoomBySlugServer(slug: string) {
             fieldFilter: {
               field: { fieldPath: 'slug' },
               op: 'EQUAL',
-              value: { stringValue: slug }
+              value: { stringValue: normalizedSlug }
             }
           },
           limit: 1
@@ -95,11 +96,10 @@ export async function getRoomBySlugServer(slug: string) {
     });
     const json = await res.json();
     
-    // Filter op resultaten met een 'document' eigenschap
-    const result = Array.isArray(json) ? json.find(item => item && item.document) : null;
+    if (!Array.isArray(json)) return null;
+    const result = json.find((item: any) => item && item.document);
     return result?.document ? mapDocument(result.document) : null;
   } catch (e) {
-    console.error(`getRoomBySlugServer ("${slug}") error:`, e);
     return null;
   }
 }
@@ -109,6 +109,7 @@ export async function getRoomBySlugServer(slug: string) {
  */
 export async function getArtworksByRoomSlugServer(roomSlug: string) {
   try {
+    const normalizedSlug = (roomSlug || "").toLowerCase().trim();
     const url = `${BASE_URL}:runQuery`;
     const res = await fetch(url, {
       method: 'POST',
@@ -120,7 +121,7 @@ export async function getArtworksByRoomSlugServer(roomSlug: string) {
             fieldFilter: {
               field: { fieldPath: 'roomSlug' },
               op: 'EQUAL',
-              value: { stringValue: roomSlug }
+              value: { stringValue: normalizedSlug }
             }
           }
         }
@@ -131,13 +132,11 @@ export async function getArtworksByRoomSlugServer(roomSlug: string) {
     
     if (!Array.isArray(json)) return [];
     
-    // Extraheer documenten uit de resultatenstroom
     return json
       .filter((item: any) => item && item.document)
       .map((item: any) => mapDocument(item.document))
       .filter(Boolean);
   } catch (e) {
-    console.error(`getArtworksByRoomSlugServer ("${roomSlug}") error:`, e);
     return [];
   }
 }
@@ -147,6 +146,7 @@ export async function getArtworksByRoomSlugServer(roomSlug: string) {
  */
 export async function getArtworkBySlugServer(slug: string) {
   try {
+    const normalizedSlug = (slug || "").toLowerCase().trim();
     const url = `${BASE_URL}:runQuery`;
     const res = await fetch(url, {
       method: 'POST',
@@ -158,7 +158,7 @@ export async function getArtworkBySlugServer(slug: string) {
             fieldFilter: {
               field: { fieldPath: 'slug' },
               op: 'EQUAL',
-              value: { stringValue: slug }
+              value: { stringValue: normalizedSlug }
             }
           },
           limit: 1
@@ -168,10 +168,10 @@ export async function getArtworkBySlugServer(slug: string) {
     });
     const json = await res.json();
     
-    const result = Array.isArray(json) ? json.find(item => item && item.document) : null;
+    if (!Array.isArray(json)) return null;
+    const result = json.find((item: any) => item && item.document);
     return result?.document ? mapDocument(result.document) : null;
   } catch (e) {
-    console.error(`getArtworkBySlugServer ("${slug}") error:`, e);
     return null;
   }
 }
@@ -188,7 +188,6 @@ export async function getArtworkServer(id: string) {
     const json = await res.json();
     return mapDocument(json);
   } catch (e) {
-    console.error(`getArtworkServer ("${id}") error:`, e);
     return null;
   }
 }
