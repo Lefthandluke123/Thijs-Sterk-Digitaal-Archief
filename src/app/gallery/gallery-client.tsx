@@ -25,7 +25,6 @@ export function GalleryClient({ initialRoomSlug }: { initialRoomSlug: string | n
   }, [firestore]);
   const { data: rooms, loading: roomsLoading } = useCollection(roomsQuery);
 
-  // Automatische redirect naar de eerste zaal als er geen slug is
   useEffect(() => {
     if (rooms && rooms.length > 0 && !currentRoomSlug) {
       router.replace(`/gallery?room=${rooms[0].slug}`);
@@ -39,10 +38,6 @@ export function GalleryClient({ initialRoomSlug }: { initialRoomSlug: string | n
   const { data: artworks, loading: artLoading } = useCollection(artworksQuery);
 
   const activeRoom = useMemo(() => rooms?.find((r: any) => r.slug === currentRoomSlug), [rooms, currentRoomSlug]);
-
-  const handleRoomChange = (slug: string) => {
-    router.push(`/gallery?room=${slug}`);
-  };
 
   if (roomsLoading && !rooms) return <div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="animate-spin text-accent" /></div>;
 
@@ -60,10 +55,10 @@ export function GalleryClient({ initialRoomSlug }: { initialRoomSlug: string | n
            {rooms?.map((r: any) => (
              <button 
                 key={r.id} 
-                onClick={() => handleRoomChange(r.slug)} 
+                onClick={() => router.push(`/gallery?room=${r.slug}`)} 
                 className={cn(
-                  "px-8 py-3 rounded-full text-[12px] font-black uppercase tracking-widest transition-all whitespace-nowrap", 
-                  currentRoomSlug === r.slug ? "bg-accent text-accent-foreground shadow-lg scale-105" : "bg-black/5 hover:bg-black/10"
+                  "px-8 py-3 rounded-full text-[12px] font-bold uppercase tracking-widest transition-all whitespace-nowrap border-2", 
+                  currentRoomSlug === r.slug ? "bg-accent text-accent-foreground border-accent shadow-lg scale-105" : "bg-white border-transparent hover:border-accent/30"
                 )}
              >
                {r.title}
@@ -76,15 +71,15 @@ export function GalleryClient({ initialRoomSlug }: { initialRoomSlug: string | n
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-10">
             {artworks?.map((item: any) => {
-              const displayImage = item.image || item.imageUrl || item.url;
+              const displayImage = item.image || item.imageUrl;
               return (
                 <article key={item.id} className="group relative cursor-pointer" onClick={() => setSelectedArtwork(item)}>
-                  <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-secondary/10 shadow-lg transition-all duration-700 hover:shadow-2xl">
+                  <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-secondary/10 shadow-lg transition-all duration-700 hover:shadow-2xl group-hover:-translate-y-1">
                     {displayImage ? (
                       <img 
                         src={displayImage} 
                         alt={item.title} 
-                        className="w-full h-full object-cover transition-all duration-1000 ease-out group-hover:scale-[1.05]"
+                        className="w-full h-full object-cover transition-all duration-1000 ease-out group-hover:scale-110"
                         style={{ filter: `brightness(${item.brightness || 1})` }}
                       />
                     ) : (

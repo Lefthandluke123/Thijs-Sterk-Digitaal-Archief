@@ -4,6 +4,7 @@ import { firebaseConfig } from '@/firebase/config';
 /**
  * @fileOverview Server-side Firestore data fetching via REST API.
  * Geoptimaliseerd voor robuustheid en SEO-previews (Open Graph).
+ * Herstelt de verwerking van runQuery resultaten die een stream van objecten retourneren.
  */
 
 const PROJECT_ID = firebaseConfig.projectId;
@@ -36,7 +37,7 @@ const mapDocument = (doc: any) => {
     data[key] = extract(doc.fields[key]);
   });
   
-  // Zorg dat afbeeldings-URL's altijd absoluut zijn en unificeer veldnamen
+  // Unificeer afbeeldingsvelden voor maximale compatibiliteit
   const rawImage = data.image || data.imageUrl || data.url;
   
   if (rawImage) {
@@ -87,8 +88,8 @@ export async function getRoomBySlugServer(slug: string) {
       next: { revalidate: 60 }
     });
     const json = await res.json();
-    // runQuery returns an array of { document: { ... } }
-    const firstResult = Array.isArray(json) ? json[0] : null;
+    // De REST API retourneert een array; we zoeken het eerste item met een 'document' property
+    const firstResult = Array.isArray(json) ? json.find(item => !!item.document) : null;
     return firstResult?.document ? mapDocument(firstResult.document) : null;
   } catch (e) {
     console.error('getRoomBySlugServer error:', e);
@@ -149,7 +150,8 @@ export async function getArtworkBySlugServer(slug: string) {
       next: { revalidate: 60 }
     });
     const json = await res.json();
-    const firstResult = Array.isArray(json) ? json[0] : null;
+    // Zoek naar het document in de resultatenstroom
+    const firstResult = Array.isArray(json) ? json.find(item => !!item.document) : null;
     return firstResult?.document ? mapDocument(firstResult.document) : null;
   } catch (e) {
     console.error('getArtworkBySlugServer error:', e);
