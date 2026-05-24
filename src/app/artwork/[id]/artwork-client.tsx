@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 
 /**
  * @fileOverview Client Component voor de artwork detail weergave.
- * Geoptimaliseerd voor een rustige, gecentreerde museum-ervaring via Grid-centering.
+ * Nu met Ultra-Explicit Centering via inline styles.
  */
 export function ArtworkClientPage({ artwork }: { artwork: any }) {
   const { language } = useLanguage();
@@ -41,9 +41,19 @@ export function ArtworkClientPage({ artwork }: { artwork: any }) {
   const displayImage = artwork.imageUrl || artwork.image || artwork.url;
 
   return (
-    <main className="fixed inset-0 bg-[#f4f4f2] overflow-hidden flex flex-col z-50">
+    <main 
+      style={{ 
+        position: 'fixed', 
+        inset: 0, 
+        zIndex: 100, 
+        backgroundColor: '#f4f4f2', 
+        display: 'flex', 
+        flexDirection: 'column', 
+        overflow: 'hidden' 
+      }}
+    >
       {/* UI Overlay Top */}
-      <div className="absolute top-0 left-0 right-0 z-[60] p-6 md:p-10 flex items-center justify-between pointer-events-none">
+      <div className="absolute top-0 left-0 right-0 z-[120] p-6 md:p-10 flex items-center justify-between pointer-events-none">
         <div className="flex items-center gap-6 pointer-events-auto">
           <Link 
             href={backLink} 
@@ -90,17 +100,29 @@ export function ArtworkClientPage({ artwork }: { artwork: any }) {
         </div>
       </div>
 
-      {/* Centered Image Engine - De Nucleaire Fix */}
-      <div className="relative w-full h-full grid place-items-center p-8 md:p-24 overflow-hidden">
+      {/* ULTRA-CENTERED IMAGE ENGINE */}
+      <div 
+        style={{ 
+          flex: 1, 
+          width: '100%', 
+          height: '100%', 
+          display: 'grid', 
+          placeItems: 'center', 
+          padding: '2rem' 
+        }}
+      >
         {displayImage && (
           <img 
             src={displayImage} 
             alt={artwork.displayTitle || artwork.title}
-            className="max-w-full max-h-full object-contain shadow-[0_60px_120px_-20px_rgba(0,0,0,0.45)] transition-all duration-1000 animate-in fade-in zoom-in-95 select-none block"
             style={{ 
+              maxWidth: '90vw', 
+              maxHeight: '80vh', 
+              objectFit: 'contain', 
+              display: 'block',
+              boxShadow: '0 60px 120px -20px rgba(0,0,0,0.45)',
               filter: `brightness(${artwork.brightness || 1})`,
-              maxHeight: '80vh',
-              maxWidth: '90vw'
+              transition: 'all 1s ease-in-out'
             }}
           />
         )}
@@ -108,7 +130,7 @@ export function ArtworkClientPage({ artwork }: { artwork: any }) {
 
       {/* Metadata Panel */}
       <div className={cn(
-        "absolute bottom-0 left-0 right-0 bg-background/95 backdrop-blur-2xl border-t border-black/5 flex flex-col items-center justify-center text-center transition-all duration-700 ease-in-out z-[55] overflow-y-auto",
+        "absolute bottom-0 left-0 right-0 bg-background/95 backdrop-blur-2xl border-t border-black/5 flex flex-col items-center justify-center text-center transition-all duration-700 ease-in-out z-[130] overflow-y-auto",
         showMetadata ? "h-auto min-h-[30vh] opacity-100 py-12 translate-y-0" : "h-0 opacity-0 pointer-events-none translate-y-12"
       )}>
         <div className="max-w-4xl mx-auto space-y-6 px-10">
@@ -137,6 +159,11 @@ export function ArtworkClientPage({ artwork }: { artwork: any }) {
              </Link>
           </div>
         </div>
+      </div>
+
+      {/* DEBUG LABEL */}
+      <div className="absolute bottom-4 right-4 z-[200] pointer-events-none">
+        <span className="bg-orange-500 text-white text-[8px] font-bold px-2 py-1 rounded uppercase tracking-tighter">LAYER: ARTWORK CLIENT</span>
       </div>
     </main>
   );

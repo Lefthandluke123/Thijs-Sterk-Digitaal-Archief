@@ -8,19 +8,26 @@ import { cn } from '@/lib/utils';
 
 interface RoomClientProps {
   artworks: any[];
+  roomTitle?: string;
 }
 
 /**
- * @fileOverview Museum-zaal component met een gegarandeerd gecentreerde weergave.
- * Gebruikt Grid-centering om de hardnekkige linksboven-bug te elimineren.
+ * @fileOverview Museum-zaal component met Ultra-Explicit Centering.
+ * Gebruikt inline grid-styles om elke mogelijke CSS-override te omzeilen.
  */
-export function RoomClient({ artworks }: RoomClientProps) {
+export function RoomClient({ artworks, roomTitle }: RoomClientProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showMetadata, setShowMetadata] = useState(false);
   
   const item = artworks[currentIndex];
 
-  if (!item) return null;
+  if (!item) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-[#f4f4f2]">
+        <p className="font-headline text-2xl italic opacity-40">Geen kunstwerken in deze zaal.</p>
+      </div>
+    );
+  }
 
   const handleNext = () => {
     setCurrentIndex((prev) => (prev + 1) % artworks.length);
@@ -35,9 +42,19 @@ export function RoomClient({ artworks }: RoomClientProps) {
   const displayImage = item.image || item.imageUrl || item.url;
 
   return (
-    <div className="fixed inset-0 bg-[#f4f4f2] z-50 flex flex-col overflow-hidden">
+    <div 
+      style={{ 
+        position: 'fixed', 
+        inset: 0, 
+        zIndex: 100, 
+        backgroundColor: '#f4f4f2', 
+        display: 'flex', 
+        flexDirection: 'column', 
+        overflow: 'hidden' 
+      }}
+    >
       {/* UI Overlay Top */}
-      <div className="absolute top-0 left-0 right-0 z-[60] p-6 md:p-10 flex items-center justify-between pointer-events-none">
+      <div className="absolute top-0 left-0 right-0 z-[120] p-6 md:p-10 flex items-center justify-between pointer-events-none">
         <div className="flex items-center gap-6 pointer-events-auto">
           <Link 
             href="/gallery" 
@@ -48,7 +65,7 @@ export function RoomClient({ artworks }: RoomClientProps) {
           <div className="hidden md:flex flex-col">
             <h1 className="font-headline text-2xl italic text-foreground leading-tight">{item.title}</h1>
             <span className="text-[9px] font-black uppercase tracking-[0.3em] text-accent">
-              Zaal: {item.roomSlug}
+              Zaal: {roomTitle || item.roomSlug}
             </span>
           </div>
         </div>
@@ -65,7 +82,7 @@ export function RoomClient({ artworks }: RoomClientProps) {
       </div>
 
       {/* Navigatie Pijlen */}
-      <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 z-40 flex justify-between px-8 pointer-events-none">
+      <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 z-[110] flex justify-between px-8 pointer-events-none">
         <button 
           onClick={handlePrev} 
           className="p-6 rounded-full bg-white/40 backdrop-blur-md border border-black/5 text-foreground pointer-events-auto hover:bg-accent hover:text-accent-foreground transition-all active:scale-90 shadow-xl"
@@ -80,18 +97,30 @@ export function RoomClient({ artworks }: RoomClientProps) {
         </button>
       </div>
 
-      {/* Gecentreerde Afbeelding Container - De Nucleaire Fix */}
-      <div className="relative w-full h-full grid place-items-center p-8 md:p-24 overflow-hidden">
+      {/* ULTRA-CENTERED IMAGE ENGINE */}
+      <div 
+        style={{ 
+          flex: 1, 
+          width: '100%', 
+          height: '100%', 
+          display: 'grid', 
+          placeItems: 'center', 
+          padding: '2rem' 
+        }}
+      >
         {displayImage && (
           <img 
             key={item.id}
             src={displayImage} 
             alt={item.title}
-            className="max-w-full max-h-full object-contain shadow-[0_60px_120px_-20px_rgba(0,0,0,0.45)] transition-all duration-1000 animate-in fade-in zoom-in-95 select-none pointer-events-none block"
             style={{ 
+              maxWidth: '90vw', 
+              maxHeight: '80vh', 
+              objectFit: 'contain', 
+              display: 'block',
+              boxShadow: '0 60px 120px -20px rgba(0,0,0,0.45)',
               filter: `brightness(${item.brightness || 1})`,
-              maxHeight: '80vh',
-              maxWidth: '90vw'
+              transition: 'opacity 1s ease-in-out'
             }}
           />
         )}
@@ -99,7 +128,7 @@ export function RoomClient({ artworks }: RoomClientProps) {
 
       {/* Metadata Panel */}
       <div className={cn(
-        "absolute bottom-0 left-0 right-0 bg-background/95 backdrop-blur-2xl border-t border-black/5 flex flex-col items-center justify-center text-center transition-all duration-700 ease-in-out z-50 overflow-y-auto",
+        "absolute bottom-0 left-0 right-0 bg-background/95 backdrop-blur-2xl border-t border-black/5 flex flex-col items-center justify-center text-center transition-all duration-700 ease-in-out z-[130] overflow-y-auto",
         showMetadata ? "h-auto min-h-[30vh] opacity-100 py-12 translate-y-0" : "h-0 opacity-0 pointer-events-none translate-y-12"
       )}>
         <div className="max-w-4xl mx-auto space-y-6 px-10">
@@ -131,7 +160,7 @@ export function RoomClient({ artworks }: RoomClientProps) {
       </div>
       
       {/* Progress Indicator */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-30 flex gap-2">
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-[115] flex gap-2">
         {artworks.map((_, i) => (
           <div 
             key={i} 
@@ -141,6 +170,11 @@ export function RoomClient({ artworks }: RoomClientProps) {
             )}
           />
         ))}
+      </div>
+
+      {/* DEBUG LABEL */}
+      <div className="absolute bottom-4 right-4 z-[200] pointer-events-none">
+        <span className="bg-red-500 text-white text-[8px] font-bold px-2 py-1 rounded uppercase tracking-tighter">LAYER: ROOM CLIENT</span>
       </div>
     </div>
   );

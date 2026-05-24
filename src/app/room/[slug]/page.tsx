@@ -1,29 +1,36 @@
 
 import React from 'react';
+import { notFound } from 'next/navigation';
+import { RoomClient } from './room-client';
+import { getRoomBySlugServer, getArtworksByRoomSlugServer } from '@/lib/firestore-server';
+import { Metadata } from 'next';
+
+interface Props {
+  params: Promise<{ slug: string }>;
+}
 
 /**
- * @fileOverview Nuclear Layout Test.
- * Dit is een tijdelijke component om de fundamentele centrering van de browser te testen.
+ * @fileOverview Server Component voor een museumzaal.
+ * Haalt data op en geeft deze door aan de (nu herstelde) RoomClient.
  */
-export default async function RoomPage() {
-  return (
-    <div style={{
-      width: '100vw',
-      height: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: 'blue',
-      fontSize: '40px',
-      color: 'white',
-      fontWeight: 'bold',
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      zIndex: 9999,
-      fontFamily: 'sans-serif'
-    }}>
-      HELLO MUSEUM TEST
-    </div>
-  );
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params;
+  const room = await getRoomBySlugServer(slug);
+  return {
+    title: room ? `${room.title} | Thijs Sterk` : 'Zaal | The Digital Retrospective',
+  };
+}
+
+export default async function RoomPage({ params }: Props) {
+  const { slug } = await params;
+  
+  // Haal data op via de server-side REST helper
+  const room = await getRoomBySlugServer(slug);
+  if (!room) notFound();
+
+  const artworks = await getArtworksByRoomSlugServer(slug);
+
+  // Render de client-component die verantwoordelijk is voor de gecentreerde weergave
+  return <RoomClient artworks={artworks} roomTitle={room.title} />;
 }
