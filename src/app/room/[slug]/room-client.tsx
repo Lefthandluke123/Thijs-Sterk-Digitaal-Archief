@@ -11,28 +11,28 @@ interface RoomClientProps {
 
 /**
  * @fileOverview Client Component voor de weergave van een zaal-collectie.
- * Getransformeerd van grid naar een gecentreerde, cinematic museum-presentatie.
+ * Geoptimaliseerd voor een cinematic, full-screen museum-presentatie met strikte centering.
  */
 export function RoomClient({ artworks }: RoomClientProps) {
   return (
-    <div className="flex flex-col items-center gap-32 md:gap-64 w-full max-w-5xl mx-auto px-4">
+    <div className="min-h-screen w-full flex flex-col items-center justify-center gap-32 md:gap-64 px-4">
       {artworks.map((item, index) => (
         <Link 
           key={item.id} 
           href={`/art/${item.slug}`}
-          className="w-full group block animate-in fade-in slide-in-from-bottom-12 duration-1000"
+          className="w-full max-w-6xl group block animate-in fade-in slide-in-from-bottom-12 duration-1000"
           style={{ animationDelay: `${index * 150}ms` }}
         >
           <article className="flex flex-col items-center justify-center space-y-12">
             {/* Museum-style Frame Container */}
             <div className="relative w-full aspect-[4/3] md:aspect-[16/10] overflow-hidden rounded-[2rem] md:rounded-[4rem] bg-black shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] border-4 border-white/5 transition-all duration-1000 group-hover:scale-[1.01] group-hover:shadow-[0_80px_150px_-30px_rgba(0,0,0,0.7)]">
               
-              {/* Centered Image Engine */}
-              <div className="absolute inset-0 flex items-center justify-center p-4 md:p-12">
+              {/* Centered Image Engine - Removed padding to prevent top-left bias */}
+              <div className="absolute inset-0 flex items-center justify-center">
                 <img 
                   src={item.image || item.imageUrl} 
                   alt={item.title} 
-                  className="max-w-full max-h-full object-contain transition-all duration-1000 ease-out group-hover:scale-105"
+                  className="max-w-[90%] max-h-[90%] object-contain transition-all duration-1000 ease-out group-hover:scale-105"
                   style={{ filter: `brightness(${item.brightness || 1})` }}
                 />
               </div>
