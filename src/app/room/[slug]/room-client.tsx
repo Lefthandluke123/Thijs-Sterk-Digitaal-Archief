@@ -11,40 +11,56 @@ interface RoomClientProps {
 
 /**
  * @fileOverview Client Component voor de weergave van een zaal-collectie.
- * Zorgt voor een grid van kunstwerken die elk linken naar hun eigen detailpagina.
+ * Getransformeerd van grid naar een gecentreerde, cinematic museum-presentatie.
  */
 export function RoomClient({ artworks }: RoomClientProps) {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-12">
+    <div className="flex flex-col items-center gap-32 md:gap-64 w-full max-w-5xl mx-auto px-4">
       {artworks.map((item, index) => (
         <Link 
           key={item.id} 
           href={`/art/${item.slug}`}
-          className="group block animate-in fade-in slide-in-from-bottom-8 duration-700"
-          style={{ animationDelay: `${index * 50}ms` }}
+          className="w-full group block animate-in fade-in slide-in-from-bottom-12 duration-1000"
+          style={{ animationDelay: `${index * 150}ms` }}
         >
-          <article className="space-y-6">
-            <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-secondary/10 shadow-lg transition-all duration-700 group-hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.2)] group-hover:-translate-y-2">
-              <img 
-                src={item.image || item.imageUrl} 
-                alt={item.title} 
-                className="w-full h-full object-cover transition-all duration-1000 ease-out group-hover:scale-110"
-                style={{ filter: `brightness(${item.brightness || 1})` }}
-              />
+          <article className="flex flex-col items-center justify-center space-y-12">
+            {/* Museum-style Frame Container */}
+            <div className="relative w-full aspect-[4/3] md:aspect-[16/10] overflow-hidden rounded-[2rem] md:rounded-[4rem] bg-black shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] border-4 border-white/5 transition-all duration-1000 group-hover:scale-[1.01] group-hover:shadow-[0_80px_150px_-30px_rgba(0,0,0,0.7)]">
+              
+              {/* Centered Image Engine */}
+              <div className="absolute inset-0 flex items-center justify-center p-4 md:p-12">
+                <img 
+                  src={item.image || item.imageUrl} 
+                  alt={item.title} 
+                  className="max-w-full max-h-full object-contain transition-all duration-1000 ease-out group-hover:scale-105"
+                  style={{ filter: `brightness(${item.brightness || 1})` }}
+                />
+              </div>
+
+              {/* Interaction Overlay */}
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-700 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                <div className="p-4 rounded-full bg-white/20 backdrop-blur-xl border border-white/20 transform scale-90 group-hover:scale-100 transition-transform duration-500">
-                  <Maximize2 className="text-white w-6 h-6" />
+                <div className="p-6 md:p-10 rounded-full bg-white/10 backdrop-blur-3xl border border-white/20 transform scale-90 group-hover:scale-100 transition-transform duration-500">
+                  <Maximize2 className="text-white w-8 h-8 md:w-12 md:h-12" />
                 </div>
               </div>
             </div>
             
-            <div className="text-center space-y-2 px-2">
-              <h3 className="font-headline text-lg italic text-muted-foreground group-hover:text-accent transition-colors truncate">
-                {item.title}
-              </h3>
-              <div className="flex items-center justify-center gap-2 text-[9px] font-black uppercase tracking-[0.2em] text-accent/40 group-hover:text-accent/100 transition-all">
-                <span>Bekijk details</span>
-                <ArrowRight className="w-3 h-3 transform group-hover:translate-x-1 transition-transform" />
+            {/* Artwork Metadata - Centered Content */}
+            <div className="text-center space-y-6 max-w-2xl px-6">
+              <div className="space-y-3">
+                <h3 className="font-headline text-3xl md:text-6xl italic text-foreground leading-tight tracking-tight">
+                  {item.title}
+                </h3>
+                <div className="flex items-center justify-center gap-4 text-[10px] md:text-[12px] font-black uppercase tracking-[0.4em] text-accent">
+                   <span className="opacity-60">{item.year || 'Interactief'}</span>
+                   <span className="w-1.5 h-1.5 rounded-full bg-accent/20" />
+                   <span className="opacity-60">{item.medium || 'Olieverf op doek'}</span>
+                </div>
+              </div>
+              
+              <div className="inline-flex items-center gap-4 px-8 py-3 rounded-full bg-accent/5 border border-accent/10 text-[10px] font-black uppercase tracking-[0.3em] text-accent group-hover:bg-accent group-hover:text-accent-foreground transition-all duration-500 shadow-sm">
+                <span>Betreed Deep Zoom</span>
+                <ArrowRight className="w-4 h-4 transform group-hover:translate-x-2 transition-transform" />
               </div>
             </div>
           </article>
