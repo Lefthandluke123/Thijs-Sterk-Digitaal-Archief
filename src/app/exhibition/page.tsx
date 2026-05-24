@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
@@ -60,18 +61,21 @@ function ExhibitionContent() {
         <h1 className="text-black/70 font-headline text-5xl font-medium italic tracking-tight">{activeRoom?.title}</h1>
       </div>
 
-      <div className="relative flex-1 flex items-center justify-center">
+      <div className="relative flex-1 flex items-center justify-center overflow-hidden border-4 border-red-500/10">
         <div className="relative w-full h-full flex items-center transition-transform duration-1000 ease-out" style={{ transform: `translateX(${-scrollX}px)` }}>
           <div className="flex gap-[40vw] px-[50vw] items-center pt-8">
             {artworks?.map((art: any) => (
-              <div key={art.id} className="relative group shrink-0" onClick={() => setSelectedArtwork(art)}>
-                {/* Horizontal Scroll Item Frame - Strikt gecentreerd via flex */}
-                <div className="relative flex flex-col bg-white shadow-2xl border border-black/[0.03] cursor-pointer transition-all duration-700 hover:scale-[1.01] items-center justify-center overflow-hidden">
-                   <div className="p-8 pb-4 flex items-center justify-center bg-gray-50/30">
+              <div key={art.id} className="relative group shrink-0 flex items-center justify-center" onClick={() => setSelectedArtwork(art)}>
+                {/* Horizontal Scroll Item Frame - Nuclear Centering */}
+                <div className="relative flex flex-col bg-white shadow-2xl border border-black/[0.03] cursor-pointer transition-all duration-700 hover:scale-[1.01] items-center justify-center overflow-hidden border-red-500/20">
+                   <div className="p-8 pb-4 flex items-center justify-center bg-gray-50/30 w-full">
                       <img 
                         src={art.image || art.imageUrl} 
-                        className="max-h-[50vh] max-w-[40vw] w-auto h-auto object-contain block mx-auto" 
-                        style={{ filter: `brightness(${art.brightness || 1})` }} 
+                        className="relative block max-h-[50vh] max-w-[40vw] w-auto h-auto object-contain mx-auto border-2 border-red-500/5" 
+                        style={{ 
+                          filter: `brightness(${art.brightness || 1})`,
+                          position: 'relative'
+                        }} 
                         alt={art.title} 
                       />
                    </div>

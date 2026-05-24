@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -11,7 +12,7 @@ interface RoomClientProps {
 
 /**
  * @fileOverview Client Component voor de weergave van een zaal-collectie.
- * Geforceerde verticale en horizontale centrering voor een monumentale museum-ervaring.
+ * Nuclear layout reset: Verwijdert alle absolute positionering van de hoofdafbeelding om top-left bugs te elimineren.
  */
 export function RoomClient({ artworks }: RoomClientProps) {
   return (
@@ -20,22 +21,25 @@ export function RoomClient({ artworks }: RoomClientProps) {
         <Link 
           key={item.id} 
           href={`/art/${item.slug}`}
-          className="w-full max-w-6xl group block animate-in fade-in slide-in-from-bottom-12 duration-1000"
+          className="w-full flex flex-col items-center justify-center min-h-[60vh] md:min-h-[80vh] group"
           style={{ animationDelay: `${index * 150}ms` }}
         >
-          <article className="flex flex-col items-center justify-center space-y-12">
-            {/* Museum-style Frame Container - Geforceerde Flex Centrering */}
-            <div className="relative w-full aspect-[4/3] md:aspect-[16/10] overflow-hidden rounded-[2rem] md:rounded-[4rem] bg-black shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] border-4 border-white/5 transition-all duration-1000 group-hover:scale-[1.01] group-hover:shadow-[0_80px_150px_-30px_rgba(0,0,0,0.7)] flex items-center justify-center p-4 md:p-12">
+          <article className="w-full flex flex-col items-center justify-center space-y-12">
+            {/* Museum-style Frame Container - Nuclear Centering */}
+            <div className="w-full max-w-6xl aspect-[4/3] md:aspect-[16/10] bg-black shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] border-4 border-white/5 flex items-center justify-center p-4 md:p-12 overflow-hidden rounded-[2rem] md:rounded-[4rem] border-red-500/30 transition-all duration-1000 group-hover:scale-[1.01]">
               
-              {/* Centered Image - Gebruikt object-contain om vervorming te voorkomen en centrering te garanderen */}
+              {/* Centered Image - Forced static/relative to prevent top-left jump */}
               <img 
                 src={item.image || item.imageUrl} 
                 alt={item.title} 
-                className="max-w-full max-h-full object-contain block mx-auto transition-all duration-1000 ease-out group-hover:scale-105"
-                style={{ filter: `brightness(${item.brightness || 1})` }}
+                className="relative block max-w-full max-h-full object-contain mx-auto border-2 border-red-500/10 transition-all duration-1000 ease-out group-hover:scale-105"
+                style={{ 
+                  filter: `brightness(${item.brightness || 1})`,
+                  position: 'relative' 
+                }}
               />
 
-              {/* Interaction Overlay */}
+              {/* Interaction Overlay - Only this part is absolute */}
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-700 flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
                 <div className="p-6 md:p-10 rounded-full bg-white/10 backdrop-blur-3xl border border-white/20 transform scale-90 group-hover:scale-100 transition-transform duration-500">
                   <Maximize2 className="text-white w-8 h-8 md:w-12 md:h-12" />

@@ -63,16 +63,18 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
       <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 flex flex-col bg-black border-none rounded-none overflow-hidden outline-none shadow-none fixed inset-0 z-[100]">
         <DialogTitle className="sr-only">Artwork Viewer</DialogTitle>
         
-        <div className="relative flex-1 bg-black overflow-hidden">
+        <div className="relative flex-1 bg-black overflow-hidden flex items-center justify-center border-4 border-red-500/20">
           {artwork && (
-            <DeepZoomViewer 
-              ref={zoomRef}
-              imageUrl={artwork.image || artwork.imageUrl} 
-              title={artwork.displayTitle || artwork.title} 
-              brightness={artwork.brightness}
-              onRevealStart={() => setIsAnimating(true)}
-              onRevealEnd={() => setIsAnimating(false)}
-            />
+            <div className="w-full h-full flex items-center justify-center relative">
+              <DeepZoomViewer 
+                ref={zoomRef}
+                imageUrl={artwork.image || artwork.imageUrl} 
+                title={artwork.displayTitle || artwork.title} 
+                brightness={artwork.brightness}
+                onRevealStart={() => setIsAnimating(true)}
+                onRevealEnd={() => setIsAnimating(false)}
+              />
+            </div>
           )}
 
           <div className={cn("absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-8 pointer-events-none z-20 transition-opacity", isAnimating ? "opacity-0" : "opacity-100")}>
