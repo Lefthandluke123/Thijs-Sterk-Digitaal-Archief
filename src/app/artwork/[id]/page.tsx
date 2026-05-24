@@ -10,7 +10,7 @@ interface Props {
 
 /**
  * @fileOverview Server Component voor individuele kunstwerk-pagina's.
- * Haalt data op via de REST API om client-SDK errors op de server te voorkomen.
+ * Zorgt voor 100% crawler-vriendelijke Open Graph tags.
  */
 
 export async function generateMetadata(
@@ -19,42 +19,44 @@ export async function generateMetadata(
 ): Promise<Metadata> {
   const { id } = await params;
   
-  // Gebruik de REST helper in plaats van de Client SDK
+  // Haal data op via de REST API (veilig voor server)
   const artwork = await getArtworkServer(id);
   
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://thijssterk.nl';
+  const defaultImage = 'https://firebasestorage.googleapis.com/v0/b/studio-7311695883-2090f.firebasestorage.app/o/artworks%2F1778851761923_x2p82k_maannacht%20copy.jpg?alt=media';
+
   if (!artwork) {
     return { title: 'Schilderij niet gevonden | Thijs Sterk' };
   }
 
   const title = artwork.displayTitle || artwork.title || 'Schilderij';
   const description = `${artwork.medium || 'Schilderij'} uit ${artwork.year || 'onbekend jaar'}. Deel van de collectie ${artwork.series || 'Thijs Sterk'}.`;
-  
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://thijssterk.nl';
+  const imageUrl = artwork.imageUrl || defaultImage;
 
   return {
     title: `${title} | The Digital Retrospective`,
     description: description,
     openGraph: {
-      title: title,
+      title: `${title} - Thijs Sterk`,
       description: description,
       url: `${baseUrl}/artwork/${id}`,
       siteName: 'Thijs Sterk Digital Retrospective',
       images: [
         {
-          url: artwork.imageUrl,
+          url: imageUrl,
           width: 1200,
           height: 900,
           alt: title,
         },
       ],
       locale: 'nl_NL',
-      type: 'website',
+      type: 'article',
     },
     twitter: {
       card: 'summary_large_image',
       title: title,
       description: description,
-      images: [artwork.imageUrl],
+      images: [imageUrl],
     },
   };
 }
@@ -62,7 +64,7 @@ export async function generateMetadata(
 export default async function ArtworkPage({ params }: Props) {
   const { id } = await params;
   
-  // Haal data op de server op voor een razendsnelle eerste render
+  // Server-side fetch voor directe rendering
   const artwork = await getArtworkServer(id);
 
   if (!artwork) {
