@@ -60,24 +60,33 @@ export function GalleryClient({ initialRoomSlug }: { initialRoomSlug: string | n
           <div className="flex justify-center py-20"><Loader2 className="animate-spin opacity-20" /></div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-10">
-            {artworks?.map((item: any) => (
-              <article key={item.id} className="group relative cursor-pointer" onClick={() => setSelectedArtwork(item)}>
-                <div className="relative aspect-[4/5] overflow-hidden rounded-sm bg-muted/20 shadow-md">
-                  <img 
-                    src={item.image} 
-                    alt={item.title} 
-                    className="w-full h-full object-cover transition-all duration-1000 ease-out group-hover:scale-[1.05]"
-                    style={{ filter: `brightness(${item.brightness || 1})` }}
-                  />
-                  <div className="absolute inset-0 bg-background/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <Maximize2 className="text-white w-6 h-6" />
+            {artworks?.map((item: any) => {
+              const displayImage = item.image || item.imageUrl || item.url;
+              return (
+                <article key={item.id} className="group relative cursor-pointer" onClick={() => setSelectedArtwork(item)}>
+                  <div className="relative aspect-[4/5] overflow-hidden rounded-sm bg-muted/20 shadow-md">
+                    {displayImage ? (
+                      <img 
+                        src={displayImage} 
+                        alt={item.title} 
+                        className="w-full h-full object-cover transition-all duration-1000 ease-out group-hover:scale-[1.05]"
+                        style={{ filter: `brightness(${item.brightness || 1})` }}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center opacity-10">
+                        <Maximize2 className="w-12 h-12" />
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-background/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <Maximize2 className="text-white w-6 h-6" />
+                    </div>
                   </div>
-                </div>
-                <div className="mt-4 text-center">
-                  <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground group-hover:text-foreground truncate">{item.title}</h3>
-                </div>
-              </article>
-            ))}
+                  <div className="mt-4 text-center">
+                    <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground group-hover:text-foreground truncate">{item.title}</h3>
+                  </div>
+                </article>
+              );
+            })}
           </div>
         )}
       </div>

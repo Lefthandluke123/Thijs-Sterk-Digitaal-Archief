@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useMemo } from 'react';
@@ -58,31 +59,36 @@ export default function ShopPage() {
 
         {artworks && artworks.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-12">
-            {artworks.map((art: any) => (
-              <Link key={art.id} href={`/shop/${art.id}`} className="group">
-                <Card className="border-none shadow-none bg-transparent space-y-6">
-                  <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-secondary/10 shadow-lg group-hover:shadow-2xl transition-all duration-700">
-                    <img 
-                      src={art.imageUrl} 
-                      alt={art.displayTitle || art.title}
-                      className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
-                      style={{ filter: `brightness(${art.brightness || 1})` }}
-                    />
-                    <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <div className="absolute bottom-4 right-4 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all">
-                       <Badge className="bg-accent text-accent-foreground px-4 py-1 rounded-full uppercase text-[9px] font-black tracking-widest shadow-xl">
-                          {t('shop_order_now')}
-                       </Badge>
+            {artworks.map((art: any) => {
+              const displayImage = art.image || art.imageUrl || art.url;
+              return (
+                <Link key={art.id} href={`/shop/${art.id}`} className="group">
+                  <Card className="border-none shadow-none bg-transparent space-y-6">
+                    <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-secondary/10 shadow-lg group-hover:shadow-2xl transition-all duration-700">
+                      {displayImage && (
+                        <img 
+                          src={displayImage} 
+                          alt={art.displayTitle || art.title}
+                          className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
+                          style={{ filter: `brightness(${art.brightness || 1})` }}
+                        />
+                      )}
+                      <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <div className="absolute bottom-4 right-4 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all">
+                         <Badge className="bg-accent text-accent-foreground px-4 py-1 rounded-full uppercase text-[9px] font-black tracking-widest shadow-xl">
+                            {t('shop_order_now')}
+                         </Badge>
+                      </div>
                     </div>
-                  </div>
-                  <div className="space-y-1 text-center">
-                    <h3 className="font-headline text-lg group-hover:text-accent transition-colors">{art.displayTitle || art.title}</h3>
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-30">{art.year} &bull; {art.series}</p>
-                    <p className="text-[12px] font-bold text-accent pt-2">{t('shop_price')} v.a. €{art.pricePostcard || '2.50'}</p>
-                  </div>
-                </Card>
-              </Link>
-            ))}
+                    <div className="space-y-1 text-center">
+                      <h3 className="font-headline text-lg group-hover:text-accent transition-colors">{art.displayTitle || art.title}</h3>
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-30">{art.year} &bull; {art.series}</p>
+                      <p className="text-[12px] font-bold text-accent pt-2">{t('shop_price')} v.a. €{art.pricePostcard || '2.50'}</p>
+                    </div>
+                  </Card>
+                </Link>
+              );
+            })}
           </div>
         ) : (
           <div className="py-32 text-center space-y-6 bg-secondary/5 rounded-[3rem] border border-dashed border-border">

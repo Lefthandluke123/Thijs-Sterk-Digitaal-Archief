@@ -152,7 +152,7 @@ export default function AdminPage() {
           await addDoc(collection(firestore, 'artworks'), {
             title: legacy.title || "Naamloos",
             slug: legacy.id,
-            image: legacy.imageUrl,
+            image: legacy.imageUrl, // We gebruiken 'image' conform backend.json
             roomSlug: defaultRoomSlug,
             tags: legacy.tags || [],
             year: legacy.year || "",
@@ -254,23 +254,26 @@ export default function AdminPage() {
               <div className="flex justify-center py-20"><Loader2 className="animate-spin text-accent" /></div>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
-                {filteredArtworks.map((art: any) => (
-                  <Card key={art.id} className="group overflow-hidden cursor-pointer hover:ring-2 hover:ring-accent transition-all border-none shadow-md bg-white" onClick={() => setEditingArtworkId(art.id)}>
-                    <div className="aspect-square bg-muted/20 relative">
-                      {art.image ? (
-                        <img src={art.image} className="w-full h-full object-cover" alt={art.title} />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center opacity-20"><Palette className="w-8 h-8" /></div>
-                      )}
-                      <div className="absolute top-2 right-2 bg-black/40 text-white text-[8px] px-2 py-1 rounded-full backdrop-blur-md uppercase font-bold">
-                        {art.roomSlug || 'geen zaal'}
+                {filteredArtworks.map((art: any) => {
+                  const displayImage = art.image || art.imageUrl || art.url;
+                  return (
+                    <Card key={art.id} className="group overflow-hidden cursor-pointer hover:ring-2 hover:ring-accent transition-all border-none shadow-md bg-white" onClick={() => setEditingArtworkId(art.id)}>
+                      <div className="aspect-square bg-muted/20 relative">
+                        {displayImage ? (
+                          <img src={displayImage} className="w-full h-full object-cover" alt={art.title} />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center opacity-20"><Palette className="w-8 h-8" /></div>
+                        )}
+                        <div className="absolute top-2 right-2 bg-black/40 text-white text-[8px] px-2 py-1 rounded-full backdrop-blur-md uppercase font-bold">
+                          {art.roomSlug || 'geen zaal'}
+                        </div>
                       </div>
-                    </div>
-                    <div className="p-3">
-                      <h3 className="text-[10px] font-bold uppercase truncate">{art.title}</h3>
-                    </div>
-                  </Card>
-                ))}
+                      <div className="p-3">
+                        <h3 className="text-[10px] font-bold uppercase truncate">{art.title}</h3>
+                      </div>
+                    </Card>
+                  );
+                })}
               </div>
             )}
           </TabsContent>
@@ -317,8 +320,8 @@ export default function AdminPage() {
             <div className="grid md:grid-cols-2 gap-12">
               <div className="space-y-6">
                 <div className="aspect-[4/5] rounded-3xl bg-muted/20 relative overflow-hidden shadow-xl">
-                  {editingArtwork.image ? (
-                    <img src={editingArtwork.image} className="w-full h-full object-cover" alt="Preview" />
+                  {(editingArtwork.image || editingArtwork.imageUrl) ? (
+                    <img src={editingArtwork.image || editingArtwork.imageUrl} className="w-full h-full object-cover" alt="Preview" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center opacity-20"><Palette className="w-12 h-12" /></div>
                   )}
@@ -327,7 +330,7 @@ export default function AdminPage() {
                   <Label className="text-[10px] uppercase font-bold tracking-widest opacity-60">Afbeelding URL</Label>
                   <Input 
                     placeholder="https://..." 
-                    defaultValue={editingArtwork.image} 
+                    defaultValue={editingArtwork.image || editingArtwork.imageUrl} 
                     onBlur={e => updateField('artworks', editingArtworkId!, 'image', e.target.value)} 
                     className="h-12 rounded-xl bg-secondary/10 border-none" 
                   />

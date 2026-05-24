@@ -36,12 +36,17 @@ const mapDocument = (doc: any) => {
     data[key] = extract(doc.fields[key]);
   });
   
-  // Zorg dat afbeeldings-URL's altijd absoluut zijn
-  if (data.image && !data.image.startsWith('http')) {
-    data.image = `https://firebasestorage.googleapis.com/v0/b/${firebaseConfig.storageBucket}/o/${encodeURIComponent(data.image)}?alt=media`;
-  }
-  if (data.imageUrl && !data.imageUrl.startsWith('http')) {
-    data.imageUrl = `https://firebasestorage.googleapis.com/v0/b/${firebaseConfig.storageBucket}/o/${encodeURIComponent(data.imageUrl)}?alt=media`;
+  // Zorg dat afbeeldings-URL's altijd absoluut zijn en unificeer veldnamen
+  // We geven de voorkeur aan 'image' conform backend.json
+  const rawImage = data.image || data.imageUrl || data.url;
+  
+  if (rawImage) {
+    let finalUrl = rawImage;
+    if (!rawImage.startsWith('http')) {
+      finalUrl = `https://firebasestorage.googleapis.com/v0/b/${firebaseConfig.storageBucket}/o/${encodeURIComponent(rawImage)}?alt=media`;
+    }
+    data.image = finalUrl;
+    data.imageUrl = finalUrl; // Voor achterwaartse compatibiliteit in bestaande componenten
   }
   
   return data;

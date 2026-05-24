@@ -115,6 +115,8 @@ export default function ProductDetailPage() {
     );
   }
 
+  const displayImage = artwork.image || artwork.imageUrl || artwork.url;
+
   if (orderComplete) {
     return (
       <main className="min-h-screen flex flex-col items-center justify-center p-6 text-center space-y-8">
@@ -142,16 +144,18 @@ export default function ProductDetailPage() {
         <div className="grid lg:grid-cols-2 gap-20 items-start">
           <div className="space-y-8 sticky top-32">
             <div className="relative aspect-[4/5] rounded-[2.5rem] overflow-hidden shadow-2xl bg-secondary/10 border border-black/5">
-              <img 
-                src={artwork.imageUrl} 
-                alt={artwork.displayTitle} 
-                className="w-full h-full object-cover"
-                style={{ filter: `brightness(${artwork.brightness || 1})` }}
-              />
+              {displayImage && (
+                <img 
+                  src={displayImage} 
+                  alt={artwork.displayTitle || artwork.title} 
+                  className="w-full h-full object-cover"
+                  style={{ filter: `brightness(1)` }}
+                />
+              )}
             </div>
             <div className="p-8 bg-secondary/5 rounded-3xl space-y-4">
                <div className="flex items-start gap-4">
-                  <Info className="w-5 h-5 text-accent shrink-0 mt-1" />
+                  <div className="mt-1"><Info className="w-5 h-5 text-accent shrink-0" /></div>
                   <p className="text-sm text-muted-foreground leading-relaxed italic">{t('shop_quality_notice')}</p>
                </div>
             </div>
