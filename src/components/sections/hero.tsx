@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from 'react';
@@ -46,11 +45,11 @@ export function Hero() {
         </h1>
         
         <div className="flex flex-col items-center justify-center gap-8">
-          {/* Hoofdactie: Kennismaking */}
+          {/* Hoofdactie: Introductie (Biografie) */}
           <Button size="lg" className="rounded-full px-16 bg-accent hover:bg-accent/90 text-accent-foreground font-bold uppercase tracking-[0.25em] text-[13px] h-16 shadow-2xl transition-all" asChild>
-            <Link href="#kennismaking">
+            <Link href="#about">
               <BookOpen className="mr-3 w-6 h-6" />
-              Een Kennismaking
+              Introductie
             </Link>
           </Button>
 
