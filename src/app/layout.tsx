@@ -9,16 +9,16 @@ import { Suspense } from 'react';
 import { Loader2 } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Thijs Sterk (1913-1982) | Het Retrospectief',
-  description: 'Het officiële retrospectief van Thijs Sterk. Ontdek zijn meesterlijke landschappen, monumentale wandkunst en verstilde dorpsgezichten uit Noord-Holland.',
+  title: 'Thijs Sterk (1913-1982) | Het Digitale Retrospectief',
+  description: 'Het officiële digitale retrospectief van Thijs Sterk. Ontdek zijn meesterlijke landschappen, monumentale wandkunst en verstilde dorpsgezichten uit Noord-Holland.',
   keywords: ['Thijs Sterk', 'Retrospectief', 'Licht en Ruimte', 'Landschappen', 'Groet Schoorl', 'Kunstarchief', 'Atmosferisch schilderen'],
   authors: [{ name: 'Erven Thijs Sterk' }],
   openGraph: {
-    title: 'Thijs Sterk - Het Retrospectief',
+    title: 'Thijs Sterk - Het Digitale Retrospectief',
     description: 'Ontdek de essentie van licht, ruimte en water. Het officiële digitale archief.',
     type: 'website',
     locale: 'nl_NL',
-    siteName: 'Thijs Sterk Retrospectief',
+    siteName: 'Thijs Sterk Digitale Retrospectief',
   },
   twitter: {
     card: 'summary_large_image',

@@ -283,7 +283,7 @@ export default function AdminPage() {
           <LayoutDashboard className="w-6 h-6 text-accent" />
           <div>
             <h1 className="font-headline text-2xl">CMS <span className="italic">Manager</span></h1>
-            <p className="text-[10px] font-black uppercase tracking-widest opacity-40 text-accent">Real-time Global Archive</p>
+            <p className="text-[10px] font-black uppercase tracking-widest opacity-40 text-accent">Real-time Digitale Archief</p>
           </div>
         </div>
         <div className="flex items-center gap-6">

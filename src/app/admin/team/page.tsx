@@ -34,7 +34,7 @@ const TEAM_MEMBERS = [
     icon: ShieldCheck,
     color: 'bg-blue-500',
     avatar: 'https://picsum.photos/seed/simon/200',
-    status: "Transitie naar 'Digital Retrospective' voltooid",
+    status: "Transitie naar 'Digitale Retrospectief' voltooid",
     tasks: ['Positionering t.o.v. internationale archieven', 'Monitoring merkconsistentie', 'Partner deals evalueren']
   },
   {
@@ -45,7 +45,7 @@ const TEAM_MEMBERS = [
     icon: Hammer,
     color: 'bg-orange-500',
     avatar: 'https://picsum.photos/seed/bob/200',
-    status: 'Optimaliseert interactie voor Retrospective',
+    status: 'Optimaliseert interactie voor Retrospectief',
     tasks: ['Deep Zoom stabiliteit bewaken', 'Metadata injectie voor Facebook verfijnen', 'UI Identity Shift borgen']
   },
   {
@@ -78,8 +78,8 @@ const TEAM_MEMBERS = [
     icon: TrendingUp,
     color: 'bg-purple-500',
     avatar: 'https://picsum.photos/seed/mark/200',
-    status: 'Optimaliseert social ads voor Digital Retrospective',
-    tasks: ['Facebook Ads voor de Retrospective', 'SEO strategie voor merknaam', 'Shop conversie prints']
+    status: 'Optimaliseert social ads voor Digitale Retrospectief',
+    tasks: ['Facebook Ads voor de Retrospectief', 'SEO strategie voor merknaam', 'Shop conversie prints']
   },
   {
     id: 'soof',
@@ -146,7 +146,7 @@ export default function TeamDashboardPage() {
           </Link>
           <div className="flex flex-col">
             <h1 className="font-headline text-2xl">Team <span className="italic">Dashboard</span></h1>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-accent">Safe Harbor: The Digital Retrospective</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-accent">Safe Harbor: Het Digitale Retrospectief</p>
           </div>
         </div>
         <div className="flex items-center gap-4">
