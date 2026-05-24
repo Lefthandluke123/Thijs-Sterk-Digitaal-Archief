@@ -8,6 +8,8 @@ import { DeepZoomViewer, type DeepZoomHandle } from './deep-zoom-viewer';
 import { useLanguage } from '@/components/language-provider';
 import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -82,45 +84,60 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
     zoomRef.current?.startReveal();
   };
 
-  const handleShareFacebook = async () => {
+  const handleShareFacebook = () => {
     if (!artwork || !firestore) return;
     
-    try {
-      const docRef = await addDoc(collection(firestore, 'shared_rooms'), {
-        title: artwork.displayTitle || artwork.title,
-        artworkIds: [artwork.id],
-        createdAt: serverTimestamp(),
-        lang: language,
-        sharedFrom: 'viewer'
+    const roomData = {
+      title: artwork.displayTitle || artwork.title,
+      artworkIds: [artwork.id],
+      createdAt: serverTimestamp(),
+      lang: language,
+      sharedFrom: 'viewer'
+    };
+
+    addDoc(collection(firestore, 'shared_rooms'), roomData)
+      .then((docRef) => {
+        const shareUrl = `${window.location.origin}/shared/${docRef.id}`;
+        const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(`Bekijk dit meesterwerk van Thijs Sterk in Deep Zoom: ${artwork.displayTitle || artwork.title}`)}`;
+        window.open(fbUrl, '_blank', 'width=600,height=400');
+        toast({ title: t('viewer_shared_fb') });
+      })
+      .catch(async (err) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: 'shared_rooms',
+          operation: 'create',
+          requestResourceData: roomData
+        }));
       });
-      
-      const shareUrl = `${window.location.origin}/shared/${docRef.id}`;
-      // Facebook Sharing URL met parameters voor betere preview
-      const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(`Bekijk dit meesterwerk van Thijs Sterk in Deep Zoom: ${artwork.displayTitle || artwork.title}`)}`;
-      window.open(fbUrl, '_blank', 'width=600,height=400');
-      toast({ title: t('viewer_shared_fb') });
-    } catch (e) {
-      console.error(e);
-    }
   };
 
-  const copyShareLink = async () => {
+  const copyShareLink = () => {
     if (!artwork || !firestore) return;
-    try {
-      const docRef = await addDoc(collection(firestore, 'shared_rooms'), {
-        title: artwork.displayTitle || artwork.title,
-        artworkIds: [artwork.id],
-        createdAt: serverTimestamp(),
-        lang: language,
-        sharedFrom: 'viewer'
+    
+    const roomData = {
+      title: artwork.displayTitle || artwork.title,
+      artworkIds: [artwork.id],
+      createdAt: serverTimestamp(),
+      lang: language,
+      sharedFrom: 'viewer'
+    };
+
+    addDoc(collection(firestore, 'shared_rooms'), roomData)
+      .then((docRef) => {
+        const shareUrl = `${window.location.origin}/shared/${docRef.id}`;
+        navigator.clipboard.writeText(shareUrl);
+        toast({ 
+          title: "Deep Zoom Link gereed!", 
+          description: "De link naar de interactieve Zen-Modus is gekopieerd." 
+        });
+      })
+      .catch(async (err) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: 'shared_rooms',
+          operation: 'create',
+          requestResourceData: roomData
+        }));
       });
-      const shareUrl = `${window.location.origin}/shared/${docRef.id}`;
-      navigator.clipboard.writeText(shareUrl);
-      toast({ 
-        title: "Deep Zoom Link gereed!", 
-        description: "De link naar de interactieve Zen-Modus is gekopieerd." 
-      });
-    } catch (e) { console.error(e); }
   };
 
   return (

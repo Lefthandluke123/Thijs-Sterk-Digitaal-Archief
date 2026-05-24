@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -12,6 +11,9 @@ import { useLanguage } from '@/components/language-provider';
 import { toast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogTitle, DialogHeader, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 const TAG_CATEGORIES = {
   "Periode": ["Vroeg werk", "45-50", "50-60", "60-70", "70-82"],
@@ -20,8 +22,6 @@ const TAG_CATEGORIES = {
   "Plaats": ["Groet", "Schoorl", "Hargen", "Camperduin", "Holland", "Amsterdam", "Frankrijk", "Bretagne", "Griekenland"],
   "Onderwerp": ["Havens", "Stillevens", "Bloemen", "Dieren", "Water", "Mensen", "Polder"]
 };
-
-const FLAT_STANDARD_TAGS = Object.values(TAG_CATEGORIES).flat();
 
 export default function CuratorPage() {
   const [activeTags, setActiveTags] = useState<string[]>([]);
@@ -57,23 +57,32 @@ export default function CuratorPage() {
     return artworks.filter((art: any) => activeTags.every(tag => art.tags?.includes(tag)));
   }, [artworks, activeTags]);
 
-  const handleShare = async () => {
+  const handleShare = () => {
     if (!firestore || filteredArtworks.length === 0) return;
     setIsSharing(true);
-    try {
-      const docRef = await addDoc(collection(firestore, 'shared_rooms'), {
-        title: roomTitle || "Mijn Expositie",
-        artworkIds: filteredArtworks.map(a => (a as any).id),
-        createdAt: serverTimestamp(),
-        lang: language
+
+    const roomData = {
+      title: roomTitle || "Mijn Expositie",
+      artworkIds: filteredArtworks.map(a => (a as any).id),
+      createdAt: serverTimestamp(),
+      lang: language
+    };
+
+    addDoc(collection(firestore, 'shared_rooms'), roomData)
+      .then((docRef) => {
+        const url = `${window.location.origin}/shared/${docRef.id}`;
+        setShareDialog(url);
+      })
+      .catch(async (err) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: 'shared_rooms',
+          operation: 'create',
+          requestResourceData: roomData
+        }));
+      })
+      .finally(() => {
+        setIsSharing(false);
       });
-      const url = `${window.location.origin}/shared/${docRef.id}`;
-      setShareDialog(url);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsSharing(false);
-    }
   };
 
   const copyToClipboard = (text: string) => {
@@ -136,7 +145,7 @@ export default function CuratorPage() {
         <DialogContent className="max-w-md rounded-[2.5rem] p-10 border-none">
           <DialogHeader><DialogTitle className="font-headline text-3xl italic">Expositie Delen</DialogTitle><DialogDescription className="text-xs uppercase tracking-widest font-bold opacity-60">Maak een privékamer aan</DialogDescription></DialogHeader>
           <div className="space-y-6 pt-4">
-            {!shareDialog ? (
+            {shareDialog === "" ? (
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label className="text-[10px] font-black uppercase tracking-widest ml-2">Titel van uw kamer</Label>
@@ -144,12 +153,12 @@ export default function CuratorPage() {
                 </div>
                 <Button onClick={handleShare} disabled={isSharing} className="w-full h-14 rounded-2xl bg-accent text-accent-foreground font-black uppercase tracking-widest text-[11px]">{isSharing ? <Loader2 className="animate-spin" /> : "Link Genereren"}</Button>
               </div>
-            ) : (
+            ) : shareDialog ? (
               <div className="space-y-6">
                  <div className="p-6 bg-black/5 rounded-2xl break-all font-mono text-[11px] border border-black/5">{shareDialog}</div>
                  <Button onClick={() => copyToClipboard(shareDialog)} className="w-full h-14 rounded-2xl bg-primary text-primary-foreground font-black uppercase tracking-widest text-[11px]"><Copy className="w-4 h-4 mr-2" /> Kopieer Link</Button>
               </div>
-            )}
+            ) : null}
           </div>
         </DialogContent>
       </Dialog>
