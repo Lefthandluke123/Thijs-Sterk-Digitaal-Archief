@@ -2,17 +2,12 @@
 import { firebaseConfig } from '@/firebase/config';
 
 /**
- * @fileOverview Server-side Firestore data fetching via REST API met Audit Logging.
- * Gebruikt om te debuggen waarom data-fetching faalt of lege resultaten geeft.
+ * @fileOverview Server-side Firestore data fetching via REST API.
+ * Geoptimaliseerd voor betrouwbare parsing van runQuery resultaten.
  */
 
 const PROJECT_ID = firebaseConfig.projectId;
 const BASE_URL = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`;
-
-console.log('--- FIRESTORE SERVER AUDIT START ---');
-console.log('Project ID:', PROJECT_ID);
-console.log('Base URL:', BASE_URL);
-console.log('------------------------------------');
 
 const extract = (val: any): any => {
   if (!val) return undefined;
@@ -41,6 +36,7 @@ const mapDocument = (doc: any) => {
     data[key] = extract(doc.fields[key]);
   });
   
+  // Normaliseer afbeelding URLs
   const rawImage = data.image || data.imageUrl || data.url;
   if (rawImage) {
     let finalUrl = rawImage;
@@ -53,33 +49,31 @@ const mapDocument = (doc: any) => {
   return data;
 };
 
+/**
+ * Haalt alle zalen op via een eenvoudige GET collectie-oproep.
+ */
 export async function getRoomsServer() {
   try {
-    console.log('[API] Ophalen van alle zalen via GET /rooms');
     const res = await fetch(`${BASE_URL}/rooms`, {
       next: { revalidate: 30 }
     });
-    if (!res.ok) {
-      console.error(`[API ERROR] Rooms status: ${res.status} ${res.statusText}`);
-      return [];
-    }
+    if (!res.ok) return [];
     const json = await res.json();
-    console.log('[RAW RESPONSE] getRoomsServer:', JSON.stringify(json).substring(0, 200) + '...');
-    
-    const docs = (json.documents || []).map(mapDocument).sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
-    console.log('[MAPPED] Aantal zalen gevonden:', docs.length);
-    if (docs.length > 0) console.log('[SAMPLE ROOM]:', docs[0].title, docs[0].slug);
-    
-    return docs;
+    return (json.documents || [])
+      .map(mapDocument)
+      .filter(Boolean)
+      .sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
   } catch (e) {
-    console.error('[CRITICAL] getRoomsServer catch:', e);
+    console.error('getRoomsServer error:', e);
     return [];
   }
 }
 
+/**
+ * Haalt een zaal op basis van slug via runQuery.
+ */
 export async function getRoomBySlugServer(slug: string) {
   try {
-    console.log(`[API] Zoeken naar zaal met slug: "${slug}" via runQuery`);
     const url = `${BASE_URL}:runQuery`;
     const res = await fetch(url, {
       method: 'POST',
@@ -100,23 +94,21 @@ export async function getRoomBySlugServer(slug: string) {
       next: { revalidate: 30 }
     });
     const json = await res.json();
-    console.log(`[RAW RESPONSE] getRoomBySlugServer ("${slug}"):`, JSON.stringify(json));
     
-    // De REST API retourneert een array. De data zit in het object met de 'document' key.
-    const result = Array.isArray(json) ? json.find(item => item.document) : null;
-    const mapped = result?.document ? mapDocument(result.document) : null;
-    
-    console.log(`[MAPPED] getRoomBySlugServer resultaat gevonden:`, !!mapped);
-    return mapped;
+    // Filter op resultaten met een 'document' eigenschap
+    const result = Array.isArray(json) ? json.find(item => item && item.document) : null;
+    return result?.document ? mapDocument(result.document) : null;
   } catch (e) {
-    console.error(`[CRITICAL] getRoomBySlugServer ("${slug}"):`, e);
+    console.error(`getRoomBySlugServer ("${slug}") error:`, e);
     return null;
   }
 }
 
+/**
+ * Haalt alle kunstwerken voor een zaal op via runQuery.
+ */
 export async function getArtworksByRoomSlugServer(roomSlug: string) {
   try {
-    console.log(`[API] Ophalen kunstwerken voor zaal: "${roomSlug}" via runQuery`);
     const url = `${BASE_URL}:runQuery`;
     const res = await fetch(url, {
       method: 'POST',
@@ -136,30 +128,25 @@ export async function getArtworksByRoomSlugServer(roomSlug: string) {
       next: { revalidate: 30 }
     });
     const json = await res.json();
-    console.log(`[RAW RESPONSE] getArtworksByRoomSlugServer ("${roomSlug}"):`, JSON.stringify(json).substring(0, 200) + '...');
     
-    if (!Array.isArray(json)) {
-      console.warn(`[API WARN] Geen array teruggekregen voor kunstwerken in zaal: ${roomSlug}`);
-      return [];
-    }
+    if (!Array.isArray(json)) return [];
     
-    const docs = json
-      .filter((j: any) => j.document)
-      .map((j: any) => mapDocument(j.document));
-      
-    console.log(`[MAPPED] getArtworksByRoomSlugServer aantal:`, docs.length);
-    if (docs.length > 0) console.log('[SAMPLE ARTWORK]:', docs[0].title, docs[0].image);
-    
-    return docs;
+    // Extraheer documenten uit de resultatenstroom
+    return json
+      .filter((item: any) => item && item.document)
+      .map((item: any) => mapDocument(item.document))
+      .filter(Boolean);
   } catch (e) {
-    console.error(`[CRITICAL] getArtworksByRoomSlugServer ("${roomSlug}"):`, e);
+    console.error(`getArtworksByRoomSlugServer ("${roomSlug}") error:`, e);
     return [];
   }
 }
 
+/**
+ * Haalt een specifiek kunstwerk op basis van slug via runQuery.
+ */
 export async function getArtworkBySlugServer(slug: string) {
   try {
-    console.log(`[API] Zoeken naar kunstwerk met slug: "${slug}" via runQuery`);
     const url = `${BASE_URL}:runQuery`;
     const res = await fetch(url, {
       method: 'POST',
@@ -180,35 +167,28 @@ export async function getArtworkBySlugServer(slug: string) {
       next: { revalidate: 30 }
     });
     const json = await res.json();
-    console.log(`[RAW RESPONSE] getArtworkBySlugServer ("${slug}"):`, JSON.stringify(json));
     
-    const result = Array.isArray(json) ? json.find(item => item.document) : null;
-    const mapped = result?.document ? mapDocument(result.document) : null;
-    
-    console.log(`[MAPPED] getArtworkBySlugServer gevonden:`, !!mapped);
-    return mapped;
+    const result = Array.isArray(json) ? json.find(item => item && item.document) : null;
+    return result?.document ? mapDocument(result.document) : null;
   } catch (e) {
-    console.error(`[CRITICAL] getArtworkBySlugServer ("${slug}"):`, e);
+    console.error(`getArtworkBySlugServer ("${slug}") error:`, e);
     return null;
   }
 }
 
+/**
+ * Haalt een kunstwerk op via een directe GET met Document ID.
+ */
 export async function getArtworkServer(id: string) {
   try {
-    console.log(`[API] Ophalen kunstwerk met ID: "${id}" via GET /artworks/${id}`);
     const res = await fetch(`${BASE_URL}/artworks/${id}`, {
       next: { revalidate: 30 }
     });
-    if (!res.ok) {
-      console.error(`[API ERROR] Artwork ID ${id} status: ${res.status}`);
-      return null;
-    }
+    if (!res.ok) return null;
     const json = await res.json();
-    const mapped = mapDocument(json);
-    console.log(`[MAPPED] getArtworkServer gevonden:`, !!mapped);
-    return mapped;
+    return mapDocument(json);
   } catch (e) {
-    console.error(`[CRITICAL] getArtworkServer catch:`, e);
+    console.error(`getArtworkServer ("${id}") error:`, e);
     return null;
   }
 }
