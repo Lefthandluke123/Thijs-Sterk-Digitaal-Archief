@@ -57,25 +57,34 @@ export async function getRoomsServer() {
     const res = await fetch(`${BASE_URL}/rooms`, {
       next: { revalidate: 30 }
     });
-    if (!res.ok) return [];
+    if (!res.ok) {
+      console.error('[ROOM DEBUG] getRoomsServer response not ok:', res.status);
+      return [];
+    }
     const json = await res.json();
-    return (json.documents || [])
+    console.log('[FIRESTORE RESPONSE] getRoomsServer raw documents count:', json.documents?.length || 0);
+    
+    const results = (json.documents || [])
       .map(mapDocument)
       .filter(Boolean)
       .sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
+    
+    console.log('[ROOM DEBUG] getRoomsServer mapped results count:', results.length);
+    return results;
   } catch (e) {
-    console.error('getRoomsServer failed:', e);
+    console.error('[ROOM DEBUG] getRoomsServer failed:', e);
     return [];
   }
 }
 
 /**
  * Haalt een zaal op basis van slug via runQuery.
- * Normaliseert de slug naar lowercase en trimt whitespace.
  */
 export async function getRoomBySlugServer(slug: string) {
   try {
     const normalizedSlug = (slug || "").toLowerCase().trim();
+    console.log('[ROOM DEBUG] getRoomBySlugServer incoming slug:', slug, 'normalized:', normalizedSlug);
+    
     if (!normalizedSlug) return null;
 
     const url = `${BASE_URL}:runQuery`;
@@ -98,21 +107,28 @@ export async function getRoomBySlugServer(slug: string) {
       next: { revalidate: 30 }
     });
     
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.error('[ROOM DEBUG] getRoomBySlugServer response not ok:', res.status);
+      return null;
+    }
     
     const results = await res.json();
+    console.log('[FIRESTORE RESPONSE] getRoomBySlugServer raw:', JSON.stringify(results, null, 2));
+    
     if (!Array.isArray(results)) return null;
     
-    // De REST API retourneert een array van objecten, zoek het object met een 'document' property
     for (const entry of results) {
       if (entry && entry.document) {
-        return mapDocument(entry.document);
+        const mapped = mapDocument(entry.document);
+        console.log('[ROOM DEBUG] getRoomBySlugServer mapped result:', mapped?.title);
+        return mapped;
       }
     }
     
+    console.log('[ROOM DEBUG] getRoomBySlugServer no document found in response for slug:', normalizedSlug);
     return null;
   } catch (e) {
-    console.error('getRoomBySlugServer failed:', e);
+    console.error('[ROOM DEBUG] getRoomBySlugServer failed:', e);
     return null;
   }
 }
@@ -123,6 +139,8 @@ export async function getRoomBySlugServer(slug: string) {
 export async function getArtworksByRoomSlugServer(roomSlug: string) {
   try {
     const normalizedSlug = (roomSlug || "").toLowerCase().trim();
+    console.log('[ARTWORK DEBUG] getArtworksByRoomSlugServer incoming roomSlug:', roomSlug, 'normalized:', normalizedSlug);
+    
     if (!normalizedSlug) return [];
 
     const url = `${BASE_URL}:runQuery`;
@@ -144,9 +162,14 @@ export async function getArtworksByRoomSlugServer(roomSlug: string) {
       next: { revalidate: 30 }
     });
     
-    if (!res.ok) return [];
+    if (!res.ok) {
+      console.error('[ARTWORK DEBUG] getArtworksByRoomSlugServer response not ok:', res.status);
+      return [];
+    }
     
     const results = await res.json();
+    console.log('[FIRESTORE RESPONSE] getArtworksByRoomSlugServer raw array length:', results?.length || 0);
+    
     if (!Array.isArray(results)) return [];
     
     const artworks: any[] = [];
@@ -157,9 +180,10 @@ export async function getArtworksByRoomSlugServer(roomSlug: string) {
       }
     }
     
+    console.log('[ARTWORK DEBUG] getArtworksByRoomSlugServer final mapped count:', artworks.length);
     return artworks;
   } catch (e) {
-    console.error('getArtworksByRoomSlugServer failed:', e);
+    console.error('[ARTWORK DEBUG] getArtworksByRoomSlugServer failed:', e);
     return [];
   }
 }
@@ -170,6 +194,8 @@ export async function getArtworksByRoomSlugServer(roomSlug: string) {
 export async function getArtworkBySlugServer(slug: string) {
   try {
     const normalizedSlug = (slug || "").toLowerCase().trim();
+    console.log('[ARTWORK DEBUG] getArtworkBySlugServer incoming slug:', slug, 'normalized:', normalizedSlug);
+    
     if (!normalizedSlug) return null;
 
     const url = `${BASE_URL}:runQuery`;
@@ -192,20 +218,28 @@ export async function getArtworkBySlugServer(slug: string) {
       next: { revalidate: 30 }
     });
     
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.error('[ARTWORK DEBUG] getArtworkBySlugServer response not ok:', res.status);
+      return null;
+    }
     
     const results = await res.json();
+    console.log('[FIRESTORE RESPONSE] getArtworkBySlugServer raw:', JSON.stringify(results, null, 2));
+    
     if (!Array.isArray(results)) return null;
     
     for (const entry of results) {
       if (entry && entry.document) {
-        return mapDocument(entry.document);
+        const mapped = mapDocument(entry.document);
+        console.log('[ARTWORK DEBUG] getArtworkBySlugServer mapped result:', mapped?.title);
+        return mapped;
       }
     }
     
+    console.log('[ARTWORK DEBUG] getArtworkBySlugServer no document found in response for slug:', normalizedSlug);
     return null;
   } catch (e) {
-    console.error('getArtworkBySlugServer failed:', e);
+    console.error('[ARTWORK DEBUG] getArtworkBySlugServer failed:', e);
     return null;
   }
 }
@@ -215,14 +249,22 @@ export async function getArtworkBySlugServer(slug: string) {
  */
 export async function getArtworkServer(id: string) {
   try {
+    console.log('[ARTWORK DEBUG] getArtworkServer incoming id:', id);
     const res = await fetch(`${BASE_URL}/artworks/${id}`, {
       next: { revalidate: 30 }
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.error('[ARTWORK DEBUG] getArtworkServer response not ok:', res.status);
+      return null;
+    }
     const json = await res.json();
-    return mapDocument(json);
+    console.log('[FIRESTORE RESPONSE] getArtworkServer raw document fields keys:', json.fields ? Object.keys(json.fields) : 'none');
+    
+    const mapped = mapDocument(json);
+    console.log('[ARTWORK DEBUG] getArtworkServer mapped result:', mapped?.title);
+    return mapped;
   } catch (e) {
-    console.error('getArtworkServer failed:', e);
+    console.error('[ARTWORK DEBUG] getArtworkServer failed:', e);
     return null;
   }
 }
