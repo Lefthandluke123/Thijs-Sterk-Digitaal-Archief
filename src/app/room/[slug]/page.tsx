@@ -1,42 +1,29 @@
 
 import React from 'react';
-import { notFound } from 'next/navigation';
-import { getRoomBySlugServer, getArtworksByRoomSlugServer } from '@/lib/firestore-server';
-import { RoomClient } from './room-client';
-import { Metadata } from 'next';
-
-interface Props {
-  params: Promise<{ slug: string }>;
-}
-
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug } = await params;
-  const room = await getRoomBySlugServer(slug);
-  if (!room) return { title: 'Zaal niet gevonden' };
-  return { title: `${room.title} | The Digital Retrospective` };
-}
 
 /**
- * @fileOverview Server Component voor de museumzaal.
- * De container is hier tot het minimum beperkt om conflicten met de fixed RoomClient te voorkomen.
+ * @fileOverview Nuclear Layout Test.
+ * Dit is een tijdelijke component om de fundamentele centrering van de browser te testen.
  */
-export default async function RoomPage({ params }: Props) {
-  const { slug } = await params;
-  
-  const room = await getRoomBySlugServer(slug);
-  if (!room) notFound();
-
-  const artworks = await getArtworksByRoomSlugServer(slug);
-
+export default async function RoomPage() {
   return (
-    <div className="relative min-h-screen">
-      {artworks && artworks.length > 0 ? (
-        <RoomClient artworks={artworks} />
-      ) : (
-        <div className="h-screen flex items-center justify-center italic opacity-30">
-          Deze zaal wordt momenteel ingericht.
-        </div>
-      )}
+    <div style={{
+      width: '100vw',
+      height: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'blue',
+      fontSize: '40px',
+      color: 'white',
+      fontWeight: 'bold',
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      zIndex: 9999,
+      fontFamily: 'sans-serif'
+    }}>
+      HELLO MUSEUM TEST
     </div>
   );
 }
