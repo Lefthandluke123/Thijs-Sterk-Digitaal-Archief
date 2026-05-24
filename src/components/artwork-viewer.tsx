@@ -1,9 +1,8 @@
-
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogTitle, DialogClose } from '@/components/ui/dialog';
-import { X, ChevronLeft, ChevronRight, Info, Mic, Play, Pause, Video, Share2, Facebook, Link as LinkIcon, Loader2, Maximize2 } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Info, Mic, Pause, Play, Maximize2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DeepZoomViewer, type DeepZoomHandle } from './deep-zoom-viewer';
 import { useLanguage } from '@/components/language-provider';
@@ -71,11 +70,6 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
     return siteSettings.seriesTranslations?.[language]?.[name] || name;
   };
 
-  const startDemo = () => {
-    zoomRef.current?.startReveal();
-  };
-
-  // Unieke URL voor dit specifieke kunstwerk
   const artworkUrl = artwork ? `${window.location.origin}/artwork/${artwork.id}` : '';
 
   return (
@@ -95,7 +89,6 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
             />
           )}
 
-          {/* Navigation Arrows */}
           <div className={cn("absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-8 pointer-events-none z-20 transition-opacity", isAnimating ? "opacity-0" : "opacity-100")}>
             {onPrev && (
               <button onClick={(e) => { e.stopPropagation(); onPrev(); }} className="p-5 rounded-full bg-black/20 backdrop-blur-md pointer-events-auto hover:bg-black/40 transition-all border border-white/10 group/btn" title={t('viewer_prev')}><ChevronLeft className="w-10 h-10 text-white opacity-40 group-hover/btn:opacity-100 transition-opacity" /></button>
@@ -105,9 +98,7 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
             )}
           </div>
 
-          {/* Action Bar Top Right */}
           <div className={cn("absolute top-8 right-8 z-[110] flex items-center gap-4 transition-opacity", isAnimating ? "opacity-0 pointer-events-none" : "opacity-100")}>
-             
              {artwork && (
                <ShareButton 
                  title={artwork.displayTitle || artwork.title}
@@ -116,15 +107,6 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
                  className="animate-in fade-in duration-700"
                />
              )}
-
-             <button 
-                onClick={startDemo} 
-                className="p-4 rounded-full bg-accent text-accent-foreground backdrop-blur-xl border-2 border-white/20 hover:scale-110 active:scale-95 transition-all shadow-2xl flex items-center gap-3"
-                title={t('viewer_social_reveal')}
-             >
-                <Video className="w-5 h-5" />
-                <span className="text-[10px] font-black uppercase tracking-widest hidden lg:inline">{t('viewer_social_reveal')}</span>
-             </button>
 
              {audio && (
                <button onClick={toggleAudio} className={cn("p-4 rounded-full backdrop-blur-xl border border-white/10 transition-all flex items-center gap-3 shadow-2xl", isPlaying ? "bg-accent text-accent-foreground" : "bg-black/40 text-white")}>
@@ -147,7 +129,6 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
              <DialogClose className="p-4 bg-black/40 backdrop-blur-xl rounded-full text-white hover:bg-destructive transition-all shadow-2xl border border-white/10"><X className="w-5 h-5 opacity-60" /></DialogClose>
           </div>
 
-          {/* Info Panel Bottom */}
           <div className={cn("absolute bottom-0 left-0 right-0 bg-background/90 backdrop-blur-xl border-t border-border/10 flex flex-col items-center justify-center overflow-y-auto text-center transition-all duration-700 ease-in-out z-[105]", (showMetadata && !isAnimating) ? "h-[18vh] opacity-100 py-6 px-12 translate-y-0" : "h-0 opacity-0 pointer-events-none translate-y-12")}>
             <div className="max-w-4xl mx-auto space-y-3">
               <h2 className="text-xl md:text-3xl font-headline font-light italic text-foreground tracking-tight">{artwork?.displayTitle || artwork?.title}</h2>

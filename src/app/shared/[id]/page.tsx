@@ -4,13 +4,11 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { doc, collection, query, where, documentId } from 'firebase/firestore';
-import { Loader2, ArrowRight, ArrowLeft, Mic, Play, Pause, Video, Share2, ZoomIn, Info } from 'lucide-react';
+import { Loader2, ArrowRight, ArrowLeft, Mic, Play, Pause, ZoomIn } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useLanguage } from '@/components/language-provider';
 import { DeepZoomViewer, type DeepZoomHandle } from '@/components/deep-zoom-viewer';
-import { toast } from '@/hooks/use-toast';
 import { ShareButton } from '@/components/share-button';
 
 export default function SharedRoomPage() {
@@ -73,10 +71,6 @@ export default function SharedRoomPage() {
     setIsPlaying(!isPlaying);
   };
 
-  const startReveal = () => {
-    zoomRef.current?.startReveal();
-  };
-
   if (roomLoading || artLoading) return <div className="h-screen bg-black flex items-center justify-center"><Loader2 className="w-10 h-10 animate-spin text-accent" /></div>;
   if (!room) return <div className="h-screen bg-black flex flex-col items-center justify-center text-white gap-8"><p className="font-headline text-3xl italic opacity-40">Kamer niet gevonden</p><Link href="/" className="text-[11px] font-black uppercase tracking-widest border-b border-white/20 pb-1">Terug naar het Museum</Link></div>;
 
@@ -117,14 +111,6 @@ export default function SharedRoomPage() {
           description={`Bekijk deze gecureerde expositie in The Digital Retrospective van Thijs Sterk.`}
           url={shareUrl}
         />
-
-        <button 
-          onClick={startReveal}
-          className="flex items-center gap-3 px-6 py-3 rounded-full backdrop-blur-xl border-2 border-white/20 bg-accent text-accent-foreground hover:scale-105 active:scale-95 transition-all shadow-2xl group"
-        >
-          <Video className="w-4 h-4 group-hover:rotate-12 transition-transform" />
-          <span className="text-[10px] font-black uppercase tracking-widest hidden md:inline">{t('viewer_social_reveal')}</span>
-        </button>
 
         {audio && (
           <button onClick={toggleAudio} className={cn("flex items-center gap-3 px-6 py-3 rounded-full backdrop-blur-xl border border-white/10 transition-all", isPlaying ? "bg-white text-black" : "bg-white/5 hover:bg-white/10")}>
