@@ -1,7 +1,9 @@
+
 import { firebaseConfig } from '@/firebase/config';
 
 /**
  * @fileOverview Server-side Firestore data fetching via REST API.
+ * Geoptimaliseerd voor robuustheid en SEO-previews (Open Graph).
  */
 
 const PROJECT_ID = firebaseConfig.projectId;
@@ -20,7 +22,7 @@ const extract = (val: any): any => {
   if ('mapValue' in val) {
     const resMap: any = {};
     const f = val.mapValue.fields;
-    if (f) Object.keys(f).forEach(k => resMap[k] = extract(f[k]));
+    if (f) Object.keys(f).forEach(key => resMap[key] = extract(f[key]));
     return resMap;
   }
   return undefined;
@@ -34,6 +36,7 @@ const mapDocument = (doc: any) => {
     data[key] = extract(doc.fields[key]);
   });
   
+  // Zorg dat afbeeldings-URL's altijd absoluut zijn
   if (data.image && !data.image.startsWith('http')) {
     data.image = `https://firebasestorage.googleapis.com/v0/b/${firebaseConfig.storageBucket}/o/${encodeURIComponent(data.image)}?alt=media`;
   }
@@ -53,6 +56,7 @@ export async function getRoomsServer() {
     const json = await res.json();
     return (json.documents || []).map(mapDocument).sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
   } catch (e) {
+    console.error('getRoomsServer error:', e);
     return [];
   }
 }
@@ -80,6 +84,7 @@ export async function getRoomBySlugServer(slug: string) {
     const json = await res.json();
     return json[0]?.document ? mapDocument(json[0].document) : null;
   } catch (e) {
+    console.error('getRoomBySlugServer error:', e);
     return null;
   }
 }
@@ -104,22 +109,12 @@ export async function getArtworksByRoomSlugServer(roomSlug: string) {
       next: { revalidate: 60 }
     });
     const json = await res.json();
-    return (json || []).filter((j: any) => j.document).map((j: any) => mapDocument(j.document));
+    return (json || [])
+      .filter((j: any) => j.document)
+      .map((j: any) => mapDocument(j.document));
   } catch (e) {
+    console.error('getArtworksByRoomSlugServer error:', e);
     return [];
-  }
-}
-
-export async function getArtworkServer(id: string) {
-  try {
-    const res = await fetch(`${BASE_URL}/artworks/${id}`, {
-      next: { revalidate: 60 }
-    });
-    if (!res.ok) return null;
-    const json = await res.json();
-    return mapDocument(json);
-  } catch (e) {
-    return null;
   }
 }
 
@@ -146,33 +141,21 @@ export async function getArtworkBySlugServer(slug: string) {
     const json = await res.json();
     return json[0]?.document ? mapDocument(json[0].document) : null;
   } catch (e) {
+    console.error('getArtworkBySlugServer error:', e);
     return null;
   }
 }
 
-export async function getFeaturedArtworksServer() {
+export async function getArtworkServer(id: string) {
   try {
-    const url = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents:runQuery`;
-    const res = await fetch(url, {
-      method: 'POST',
-      body: JSON.stringify({
-        structuredQuery: {
-          from: [{ collectionId: 'artworks' }],
-          where: {
-            fieldFilter: {
-              field: { fieldPath: 'featured' },
-              op: 'EQUAL',
-              value: { booleanValue: true }
-            }
-          },
-          limit: 6
-        }
-      }),
+    const res = await fetch(`${BASE_URL}/artworks/${id}`, {
       next: { revalidate: 60 }
     });
+    if (!res.ok) return null;
     const json = await res.json();
-    return (json || []).filter((j: any) => j.document).map((j: any) => mapDocument(j.document));
+    return mapDocument(json);
   } catch (e) {
-    return [];
+    console.error('getArtworkServer error:', e);
+    return null;
   }
 }

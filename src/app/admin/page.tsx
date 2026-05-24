@@ -4,7 +4,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, doc, deleteDoc, query, updateDoc, addDoc, serverTimestamp, orderBy } from 'firebase/firestore';
+import { collection, doc, deleteDoc, query, updateDoc, addDoc, serverTimestamp, orderBy, getDocs, where } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
@@ -21,7 +21,9 @@ import {
   LayoutDashboard,
   Layers,
   Settings as SettingsIcon,
-  X
+  X,
+  RefreshCw,
+  DatabaseZap
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -31,6 +33,7 @@ import { Dialog, DialogContent, DialogTitle, DialogHeader } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { verifyAdminPassword } from '@/lib/admin-actions';
 import { cn } from '@/lib/utils';
+import placeholderData from '@/app/lib/placeholder-images.json';
 
 export default function AdminPage() {
   const firestore = useFirestore();
@@ -38,6 +41,7 @@ export default function AdminPage() {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [password, setPassword] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
+  const [isMigrating, setIsMigrating] = useState(false);
 
   const [editingArtworkId, setEditingArtworkId] = useState<string | null>(null);
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
@@ -88,7 +92,12 @@ export default function AdminPage() {
       image: '',
       roomSlug: rooms?.[0]?.slug || '',
       createdAt: serverTimestamp(),
-      tags: []
+      tags: [],
+      year: '',
+      medium: 'Olieverf op doek',
+      description: '',
+      brightness: 1,
+      featured: false
     });
     setEditingArtworkId(newDoc.id);
   };
@@ -110,6 +119,59 @@ export default function AdminPage() {
     updateDoc(ref, { [field]: value }).catch(err => {
       errorEmitter.emit('permission-error', new FirestorePermissionError({ path: ref.path, operation: 'update' }));
     });
+  };
+
+  const runMigration = async () => {
+    if (!firestore || !confirm('Hiermee importeer je legacy data uit placeholder-images.json naar Firestore. Doorgaan?')) return;
+    setIsMigrating(true);
+    
+    try {
+      // 1. Zorg voor tenminste één zaal als die er niet is
+      let defaultRoomSlug = "algemeen";
+      if (!rooms || rooms.length === 0) {
+        const roomRef = await addDoc(collection(firestore, 'rooms'), {
+          title: "Algemene Collectie",
+          slug: "algemeen",
+          description: "Gerecupereerde werken uit het archief.",
+          order: 1
+        });
+      } else {
+        defaultRoomSlug = rooms[0].slug;
+      }
+
+      // 2. Importeer kunstwerken
+      const legacyArtworks = placeholderData.placeholderImages;
+      let count = 0;
+
+      for (const legacy of legacyArtworks) {
+        // Check of het al bestaat (op slug)
+        const q = query(collection(firestore, 'artworks'), where('slug', '==', legacy.id));
+        const snap = await getDocs(q);
+        
+        if (snap.empty) {
+          await addDoc(collection(firestore, 'artworks'), {
+            title: legacy.title || "Naamloos",
+            slug: legacy.id,
+            image: legacy.imageUrl,
+            roomSlug: defaultRoomSlug,
+            tags: legacy.tags || [],
+            year: legacy.year || "",
+            medium: legacy.medium || "Olieverf op doek",
+            description: legacy.description || "",
+            brightness: legacy.brightness || 1,
+            featured: legacy.featured || false,
+            createdAt: serverTimestamp()
+          });
+          count++;
+        }
+      }
+
+      toast({ title: "Migratie voltooid", description: `${count} nieuwe werken toegevoegd.` });
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Migratie fout", description: err.message });
+    } finally {
+      setIsMigrating(false);
+    }
   };
 
   if (!isAuthorized) {
@@ -144,9 +206,21 @@ export default function AdminPage() {
             <p className="text-[10px] font-black uppercase tracking-widest opacity-40 text-accent">Single Source of Truth Architecture</p>
           </div>
         </div>
-        <Link href="/" className="text-[11px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-           <ArrowLeft className="w-3 h-3" /> Website
-        </Link>
+        <div className="flex items-center gap-6">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={runMigration} 
+            disabled={isMigrating}
+            className="text-[10px] font-black uppercase tracking-widest text-accent/60 hover:text-accent"
+          >
+            {isMigrating ? <RefreshCw className="w-3 h-3 animate-spin mr-2" /> : <DatabaseZap className="w-3 h-3 mr-2" />}
+            Legacy Import
+          </Button>
+          <Link href="/" className="text-[11px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+             <ArrowLeft className="w-3 h-3" /> Website
+          </Link>
+        </div>
       </header>
 
       <div className="max-w-7xl mx-auto space-y-12 pb-32">
@@ -290,6 +364,22 @@ export default function AdminPage() {
                         ))}
                       </SelectContent>
                     </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-[10px] uppercase font-bold tracking-widest opacity-60">Jaar</Label>
+                    <Input 
+                      defaultValue={editingArtwork.year} 
+                      onBlur={e => updateField('artworks', editingArtworkId!, 'year', e.target.value)} 
+                      className="h-12 rounded-xl bg-secondary/10 border-none" 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-[10px] uppercase font-bold tracking-widest opacity-60">Medium</Label>
+                    <Input 
+                      defaultValue={editingArtwork.medium} 
+                      onBlur={e => updateField('artworks', editingArtworkId!, 'medium', e.target.value)} 
+                      className="h-12 rounded-xl bg-secondary/10 border-none" 
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label className="text-[10px] uppercase font-bold tracking-widest opacity-60">Tags (komma gescheiden)</Label>
