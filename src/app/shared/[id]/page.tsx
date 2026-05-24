@@ -1,22 +1,15 @@
-
 "use client";
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { doc, collection, query, where, documentId } from 'firebase/firestore';
-import { Loader2, ArrowRight, ArrowLeft, Mic, Play, Pause, Video, Facebook, Share2, ZoomIn, Info } from 'lucide-react';
+import { Loader2, ArrowRight, ArrowLeft, Mic, Play, Pause, Video, Share2, ZoomIn, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useLanguage } from '@/components/language-provider';
 import { DeepZoomViewer, type DeepZoomHandle } from '@/components/deep-zoom-viewer';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { toast } from '@/hooks/use-toast';
 
 export default function SharedRoomPage() {
@@ -50,7 +43,6 @@ export default function SharedRoomPage() {
 
   useEffect(() => {
     if (room) {
-      // Toon een welkomst-hint voor social media bezoekers
       const timer = setTimeout(() => setShowHint(true), 1500);
       const hideTimer = setTimeout(() => setShowHint(false), 8000);
       return () => { clearTimeout(timer); clearTimeout(hideTimer); };
@@ -83,15 +75,21 @@ export default function SharedRoomPage() {
     zoomRef.current?.startReveal();
   };
 
-  const handleShareFacebook = () => {
-    const shareUrl = window.location.href;
-    const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
-    window.open(fbUrl, '_blank', 'width=600,height=400');
-  };
-
-  const copyShareLink = () => {
-    navigator.clipboard.writeText(window.location.href);
-    toast({ title: "Link naar deze kamer gekopieerd!" });
+  const handleGlobalShare = async () => {
+    const url = window.location.href;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: room?.title || "Mijn Expositie",
+          text: `Bekijk dit retrospectief archief van Thijs Sterk: ${room?.title}`,
+          url
+        });
+        return;
+      } catch (e) {}
+    }
+    // Fallback: copy link
+    navigator.clipboard.writeText(url);
+    toast({ title: "Link gekopieerd!" });
   };
 
   if (roomLoading || artLoading) return <div className="h-screen bg-black flex items-center justify-center"><Loader2 className="w-10 h-10 animate-spin text-accent" /></div>;
@@ -99,7 +97,6 @@ export default function SharedRoomPage() {
 
   return (
     <main className="h-screen w-screen bg-black overflow-hidden flex flex-col text-white selection:bg-accent selection:text-white">
-      {/* Social Media Welcome Hint */}
       <div className={cn(
         "fixed top-1/4 left-1/2 -translate-x-1/2 z-[60] transition-all duration-1000 pointer-events-none",
         showHint ? "opacity-100 translate-y-0 scale-100" : "opacity-0 -translate-y-10 scale-90"
@@ -130,24 +127,13 @@ export default function SharedRoomPage() {
       </div>
 
       <div className={cn("absolute top-10 right-10 z-50 flex items-center gap-4 transition-opacity", isAnimating ? "opacity-0 pointer-events-none" : "opacity-100")}>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="flex items-center gap-3 px-6 py-3 rounded-full backdrop-blur-xl border border-white/10 bg-white/5 hover:bg-white/10 transition-all shadow-2xl">
-              <Share2 className="w-4 h-4 text-accent" />
-              <span className="text-[10px] font-black uppercase tracking-widest hidden md:inline">{t('viewer_share')}</span>
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="bg-black/90 backdrop-blur-2xl border-white/10 text-white p-2 min-w-[200px] rounded-2xl shadow-2xl">
-             <DropdownMenuItem onClick={handleShareFacebook} className="flex items-center gap-3 p-4 rounded-xl cursor-pointer focus:bg-accent transition-all">
-                <Facebook className="w-4 h-4 text-[#1877F2]" />
-                <span className="text-[11px] font-bold uppercase tracking-widest">Deel op Facebook</span>
-             </DropdownMenuItem>
-             <DropdownMenuItem onClick={copyShareLink} className="flex items-center gap-3 p-4 rounded-xl cursor-pointer focus:bg-accent transition-all">
-                <Share2 className="w-4 h-4 text-accent" />
-                <span className="text-[11px] font-bold uppercase tracking-widest">Kopieer Link</span>
-             </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <button 
+          onClick={handleGlobalShare}
+          className="flex items-center gap-3 px-6 py-3 rounded-full backdrop-blur-xl border border-white/10 bg-white/5 hover:bg-white/10 transition-all shadow-2xl"
+        >
+          <Share2 className="w-4 h-4 text-accent" />
+          <span className="text-[10px] font-black uppercase tracking-widest hidden md:inline">{t('viewer_share')}</span>
+        </button>
 
         <button 
           onClick={startReveal}

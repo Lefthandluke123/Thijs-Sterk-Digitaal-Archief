@@ -1,8 +1,7 @@
-
 "use client";
 
 import React, { useState } from 'react';
-import { Facebook, Share2, Loader2, Check } from 'lucide-react';
+import { Share2, Loader2, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
@@ -16,7 +15,8 @@ interface ShareButtonProps {
 }
 
 /**
- * @fileOverview Slimme deel-component die switcht tussen native share en Facebook fallback.
+ * @fileOverview Subtiele deel-component die switcht tussen native share en universele fallback.
+ * De 'lelijke' blauwe branded knop is verwijderd voor een museale uitstraling.
  */
 export function ShareButton({ title, description, url, className }: ShareButtonProps) {
   const [isSharing, setIsSharing] = useState(false);
@@ -36,25 +36,25 @@ export function ShareButton({ title, description, url, className }: ShareButtonP
         setIsSharing(false);
         return;
       } catch (error) {
-        // Gebruiker heeft mogelijk geannuleerd of er is een beperking
         if ((error as Error).name !== 'AbortError') {
           console.error('Native share failed:', error);
         }
       }
     }
 
-    // 2. Fallback naar Facebook popup
+    // 2. Fallback naar Facebook popup (discreet via icon)
     const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
     window.open(fbUrl, '_blank', 'width=600,height=500,location=no,menubar=no,status=no,toolbar=no');
     
     setIsSharing(false);
     toast({
-      title: "Deelvenster geopend",
-      description: "U kunt het werk nu delen op uw tijdlijn.",
+      title: "Deelopties geopend",
+      description: "U kunt de link nu delen.",
     });
   };
 
-  const copyToClipboard = () => {
+  const copyToClipboard = (e: React.MouseEvent) => {
+    e.stopPropagation();
     navigator.clipboard.writeText(url);
     setCopied(true);
     toast({ title: "Link gekopieerd!" });
@@ -66,19 +66,22 @@ export function ShareButton({ title, description, url, className }: ShareButtonP
       <Button 
         onClick={handleShare}
         disabled={isSharing}
-        className="rounded-full bg-[#1877F2] hover:bg-[#1877F2]/90 text-white font-bold uppercase tracking-widest text-[10px] h-12 px-6 shadow-xl transition-all hover:scale-105 active:scale-95"
+        className="rounded-full border-2 h-12 w-12 p-0 bg-white/10 backdrop-blur-md hover:bg-white/20 border-white/20 transition-all shadow-xl"
+        title="Deel dit werk"
       >
-        {isSharing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Facebook className="w-4 h-4 mr-2" />}
-        Deel op Facebook
+        {isSharing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Share2 className="w-4 h-4" />}
       </Button>
       
       <Button
-        variant="outline"
+        variant="ghost"
         onClick={copyToClipboard}
-        className="rounded-full border-2 h-12 w-12 p-0 bg-white/10 backdrop-blur-md hover:bg-white/20 border-white/20 transition-all"
-        title="Kopieer Link"
+        className={cn(
+          "rounded-full h-12 px-4 text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white transition-all",
+          copied && "text-green-400"
+        )}
       >
-        {copied ? <Check className="w-4 h-4 text-green-400" /> : <Share2 className="w-4 h-4" />}
+        {copied ? <Check className="w-3 h-3 mr-2" /> : null}
+        {copied ? "Gekopieerd" : "Kopieer Link"}
       </Button>
     </div>
   );
