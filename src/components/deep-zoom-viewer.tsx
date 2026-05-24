@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useImperativeHandle, forwardRef } from 'react';
-import { Loader2, ZoomIn, ZoomOut, Play } from 'lucide-react';
+import { Loader2, ZoomIn, ZoomOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface DeepZoomViewerProps {
@@ -40,24 +40,18 @@ export const DeepZoomViewer = forwardRef<DeepZoomHandle, DeepZoomViewerProps>(
     setIsAnimating(true);
     onRevealStart?.();
 
-    // 1. Zoom eerst extreem in op het centrum (of een willekeurig detail)
     const homeZoom = viewport.getHomeZoom();
     const targetZoom = homeZoom * 10;
     
-    // We animeren naar een detail-view
     viewport.zoomTo(targetZoom, viewport.getCenter(), false);
     
-    // 2. Wacht even op het detail
     await new Promise(resolve => setTimeout(resolve, 2500));
     
-    // 3. Zoom langzaam uit naar het volledige beeld (Home)
-    // We passen de animationTime tijdelijk aan voor een vloeiende "reveal"
     const originalAnimTime = osdRef.current.animationTime;
-    osdRef.current.animationTime = 4.0; // Langzame, statige beweging
+    osdRef.current.animationTime = 4.0;
     
     viewport.goHome(false);
 
-    // 4. Reset en rond af
     setTimeout(() => {
       osdRef.current.animationTime = originalAnimTime;
       setIsAnimating(false);
@@ -132,6 +126,12 @@ export const DeepZoomViewer = forwardRef<DeepZoomHandle, DeepZoomViewerProps>(
 
         osdInstance.addHandler('open', () => {
           setIsLoading(false);
+          
+          // CRITICAL FIX: Force viewport to center and fit screen on load
+          if (osdInstance.viewport) {
+            osdInstance.viewport.goHome(true);
+          }
+
           const canvas = osdInstance.canvas as HTMLCanvasElement;
           if (canvas) {
             canvas.style.filter = `brightness(${brightness})`;
