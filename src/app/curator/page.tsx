@@ -17,7 +17,7 @@ import { FirestorePermissionError } from '@/firebase/errors';
 
 const TAG_CATEGORIES = {
   "Periode": ["Vroeg werk", "45-50", "50-60", "60-70", "70-82"],
-  "Techniek": ["Olieverf", "Aquarel", "Gouache"],
+  "Techniek": ["Olieverf", "Aquarel", "Gouache", "Litho", "Pentekening"],
   "Monumentaal": ["Monumentaal", "Glas in lood"],
   "Plaats": ["Groet", "Schoorl", "Hargen", "Camperduin", "Holland", "Amsterdam", "Frankrijk", "Bretagne", "Griekenland"],
   "Onderwerp": ["Havens", "Stillevens", "Bloemen", "Dieren", "Water", "Mensen", "Polder"]
