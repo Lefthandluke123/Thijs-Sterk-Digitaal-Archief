@@ -4,20 +4,18 @@
 import React, { useRef, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Info, Mic, Pause } from 'lucide-react';
-import { DeepZoomViewer, type DeepZoomHandle } from '@/components/deep-zoom-viewer';
 import { ShareButton } from '@/components/share-button';
 import { useLanguage } from '@/components/language-provider';
 import { cn } from '@/lib/utils';
 
 /**
  * @fileOverview Client Component voor de artwork detail weergave.
- * Geoptimaliseerd voor schermvullende Deep Zoom weergave.
+ * Geoptimaliseerd voor een rustige, gecentreerde museum-ervaring.
  */
 export function ArtworkClientPage({ artwork }: { artwork: any }) {
   const { language } = useLanguage();
   const [showMetadata, setShowMetadata] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  const zoomRef = useRef<DeepZoomHandle>(null);
   
   const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
 
@@ -42,25 +40,25 @@ export function ArtworkClientPage({ artwork }: { artwork: any }) {
   const backLink = artwork.roomSlug ? `/room/${artwork.roomSlug}` : "/gallery";
 
   return (
-    <main className="fixed inset-0 bg-black overflow-hidden flex flex-col text-white z-50">
+    <main className="fixed inset-0 bg-[#f4f4f2] overflow-hidden flex flex-col z-50">
       {/* UI Overlay Top */}
-      <div className="absolute top-0 left-0 right-0 z-50 p-6 md:p-10 flex items-center justify-between pointer-events-none">
-        <div className="flex items-center gap-6 pointer-events-auto">
+      <div className="absolute top-0 left-0 right-0 z-50 p-6 md:p-10 flex items-center justify-between">
+        <div className="flex items-center gap-6">
           <Link 
             href={backLink} 
-            className="p-4 rounded-full bg-white/5 backdrop-blur-xl border border-white/10 hover:bg-white/10 transition-all group"
+            className="p-4 rounded-full bg-white/80 backdrop-blur-md border border-black/5 hover:bg-accent hover:text-accent-foreground transition-all group shadow-lg"
           >
-            <ArrowLeft className="w-5 h-5 text-white group-hover:-translate-x-1 transition-transform" />
+            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
           </Link>
           <div className="hidden md:flex flex-col">
-            <h1 className="font-headline text-2xl italic leading-tight text-white/90">{artwork.displayTitle || artwork.title}</h1>
+            <h1 className="font-headline text-2xl italic leading-tight text-foreground">{artwork.displayTitle || artwork.title}</h1>
             <span className="text-[9px] font-black uppercase tracking-[0.3em] text-accent">
               Collectie Thijs Sterk
             </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 pointer-events-auto">
+        <div className="flex items-center gap-3">
           <ShareButton 
             title={artwork.displayTitle || artwork.title}
             description={artwork.description}
@@ -71,8 +69,8 @@ export function ArtworkClientPage({ artwork }: { artwork: any }) {
             <button 
               onClick={toggleAudio}
               className={cn(
-                "p-4 rounded-full backdrop-blur-xl border border-white/10 transition-all shadow-2xl",
-                isPlaying ? "bg-accent text-accent-foreground" : "bg-black/40 text-white"
+                "p-4 rounded-full backdrop-blur-md border border-black/5 transition-all shadow-lg",
+                isPlaying ? "bg-accent text-accent-foreground" : "bg-white/80 text-foreground"
               )}
             >
               {isPlaying ? <Pause className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
@@ -82,8 +80,8 @@ export function ArtworkClientPage({ artwork }: { artwork: any }) {
           <button 
             onClick={() => setShowMetadata(!showMetadata)}
             className={cn(
-              "p-4 rounded-full backdrop-blur-xl border border-white/10 transition-all shadow-2xl",
-              showMetadata ? "bg-accent text-accent-foreground" : "bg-black/40 text-white"
+              "p-4 rounded-full backdrop-blur-md border border-black/5 transition-all shadow-lg",
+              showMetadata ? "bg-accent text-accent-foreground" : "bg-white/80 text-foreground"
             )}
           >
             <Info className="w-5 h-5" />
@@ -91,19 +89,19 @@ export function ArtworkClientPage({ artwork }: { artwork: any }) {
         </div>
       </div>
 
-      {/* Deep Zoom Viewer */}
-      <div className="flex-1 relative w-full h-full bg-black">
-        <DeepZoomViewer 
-          ref={zoomRef}
-          imageUrl={artwork.imageUrl || artwork.image}
-          title={artwork.displayTitle || artwork.title}
-          brightness={artwork.brightness}
+      {/* Centered Image Engine */}
+      <div className="flex-1 w-full h-full flex items-center justify-center p-8 md:p-24 relative overflow-hidden">
+        <img 
+          src={artwork.imageUrl || artwork.image} 
+          alt={artwork.displayTitle || artwork.title}
+          className="max-w-full max-h-full object-contain shadow-[0_60px_120px_-20px_rgba(0,0,0,0.45)] transition-all duration-1000 animate-in fade-in zoom-in-95 select-none"
+          style={{ filter: `brightness(${artwork.brightness || 1})` }}
         />
       </div>
 
       {/* Metadata Panel */}
       <div className={cn(
-        "absolute bottom-0 left-0 right-0 bg-background/95 backdrop-blur-2xl border-t border-white/10 flex flex-col items-center justify-center text-center transition-all duration-700 ease-in-out z-40 overflow-y-auto",
+        "absolute bottom-0 left-0 right-0 bg-background/95 backdrop-blur-2xl border-t border-black/5 flex flex-col items-center justify-center text-center transition-all duration-700 ease-in-out z-40 overflow-y-auto",
         showMetadata ? "h-auto min-h-[30vh] opacity-100 py-12 translate-y-0" : "h-0 opacity-0 pointer-events-none translate-y-12"
       )}>
         <div className="max-w-4xl mx-auto space-y-6 px-10">
