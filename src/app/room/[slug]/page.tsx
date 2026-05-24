@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { notFound } from 'next/navigation';
 import { getRoomBySlugServer, getArtworksByRoomSlugServer } from '@/lib/firestore-server';
@@ -57,7 +58,7 @@ export default async function RoomPage({ params }: Props) {
           <div className="h-px w-24 bg-accent/20 mx-auto" />
         </header>
 
-        {artworks.length > 0 ? (
+        {artworks && artworks.length > 0 ? (
           <RoomClient artworks={artworks} />
         ) : (
           <div className="py-32 text-center opacity-30 italic font-light">

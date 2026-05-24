@@ -14,7 +14,7 @@ const extract = (val: any): any => {
   if ('stringValue' in val) return val.stringValue;
   if ('booleanValue' in val) return val.booleanValue;
   if ('integerValue' in val) return parseInt(val.integerValue, 10);
-  if ('doubleValue' in val) return val.doubleValue;
+  if ('doubleValue' in val) return parseFloat(val.doubleValue);
   if ('timestampValue' in val) return val.timestampValue;
   if ('arrayValue' in val) {
     return val.arrayValue.values?.map((v: any) => extract(v)) || [];
@@ -38,9 +38,9 @@ const mapDocument = (doc: any) => {
   
   // Normaliseer afbeelding URLs
   const rawImage = data.image || data.imageUrl || data.url;
-  if (rawImage) {
+  if (rawImage && typeof rawImage === 'string') {
     let finalUrl = rawImage;
-    if (!rawImage.startsWith('http')) {
+    if (!rawImage.startsWith('http') && !rawImage.startsWith('data:')) {
       finalUrl = `https://firebasestorage.googleapis.com/v0/b/${firebaseConfig.storageBucket}/o/${encodeURIComponent(rawImage)}?alt=media`;
     }
     data.image = finalUrl;
@@ -64,6 +64,7 @@ export async function getRoomsServer() {
       .filter(Boolean)
       .sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
   } catch (e) {
+    console.error('getRoomsServer failed:', e);
     return [];
   }
 }
@@ -75,6 +76,8 @@ export async function getRoomsServer() {
 export async function getRoomBySlugServer(slug: string) {
   try {
     const normalizedSlug = (slug || "").toLowerCase().trim();
+    if (!normalizedSlug) return null;
+
     const url = `${BASE_URL}:runQuery`;
     const res = await fetch(url, {
       method: 'POST',
@@ -94,12 +97,22 @@ export async function getRoomBySlugServer(slug: string) {
       }),
       next: { revalidate: 30 }
     });
-    const json = await res.json();
     
-    if (!Array.isArray(json)) return null;
-    const result = json.find((item: any) => item && item.document);
-    return result?.document ? mapDocument(result.document) : null;
+    if (!res.ok) return null;
+    
+    const results = await res.json();
+    if (!Array.isArray(results)) return null;
+    
+    // De REST API retourneert een array van objecten, zoek het object met een 'document' property
+    for (const entry of results) {
+      if (entry && entry.document) {
+        return mapDocument(entry.document);
+      }
+    }
+    
+    return null;
   } catch (e) {
+    console.error('getRoomBySlugServer failed:', e);
     return null;
   }
 }
@@ -110,6 +123,8 @@ export async function getRoomBySlugServer(slug: string) {
 export async function getArtworksByRoomSlugServer(roomSlug: string) {
   try {
     const normalizedSlug = (roomSlug || "").toLowerCase().trim();
+    if (!normalizedSlug) return [];
+
     const url = `${BASE_URL}:runQuery`;
     const res = await fetch(url, {
       method: 'POST',
@@ -128,15 +143,23 @@ export async function getArtworksByRoomSlugServer(roomSlug: string) {
       }),
       next: { revalidate: 30 }
     });
-    const json = await res.json();
     
-    if (!Array.isArray(json)) return [];
+    if (!res.ok) return [];
     
-    return json
-      .filter((item: any) => item && item.document)
-      .map((item: any) => mapDocument(item.document))
-      .filter(Boolean);
+    const results = await res.json();
+    if (!Array.isArray(results)) return [];
+    
+    const artworks: any[] = [];
+    for (const entry of results) {
+      if (entry && entry.document) {
+        const mapped = mapDocument(entry.document);
+        if (mapped) artworks.push(mapped);
+      }
+    }
+    
+    return artworks;
   } catch (e) {
+    console.error('getArtworksByRoomSlugServer failed:', e);
     return [];
   }
 }
@@ -147,6 +170,8 @@ export async function getArtworksByRoomSlugServer(roomSlug: string) {
 export async function getArtworkBySlugServer(slug: string) {
   try {
     const normalizedSlug = (slug || "").toLowerCase().trim();
+    if (!normalizedSlug) return null;
+
     const url = `${BASE_URL}:runQuery`;
     const res = await fetch(url, {
       method: 'POST',
@@ -166,12 +191,21 @@ export async function getArtworkBySlugServer(slug: string) {
       }),
       next: { revalidate: 30 }
     });
-    const json = await res.json();
     
-    if (!Array.isArray(json)) return null;
-    const result = json.find((item: any) => item && item.document);
-    return result?.document ? mapDocument(result.document) : null;
+    if (!res.ok) return null;
+    
+    const results = await res.json();
+    if (!Array.isArray(results)) return null;
+    
+    for (const entry of results) {
+      if (entry && entry.document) {
+        return mapDocument(entry.document);
+      }
+    }
+    
+    return null;
   } catch (e) {
+    console.error('getArtworkBySlugServer failed:', e);
     return null;
   }
 }
@@ -188,6 +222,7 @@ export async function getArtworkServer(id: string) {
     const json = await res.json();
     return mapDocument(json);
   } catch (e) {
+    console.error('getArtworkServer failed:', e);
     return null;
   }
 }
