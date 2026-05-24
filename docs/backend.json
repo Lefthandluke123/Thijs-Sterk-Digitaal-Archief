@@ -1,95 +1,71 @@
+
 {
   "entities": {
-    "Artwork": {
-      "title": "Artwork",
-      "description": "Een kunstwerk in het portfolio van de artiest. Openbaar leesbaar voor alle bezoekers.",
+    "Room": {
+      "title": "Room",
+      "description": "Een thematische zaal in het museum.",
       "type": "object",
       "properties": {
         "title": { "type": "string" },
-        "displayTitle": { "type": "string" },
-        "series": { "type": "string" },
+        "slug": { "type": "string" },
+        "description": { "type": "string" },
+        "order": { "type": "number" }
+      },
+      "required": ["title", "slug"]
+    },
+    "Artwork": {
+      "title": "Artwork",
+      "description": "Een kunstwerk gekoppeld aan een zaal via roomSlug.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "slug": { "type": "string" },
+        "image": { "type": "string" },
+        "roomSlug": { "type": "string" },
+        "tags": { "type": "array", "items": { "type": "string" } },
         "year": { "type": "string" },
         "medium": { "type": "string" },
-        "dimensions": { "type": "string" },
         "description": { "type": "string" },
-        "imageUrl": { "type": "string" },
-        "imageHint": { "type": "string" },
-        "fileSize": { "type": "number" },
-        "fileType": { "type": "string" },
-        "tags": { "type": "array", "items": { "type": "string" } },
+        "brightness": { "type": "number" },
         "cropTop": { "type": "number" },
         "cropBottom": { "type": "number" },
         "cropLeft": { "type": "number" },
         "cropRight": { "type": "number" },
-        "brightness": { "type": "number" },
         "featured": { "type": "boolean" },
         "inShop": { "type": "boolean" },
-        "audioUrls": { 
-          "type": "object",
-          "description": "Map van taalcode naar audio URL (bijv. { 'nl': '...', 'en': '...' })"
-        },
+        "audioUrls": { "type": "object" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["title", "imageUrl"]
+      "required": ["title", "slug", "image", "roomSlug"]
     },
     "SharedRoom": {
       "title": "SharedRoom",
-      "description": "Een door een gebruiker of curator samengestelde kamer (expositie).",
+      "description": "Een door een gebruiker samengestelde expositie.",
       "type": "object",
       "properties": {
         "title": { "type": "string" },
         "description": { "type": "string" },
         "artworkIds": { "type": "array", "items": { "type": "string" } },
-        "creatorName": { "type": "string" },
-        "lang": { "type": "string" },
-        "sharedFrom": { "type": "string" },
-        "audioUrls": { "type": "object" },
-        "createdAt": { "type": "string", "format": "date-time" }
-      }
-    },
-    "Order": {
-      "title": "Order",
-      "description": "Een bestelling geplaatst in de museumwinkel.",
-      "type": "object",
-      "properties": {
-        "customerName": { "type": "string" },
-        "customerEmail": { "type": "string" },
-        "customerAddress": { "type": "string" },
-        "artworkId": { "type": "string" },
-        "artworkTitle": { "type": "string" },
-        "productType": { "type": "string", "enum": ["postcard", "poster", "fine-art", "canvas", "digital"] },
-        "status": { "type": "string", "enum": ["new", "pending", "shipped", "paid"] },
-        "stripeSessionId": { "type": "string" },
-        "timestamp": { "type": "string", "format": "date-time" }
+        "createdAt": { "type": "string", "format": "date-time" },
+        "lang": { "type": "string" }
       }
     },
     "Settings": {
       "title": "Settings",
-      "description": "Algemene website instellingen en teksten voor White Label branding.",
+      "description": "Website configuratie.",
       "type": "object",
       "properties": {
         "siteTitle": { "type": "string" },
         "siteSubtitle": { "type": "string" },
-        "logoUrl": { "type": "string" },
-        "cdnBaseUrl": { "type": "string" },
-        "adminEmail": { "type": "string" },
-        "stripeEnabled": { "type": "boolean" },
-        "stripePublicKey": { "type": "string" },
-        "stripeSecretKey": { "type": "string" },
-        "shopIntro": { "type": "string" },
-        "homeBioTitle": { "type": "string" },
-        "homeBio": { "type": "string" },
-        "hiddenSeries": { "type": "array", "items": { "type": "string" } },
-        "seriesTranslations": { "type": "object" },
-        "tagTranslations": { "type": "object" }
+        "logoUrl": { "type": "string" }
       }
     }
   },
   "auth": { "providers": ["google"] },
   "firestore": {
+    "/rooms/{roomId}": { "schema": "Room", "description": "Collectie van alle museumzalen" },
     "/artworks/{artworkId}": { "schema": "Artwork", "description": "Collectie van alle kunstwerken" },
     "/shared_rooms/{roomId}": { "schema": "SharedRoom", "description": "Gedeelde exposities" },
-    "/orders/{orderId}": { "schema": "Order", "description": "Bestellingen uit de winkel" },
-    "/settings/site": { "schema": "Settings", "description": "Website configuratie en branding" }
+    "/settings/site": { "schema": "Settings", "description": "Algemene instellingen" }
   }
 }
