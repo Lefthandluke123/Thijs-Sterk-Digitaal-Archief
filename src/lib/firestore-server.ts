@@ -12,7 +12,7 @@ export async function getArtworkServer(id: string) {
   
   try {
     const res = await fetch(url, { 
-      next: { revalidate: 3600 }, // Cache for 1 hour for bots/crawlers
+      next: { revalidate: 60 }, // Cache for 1 minute to allow updates while keeping bots happy
       headers: { 
         'Content-Type': 'application/json',
         'Accept': 'application/json'
@@ -21,10 +21,7 @@ export async function getArtworkServer(id: string) {
     
     if (!res.ok) {
       if (res.status === 403) {
-        console.warn(`Firestore REST Access Forbidden (403). Check security rules for public read on /artworks/${id}`);
-      }
-      if (res.status !== 404) {
-        console.error(`Firestore REST Error: ${res.status} ${res.statusText}`);
+        console.warn(`Firestore REST Access Forbidden (403) for /artworks/${id}. Check Firestore Security Rules.`);
       }
       return null;
     }
@@ -35,7 +32,6 @@ export async function getArtworkServer(id: string) {
 
     const artwork: any = { id };
     
-    // Recursive helper to transform Firestore REST JSON to plain JS object
     const extract = (val: any): any => {
       if (!val) return undefined;
       if ('stringValue' in val) return val.stringValue;
@@ -59,8 +55,9 @@ export async function getArtworkServer(id: string) {
       artwork[key] = extract(fields[key]);
     });
 
-    // Ensure image URLs are absolute for Facebook crawler
+    // Zorg voor absolute URLs voor crawlers
     if (artwork.imageUrl && !artwork.imageUrl.startsWith('http')) {
+      // Als het een relatief pad is uit storage, bouw de publieke URL
       artwork.imageUrl = `https://firebasestorage.googleapis.com/v0/b/${firebaseConfig.storageBucket}/o/${encodeURIComponent(artwork.imageUrl)}?alt=media`;
     }
 
