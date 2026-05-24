@@ -78,7 +78,6 @@ export const DeepZoomViewer = forwardRef<DeepZoomHandle, DeepZoomViewerProps>(
 
   useEffect(() => {
     let osdInstance: any = null;
-    let resizeObserver: ResizeObserver | null = null;
 
     const initOpenSeadragon = async () => {
       if (!viewerRef.current) return;
@@ -100,11 +99,11 @@ export const DeepZoomViewer = forwardRef<DeepZoomHandle, DeepZoomViewerProps>(
             url: imageUrl,
             buildPyramid: true
           },
-          animationTime: 1.2,
+          animationTime: 1.5,
           blendTime: 0.1,
           constrainDuringPan: true,
           maxZoomPixelRatio: 3,
-          minZoomLevel: 0.5,
+          minZoomLevel: 0.2,
           visibilityRatio: 1,
           zoomPerScroll: 2,
           showNavigationControl: false,
@@ -127,15 +126,19 @@ export const DeepZoomViewer = forwardRef<DeepZoomHandle, DeepZoomViewerProps>(
 
         osdRef.current = osdInstance;
 
+        // CRITICAL: Centering must happen AFTER the viewer has processed the image dimensions
         osdInstance.addHandler('open', () => {
+          console.log('[VIEWER DEBUG] Image opened:', title);
           setIsLoading(false);
           
-          // Forceer centrering bij openen
-          setTimeout(() => {
+          // Using requestAnimationFrame to ensure the browser has finished layout calculations
+          requestAnimationFrame(() => {
             if (osdInstance.viewport) {
+              console.log('[VIEWER DEBUG] Applying fit-to-screen centering');
               osdInstance.viewport.goHome(true);
+              console.log('[VIEWER DEBUG] Viewport center now:', osdInstance.viewport.getCenter());
             }
-          }, 100);
+          });
 
           const canvas = osdInstance.canvas as HTMLCanvasElement;
           if (canvas) {
@@ -152,20 +155,12 @@ export const DeepZoomViewer = forwardRef<DeepZoomHandle, DeepZoomViewerProps>(
           }
         });
 
-        // ResizeObserver is cruciaal voor centrering in dynamische layouts
-        resizeObserver = new ResizeObserver(() => {
-          if (osdInstance && osdInstance.viewport) {
-            osdInstance.viewport.goHome(true);
-          }
-        });
-        resizeObserver.observe(viewerRef.current);
-
-        osdInstance.addHandler('open-failed', () => {
+        osdInstance.addHandler('open-failed', (event: any) => {
           setIsLoading(false);
-          console.error("OpenSeadragon failed to load image");
+          console.error("[VIEWER DEBUG] OpenSeadragon failed to load image:", event);
         });
       } catch (error) {
-        console.error("Error initializing OpenSeadragon:", error);
+        console.error("[VIEWER DEBUG] Error initializing OpenSeadragon:", error);
         setIsLoading(false);
       }
     };
@@ -177,11 +172,8 @@ export const DeepZoomViewer = forwardRef<DeepZoomHandle, DeepZoomViewerProps>(
         osdInstance.destroy();
         osdRef.current = null;
       }
-      if (resizeObserver) {
-        resizeObserver.disconnect();
-      }
     };
-  }, [imageUrl, brightness]);
+  }, [imageUrl, brightness, title]);
 
   return (
     <div className={cn("relative w-full h-full bg-black overflow-hidden group", className)}>
@@ -229,7 +221,7 @@ export const DeepZoomViewer = forwardRef<DeepZoomHandle, DeepZoomViewerProps>(
           {isZoomedIn ? (
             <ZoomOut className="w-7 h-7 md:w-10 md:h-10 transition-transform group-hover/zoom:scale-110" />
           ) : (
-            <ZoomIn className="w-7 h-7 md:w-10 md:h-10 transition-transform group-hover/zoom:scale-110" />
+            <ZoomIn className="w-7 h-7 md:text-10 md:h-10 transition-transform group-hover/zoom:scale-110" />
           )}
         </button>
       </div>
