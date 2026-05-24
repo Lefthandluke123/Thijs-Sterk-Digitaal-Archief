@@ -4,7 +4,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Maximize2, Sparkles, Layout } from 'lucide-react';
+import { Maximize2, Sparkles, Layout, BookOpen } from 'lucide-react';
 import { useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, where, limit, doc, orderBy } from 'firebase/firestore';
 import { ArtworkViewer } from '@/components/artwork-viewer';
@@ -45,29 +45,35 @@ export function Hero() {
           )}
         </h1>
         
-        <div className="flex flex-col items-center justify-center gap-12">
-          {/* Hoofdactie: Retrospective Overzicht */}
-          <Button size="lg" className="rounded-full px-16 bg-primary hover:bg-primary/90 text-primary-foreground font-bold uppercase tracking-[0.25em] text-[13px] h-16 shadow-2xl transition-all" asChild>
-            <Link href="/gallery">
-              <Sparkles className="mr-3 w-6 h-6" />
-              {t('hero_start_walk')}
+        <div className="flex flex-col items-center justify-center gap-8">
+          {/* Hoofdactie: Kennismaking */}
+          <Button size="lg" className="rounded-full px-16 bg-accent hover:bg-accent/90 text-accent-foreground font-bold uppercase tracking-[0.25em] text-[13px] h-16 shadow-2xl transition-all" asChild>
+            <Link href="#kennismaking">
+              <BookOpen className="mr-3 w-6 h-6" />
+              Een Kennismaking
             </Link>
           </Button>
 
-          {/* Secundaire actie: Curator Mode met contextuele tekst */}
-          <div className="flex flex-col items-center gap-6 max-w-lg">
-            <Button variant="outline" size="lg" className="rounded-full px-16 border-2 border-foreground/30 text-foreground hover:bg-black/5 font-bold uppercase tracking-[0.25em] text-[13px] h-16 transition-all" asChild>
+          <div className="flex flex-col md:flex-row items-center justify-center gap-6">
+            <Button variant="outline" size="lg" className="rounded-full px-12 border-2 border-foreground/30 text-foreground hover:bg-black/5 font-bold uppercase tracking-[0.25em] text-[12px] h-14 transition-all" asChild>
+              <Link href="/gallery">
+                <Sparkles className="mr-3 w-5 h-5" />
+                {t('hero_start_walk')}
+              </Link>
+            </Button>
+
+            <Button variant="outline" size="lg" className="rounded-full px-12 border-2 border-foreground/30 text-foreground hover:bg-black/5 font-bold uppercase tracking-[0.25em] text-[12px] h-14 transition-all" asChild>
               <Link href="/curator">
-                <Layout className="mr-3 w-6 h-6" />
+                <Layout className="mr-3 w-5 h-5" />
                 {t('hero_your_room')}
               </Link>
             </Button>
-            
-            <div className="animate-in fade-in slide-in-from-top-2 duration-1000">
-               <p className="text-[11px] font-black uppercase tracking-[0.4em] text-accent opacity-60 leading-relaxed">
-                 Kies uw eigen rondleiding langs het werk van Thijs op basis van thema&apos;s
-               </p>
-            </div>
+          </div>
+          
+          <div className="animate-in fade-in slide-in-from-top-2 duration-1000 max-w-lg">
+             <p className="text-[11px] font-black uppercase tracking-[0.4em] text-accent opacity-60 leading-relaxed">
+               Kies uw eigen rondleiding langs het werk van Thijs op basis van thema&apos;s
+             </p>
           </div>
         </div>
       </div>

@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -5,6 +6,7 @@ import { Hero } from '@/components/sections/hero';
 import { PortfolioGrid } from '@/components/sections/portfolio-grid';
 import { ArtistBio } from '@/components/sections/artist-bio';
 import { ContactForm } from '@/components/sections/contact-form';
+import { IntroductionGallery } from '@/components/sections/introduction-gallery';
 import { Toaster } from '@/components/ui/toaster';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
@@ -23,6 +25,9 @@ export default function Home() {
     <main className="min-h-screen bg-background pt-16 md:pt-32">
       <Hero />
       
+      {/* Introductie Galerie */}
+      <IntroductionGallery />
+
       {/* Dynamic Rooms Selection */}
       <section className="py-20 px-4">
         <div className="container mx-auto max-w-7xl">
