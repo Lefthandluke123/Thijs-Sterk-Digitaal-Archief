@@ -1,6 +1,7 @@
+
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { ArrowLeft, Info, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -27,6 +28,26 @@ export function RoomClient({ artworks, roomTitle }: RoomClientProps) {
   
   const item = artworks[currentIndex];
 
+  const handleNext = useCallback(() => {
+    setCurrentIndex((prev) => (prev + 1) % artworks.length);
+    setShowMetadata(false);
+  }, [artworks.length]);
+
+  const handlePrev = useCallback(() => {
+    setCurrentIndex((prev) => (prev - 1 + artworks.length) % artworks.length);
+    setShowMetadata(false);
+  }, [artworks.length]);
+
+  // Toetsenbord ondersteuning
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight') handleNext();
+      if (e.key === 'ArrowLeft') handlePrev();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleNext, handlePrev]);
+
   if (!item) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-[#f4f4f2]">
@@ -34,16 +55,6 @@ export function RoomClient({ artworks, roomTitle }: RoomClientProps) {
       </div>
     );
   }
-
-  const handleNext = () => {
-    setCurrentIndex((prev) => (prev + 1) % artworks.length);
-    setShowMetadata(false);
-  };
-
-  const handlePrev = () => {
-    setCurrentIndex((prev) => (prev - 1 + artworks.length) % artworks.length);
-    setShowMetadata(false);
-  };
 
   const displayImage = item.image || item.imageUrl || item.url;
 

@@ -1,6 +1,7 @@
+
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { X, ChevronLeft, ChevronRight, Info, Mic, Pause } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -32,6 +33,18 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
   
   const pathname = usePathname();
   const { language, t } = useLanguage();
+
+  // Toetsenbord ondersteuning
+  useEffect(() => {
+    if (!artwork) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight' && onNext) onNext();
+      if (e.key === 'ArrowLeft' && onPrev) onPrev();
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [artwork, onNext, onPrev, onClose]);
 
   useEffect(() => {
     if (!artwork) {
@@ -111,12 +124,24 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
       </div>
 
       <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-8 pointer-events-none z-[10000]">
-        {onPrev && (
-          <button onClick={onPrev} className="p-5 rounded-full bg-white/40 backdrop-blur-md pointer-events-auto hover:bg-accent hover:text-accent-foreground transition-all border border-black/5 shadow-xl"><ChevronLeft className="w-10 h-10 opacity-40" /></button>
-        )}
-        {onNext && (
-          <button onClick={onNext} className="p-5 rounded-full bg-white/40 backdrop-blur-md pointer-events-auto hover:bg-accent hover:text-accent-foreground transition-all border border-black/5 shadow-xl"><ChevronRight className="w-10 h-10 opacity-40" /></button>
-        )}
+        <button 
+          onClick={(e) => { e.stopPropagation(); if(onPrev) onPrev(); }} 
+          className={cn(
+            "p-5 rounded-full bg-white/40 backdrop-blur-md pointer-events-auto hover:bg-accent hover:text-accent-foreground transition-all border border-black/5 shadow-xl",
+            !onPrev && "opacity-0 pointer-events-none"
+          )}
+        >
+          <ChevronLeft className="w-10 h-10 opacity-40" />
+        </button>
+        <button 
+          onClick={(e) => { e.stopPropagation(); if(onNext) onNext(); }} 
+          className={cn(
+            "p-5 rounded-full bg-white/40 backdrop-blur-md pointer-events-auto hover:bg-accent hover:text-accent-foreground transition-all border border-black/5 shadow-xl",
+            !onNext && "opacity-0 pointer-events-none"
+          )}
+        >
+          <ChevronRight className="w-10 h-10 opacity-40" />
+        </button>
       </div>
 
       <div className={cn(

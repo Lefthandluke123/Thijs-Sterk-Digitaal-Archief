@@ -1,6 +1,7 @@
+
 "use client";
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, where } from 'firebase/firestore';
@@ -37,6 +38,15 @@ export function GalleryClient({ initialRoomSlug }: { initialRoomSlug: string | n
   const { data: artworks, loading: artLoading } = useCollection(artworksQuery);
 
   const activeRoom = useMemo(() => rooms?.find((r: any) => r.slug === currentRoomSlug), [rooms, currentRoomSlug]);
+
+  const navigateArtwork = useCallback((direction: 'next' | 'prev') => {
+    if (!selectedArtwork || !artworks) return;
+    const currentIndex = artworks.findIndex((a: any) => a.id === selectedArtwork.id);
+    const nextIndex = direction === 'next' 
+      ? (currentIndex + 1) % artworks.length 
+      : (currentIndex - 1 + artworks.length) % artworks.length;
+    setSelectedArtwork(artworks[nextIndex]);
+  }, [selectedArtwork, artworks]);
 
   if (roomsLoading && !rooms) {
     return (
@@ -130,7 +140,12 @@ export function GalleryClient({ initialRoomSlug }: { initialRoomSlug: string | n
         )}
       </div>
 
-      <ArtworkViewer artwork={selectedArtwork} onClose={() => setSelectedArtwork(null)} />
+      <ArtworkViewer 
+        artwork={selectedArtwork} 
+        onClose={() => setSelectedArtwork(null)} 
+        onNext={() => navigateArtwork('next')}
+        onPrev={() => navigateArtwork('prev')}
+      />
     </main>
   );
 }

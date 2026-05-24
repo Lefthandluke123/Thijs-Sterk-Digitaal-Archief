@@ -1,6 +1,7 @@
+
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
@@ -56,6 +57,15 @@ export default function CuratorPage() {
     if (activeTags.length === 0) return [];
     return artworks.filter((art: any) => activeTags.every(tag => art.tags?.includes(tag)));
   }, [artworks, activeTags]);
+
+  const navigateArtwork = useCallback((direction: 'next' | 'prev') => {
+    if (!selectedArtwork || filteredArtworks.length === 0) return;
+    const currentIndex = filteredArtworks.findIndex((a: any) => a.id === selectedArtwork.id);
+    const nextIndex = direction === 'next' 
+      ? (currentIndex + 1) % filteredArtworks.length 
+      : (currentIndex - 1 + filteredArtworks.length) % filteredArtworks.length;
+    setSelectedArtwork(filteredArtworks[nextIndex]);
+  }, [selectedArtwork, filteredArtworks]);
 
   const handleShare = () => {
     if (!firestore) {
@@ -232,7 +242,12 @@ export default function CuratorPage() {
         </DialogContent>
       </Dialog>
 
-      <ArtworkViewer artwork={selectedArtwork} onClose={() => setSelectedArtwork(null)} />
+      <ArtworkViewer 
+        artwork={selectedArtwork} 
+        onClose={() => setSelectedArtwork(null)} 
+        onNext={() => navigateArtwork('next')}
+        onPrev={() => navigateArtwork('prev')}
+      />
     </main>
   );
 }

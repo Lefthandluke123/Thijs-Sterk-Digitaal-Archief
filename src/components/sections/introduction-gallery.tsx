@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, limit, orderBy } from 'firebase/firestore';
 import { ArtworkViewer } from '@/components/artwork-viewer';
@@ -20,6 +20,15 @@ export function IntroductionGallery() {
   }, [firestore]);
 
   const { data: artworks, loading } = useCollection(artworksQuery);
+
+  const navigateArtwork = useCallback((direction: 'next' | 'prev') => {
+    if (!selectedArtwork || !artworks) return;
+    const currentIndex = artworks.findIndex((a: any) => a.id === selectedArtwork.id);
+    const nextIndex = direction === 'next' 
+      ? (currentIndex + 1) % artworks.length 
+      : (currentIndex - 1 + artworks.length) % artworks.length;
+    setSelectedArtwork(artworks[nextIndex]);
+  }, [selectedArtwork, artworks]);
 
   return (
     <section className="py-32 bg-background px-4 scroll-mt-32" id="kennismaking">
@@ -89,7 +98,12 @@ export function IntroductionGallery() {
         )}
       </div>
 
-      <ArtworkViewer artwork={selectedArtwork} onClose={() => setSelectedArtwork(null)} />
+      <ArtworkViewer 
+        artwork={selectedArtwork} 
+        onClose={() => setSelectedArtwork(null)} 
+        onNext={() => navigateArtwork('next')}
+        onPrev={() => navigateArtwork('prev')}
+      />
     </section>
   );
 }
