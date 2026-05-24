@@ -6,6 +6,7 @@ import { X, ChevronLeft, ChevronRight, Info, Mic, Pause } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/components/language-provider';
 import { ShareButton } from './share-button';
+import { usePathname } from 'next/navigation';
 
 interface ArtworkViewerProps {
   artwork: any | null;
@@ -17,12 +18,14 @@ interface ArtworkViewerProps {
 /**
  * @fileOverview Gestroomlijnde Artwork Viewer zonder Portals.
  * Gebruikt een directe grid-centrering op de volledige viewport.
+ * Uitgesloten op /room en /art routes om dubbele lagen te voorkomen.
  */
 export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewerProps) {
   const [showMetadata, setShowMetadata] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
   
+  const pathname = usePathname();
   const { language, t } = useLanguage();
 
   useEffect(() => {
@@ -55,7 +58,10 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
     setIsPlaying(!isPlaying);
   };
 
-  if (!artwork) return null;
+  // Harde uitsluiting: render nooit op specifieke detail-pagina's waar RoomClient of ArtworkClientPage actief is
+  if (!artwork || pathname.startsWith('/room') || pathname.startsWith('/art') || pathname.startsWith('/artwork')) {
+    return null;
+  }
 
   const artworkUrl = `${window.location.origin}/art/${artwork.slug || artwork.id}`;
   const displayImage = artwork.image || artwork.imageUrl || artwork.url;
@@ -138,11 +144,6 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
           </div>
           <p className="text-xs text-muted-foreground opacity-60 max-w-2xl mx-auto line-clamp-2">{artwork.description}</p>
         </div>
-      </div>
-
-      {/* DEBUG LABEL */}
-      <div className="absolute bottom-4 right-4 z-[10050] pointer-events-none">
-        <span className="bg-purple-600 text-white text-[8px] font-bold px-2 py-1 rounded uppercase tracking-tighter">GLOBAL VIEWER ACTIVE</span>
       </div>
     </div>
   );

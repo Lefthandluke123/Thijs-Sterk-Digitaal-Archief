@@ -149,11 +149,6 @@ export function ArtworkClientPage({ artwork }: { artwork: any }) {
           </div>
         </div>
       </div>
-
-      {/* DEBUG LABEL */}
-      <div className="absolute bottom-4 right-4 z-[200] pointer-events-none">
-        <span className="bg-blue-600 text-white text-[8px] font-bold px-2 py-1 rounded uppercase tracking-tighter">ARTWORK PAGE VIEWER</span>
-      </div>
     </main>
   );
 }
