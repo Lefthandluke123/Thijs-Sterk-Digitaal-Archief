@@ -13,7 +13,7 @@ interface RoomClientProps {
 
 /**
  * @fileOverview Client Component voor de museumzaal.
- * Gebruikt de Deep Zoom viewer voor een meeslepende, gecentreerde ervaring.
+ * Gebruikt de Deep Zoom viewer voor een gecentreerde, schermvullende ervaring.
  */
 export function RoomClient({ artworks }: RoomClientProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -46,7 +46,7 @@ export function RoomClient({ artworks }: RoomClientProps) {
             <ArrowLeft className="w-5 h-5 text-white group-hover:-translate-x-1 transition-transform" />
           </Link>
           <div className="hidden md:flex flex-col">
-            <h1 className="font-headline text-2xl italic leading-tight text-white/90">{item.title}</h1>
+            <h1 className="font-headline text-2xl italic text-white/90 leading-tight">{item.title}</h1>
             <span className="text-[9px] font-black uppercase tracking-[0.3em] text-accent">
               Zaal: {item.roomSlug}
             </span>
@@ -82,8 +82,8 @@ export function RoomClient({ artworks }: RoomClientProps) {
         </button>
       </div>
 
-      {/* Viewer Engine - De container is nu gegarandeerd schermvullend */}
-      <div className="flex-1 relative w-full h-full">
+      {/* Deep Zoom Viewer Engine */}
+      <div className="flex-1 relative w-full h-full bg-black">
         <DeepZoomViewer 
           key={item.id} 
           ref={zoomRef}
@@ -95,7 +95,7 @@ export function RoomClient({ artworks }: RoomClientProps) {
 
       {/* Metadata Panel */}
       <div className={cn(
-        "absolute bottom-0 left-0 right-0 bg-background/90 backdrop-blur-xl border-t border-border/10 flex flex-col items-center justify-center text-center transition-all duration-700 ease-in-out z-[70] overflow-y-auto",
+        "absolute bottom-0 left-0 right-0 bg-background/95 backdrop-blur-2xl border-t border-white/10 flex flex-col items-center justify-center text-center transition-all duration-700 ease-in-out z-[70] overflow-y-auto",
         showMetadata ? "h-auto min-h-[30vh] opacity-100 py-12 translate-y-0" : "h-0 opacity-0 pointer-events-none translate-y-12"
       )}>
         <div className="max-w-4xl mx-auto space-y-6 px-10">

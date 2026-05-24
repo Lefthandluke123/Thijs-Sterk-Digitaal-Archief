@@ -18,6 +18,10 @@ export interface DeepZoomHandle {
   startReveal: () => void;
 }
 
+/**
+ * @fileOverview Gestroomlijnde OpenSeadragon viewer.
+ * Gefocust op stabiele centrering en schermvullende weergave.
+ */
 export const DeepZoomViewer = forwardRef<DeepZoomHandle, DeepZoomViewerProps>(
   ({ imageUrl, title, brightness = 1, className, onRevealStart, onRevealEnd }, ref) => {
   const viewerRef = useRef<HTMLDivElement>(null);
@@ -111,6 +115,8 @@ export const DeepZoomViewer = forwardRef<DeepZoomHandle, DeepZoomViewerProps>(
           navigatorPosition: "BOTTOM_RIGHT",
           navigatorAutoFade: true,
           autoResize: true,
+          // CRITICAL: Force initial viewport to zero so we can override it reliably on open
+          defaultZoomLevel: 0,
           gestureSettingsMouse: {
             clickToZoom: true,
             dblClickToZoom: true,
@@ -126,17 +132,17 @@ export const DeepZoomViewer = forwardRef<DeepZoomHandle, DeepZoomViewerProps>(
 
         osdRef.current = osdInstance;
 
-        // CRITICAL: Centering must happen AFTER the viewer has processed the image dimensions
+        // CRITICAL: Centering must happen AFTER the viewer has processed the container dimensions
         osdInstance.addHandler('open', () => {
-          console.log('[VIEWER DEBUG] Image opened:', title);
+          console.log('[OSD DEBUG] Image opened:', title);
           setIsLoading(false);
           
           // Using requestAnimationFrame to ensure the browser has finished layout calculations
+          // This fixes the 'top-left' anchor issue.
           requestAnimationFrame(() => {
             if (osdInstance.viewport) {
-              console.log('[VIEWER DEBUG] Applying fit-to-screen centering');
+              console.log('[OSD DEBUG] Applying fit-to-screen centering');
               osdInstance.viewport.goHome(true);
-              console.log('[VIEWER DEBUG] Viewport center now:', osdInstance.viewport.getCenter());
             }
           });
 
@@ -157,10 +163,10 @@ export const DeepZoomViewer = forwardRef<DeepZoomHandle, DeepZoomViewerProps>(
 
         osdInstance.addHandler('open-failed', (event: any) => {
           setIsLoading(false);
-          console.error("[VIEWER DEBUG] OpenSeadragon failed to load image:", event);
+          console.error("[OSD DEBUG] Failed to load image:", event);
         });
       } catch (error) {
-        console.error("[VIEWER DEBUG] Error initializing OpenSeadragon:", error);
+        console.error("[OSD DEBUG] Error initializing:", error);
         setIsLoading(false);
       }
     };
@@ -176,9 +182,9 @@ export const DeepZoomViewer = forwardRef<DeepZoomHandle, DeepZoomViewerProps>(
   }, [imageUrl, brightness, title]);
 
   return (
-    <div className={cn("relative w-full h-full bg-black overflow-hidden group", className)}>
+    <div className={cn("relative w-full h-full bg-black overflow-hidden", className)}>
       {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center z-[150] bg-black/40 backdrop-blur-md">
+        <div className="absolute inset-0 flex items-center justify-center z-[150] bg-black">
           <Loader2 className="w-12 h-12 animate-spin text-accent" />
         </div>
       )}
@@ -186,11 +192,14 @@ export const DeepZoomViewer = forwardRef<DeepZoomHandle, DeepZoomViewerProps>(
       <div 
         ref={viewerRef} 
         className="w-full h-full cursor-crosshair block"
-        style={{ width: '100%', height: '100%', display: 'block' }}
+        style={{ width: '100%', height: '100%' }}
         aria-label={`Deep Zoom viewer voor ${title}`}
       />
 
       <style dangerouslySetInnerHTML={{ __html: `
+        .openseadragon-container {
+          background-color: transparent !important;
+        }
         .navigator {
           border: 1px solid rgba(255,255,255,0.1) !important;
           background-color: rgba(0,0,0,0.4) !important;
@@ -205,7 +214,7 @@ export const DeepZoomViewer = forwardRef<DeepZoomHandle, DeepZoomViewerProps>(
 
       <div className="absolute top-8 left-8 flex flex-col gap-4 md:gap-6 z-[160] pointer-events-none">
         <div className={cn("bg-black/60 backdrop-blur-xl border border-white/10 p-3 md:p-5 rounded-2xl shadow-2xl pointer-events-auto transition-opacity", isAnimating ? "opacity-0" : "opacity-100")}>
-          <p className="text-[8px] md:text-[10px] font-black uppercase tracking-[0.3em] text-accent mb-1">Collectie Thijs Sterk</p>
+          <p className="text-[8px] md:text-[10px] font-black uppercase tracking-[0.3em] text-accent mb-1">Thijs Sterk Archief</p>
           <p className="text-white text-xs md:text-sm font-light italic truncate max-w-[180px] md:max-w-[240px]">{title}</p>
         </div>
 
@@ -215,13 +224,13 @@ export const DeepZoomViewer = forwardRef<DeepZoomHandle, DeepZoomViewerProps>(
             e.stopPropagation(); 
             handleToggleZoom(); 
           }}
-          className={cn("w-14 h-14 md:w-20 md:h-20 bg-accent hover:bg-accent/90 text-accent-foreground rounded-2xl md:rounded-3xl flex items-center justify-center shadow-[0_20px_50px_rgba(0,0,0,0.4)] border-2 border-white/20 transition-all hover:scale-110 active:scale-90 pointer-events-auto group/zoom", isAnimating && "opacity-0 pointer-events-none")}
+          className={cn("w-14 h-14 md:w-20 md:h-20 bg-accent hover:bg-accent/90 text-accent-foreground rounded-2xl md:rounded-3xl flex items-center justify-center shadow-2xl border-2 border-white/20 transition-all hover:scale-110 active:scale-90 pointer-events-auto group/zoom", isAnimating && "opacity-0 pointer-events-none")}
           title={isZoomedIn ? "Terug naar overzicht (-)" : "Zoom in op details (+)"}
         >
           {isZoomedIn ? (
-            <ZoomOut className="w-7 h-7 md:w-10 md:h-10 transition-transform group-hover/zoom:scale-110" />
+            <ZoomOut className="w-7 h-7 md:w-10 md:h-10" />
           ) : (
-            <ZoomIn className="w-7 h-7 md:text-10 md:h-10 transition-transform group-hover/zoom:scale-110" />
+            <ZoomIn className="w-7 h-7 md:w-10 md:h-10" />
           )}
         </button>
       </div>

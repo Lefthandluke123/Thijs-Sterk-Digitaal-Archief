@@ -3,7 +3,7 @@
 
 import React, { useRef, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Info, Mic, Pause, Tag as TagIcon } from 'lucide-react';
+import { ArrowLeft, Info, Mic, Pause } from 'lucide-react';
 import { DeepZoomViewer, type DeepZoomHandle } from '@/components/deep-zoom-viewer';
 import { ShareButton } from '@/components/share-button';
 import { useLanguage } from '@/components/language-provider';
@@ -11,10 +11,10 @@ import { cn } from '@/lib/utils';
 
 /**
  * @fileOverview Client Component voor de artwork detail weergave.
- * Geoptimaliseerd voor Deep Zoom en dynamische metadata uit Firestore.
+ * Geoptimaliseerd voor schermvullende Deep Zoom weergave.
  */
 export function ArtworkClientPage({ artwork }: { artwork: any }) {
-  const { language, t } = useLanguage();
+  const { language } = useLanguage();
   const [showMetadata, setShowMetadata] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const zoomRef = useRef<DeepZoomHandle>(null);
@@ -39,11 +39,10 @@ export function ArtworkClientPage({ artwork }: { artwork: any }) {
     setIsPlaying(!isPlaying);
   };
 
-  // Dynamische link terug naar de specifieke zaal of de algemene galerij
   const backLink = artwork.roomSlug ? `/room/${artwork.roomSlug}` : "/gallery";
 
   return (
-    <main className="h-screen w-screen bg-black overflow-hidden flex flex-col text-white">
+    <main className="fixed inset-0 bg-black overflow-hidden flex flex-col text-white z-50">
       {/* UI Overlay Top */}
       <div className="absolute top-0 left-0 right-0 z-50 p-6 md:p-10 flex items-center justify-between pointer-events-none">
         <div className="flex items-center gap-6 pointer-events-auto">
@@ -51,12 +50,12 @@ export function ArtworkClientPage({ artwork }: { artwork: any }) {
             href={backLink} 
             className="p-4 rounded-full bg-white/5 backdrop-blur-xl border border-white/10 hover:bg-white/10 transition-all group"
           >
-            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+            <ArrowLeft className="w-5 h-5 text-white group-hover:-translate-x-1 transition-transform" />
           </Link>
           <div className="hidden md:flex flex-col">
             <h1 className="font-headline text-2xl italic leading-tight text-white/90">{artwork.displayTitle || artwork.title}</h1>
             <span className="text-[9px] font-black uppercase tracking-[0.3em] text-accent">
-              {artwork.roomSlug ? `Zaal: ${artwork.roomSlug}` : 'Collectie Thijs Sterk'}
+              Collectie Thijs Sterk
             </span>
           </div>
         </div>
@@ -92,8 +91,8 @@ export function ArtworkClientPage({ artwork }: { artwork: any }) {
         </div>
       </div>
 
-      {/* Viewer Engine */}
-      <div className="flex-1 relative">
+      {/* Deep Zoom Viewer */}
+      <div className="flex-1 relative w-full h-full bg-black">
         <DeepZoomViewer 
           ref={zoomRef}
           imageUrl={artwork.imageUrl || artwork.image}
@@ -104,7 +103,7 @@ export function ArtworkClientPage({ artwork }: { artwork: any }) {
 
       {/* Metadata Panel */}
       <div className={cn(
-        "absolute bottom-0 left-0 right-0 bg-background/90 backdrop-blur-xl border-t border-border/10 flex flex-col items-center justify-center text-center transition-all duration-700 ease-in-out z-40 overflow-y-auto",
+        "absolute bottom-0 left-0 right-0 bg-background/95 backdrop-blur-2xl border-t border-white/10 flex flex-col items-center justify-center text-center transition-all duration-700 ease-in-out z-40 overflow-y-auto",
         showMetadata ? "h-auto min-h-[30vh] opacity-100 py-12 translate-y-0" : "h-0 opacity-0 pointer-events-none translate-y-12"
       )}>
         <div className="max-w-4xl mx-auto space-y-6 px-10">
@@ -118,29 +117,11 @@ export function ArtworkClientPage({ artwork }: { artwork: any }) {
               </>
             )}
             <span>{artwork.medium || 'Olieverf op doek'}</span>
-            {artwork.series && (
-              <>
-                <span className="w-1 h-1 rounded-full bg-accent/30" />
-                <span>{artwork.series}</span>
-              </>
-            )}
           </div>
 
           <p className="text-sm md:text-base text-muted-foreground font-light leading-relaxed max-w-2xl mx-auto">
             {artwork.description || 'Ontdek de essentie van licht en ruimte in dit meesterlijke werk van Thijs Sterk.'}
           </p>
-
-          {/* Tags Sectie */}
-          {artwork.tags && artwork.tags.length > 0 && (
-            <div className="flex flex-wrap gap-3 justify-center pt-4">
-              <TagIcon className="w-3 h-3 text-accent/40 self-center" />
-              {artwork.tags.map((tag: string) => (
-                <span key={tag} className="px-3 py-1 rounded-full bg-secondary/30 text-accent text-[9px] font-black uppercase tracking-widest border border-accent/10">
-                  {tag}
-                </span>
-              ))}
-            </div>
-          )}
 
           <div className="pt-8">
              <Link 
