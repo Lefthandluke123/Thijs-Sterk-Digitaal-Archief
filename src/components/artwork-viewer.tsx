@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import { X, ChevronLeft, ChevronRight, Info, Mic, Pause } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Info, Mic, Pause, Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/components/language-provider';
 import { ShareButton } from './share-button';
@@ -28,6 +28,7 @@ interface ArtworkViewerProps {
 export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewerProps) {
   const [showMetadata, setShowMetadata] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isZenMode, setIsZenMode] = useState(false);
   const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
   
   const pathname = usePathname();
@@ -36,6 +37,7 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
   useEffect(() => {
     if (!artwork) {
       setShowMetadata(false);
+      setIsZenMode(false);
       if (audio) audio.pause();
       setIsPlaying(false);
     }
@@ -61,6 +63,11 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
     if (isPlaying) audio.pause();
     else audio.play();
     setIsPlaying(!isPlaying);
+  };
+
+  const toggleZen = () => {
+    setIsZenMode(!isZenMode);
+    if (!isZenMode) setShowMetadata(false);
   };
 
   // Uitsluiting voor specifieke routes waar de viewer niet gewenst is
@@ -93,7 +100,10 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
         )}
       </div>
 
-      <div className="absolute top-8 right-8 z-[10000] flex items-center gap-4">
+      <div className={cn(
+        "absolute top-8 right-8 z-[10000] flex items-center gap-4 transition-all duration-700",
+        isZenMode ? "opacity-0 pointer-events-none translate-y-[-20px]" : "opacity-100"
+      )}>
          <ShareButton 
            title={artwork.displayTitle || artwork.title}
            url={artworkUrl}
@@ -110,7 +120,22 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
          <button onClick={onClose} className="p-4 bg-white/80 backdrop-blur-md rounded-full text-foreground hover:bg-destructive hover:text-white transition-all border border-black/5 shadow-lg"><X className="w-5 h-5 opacity-60" /></button>
       </div>
 
-      <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-8 pointer-events-none z-[10000]">
+      {/* Zen Toggle Button - Altijd zichtbaar maar subtiel */}
+      <button 
+        onClick={toggleZen}
+        className={cn(
+          "absolute top-8 left-8 z-[10001] p-4 rounded-full backdrop-blur-md border border-black/5 transition-all shadow-lg",
+          isZenMode ? "bg-accent text-accent-foreground opacity-40 hover:opacity-100" : "bg-white/80 text-foreground"
+        )}
+        title="Zen Modus"
+      >
+        {isZenMode ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+      </button>
+
+      <div className={cn(
+        "absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-8 pointer-events-none z-[10000] transition-all duration-700",
+        isZenMode ? "opacity-0" : "opacity-100"
+      )}>
         {onPrev && (
           <button onClick={onPrev} className="p-5 rounded-full bg-white/40 backdrop-blur-md pointer-events-auto hover:bg-accent hover:text-accent-foreground transition-all border border-black/5 shadow-xl"><ChevronLeft className="w-10 h-10 opacity-40" /></button>
         )}
@@ -119,7 +144,10 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
         )}
       </div>
 
-      <div className={cn("absolute bottom-0 left-0 right-0 bg-background/95 backdrop-blur-2xl border-t border-black/5 flex flex-col items-center justify-center text-center transition-all duration-700 ease-in-out z-[10010]", showMetadata ? "h-[30vh] opacity-100 py-12 px-10 translate-y-0" : "h-0 opacity-0 pointer-events-none translate-y-12")}>
+      <div className={cn(
+        "absolute bottom-0 left-0 right-0 bg-background/95 backdrop-blur-2xl border-t border-black/5 flex flex-col items-center justify-center text-center transition-all duration-700 ease-in-out z-[10010]", 
+        showMetadata && !isZenMode ? "h-[30vh] opacity-100 py-12 px-10 translate-y-0" : "h-0 opacity-0 pointer-events-none translate-y-12"
+      )}>
         <div className="max-w-4xl mx-auto space-y-6">
           <h2 className="text-2xl md:text-5xl font-headline font-light italic text-foreground leading-tight">{artwork.displayTitle || artwork.title}</h2>
           <div className="text-[12px] font-bold tracking-[0.2em] text-accent flex flex-wrap gap-x-8 gap-y-2 justify-center items-center uppercase">

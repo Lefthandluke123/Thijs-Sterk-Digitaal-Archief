@@ -31,7 +31,9 @@ import {
   ShoppingBag,
   ExternalLink,
   Edit3,
-  Check
+  Check,
+  Mic,
+  Sparkles
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -43,6 +45,7 @@ import { verifyAdminPassword } from '@/lib/admin-actions';
 import { cn } from '@/lib/utils';
 import placeholderData from '@/app/lib/placeholder-images.json';
 import { Checkbox } from '@/components/ui/checkbox';
+import { generateNarrative } from '@/ai/flows/narrative-flow';
 
 export default function AdminPage() {
   const firestore = useFirestore();
@@ -52,6 +55,7 @@ export default function AdminPage() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [isMigrating, setIsMigrating] = useState(false);
   const [isBulkOperating, setIsBulkOperating] = useState(false);
+  const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
 
   const [editingArtworkId, setEditingArtworkId] = useState<string | null>(null);
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
@@ -152,6 +156,35 @@ export default function AdminPage() {
       .catch(err => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: ref.path, operation: 'update' }));
       });
+  };
+
+  const handleGenerateAudio = async () => {
+    const artwork = artworks?.find((a: any) => a.id === editingArtworkId);
+    if (!artwork || !editingArtworkId) return;
+
+    setIsGeneratingAudio(true);
+    try {
+      const result = await generateNarrative({
+        title: artwork.title,
+        description: artwork.description,
+        tags: artwork.tags,
+        language: 'nl'
+      });
+
+      const audioUrls = artwork.audioUrls || {};
+      audioUrls['nl'] = result.audioUri;
+
+      await updateDoc(doc(firestore!, 'artworks', editingArtworkId), {
+        audioUrls,
+        description: result.text // Update ook de tekst met de poëtische versie
+      });
+
+      toast({ title: "Audio gegenereerd", description: "Het poëtische narratief is toegevoegd aan het werk." });
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Generatie mislukt", description: error.message });
+    } finally {
+      setIsGeneratingAudio(false);
+    }
   };
 
   const toggleSelection = (id: string) => {
@@ -532,7 +565,17 @@ export default function AdminPage() {
       <Dialog open={!!editingArtworkId} onOpenChange={() => setEditingArtworkId(null)}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-10 rounded-[3rem] border-none shadow-2xl">
           <DialogHeader>
-            <DialogTitle className="font-headline text-3xl italic mb-8">Bewerk Kunstwerk</DialogTitle>
+            <div className="flex justify-between items-start">
+              <DialogTitle className="font-headline text-3xl italic mb-8">Bewerk Kunstwerk</DialogTitle>
+              <Button 
+                onClick={handleGenerateAudio} 
+                disabled={isGeneratingAudio}
+                className="bg-accent hover:bg-accent/90 text-white rounded-full px-6"
+              >
+                {isGeneratingAudio ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />}
+                Genereer Narratief
+              </Button>
+            </div>
           </DialogHeader>
           {editingArtwork && (
             <div className="grid md:grid-cols-2 gap-12">
@@ -617,6 +660,14 @@ export default function AdminPage() {
                       defaultValue={editingArtwork.medium} 
                       onBlur={e => updateField('artworks', editingArtworkId!, 'medium', e.target.value)} 
                       className="h-12 rounded-xl bg-secondary/10 border-none" 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-[10px] uppercase font-bold tracking-widest opacity-60">Beschrijving</Label>
+                    <Textarea 
+                      defaultValue={editingArtwork.description} 
+                      onBlur={e => updateField('artworks', editingArtworkId!, 'description', e.target.value)} 
+                      className="rounded-xl bg-secondary/10 border-none min-h-[100px]" 
                     />
                   </div>
                   <div className="space-y-2">
