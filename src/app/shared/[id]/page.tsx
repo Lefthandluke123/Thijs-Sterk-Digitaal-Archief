@@ -5,7 +5,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { doc, collection, query, where, documentId } from 'firebase/firestore';
-import { Loader2, ArrowRight, ArrowLeft, Mic, Play, Pause } from 'lucide-react';
+import { Loader2, ArrowRight, ArrowLeft, Mic, Play, Pause, Palette } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { useLanguage } from '@/components/language-provider';
@@ -105,13 +105,17 @@ export default function SharedRoomPage() {
 
         {activeArtwork && (
           <div className="relative w-full h-full flex items-center justify-center">
-             <img 
-                key={activeArtwork.id}
-                src={activeArtwork.imageUrl}
-                alt={activeArtwork.title}
-                className="max-w-full max-h-full object-contain shadow-[0_60px_120px_-20px_rgba(0,0,0,0.45)] transition-all duration-1000 animate-in fade-in zoom-in-95 select-none"
-                style={{ filter: `brightness(${activeArtwork.brightness || 1})` }}
-             />
+             {(activeArtwork.image || activeArtwork.imageUrl) ? (
+               <img 
+                  key={activeArtwork.id}
+                  src={activeArtwork.image || activeArtwork.imageUrl}
+                  alt={activeArtwork.title}
+                  className="max-w-full max-h-full object-contain shadow-[0_60px_120px_-20px_rgba(0,0,0,0.45)] transition-all duration-1000 animate-in fade-in zoom-in-95 select-none"
+                  style={{ filter: `brightness(${activeArtwork.brightness || 1})` }}
+               />
+             ) : (
+               <Palette className="w-20 h-20 opacity-10" />
+             )}
              
              <div className="absolute bottom-[-15vh] left-0 right-0 text-center space-y-2 pointer-events-none">
                <h2 className="text-3xl md:text-5xl font-headline font-light italic text-foreground">{activeArtwork.displayTitle || activeArtwork.title}</h2>

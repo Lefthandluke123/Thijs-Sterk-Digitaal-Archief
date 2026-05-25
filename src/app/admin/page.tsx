@@ -267,23 +267,30 @@ export default function AdminPage() {
               </Button>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
-               {artworks?.map((art: any) => (
-                 <Card key={art.id} className="p-4 rounded-2xl border-none shadow-md bg-white group relative overflow-hidden">
-                    <div className="aspect-square rounded-xl overflow-hidden bg-black/5 mb-4">
-                      <img src={art.image || art.imageUrl} className="w-full h-full object-cover" alt={art.title} />
-                    </div>
-                    <h3 className="font-bold text-sm truncate">{art.title}</h3>
-                    <p className="text-[10px] opacity-40 uppercase font-black tracking-widest">{art.year} • {art.roomSlug}</p>
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                       <Button size="sm" onClick={() => handleOpenArtworkDialog(art)} className="rounded-full bg-white text-black hover:bg-white/90">
-                         <Edit3 className="w-4 h-4" />
-                       </Button>
-                       <Button size="sm" variant="destructive" onClick={() => handleDeleteArtwork(art.id)} className="rounded-full">
-                         <Trash2 className="w-4 h-4" />
-                       </Button>
-                    </div>
-                 </Card>
-               ))}
+               {artworks?.map((art: any) => {
+                 const imgSrc = art.image || art.imageUrl;
+                 return (
+                   <Card key={art.id} className="p-4 rounded-2xl border-none shadow-md bg-white group relative overflow-hidden">
+                      <div className="aspect-square rounded-xl overflow-hidden bg-black/5 mb-4 flex items-center justify-center">
+                        {imgSrc ? (
+                          <img src={imgSrc} className="w-full h-full object-cover" alt={art.title} />
+                        ) : (
+                          <Palette className="w-8 h-8 opacity-20" />
+                        )}
+                      </div>
+                      <h3 className="font-bold text-sm truncate">{art.title}</h3>
+                      <p className="text-[10px] opacity-40 uppercase font-black tracking-widest">{art.year} • {art.roomSlug}</p>
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                         <Button size="sm" onClick={() => handleOpenArtworkDialog(art)} className="rounded-full bg-white text-black hover:bg-white/90">
+                           <Edit3 className="w-4 h-4" />
+                         </Button>
+                         <Button size="sm" variant="destructive" onClick={() => handleDeleteArtwork(art.id)} className="rounded-full">
+                           <Trash2 className="w-4 h-4" />
+                         </Button>
+                      </div>
+                   </Card>
+                 );
+               })}
             </div>
           </TabsContent>
 
