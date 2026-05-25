@@ -14,7 +14,6 @@ import {
   serverTimestamp, 
   writeBatch,
   arrayUnion,
-  arrayRemove,
   orderBy
 } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
@@ -33,16 +32,12 @@ import {
   Sparkles,
   Save,
   CheckSquare,
-  X,
-  Star,
   Search,
   Settings2,
-  Hash,
   Image as ImageIcon,
   Settings,
   Monitor,
   Type,
-  Grid,
   Library,
   LayoutTemplate,
   Languages
@@ -56,16 +51,13 @@ import {
   DialogContent, 
   DialogTitle, 
   DialogHeader, 
-  DialogFooter, 
-  DialogDescription
+  DialogFooter
 } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import { verifyAdminPassword } from '@/lib/admin-actions';
 import { cn } from '@/lib/utils';
-import { sortArtworksByTitle, cleanString, cleanArray, sanitizeArtwork, normalizeArtwork } from '@/lib/museum-utils';
+import { sortArtworksByTitle, sanitizeArtwork, normalizeArtwork, cleanString, cleanArray } from '@/lib/museum-utils';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { StoryEditor, StoryNode } from '@/components/story-editor';
 import { translateMuseumText } from '@/ai/flows/translate-flow';
@@ -131,9 +123,7 @@ export default function AdminPage() {
   const [isBulkDialogOpen, setIsBulkEditConfirmOpen] = useState(false);
   const [bulkForm, setBulkForm] = useState({
     addRoomIds: [] as string[],
-    removeRoomIds: [] as string[],
     addTags: '',
-    removeTags: '',
     featured: 'keep' as 'keep' | 'yes' | 'no',
     inShop: 'keep' as 'keep' | 'yes' | 'no'
   });
@@ -252,7 +242,7 @@ export default function AdminPage() {
     const fields = ['bgColor', 'primaryColor', 'accentColor', 'baseFontSize', 'lineHeight', 'headingScale', 'containerWidth', 'radius', 'bodyFont', 'headFont'];
     fields.forEach(f => {
       const val = formData.get(f);
-      if (val !== null) updates[f] = f.toLowerCase().includes('scale') ? parseFloat(String(val)) : cleanString(val);
+      if (val !== null) updates[f] = String(val);
     });
     updates['backgroundImageUrl'] = cleanString(formData.get('backgroundImageUrl'));
     updates['backgroundOpacity'] = parseInt(String(formData.get('backgroundOpacity')), 10);
@@ -261,8 +251,6 @@ export default function AdminPage() {
       const opacity = formData.get(`backgroundOpacity_${page.id}`);
       if (bgUrl !== null) updates[`backgroundImageUrl_${page.id}`] = cleanString(bgUrl);
       if (opacity !== null) updates[`backgroundOpacity_${page.id}`] = parseInt(String(opacity), 10);
-      const bioImagesStr = formData.get(`bioImages_${page.id}`);
-      if (bioImagesStr !== null) updates[`${page.id}BioImages`] = cleanArray(String(bioImagesStr).split(','));
     });
     try {
       await updateDoc(settingsRef, updates);
@@ -311,8 +299,8 @@ export default function AdminPage() {
     setIsImagePickerOpen(true);
   };
 
-  const selectImageFromArchive = (imageUrl: string) => {
-    if (pickerTarget) setBgSettings(prev => ({ ...prev, [pickerTarget]: imageUrl }));
+  const selectImageFromArchive = (imageUrl: string | null) => {
+    if (pickerTarget && imageUrl) setBgSettings(prev => ({ ...prev, [pickerTarget]: imageUrl }));
     setIsImagePickerOpen(false);
     setPickerTarget(null);
   };
@@ -512,8 +500,71 @@ export default function AdminPage() {
           <TabsContent value="settings">
              <Card className="p-12 rounded-[3rem] bg-white border-none shadow-xl">
                 <form onSubmit={handleSaveSettings} className="space-y-12">
-                   <div className="grid md:grid-cols-2 gap-12"><div className="space-y-8"><div className="flex items-center gap-3 opacity-40"><Type className="w-5 h-5" /><h3 className="text-xs font-black uppercase">Typografie</h3></div><div className="grid gap-6"><div className="grid grid-cols-2 gap-4"><div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Body Font</Label><Select name="bodyFont" defaultValue={settings?.bodyFont || 'sans'}><SelectTrigger className="h-12 rounded-xl bg-black/5 border-none"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="sans">Modern</SelectItem><SelectItem value="serif">Klassiek</SelectItem></SelectContent></Select></div><div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Headline Font</Label><Select name="headFont" defaultValue={settings?.headFont || 'serif'}><SelectTrigger className="h-12 rounded-xl bg-black/5 border-none"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="sans">Modern</SelectItem><SelectItem value="serif">Klassiek</SelectItem></SelectContent></Select></div></div><div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Base Size (px)</Label><Input name="baseFontSize" defaultValue={settings?.baseFontSize || '16px'} className="h-12 rounded-xl bg-black/5 border-none" /></div></div></div><div className="space-y-8"><div className="flex items-center gap-3 opacity-40"><Palette className="w-5 h-5" /><h3 className="text-xs font-black uppercase">Kleuren & Raster</h3></div><div className="grid gap-6"><div className="grid grid-cols-2 gap-4"><div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Accent (HSL)</Label><Input name="accentColor" defaultValue={settings?.accentColor || '142 30% 25%'} className="h-12 rounded-xl bg-black/5 border-none" /></div><div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">BG (HSL)</Label><Input name="bgColor" defaultValue={settings?.bgColor || '40 15% 97%'} className="h-12 rounded-xl bg-black/5 border-none" /></div></div><div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Radius</Label><Input name="radius" defaultValue={settings?.radius || '2rem'} className="h-12 rounded-xl bg-black/5 border-none" /></div></div></div></div>
-                   <div className="space-y-8 pt-12 border-t border-black/5"><div className="flex items-center gap-3 opacity-40"><Monitor className="w-5 h-5" /><h3 className="text-xs font-black uppercase">Achtergronden</h3></div><Accordion type="single" collapsible className="w-full"><AccordionItem value="global-bg" className="border-b border-black/5"><AccordionTrigger className="font-bold text-sm uppercase">Globale Achtergrond</AccordionTrigger><AccordionContent className="space-y-8 pt-4 pb-8"><div className="grid md:grid-cols-2 gap-8"><div className="space-y-4"><Label className="text-[10px] uppercase font-black opacity-40">URL</Label><div className="flex gap-2"><Input name="backgroundImageUrl" value={bgSettings.backgroundImageUrl || ''} onChange={e => setBgSettings(p => ({...p, backgroundImageUrl: e.target.value}))} className="h-12 rounded-xl bg-black/5 border-none" /><Button type="button" onClick={() => openImagePicker('backgroundImageUrl')} size="icon" variant="outline" className="h-12 w-12 rounded-xl"><Library className="w-5 h-5" /></Button></div></div><div className="space-y-4"><div className="flex justify-between items-center"><Label className="text-[10px] uppercase font-black opacity-40">Opacity (%)</Label><span className="text-xs font-bold">{opacities.backgroundOpacity ?? 10}%</span></div><Slider value={[opacities.backgroundOpacity ?? 10]} onValueChange={(v) => setOpacities(p => ({...p, backgroundOpacity: v[0]}))} max={100} step={1} /><input type="hidden" name="backgroundOpacity" value={opacities.backgroundOpacity ?? 10} /></div></div></AccordionContent></AccordionItem>{PAGES.map(page => (<AccordionItem key={page.id} value={page.id} className="border-b border-black/5"><AccordionTrigger className="font-bold text-sm uppercase">{page.label} Override</AccordionTrigger><AccordionContent className="space-y-8 pt-4 pb-8"><div className="grid md:grid-cols-2 gap-8"><div className="space-y-4"><Label className="text-[10px] uppercase font-black opacity-40">URL</Label><div className="flex gap-2"><Input name={`backgroundImageUrl_${page.id}`} value={bgSettings[`backgroundImageUrl_${page.id}`] || ''} onChange={e => setBgSettings(p => ({...p, [`backgroundImageUrl_${page.id}`]: e.target.value}))} className="h-12 rounded-xl bg-black/5 border-none" /><Button type="button" onClick={() => openImagePicker(`backgroundImageUrl_${page.id}`)} size="icon" variant="outline" className="h-12 w-12 rounded-xl"><Library className="w-5 h-5" /></Button></div></div><div className="space-y-4"><div className="flex justify-between items-center"><Label className="text-[10px] uppercase font-black opacity-40">Opacity (%)</Label><span className="text-xs font-bold">{opacities[`backgroundOpacity_${page.id}`] ?? 10}%</span></div><Slider value={[opacities[`backgroundOpacity_${page.id}`] ?? 10]} onValueChange={(v) => setOpacities(p => ({...p, [`backgroundOpacity_${page.id}`]: v[0]}))} max={100} step={1} /><input type="hidden" name={`backgroundOpacity_${page.id}`} value={opacities[`backgroundOpacity_${page.id}`] ?? 10} /></div></div></AccordionContent></AccordionItem>))}</Accordion></div>
+                   <div className="grid md:grid-cols-2 gap-12">
+                      <div className="space-y-8">
+                         <div className="flex items-center gap-3 opacity-40"><Type className="w-5 h-5" /><h3 className="text-xs font-black uppercase">Typografie</h3></div>
+                         <div className="grid gap-6">
+                            <div className="grid grid-cols-2 gap-4">
+                               <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Body Font</Label><Select name="bodyFont" defaultValue={settings?.bodyFont || 'sans'}><SelectTrigger className="h-12 rounded-xl bg-black/5 border-none"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="sans">Modern</SelectItem><SelectItem value="serif">Klassiek</SelectItem></SelectContent></Select></div>
+                               <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Headline Font</Label><Select name="headFont" defaultValue={settings?.headFont || 'serif'}><SelectTrigger className="h-12 rounded-xl bg-black/5 border-none"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="sans">Modern</SelectItem><SelectItem value="serif">Klassiek</SelectItem></SelectContent></Select></div>
+                            </div>
+                            <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Base Size (px)</Label><Input name="baseFontSize" defaultValue={settings?.baseFontSize || '16px'} className="h-12 rounded-xl bg-black/5 border-none" /></div>
+                         </div>
+                      </div>
+                      <div className="space-y-8">
+                         <div className="flex items-center gap-3 opacity-40"><Palette className="w-5 h-5" /><h3 className="text-xs font-black uppercase">Kleuren & Raster</h3></div>
+                         <div className="grid gap-6">
+                            <div className="grid grid-cols-2 gap-4">
+                               <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Accent (HSL)</Label><Input name="accentColor" defaultValue={settings?.accentColor || '142 30% 25%'} className="h-12 rounded-xl bg-black/5 border-none" /></div>
+                               <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">BG (HSL)</Label><Input name="bgColor" defaultValue={settings?.bgColor || '40 15% 97%'} className="h-12 rounded-xl bg-black/5 border-none" /></div>
+                            </div>
+                            <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Radius</Label><Input name="radius" defaultValue={settings?.radius || '2rem'} className="h-12 rounded-xl bg-black/5 border-none" /></div>
+                         </div>
+                      </div>
+                   </div>
+                   <div className="space-y-8 pt-12 border-t border-black/5">
+                      <div className="flex items-center gap-3 opacity-40"><Monitor className="w-5 h-5" /><h3 className="text-xs font-black uppercase">Achtergronden</h3></div>
+                      <Accordion type="single" collapsible className="w-full">
+                         <AccordionItem value="global-bg" className="border-b border-black/5">
+                            <AccordionTrigger className="font-bold text-sm uppercase">Globale Achtergrond</AccordionTrigger>
+                            <AccordionContent className="space-y-8 pt-4 pb-8">
+                               <div className="grid md:grid-cols-2 gap-8">
+                                  <div className="space-y-4">
+                                     <Label className="text-[10px] uppercase font-black opacity-40">URL</Label>
+                                     <div className="flex gap-2">
+                                        <Input name="backgroundImageUrl" value={bgSettings.backgroundImageUrl || ''} onChange={e => setBgSettings(p => ({...p, backgroundImageUrl: e.target.value}))} className="h-12 rounded-xl bg-black/5 border-none" />
+                                        <Button type="button" onClick={() => openImagePicker('backgroundImageUrl')} size="icon" variant="outline" className="h-12 w-12 rounded-xl"><Library className="w-5 h-5" /></Button>
+                                     </div>
+                                  </div>
+                                  <div className="space-y-4">
+                                     <div className="flex justify-between items-center"><Label className="text-[10px] uppercase font-black opacity-40">Opacity (%)</Label><span className="text-xs font-bold">{opacities.backgroundOpacity ?? 10}%</span></div>
+                                     <Slider value={[opacities.backgroundOpacity ?? 10]} onValueChange={(v) => setOpacities(p => ({...p, backgroundOpacity: v[0]}))} max={100} step={1} /><input type="hidden" name="backgroundOpacity" value={opacities.backgroundOpacity ?? 10} />
+                                  </div>
+                               </div>
+                            </AccordionContent>
+                         </AccordionItem>
+                         {PAGES.map(page => (
+                            <AccordionItem key={page.id} value={page.id} className="border-b border-black/5">
+                               <AccordionTrigger className="font-bold text-sm uppercase">{page.label} Override</AccordionTrigger>
+                               <AccordionContent className="space-y-8 pt-4 pb-8">
+                                  <div className="grid md:grid-cols-2 gap-8">
+                                     <div className="space-y-4">
+                                        <Label className="text-[10px] uppercase font-black opacity-40">URL</Label>
+                                        <div className="flex gap-2">
+                                           <Input name={`backgroundImageUrl_${page.id}`} value={bgSettings[`backgroundImageUrl_${page.id}`] || ''} onChange={e => setBgSettings(p => ({...p, [`backgroundImageUrl_${page.id}`]: e.target.value}))} className="h-12 rounded-xl bg-black/5 border-none" />
+                                           <Button type="button" onClick={() => openImagePicker(`backgroundImageUrl_${page.id}`)} size="icon" variant="outline" className="h-12 w-12 rounded-xl"><Library className="w-5 h-5" /></Button>
+                                        </div>
+                                     </div>
+                                     <div className="space-y-4">
+                                        <div className="flex justify-between items-center"><Label className="text-[10px] uppercase font-black opacity-40">Opacity (%)</Label><span className="text-xs font-bold">{opacities[`backgroundOpacity_${page.id}`] ?? 10}%</span></div>
+                                        <Slider value={[opacities[`backgroundOpacity_${page.id}`] ?? 10]} onValueChange={(v) => setOpacities(p => ({...p, [`backgroundOpacity_${page.id}`]: v[0]}))} max={100} step={1} /><input type="hidden" name={`backgroundOpacity_${page.id}`} value={opacities[`backgroundOpacity_${page.id}`] ?? 10} />
+                                     </div>
+                                  </div>
+                               </AccordionContent>
+                            </AccordionItem>
+                         ))}
+                      </Accordion>
+                   </div>
                    <Button type="submit" disabled={isSavingSettings} className="w-full h-20 rounded-[2.5rem] bg-primary text-xl font-black uppercase shadow-2xl">{isSavingSettings ? <Loader2 className="animate-spin" /> : <Save className="w-5 h-5 mr-3" />} Stramien Opslaan</Button>
                 </form>
              </Card>
@@ -521,10 +572,68 @@ export default function AdminPage() {
         </Tabs>
       </div>
 
-      {/* Shared Dialogs from earlier versions */}
-      <Dialog open={isImagePickerOpen} onOpenChange={setIsImagePickerOpen}><DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto rounded-[2.5rem] p-10"><DialogHeader><DialogTitle className="font-headline text-3xl italic">Kies uit Archief</DialogTitle></DialogHeader><div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4 py-8">{filteredAndSortedArtworks.map((art: any) => (<button key={art.id} onClick={() => selectImageFromArchive(art.image)} className="group relative aspect-square rounded-2xl overflow-hidden bg-black/5 border hover:ring-2 ring-accent transition-all">{art.image ? <img src={art.image} className="w-full h-full object-cover" /> : <ImageIcon className="w-6 h-6 mx-auto opacity-10" /><div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-end p-2"><p className="text-[8px] text-white font-bold truncate w-full">{art.displayTitle || art.title}</p></div>}</button>))}</div></DialogContent></Dialog>
-      <Dialog open={isArtworkDialogOpen} onOpenChange={setIsArtworkDialogOpen}><DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-[2rem] p-8"><DialogHeader><DialogTitle className="font-headline text-2xl italic">{editingArtwork ? 'Bewerken' : 'Nieuw'}</DialogTitle></DialogHeader><div className="grid gap-6 py-4"><div className="grid grid-cols-2 gap-4"><div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Titel</Label><Input value={artworkForm.title} onChange={e => setArtworkForm({...artworkForm, title: e.target.value})} className="rounded-xl h-12" /></div><div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Afbeelding URL</Label><Input value={artworkForm.image || ''} onChange={e => setArtworkForm({...artworkForm, image: e.target.value})} className="rounded-xl h-12" /></div></div><div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Zalen</Label><div className="flex flex-wrap gap-2 p-3 bg-black/5 rounded-xl">{rooms?.map((r: any) => (<label key={r.id} className={cn("px-4 py-1.5 rounded-full border text-[10px] font-black uppercase cursor-pointer transition-all", artworkForm.roomIds?.includes(r.id) ? "bg-accent text-white border-accent" : "bg-white border-black/5 opacity-50")}><input type="checkbox" className="hidden" checked={artworkForm.roomIds?.includes(r.id)} onChange={e => setArtworkForm(p => ({ ...p, roomIds: e.target.checked ? [...(p.roomIds || []), r.id] : (p.roomIds || []).filter(id => id !== r.id) }))} />{r.title}</label>))}</div></div><div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Tags</Label><Input value={artworkForm.tags} onChange={e => setArtworkForm({...artworkForm, tags: e.target.value})} className="rounded-xl h-12" /></div></div><DialogFooter><Button onClick={handleSaveArtwork} className="w-full h-14 rounded-2xl bg-primary">Opslaan</Button></DialogFooter></DialogContent></Dialog>
-      <Dialog open={isRoomDialogOpen} onOpenChange={setIsRoomDialogOpen}><DialogContent className="max-w-xl rounded-[2rem] p-8"><DialogHeader><DialogTitle className="font-headline text-2xl italic">Zaal</DialogTitle></DialogHeader><div className="grid gap-6 py-4"><div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Titel</Label><Input value={roomForm.title} onChange={e => setRoomForm({...roomForm, title: e.target.value})} className="rounded-xl h-12" /></div><div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Slug (URL)</Label><Input value={roomForm.slug} onChange={e => setRoomForm({...roomForm, slug: e.target.value.toLowerCase().replace(/ /g, '-')})} className="rounded-xl h-12" /></div><div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Volgorde</Label><Input type="number" value={roomForm.order} onChange={e => setRoomForm({...roomForm, order: parseInt(e.target.value, 10)})} className="rounded-xl h-12" /></div></div><DialogFooter><Button onClick={handleSaveRoom} className="w-full h-14 rounded-2xl bg-primary">Zaal Opslaan</Button></DialogFooter></DialogContent></Dialog>
+      <Dialog open={isImagePickerOpen} onOpenChange={setIsImagePickerOpen}>
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto rounded-[2.5rem] p-10">
+          <DialogHeader>
+            <DialogTitle className="font-headline text-3xl italic">Kies uit Archief</DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4 py-8">
+            {filteredAndSortedArtworks.map((art: any) => (
+              <button 
+                key={art.id} 
+                onClick={() => selectImageFromArchive(art.image)} 
+                className="group relative aspect-square rounded-2xl overflow-hidden bg-black/5 border hover:ring-2 ring-accent transition-all"
+              >
+                {art.image ? (
+                  <img src={art.image} className="w-full h-full object-cover" alt={art.title} />
+                ) : (
+                  <ImageIcon className="w-6 h-6 mx-auto opacity-10" />
+                )}
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-end p-2">
+                  <p className="text-[8px] text-white font-bold truncate w-full">{art.displayTitle || art.title}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isArtworkDialogOpen} onOpenChange={setIsArtworkDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-[2rem] p-8">
+          <DialogHeader><DialogTitle className="font-headline text-2xl italic">{editingArtwork ? 'Bewerken' : 'Nieuw'}</DialogTitle></DialogHeader>
+          <div className="grid gap-6 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Titel</Label><Input value={artworkForm.title} onChange={e => setArtworkForm({...artworkForm, title: e.target.value})} className="rounded-xl h-12" /></div>
+              <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Afbeelding URL</Label><Input value={artworkForm.image || ''} onChange={e => setArtworkForm({...artworkForm, image: e.target.value})} className="rounded-xl h-12" /></div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[10px] uppercase font-black opacity-40">Zalen</Label>
+              <div className="flex flex-wrap gap-2 p-3 bg-black/5 rounded-xl">
+                {rooms?.map((r: any) => (
+                  <label key={r.id} className={cn("px-4 py-1.5 rounded-full border text-[10px] font-black uppercase cursor-pointer transition-all", artworkForm.roomIds?.includes(r.id) ? "bg-accent text-white border-accent" : "bg-white border-black/5 opacity-50")}>
+                    <input type="checkbox" className="hidden" checked={artworkForm.roomIds?.includes(r.id)} onChange={e => setArtworkForm(p => ({ ...p, roomIds: e.target.checked ? [...(p.roomIds || []), r.id] : (p.roomIds || []).filter(id => id !== r.id) }))} />
+                    {r.title}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Tags</Label><Input value={artworkForm.tags} onChange={e => setArtworkForm({...artworkForm, tags: e.target.value})} className="rounded-xl h-12" /></div>
+          </div>
+          <DialogFooter><Button onClick={handleSaveArtwork} className="w-full h-14 rounded-2xl bg-primary">Opslaan</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isRoomDialogOpen} onOpenChange={setIsRoomDialogOpen}>
+        <DialogContent className="max-w-xl rounded-[2rem] p-8">
+          <DialogHeader><DialogTitle className="font-headline text-2xl italic">Zaal</DialogTitle></DialogHeader>
+          <div className="grid gap-6 py-4">
+            <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Titel</Label><Input value={roomForm.title} onChange={e => setRoomForm({...roomForm, title: e.target.value})} className="rounded-xl h-12" /></div>
+            <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Slug (URL)</Label><Input value={roomForm.slug} onChange={e => setRoomForm({...roomForm, slug: e.target.value.toLowerCase().replace(/ /g, '-')})} className="rounded-xl h-12" /></div>
+            <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Volgorde</Label><Input type="number" value={roomForm.order} onChange={e => setRoomForm({...roomForm, order: parseInt(e.target.value, 10)})} className="rounded-xl h-12" /></div>
+          </div>
+          <DialogFooter><Button onClick={handleSaveRoom} className="w-full h-14 rounded-2xl bg-primary">Zaal Opslaan</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
