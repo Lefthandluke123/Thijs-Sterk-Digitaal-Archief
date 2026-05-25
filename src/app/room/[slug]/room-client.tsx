@@ -50,18 +50,8 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
       if (e.key === 'Escape') setShowMetadata(false);
     };
     window.addEventListener('keydown', handleKeyDown);
-    
-    // Voorkom default scroll gedrag op de main container
-    const preventScroll = (e: WheelEvent) => {
-      // Alleen navigatie triggeren als we NIET op de DeepZoom viewer zelf zitten met de muis
-      // of als we heel specifiek horizontaal scrollen.
-      // Voor nu laten we navigatie via pijltjes en knoppen de voorkeur hebben om conflict met zoom te vermijden.
-    };
-    window.addEventListener('wheel', preventScroll, { passive: false });
-
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('wheel', preventScroll);
     };
   }, [handleNext, handlePrev]);
 
@@ -126,7 +116,7 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
       </div>
 
       {/* Immersive Viewer Container */}
-      <div className="w-[85vw] h-[75vh] md:w-[90vw] md:h-[80vh] flex items-center justify-center animate-subtle-fade z-[105]">
+      <div className="w-[85vw] h-[75vh] md:w-[90vw] md:h-[80vh] flex items-center justify-center animate-subtle-fade z-[105] pointer-events-auto">
         {displayImage && (
           <DeepZoomViewer 
             key={item.id}
@@ -172,7 +162,7 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
       </div>
       
       {/* Visual Progress Line */}
-      <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-[115] flex gap-3 items-center">
+      <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-[115] flex gap-3 items-center pointer-events-auto">
         <span className="text-[9px] font-black tracking-widest opacity-30">{currentIndex + 1}</span>
         <div className="flex gap-1.5">
           {artworks.map((_, i) => (

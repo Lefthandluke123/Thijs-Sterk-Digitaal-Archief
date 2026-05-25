@@ -47,21 +47,29 @@ function ExhibitionContent() {
   const currentIndex = rooms?.findIndex((r: any) => r.slug === currentRoomSlug) ?? -1;
   const nextRoom = currentIndex < (rooms?.length || 0) - 1 ? rooms?.[currentIndex + 1] : null;
 
-  const handleStep = (delta: number) => setScrollX(prev => Math.max(0, prev + delta));
+  const handleStep = (delta: number) => {
+    setScrollX(prev => {
+      const newVal = prev + delta;
+      return Math.max(0, newVal);
+    });
+  };
 
-  // Voeg ondersteuning voor muiswiel horizontaal scrollen toe
+  // Ondersteuning voor muiswiel horizontaal scrollen
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
+      // Alleen reageren als er geen modaal venster open staat
+      if (selectedArtwork) return;
+      
       if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
-        handleStep(e.deltaY * 2);
+        handleStep(e.deltaY * 3);
       } else {
-        handleStep(e.deltaX * 2);
+        handleStep(e.deltaX * 3);
       }
     };
     
     window.addEventListener('wheel', handleWheel, { passive: true });
     return () => window.removeEventListener('wheel', handleWheel);
-  }, []);
+  }, [selectedArtwork]);
 
   if (loading || !rooms) return <div className="h-screen flex items-center justify-center bg-white"><Loader2 className="animate-spin text-accent" /></div>;
 
@@ -70,7 +78,14 @@ function ExhibitionContent() {
       <div className="absolute top-10 left-0 right-0 z-40 flex justify-center px-6">
          <div className="bg-white/80 backdrop-blur-md border rounded-full px-8 py-3 flex items-center gap-8 shadow-xl">
             {rooms.map((r: any) => (
-              <button key={r.id} onClick={() => router.push(`/exhibition?room=${r.slug}`)} className={cn("text-[14px] font-bold uppercase tracking-widest whitespace-nowrap transition-all", currentRoomSlug === r.slug ? "text-accent scale-105" : "text-black/30 hover:text-black")}>
+              <button 
+                key={r.id} 
+                onClick={() => {
+                  setScrollX(0);
+                  router.push(`/exhibition?room=${r.slug}`);
+                }} 
+                className={cn("text-[14px] font-bold uppercase tracking-widest whitespace-nowrap transition-all", currentRoomSlug === r.slug ? "text-accent scale-105" : "text-black/30 hover:text-black")}
+              >
                 {r.title}
               </button>
             ))}
@@ -81,8 +96,11 @@ function ExhibitionContent() {
         <h1 className="text-black/70 font-headline text-5xl font-medium italic tracking-tight">{activeRoom?.title}</h1>
       </div>
 
-      <div className="relative flex-1 flex items-center justify-center overflow-hidden" ref={scrollContainerRef}>
-        <div className="relative w-full h-full flex items-center transition-transform duration-1000 ease-out" style={{ transform: `translateX(${-scrollX}px)` }}>
+      <div className="relative flex-1 flex items-center justify-center overflow-hidden">
+        <div 
+          className="relative w-full h-full flex items-center transition-transform duration-1000 ease-out" 
+          style={{ transform: `translateX(${-scrollX}px)` }}
+        >
           <div className="flex gap-[40vw] px-[50vw] items-center pt-8">
             {artworks?.map((art: any) => (
               <div key={art.id} className="relative group shrink-0 flex items-center justify-center" onClick={() => setSelectedArtwork(art)}>
@@ -93,7 +111,6 @@ function ExhibitionContent() {
                         className="relative block max-h-[50vh] max-w-[40vw] w-auto h-auto object-contain mx-auto" 
                         style={{ 
                           filter: `brightness(${art.brightness || 1})`,
-                          position: 'relative'
                         }} 
                         alt={art.displayTitle || art.title} 
                       />
@@ -109,7 +126,13 @@ function ExhibitionContent() {
             {nextRoom && (
               <div className="shrink-0 w-[50vw] flex flex-col items-center justify-center text-center opacity-40 group hover:opacity-100 transition-opacity">
                  <h4 className="text-[11px] font-bold uppercase tracking-[0.5em]">Volgende Zaal</h4>
-                 <button onClick={() => router.push(`/exhibition?room=${nextRoom.slug}`)} className="mt-12 px-10 py-4 rounded-full bg-accent text-accent-foreground text-[10px] font-bold uppercase tracking-[0.25em] shadow-xl hover:scale-105 transition-all flex items-center gap-4">
+                 <button 
+                  onClick={() => {
+                    setScrollX(0);
+                    router.push(`/exhibition?room=${nextRoom.slug}`);
+                  }} 
+                  className="mt-12 px-10 py-4 rounded-full bg-accent text-accent-foreground text-[10px] font-bold uppercase tracking-[0.25em] shadow-xl hover:scale-105 transition-all flex items-center gap-4"
+                 >
                     {nextRoom.title} <ArrowRight className="w-4 h-4" />
                  </button>
               </div>
@@ -147,7 +170,7 @@ function ExhibitionContent() {
 
 export default function ExhibitionPage() {
   return (
-    <Suspense fallback={<div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin" /></div>}>
+    <Suspense fallback={<div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin text-accent" /></div>}>
       <ExhibitionContent />
     </Suspense>
   );

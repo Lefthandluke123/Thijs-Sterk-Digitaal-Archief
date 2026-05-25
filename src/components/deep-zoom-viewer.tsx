@@ -11,7 +11,7 @@ interface DeepZoomViewerProps {
 
 /**
  * @fileOverview Verbeterde OpenSeadragon Viewer met robuuste event handling.
- * Fix: Zoom en pan werken nu consistent op alle apparaten.
+ * Fix: Zoom en pan werken nu consistent en het schilderij blijft gecentreerd.
  */
 export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({ 
   imageUrl, 
@@ -50,6 +50,7 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
 
         if (!containerRef.current) return;
 
+        // Vernietig oude instance indien aanwezig
         if (viewerRef.current) {
           viewerRef.current.destroy();
         }
@@ -80,8 +81,8 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
           animationTime: 1.2,
           blendTime: 0.1,
           constrainDuringPan: true,
-          visibilityRatio: 0.8,      
-          minZoomImageRatio: 0.9,    
+          visibilityRatio: 1.0,      // Fix: Houd schilderij in frame
+          minZoomImageRatio: 1.0,    // Fix: Voorkom dat schilderij te klein wordt en 'dwaalt'
           defaultZoomLevel: 0,
           minZoomLevel: 0.5,
           maxZoomLevel: 10,
@@ -89,6 +90,8 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
           preserveViewport: true,
           wrapHorizontal: false,
           wrapVertical: false,
+          homeFillsViewer: true,
+          centerImageOnce: true
         });
 
         viewerRef.current.addHandler('open', () => {
@@ -109,9 +112,9 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
           }
         });
 
+        // Blokkeer default page scroll op de viewer
         if (viewerRef.current.canvas) {
           viewerRef.current.canvas.style.cursor = "zoom-in";
-          // Zorg dat het muiswiel niet de hele pagina scrollt als we boven de viewer zijn
           viewerRef.current.canvas.addEventListener('wheel', (e: WheelEvent) => {
             e.preventDefault();
           }, { passive: false });
@@ -150,7 +153,8 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
         className="w-full h-full" 
         style={{ 
           filter: `brightness(${brightness})`,
-          display: 'block' 
+          display: 'block',
+          touchAction: 'none'
         }} 
       />
     </div>
