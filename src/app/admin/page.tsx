@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -14,7 +13,8 @@ import {
   serverTimestamp, 
   writeBatch,
   arrayUnion,
-  arrayRemove
+  arrayRemove,
+  orderBy
 } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -40,7 +40,10 @@ import {
   Image as ImageIcon,
   Sliders,
   Settings,
-  Monitor
+  Monitor,
+  Type,
+  Maximize,
+  Grid
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -175,9 +178,22 @@ export default function AdminPage() {
     const formData = new FormData(e.currentTarget);
     const updates: any = { updatedAt: serverTimestamp() };
 
-    // Verwerk globale settings
-    updates.backgroundImageUrl = cleanString(formData.get('backgroundImageUrl'));
-    updates.backgroundOpacity = parseInt(formData.get('backgroundOpacity') as string, 10);
+    // Verwerk globale settings & Stramien
+    const fields = [
+      'backgroundImageUrl', 'backgroundOpacity', 'bgColor', 'primaryColor', 'accentColor',
+      'baseFontSize', 'lineHeight', 'headingScale', 'containerWidth', 'radius', 'bodyFont', 'headFont'
+    ];
+    
+    fields.forEach(f => {
+      const val = formData.get(f);
+      if (val !== null) {
+        if (f.toLowerCase().includes('opacity') || f.toLowerCase().includes('scale')) {
+          updates[f] = parseFloat(String(val));
+        } else {
+          updates[f] = cleanString(val);
+        }
+      }
+    });
 
     // Verwerk pagina-specifieke settings
     PAGES.forEach(page => {
@@ -186,7 +202,6 @@ export default function AdminPage() {
       if (url !== null) updates[`backgroundImageUrl_${page.id}`] = cleanString(url);
       if (opacity !== null) updates[`backgroundOpacity_${page.id}`] = parseInt(opacity as string, 10);
       
-      // Verwerk bio images (foto-vakken)
       const bioImagesStr = formData.get(`bioImages_${page.id}`);
       if (bioImagesStr !== null) {
         updates[`${page.id}BioImages`] = cleanArray(String(bioImagesStr).split(','));
@@ -195,7 +210,7 @@ export default function AdminPage() {
 
     try {
       await updateDoc(settingsRef, updates);
-      toast({ title: "Visuele instellingen opgeslagen" });
+      toast({ title: "Stramien & Visuele instellingen opgeslagen" });
     } catch (e) {
       toast({ variant: "destructive", title: "Fout", description: "Kon instellingen niet opslaan." });
     } finally {
@@ -328,7 +343,7 @@ export default function AdminPage() {
               <Hash className="w-4 h-4 mr-2" /> Tags
             </TabsTrigger>
             <TabsTrigger value="settings" className="rounded-full px-8 h-12 uppercase font-black text-[11px] tracking-widest">
-              <Settings className="w-4 h-4 mr-2" /> Visueel
+              <Settings className="w-4 h-4 mr-2" /> Stramien
             </TabsTrigger>
           </TabsList>
 
@@ -429,78 +444,168 @@ export default function AdminPage() {
           </TabsContent>
 
           <TabsContent value="settings">
-             <div className="max-w-4xl mx-auto space-y-12">
+             <div className="max-w-5xl mx-auto space-y-12">
                <Card className="p-12 rounded-[3rem] bg-white border-none shadow-xl">
-                  <form onSubmit={handleSaveSettings} className="space-y-10">
+                  <form onSubmit={handleSaveSettings} className="space-y-12">
                      <div className="space-y-4">
                         <div className="flex items-center gap-3">
-                           <Monitor className="w-5 h-5 text-accent" />
-                           <h2 className="font-headline text-2xl italic">Visuele Styling</h2>
+                           <Grid className="w-6 h-6 text-accent" />
+                           <h2 className="font-headline text-3xl italic">Museum Stramien</h2>
                         </div>
-                        <p className="text-sm text-muted-foreground leading-relaxed">
-                           Beheer hier de globale en pagina-specifieke achtergronden en foto-secties.
+                        <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl">
+                           Beheer hier de kern van uw visuele identiteit: typografie, kleuren en globale layout-regels.
                         </p>
                      </div>
 
-                     <Accordion type="single" collapsible className="w-full">
-                        <AccordionItem value="global" className="border-b border-black/5">
-                           <AccordionTrigger className="font-bold text-sm uppercase tracking-widest hover:no-underline py-6">
-                              Globale Museum Achtergrond
-                           </AccordionTrigger>
-                           <AccordionContent className="space-y-8 pt-4 pb-8">
-                              <div className="space-y-2">
-                                 <Label className="text-[10px] uppercase font-black opacity-40">Afbeelding URL</Label>
-                                 <Input name="backgroundImageUrl" defaultValue={settings?.backgroundImageUrl || ""} placeholder="https://..." className="h-12 rounded-xl bg-black/5 border-none" />
-                              </div>
-                              <div className="space-y-4">
-                                 <div className="flex justify-between items-center">
-                                    <Label className="text-[10px] uppercase font-black opacity-40">Opacity (%)</Label>
-                                    <span className="text-xs font-bold text-accent">{settings?.backgroundOpacity || 0}%</span>
+                     <div className="grid md:grid-cols-2 gap-12 pt-8 border-t border-black/5">
+                        {/* Typography Section */}
+                        <div className="space-y-8">
+                           <div className="flex items-center gap-3 opacity-40">
+                              <Type className="w-5 h-5" />
+                              <h3 className="text-xs font-black uppercase tracking-widest">Typografie & DTP</h3>
+                           </div>
+                           
+                           <div className="grid gap-6">
+                              <div className="grid grid-cols-2 gap-4">
+                                 <div className="space-y-2">
+                                    <Label className="text-[10px] uppercase font-black opacity-40">Body Lettertype</Label>
+                                    <Select name="bodyFont" defaultValue={settings?.bodyFont || 'sans'}>
+                                       <SelectTrigger className="h-12 rounded-xl bg-black/5 border-none">
+                                          <SelectValue />
+                                       </SelectTrigger>
+                                       <SelectContent>
+                                          <SelectItem value="sans">Modern (Sans)</SelectItem>
+                                          <SelectItem value="serif">Klassiek (Serif)</SelectItem>
+                                       </SelectContent>
+                                    </Select>
                                  </div>
-                                 <Slider name="backgroundOpacity" defaultValue={[settings?.backgroundOpacity || 0]} max={100} step={1} />
+                                 <div className="space-y-2">
+                                    <Label className="text-[10px] uppercase font-black opacity-40">Koptekst Lettertype</Label>
+                                    <Select name="headFont" defaultValue={settings?.headFont || 'serif'}>
+                                       <SelectTrigger className="h-12 rounded-xl bg-black/5 border-none">
+                                          <SelectValue />
+                                       </SelectTrigger>
+                                       <SelectContent>
+                                          <SelectItem value="sans">Modern (Sans)</SelectItem>
+                                          <SelectItem value="serif">Klassiek (Serif)</SelectItem>
+                                       </SelectContent>
+                                    </Select>
+                                 </div>
                               </div>
-                           </AccordionContent>
-                        </AccordionItem>
 
-                        {PAGES.map(page => (
-                           <AccordionItem key={page.id} value={page.id} className="border-b border-black/5">
+                              <div className="space-y-2">
+                                 <Label className="text-[10px] uppercase font-black opacity-40">Basis Lettergrootte (px)</Label>
+                                 <Input name="baseFontSize" defaultValue={settings?.baseFontSize || '16px'} className="h-12 rounded-xl bg-black/5 border-none" />
+                              </div>
+
+                              <div className="space-y-2">
+                                 <Label className="text-[10px] uppercase font-black opacity-40">Regelafstand (Line Height)</Label>
+                                 <Input name="lineHeight" defaultValue={settings?.lineHeight || '1.7'} className="h-12 rounded-xl bg-black/5 border-none" />
+                              </div>
+                           </div>
+                        </div>
+
+                        {/* Colors & Layout Section */}
+                        <div className="space-y-8">
+                           <div className="flex items-center gap-3 opacity-40">
+                              <Palette className="w-5 h-5" />
+                              <h3 className="text-xs font-black uppercase tracking-widest">Kleuren & Raster</h3>
+                           </div>
+
+                           <div className="grid gap-6">
+                              <div className="grid grid-cols-2 gap-4">
+                                 <div className="space-y-2">
+                                    <Label className="text-[10px] uppercase font-black opacity-40">Accent Kleur (HSL)</Label>
+                                    <Input name="accentColor" defaultValue={settings?.accentColor || '142 30% 25%'} placeholder="142 30% 25%" className="h-12 rounded-xl bg-black/5 border-none" />
+                                 </div>
+                                 <div className="space-y-2">
+                                    <Label className="text-[10px] uppercase font-black opacity-40">Achtergrond (HSL)</Label>
+                                    <Input name="bgColor" defaultValue={settings?.bgColor || '40 15% 97%'} placeholder="40 15% 97%" className="h-12 rounded-xl bg-black/5 border-none" />
+                                 </div>
+                              </div>
+
+                              <div className="space-y-2">
+                                 <Label className="text-[10px] uppercase font-black opacity-40">Container Breedte (px/%)</Label>
+                                 <Input name="containerWidth" defaultValue={settings?.containerWidth || '1280px'} className="h-12 rounded-xl bg-black/5 border-none" />
+                              </div>
+
+                              <div className="space-y-2">
+                                 <Label className="text-[10px] uppercase font-black opacity-40">Afronding Radius (rem)</Label>
+                                 <Input name="radius" defaultValue={settings?.radius || '2rem'} className="h-12 rounded-xl bg-black/5 border-none" />
+                              </div>
+                           </div>
+                        </div>
+                     </div>
+
+                     <div className="space-y-8 pt-12 border-t border-black/5">
+                        <div className="flex items-center gap-3 opacity-40">
+                           <Monitor className="w-5 h-5" />
+                           <h3 className="text-xs font-black uppercase tracking-widest">Pagina Achtergronden</h3>
+                        </div>
+
+                        <Accordion type="single" collapsible className="w-full">
+                           <AccordionItem value="global-bg" className="border-b border-black/5">
                               <AccordionTrigger className="font-bold text-sm uppercase tracking-widest hover:no-underline py-6">
-                                 {page.label}
+                                 Globale Achtergrondfoto
                               </AccordionTrigger>
                               <AccordionContent className="space-y-8 pt-4 pb-8">
                                  <div className="grid md:grid-cols-2 gap-8">
-                                    <div className="space-y-6">
-                                       <div className="space-y-2">
-                                          <Label className="text-[10px] uppercase font-black opacity-40">Pagina Achtergrond URL</Label>
-                                          <Input name={`backgroundImageUrl_${page.id}`} defaultValue={settings?.[`backgroundImageUrl_${page.id}`] || ""} placeholder="Laat leeg voor global..." className="h-12 rounded-xl bg-black/5 border-none" />
-                                       </div>
-                                       <div className="space-y-4">
-                                          <div className="flex justify-between items-center">
-                                             <Label className="text-[10px] uppercase font-black opacity-40">Opacity (%)</Label>
-                                             <span className="text-xs font-bold text-accent">{settings?.[`backgroundOpacity_${page.id}`] ?? 10}%</span>
-                                          </div>
-                                          <Slider name={`backgroundOpacity_${page.id}`} defaultValue={[settings?.[`backgroundOpacity_${page.id}`] ?? 10]} max={100} step={1} />
-                                       </div>
+                                    <div className="space-y-2">
+                                       <Label className="text-[10px] uppercase font-black opacity-40">Afbeelding URL</Label>
+                                       <Input name="backgroundImageUrl" defaultValue={settings?.backgroundImageUrl || ""} placeholder="https://..." className="h-12 rounded-xl bg-black/5 border-none" />
                                     </div>
-                                    
-                                    {page.id.includes('beatrijs') || page.id.includes('hanneke') || page.id.includes('peter') || page.id.includes('leo') ? (
-                                       <div className="space-y-4">
-                                          <div className="flex items-center gap-2">
-                                             <ImageIcon className="w-3.5 h-3.5 opacity-40" />
-                                             <Label className="text-[10px] uppercase font-black opacity-40">Foto-vakken (URL's gescheiden door komma)</Label>
-                                          </div>
-                                          <Textarea name={`bioImages_${page.id}`} defaultValue={(settings?.[`${page.id}BioImages`] || []).join(', ')} placeholder="URL 1, URL 2..." className="min-h-[120px] rounded-xl bg-black/5 border-none resize-none text-xs" />
-                                          <p className="text-[9px] text-muted-foreground italic">Deze foto's verschijnen in vakken naast de tekst en kunnen in Deep Zoom bekeken worden.</p>
+                                    <div className="space-y-4">
+                                       <div className="flex justify-between items-center">
+                                          <Label className="text-[10px] uppercase font-black opacity-40">Opacity (%)</Label>
+                                          <span className="text-xs font-bold text-accent">{settings?.backgroundOpacity || 0}%</span>
                                        </div>
-                                    ) : null}
+                                       <Slider name="backgroundOpacity" defaultValue={[settings?.backgroundOpacity || 0]} max={100} step={1} />
+                                    </div>
                                  </div>
                               </AccordionContent>
                            </AccordionItem>
-                        ))}
-                     </Accordion>
 
-                     <Button type="submit" disabled={isSavingSettings} className="w-full h-16 rounded-2xl bg-primary text-primary-foreground font-black uppercase tracking-widest shadow-xl">
-                        {isSavingSettings ? <Loader2 className="animate-spin" /> : "Alle Visuele Instellingen Opslaan"}
+                           {PAGES.map(page => (
+                              <AccordionItem key={page.id} value={page.id} className="border-b border-black/5">
+                                 <AccordionTrigger className="font-bold text-sm uppercase tracking-widest hover:no-underline py-6">
+                                    {page.label} Overrides
+                                 </AccordionTrigger>
+                                 <AccordionContent className="space-y-8 pt-4 pb-8">
+                                    <div className="grid md:grid-cols-2 gap-8">
+                                       <div className="space-y-6">
+                                          <div className="space-y-2">
+                                             <Label className="text-[10px] uppercase font-black opacity-40">Specifieke Achtergrond URL</Label>
+                                             <Input name={`backgroundImageUrl_${page.id}`} defaultValue={settings?.[`backgroundImageUrl_${page.id}`] || ""} placeholder="Laat leeg voor globaal..." className="h-12 rounded-xl bg-black/5 border-none" />
+                                          </div>
+                                          <div className="space-y-4">
+                                             <div className="flex justify-between items-center">
+                                                <Label className="text-[10px] uppercase font-black opacity-40">Opacity (%)</Label>
+                                                <span className="text-xs font-bold text-accent">{settings?.[`backgroundOpacity_${page.id}`] ?? 10}%</span>
+                                             </div>
+                                             <Slider name={`backgroundOpacity_${page.id}`} defaultValue={[settings?.[`backgroundOpacity_${page.id}`] ?? 10]} max={100} step={1} />
+                                          </div>
+                                       </div>
+                                       
+                                       {page.id.includes('beatrijs') || page.id.includes('hanneke') || page.id.includes('peter') || page.id.includes('leo') ? (
+                                          <div className="space-y-4">
+                                             <div className="flex items-center gap-2">
+                                                <ImageIcon className="w-3.5 h-3.5 opacity-40" />
+                                                <Label className="text-[10px] uppercase font-black opacity-40">Foto-vakken (URL's gescheiden door komma)</Label>
+                                             </div>
+                                             <Textarea name={`bioImages_${page.id}`} defaultValue={(settings?.[`${page.id}BioImages`] || []).join(', ')} placeholder="URL 1, URL 2..." className="min-h-[120px] rounded-xl bg-black/5 border-none resize-none text-xs" />
+                                             <p className="text-[9px] text-muted-foreground italic">Deze foto's verschijnen in vakken naast de tekst op de pagina.</p>
+                                          </div>
+                                       ) : null}
+                                    </div>
+                                 </AccordionContent>
+                              </AccordionItem>
+                           ))}
+                        </Accordion>
+                     </div>
+
+                     <Button type="submit" disabled={isSavingSettings} className="w-full h-20 rounded-[2.5rem] bg-primary text-primary-foreground font-black uppercase tracking-widest shadow-2xl hover:scale-[1.01] active:scale-95 transition-all">
+                        {isSavingSettings ? <Loader2 className="animate-spin" /> : <Save className="w-5 h-5 mr-3" />}
+                        Stramien & Visuele Regels Opslaan
                      </Button>
                   </form>
                </Card>

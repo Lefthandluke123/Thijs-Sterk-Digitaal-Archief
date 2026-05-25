@@ -1,4 +1,3 @@
-
 import type { Metadata } from 'next';
 import './globals.css';
 import { Navbar } from '@/components/navbar';
@@ -7,6 +6,7 @@ import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { CookieConsent } from '@/components/cookie-consent';
 import { LanguageProvider } from '@/components/language-provider';
 import { BackgroundLayer } from '@/components/background-layer';
+import { DesignSystemProvider } from '@/components/design-system-provider';
 import { Suspense } from 'react';
 import { Loader2 } from 'lucide-react';
 
@@ -63,13 +63,15 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased selection:bg-accent/20 selection:text-accent">
         <FirebaseClientProvider>
-          <LanguageProvider>
-            <Navbar />
-            <BackgroundLayer />
-            {children}
-            <CookieConsent />
-            <Footer />
-          </LanguageProvider>
+          <DesignSystemProvider>
+            <LanguageProvider>
+              <Navbar />
+              <BackgroundLayer />
+              {children}
+              <CookieConsent />
+              <Footer />
+            </LanguageProvider>
+          </DesignSystemProvider>
         </FirebaseClientProvider>
       </body>
     </html>
