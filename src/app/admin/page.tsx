@@ -87,8 +87,9 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState('artworks');
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Settings UI State
+  // Settings UI State for real-time slider feedback
   const [bgSettings, setBgSettings] = useState<Record<string, string>>({});
+  const [opacities, setOpacities] = useState<Record<string, number>>({});
   const [isImagePickerOpen, setIsImagePickerOpen] = useState(false);
   const [pickerTarget, setPickerTarget] = useState<string | null>(null);
 
@@ -168,10 +169,17 @@ export default function AdminPage() {
       const initialBgs: Record<string, string> = {
         backgroundImageUrl: settings.backgroundImageUrl || ''
       };
+      const initialOpacities: Record<string, number> = {
+        backgroundOpacity: typeof settings.backgroundOpacity === 'number' ? settings.backgroundOpacity : 10
+      };
+
       PAGES.forEach(page => {
         initialBgs[`backgroundImageUrl_${page.id}`] = settings[`backgroundImageUrl_${page.id}`] || '';
+        initialOpacities[`backgroundOpacity_${page.id}`] = typeof settings[`backgroundOpacity_${page.id}`] === 'number' ? settings[`backgroundOpacity_${page.id}`] : 10;
       });
+
       setBgSettings(initialBgs);
+      setOpacities(initialOpacities);
     }
   }, [settings]);
 
@@ -197,15 +205,16 @@ export default function AdminPage() {
     const formData = new FormData(e.currentTarget);
     const updates: any = { updatedAt: serverTimestamp() };
 
+    // Common fields
     const fields = [
-      'backgroundImageUrl', 'backgroundOpacity', 'bgColor', 'primaryColor', 'accentColor',
+      'bgColor', 'primaryColor', 'accentColor',
       'baseFontSize', 'lineHeight', 'headingScale', 'containerWidth', 'radius', 'bodyFont', 'headFont'
     ];
     
     fields.forEach(f => {
       const val = formData.get(f);
       if (val !== null) {
-        if (f.toLowerCase().includes('opacity') || f.toLowerCase().includes('scale')) {
+        if (f.toLowerCase().includes('scale')) {
           updates[f] = parseFloat(String(val));
         } else {
           updates[f] = cleanString(val);
@@ -213,14 +222,16 @@ export default function AdminPage() {
       }
     });
 
-    // Overwrite with state-managed background URLs
-    Object.entries(bgSettings).forEach(([key, val]) => {
-      updates[key] = cleanString(val);
-    });
+    // Handle background URLs and opacities specifically from state/hidden inputs
+    updates['backgroundImageUrl'] = cleanString(formData.get('backgroundImageUrl'));
+    updates['backgroundOpacity'] = parseInt(String(formData.get('backgroundOpacity')), 10);
 
     PAGES.forEach(page => {
+      const bgUrl = formData.get(`backgroundImageUrl_${page.id}`);
       const opacity = formData.get(`backgroundOpacity_${page.id}`);
-      if (opacity !== null) updates[`backgroundOpacity_${page.id}`] = parseInt(opacity as string, 10);
+      
+      if (bgUrl !== null) updates[`backgroundImageUrl_${page.id}`] = cleanString(bgUrl);
+      if (opacity !== null) updates[`backgroundOpacity_${page.id}`] = parseInt(String(opacity), 10);
       
       const bioImagesStr = formData.get(`bioImages_${page.id}`);
       if (bioImagesStr !== null) {
@@ -587,6 +598,7 @@ export default function AdminPage() {
                                        <Label className="text-[10px] uppercase font-black opacity-40">Afbeelding URL</Label>
                                        <div className="flex gap-2">
                                           <Input 
+                                            name="backgroundImageUrl"
                                             value={bgSettings.backgroundImageUrl || ''} 
                                             onChange={e => setBgSettings(p => ({...p, backgroundImageUrl: e.target.value}))}
                                             placeholder="https://..." 
@@ -600,9 +612,15 @@ export default function AdminPage() {
                                     <div className="space-y-4">
                                        <div className="flex justify-between items-center">
                                           <Label className="text-[10px] uppercase font-black opacity-40">Opacity (%)</Label>
-                                          <span className="text-xs font-bold text-accent">{settings?.backgroundOpacity || 0}%</span>
+                                          <span className="text-xs font-bold text-accent">{opacities.backgroundOpacity ?? 10}%</span>
                                        </div>
-                                       <Slider name="backgroundOpacity" defaultValue={[settings?.backgroundOpacity || 0]} max={100} step={1} />
+                                       <Slider 
+                                          value={[opacities.backgroundOpacity ?? 10]} 
+                                          onValueChange={(v) => setOpacities(p => ({...p, backgroundOpacity: v[0]}))}
+                                          max={100} 
+                                          step={1} 
+                                       />
+                                       <input type="hidden" name="backgroundOpacity" value={opacities.backgroundOpacity ?? 10} />
                                     </div>
                                  </div>
                               </AccordionContent>
@@ -620,6 +638,7 @@ export default function AdminPage() {
                                              <Label className="text-[10px] uppercase font-black opacity-40">Specifieke Achtergrond URL</Label>
                                              <div className="flex gap-2">
                                                 <Input 
+                                                  name={`backgroundImageUrl_${page.id}`}
                                                   value={bgSettings[`backgroundImageUrl_${page.id}`] || ''} 
                                                   onChange={e => setBgSettings(p => ({...p, [`backgroundImageUrl_${page.id}`]: e.target.value}))}
                                                   placeholder="Laat leeg voor globaal..." 
@@ -633,9 +652,15 @@ export default function AdminPage() {
                                           <div className="space-y-4">
                                              <div className="flex justify-between items-center">
                                                 <Label className="text-[10px] uppercase font-black opacity-40">Opacity (%)</Label>
-                                                <span className="text-xs font-bold text-accent">{settings?.[`backgroundOpacity_${page.id}`] ?? 10}%</span>
+                                                <span className="text-xs font-bold text-accent">{opacities[`backgroundOpacity_${page.id}`] ?? 10}%</span>
                                              </div>
-                                             <Slider name={`backgroundOpacity_${page.id}`} defaultValue={[settings?.[`backgroundOpacity_${page.id}`] ?? 10]} max={100} step={1} />
+                                             <Slider 
+                                                value={[opacities[`backgroundOpacity_${page.id}`] ?? 10]} 
+                                                onValueChange={(v) => setOpacities(p => ({...p, [`backgroundOpacity_${page.id}`]: v[0]}))}
+                                                max={100} 
+                                                step={1} 
+                                             />
+                                             <input type="hidden" name={`backgroundOpacity_${page.id}`} value={opacities[`backgroundOpacity_${page.id}`] ?? 10} />
                                           </div>
                                        </div>
                                        

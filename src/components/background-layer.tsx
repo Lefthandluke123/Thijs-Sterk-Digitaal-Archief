@@ -35,7 +35,13 @@ export function BackgroundLayer() {
   
   // Zoek naar pagina-specifieke instellingen, anders fallback naar global
   const bgUrl = settings?.[`backgroundImageUrl_${pageKey}`] || settings?.backgroundImageUrl;
-  const rawOpacity = settings?.[`backgroundOpacity_${pageKey}`] ?? settings?.backgroundOpacity;
+  
+  // Opacity: gebruik page-specifiek, anders global, anders fallback naar 10% als er een URL is
+  let rawOpacity = settings?.[`backgroundOpacity_${pageKey}`] ?? settings?.backgroundOpacity;
+  if (typeof rawOpacity !== 'number' && bgUrl) {
+    rawOpacity = 10; // Fallback naar 10% als er een URL is maar geen opacity ingesteld
+  }
+  
   const opacity = typeof rawOpacity === 'number' ? rawOpacity / 100 : 0;
 
   if (!bgUrl) return null;
@@ -48,7 +54,8 @@ export function BackgroundLayer() {
         backgroundImage: `url(${bgUrl})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        backgroundAttachment: 'fixed'
+        backgroundAttachment: 'fixed',
+        zIndex: 0, // Zorg dat het zichtbaar is maar achter de content (content moet relative z-10 zijn indien nodig)
       }}
       aria-hidden="true"
     />
