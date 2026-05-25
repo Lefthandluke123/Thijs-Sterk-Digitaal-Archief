@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, Suspense } from 'react';
@@ -53,13 +54,21 @@ function NavbarContent() {
   }, [firestore, mounted]);
   const { data: siteSettings } = useDoc(siteSettingsRef);
 
-  const siteTitle = (mounted && language !== 'nl' && siteSettings?.[`siteTitle_${language}`])
-    ? siteSettings[`siteTitle_${language}`]
-    : (siteSettings?.siteTitle || t('nav_museum_title'));
+  // Gescheiden logica voor taal-afhankelijke titels
+  const getSiteIdentity = () => {
+    if (!mounted) return { title: "Het Digitale Retrospectief", subtitle: "Licht, Ruimte en Water" };
+    
+    // 1. Zoek naar taal-specifieke titels in de database (bijv. siteTitle_en)
+    const dbTitle = siteSettings?.[`siteTitle_${language}`] || siteSettings?.siteTitle;
+    const dbSubtitle = siteSettings?.[`siteSubtitle_${language}`] || siteSettings?.siteSubtitle;
 
-  const siteSubtitle = (mounted && language !== 'nl' && siteSettings?.[`siteSubtitle_${language}`])
-    ? siteSettings[`siteSubtitle_${language}`]
-    : (siteSettings?.siteSubtitle || t('nav_museum_subtitle'));
+    return {
+      title: dbTitle || t('nav_museum_title'),
+      subtitle: dbSubtitle || t('nav_museum_subtitle')
+    };
+  };
+
+  const { title: siteTitle, subtitle: siteSubtitle } = getSiteIdentity();
 
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -134,20 +143,23 @@ function NavbarContent() {
                 <BookOpen className="w-4 h-4" /> Guide
               </button>
 
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-secondary/40 text-[12px] font-bold uppercase tracking-widest hover:bg-secondary/60 transition-all border-2 border-border/20 ml-2">
-                    <Languages className="w-4 h-4 text-accent" /> {language.toUpperCase()}
+              {/* Directe taalkeuze knoppen */}
+              <div className="flex bg-secondary/30 rounded-full p-1 ml-2 border border-border/20">
+                {(['nl', 'en', 'de', 'fr', 'es'] as const).map((lang) => (
+                  <button
+                    key={lang}
+                    onClick={() => setLanguage(lang)}
+                    className={cn(
+                      "px-3 py-1.5 rounded-full text-[10px] font-black uppercase transition-all",
+                      language === lang 
+                        ? "bg-accent text-accent-foreground shadow-sm scale-105" 
+                        : "hover:bg-black/5 text-foreground/50 hover:text-foreground"
+                    )}
+                  >
+                    {lang}
                   </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="bg-background/98 backdrop-blur-2xl border-border/40 rounded-2xl p-2 min-w-[160px] shadow-2xl">
-                  {['nl', 'en', 'de', 'fr', 'es'].map((lang) => (
-                    <DropdownMenuItem key={lang} onClick={() => setLanguage(lang as any)} className="flex items-center gap-3 text-[12px] uppercase font-bold tracking-widest rounded-xl p-4 cursor-pointer focus:bg-accent focus:text-accent-foreground">
-                      {lang.toUpperCase()} {language === lang && <div className="ml-auto w-2 h-2 rounded-full bg-accent" />}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+                ))}
+              </div>
             </div>
           )}
 
@@ -167,6 +179,23 @@ function NavbarContent() {
                        {rooms?.map((r: any) => (
                          <Link key={r.id} href={`/room/${r.slug}`} className="flex items-center gap-4 p-5 rounded-2xl bg-black/5 text-[14px] font-bold uppercase tracking-wider mb-2">{r.title}</Link>
                        ))}
+                     </div>
+                     <div className="pt-4 border-t border-border/10">
+                        <p className="text-[10px] font-black uppercase tracking-widest mb-4 px-4 opacity-40">Taal / Language</p>
+                        <div className="flex flex-wrap gap-2 px-4">
+                          {['nl', 'en', 'de', 'fr', 'es'].map((lang) => (
+                            <button
+                              key={lang}
+                              onClick={() => setLanguage(lang as any)}
+                              className={cn(
+                                "px-4 py-2 rounded-xl text-[12px] font-bold uppercase border-2 transition-all",
+                                language === lang ? "bg-accent text-accent-foreground border-accent" : "bg-black/5 border-transparent"
+                              )}
+                            >
+                              {lang}
+                            </button>
+                          ))}
+                        </div>
                      </div>
                   </div>
                 </div>
