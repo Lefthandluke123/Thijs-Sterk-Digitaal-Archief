@@ -13,7 +13,7 @@ import {
   addDoc, 
   serverTimestamp, 
   orderBy, 
-  setDoc 
+  writeBatch
 } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -32,7 +32,12 @@ import {
   Sparkles,
   FileText,
   Save,
-  X
+  CheckSquare,
+  Square,
+  ArrowRightLeft,
+  X,
+  Star,
+  ShoppingBag
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -59,6 +64,12 @@ export default function AdminPage() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [activeTab, setActiveTab] = useState('artworks');
 
+  // Bulk State
+  const [selectedArtIds, setSelectedArtIds] = useState<string[]>([]);
+  const [isBulkRoomDialogOpen, setIsBulkRoomDialogOpen] = useState(false);
+  const [bulkRoomForm, setBulkRoomForm] = useState({ roomSlug: '', newRoomTitle: '' });
+  const [isProcessing, setIsProcessing] = useState(false);
+
   // Room Dialog State
   const [isRoomDialogOpen, setIsRoomDialogOpen] = useState(false);
   const [editingRoom, setEditingRoom] = useState<any>(null);
@@ -72,7 +83,7 @@ export default function AdminPage() {
     slug: '', 
     image: '', 
     roomSlug: '', 
-    newRoomTitle: '', // Extra veld voor on-the-fly creatie
+    newRoomTitle: '', 
     year: '', 
     medium: '', 
     description: '',
@@ -108,6 +119,106 @@ export default function AdminPage() {
     return query(collection(firestore, 'rooms'), orderBy('order', 'asc'));
   }, [firestore, isAuthorized]);
   const { data: rooms } = useCollection(roomsQuery);
+
+  // --- Bulk Actions ---
+  const toggleSelection = (id: string) => {
+    setSelectedArtIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
+  const selectAll = () => {
+    if (!artworks) return;
+    if (selectedArtIds.length === artworks.length) setSelectedArtIds([]);
+    else setSelectedArtIds(artworks.map(a => (a as any).id));
+  };
+
+  const handleBulkDelete = async () => {
+    if (!firestore || !selectedArtIds.length) return;
+    if (!confirm(`Weet je zeker dat je ${selectedArtIds.length} kunstwerken wilt verwijderen uit het archief?`)) return;
+
+    setIsProcessing(true);
+    const batch = writeBatch(firestore);
+    selectedArtIds.forEach(id => {
+      batch.delete(doc(firestore, 'artworks', id));
+    });
+
+    try {
+      await batch.commit();
+      toast({ title: `${selectedArtIds.length} kunstwerken verwijderd` });
+      setSelectedArtIds([]);
+    } catch (e) {
+      toast({ variant: "destructive", title: "Fout", description: "Kon items niet verwijderen." });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleBulkUpdateStatus = async (field: 'featured' | 'inShop', value: boolean) => {
+    if (!firestore || !selectedArtIds.length) return;
+    setIsProcessing(true);
+    const batch = writeBatch(firestore);
+    selectedArtIds.forEach(id => {
+      batch.update(doc(firestore, 'artworks', id), { [field]: value });
+    });
+
+    try {
+      await batch.commit();
+      toast({ title: `Status bijgewerkt voor ${selectedArtIds.length} items` });
+      setSelectedArtIds([]);
+    } catch (e) {
+      toast({ variant: "destructive", title: "Fout", description: "Kon status niet bijwerken." });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleBulkRoomSave = async () => {
+    if (!firestore || !selectedArtIds.length) return;
+    setIsProcessing(true);
+
+    let finalRoomSlug = bulkRoomForm.roomSlug;
+
+    if (bulkRoomForm.newRoomTitle.trim()) {
+      const existingRoom = rooms?.find(r => r.title.toLowerCase() === bulkRoomForm.newRoomTitle.trim().toLowerCase());
+      if (existingRoom) {
+        finalRoomSlug = existingRoom.slug;
+      } else {
+        const newSlug = bulkRoomForm.newRoomTitle.trim().toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
+        const newRoomRef = doc(collection(firestore, 'rooms'));
+        await setDoc(newRoomRef, {
+          title: bulkRoomForm.newRoomTitle.trim(),
+          slug: newSlug,
+          description: `Collectie van ${bulkRoomForm.newRoomTitle.trim()}`,
+          order: (rooms?.length || 0) + 1,
+          createdAt: serverTimestamp()
+        });
+        finalRoomSlug = newSlug;
+      }
+    }
+
+    if (!finalRoomSlug) {
+      toast({ variant: "destructive", title: "Fout", description: "Geen zaal geselecteerd." });
+      setIsProcessing(false);
+      return;
+    }
+
+    const batch = writeBatch(firestore);
+    selectedArtIds.forEach(id => {
+      batch.update(doc(firestore, 'artworks', id), { roomSlug: finalRoomSlug });
+    });
+
+    try {
+      await batch.commit();
+      toast({ title: `${selectedArtIds.length} kunstwerken verplaatst naar ${finalRoomSlug}` });
+      setIsBulkRoomDialogOpen(false);
+      setSelectedArtIds([]);
+    } catch (e) {
+      toast({ variant: "destructive", title: "Fout", description: "Kon items niet verplaatsen." });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   // --- Room Actions ---
   const handleOpenRoomDialog = (room?: any) => {
@@ -188,7 +299,6 @@ export default function AdminPage() {
 
     let finalRoomSlug = artworkForm.roomSlug;
 
-    // Als er een nieuwe zaalnaam is ingevoerd, maak deze dan eerst aan
     if (artworkForm.newRoomTitle.trim()) {
       const existingRoom = rooms?.find(r => r.title.toLowerCase() === artworkForm.newRoomTitle.trim().toLowerCase());
       if (existingRoom) {
@@ -206,7 +316,6 @@ export default function AdminPage() {
           finalRoomSlug = newSlug;
           toast({ title: `Nieuwe zaal '${artworkForm.newRoomTitle}' aangemaakt` });
         } catch (err) {
-          console.error("Fout bij aanmaken zaal:", err);
           toast({ variant: "destructive", title: "Zaal fout", description: "Kon nieuwe zaal niet aanmaken." });
           return;
         }
@@ -300,31 +409,82 @@ export default function AdminPage() {
           </TabsList>
 
           <TabsContent value="artworks" className="space-y-8">
-            <div className="flex justify-between items-center mb-8">
-              <h2 className="font-headline text-3xl italic opacity-40">Kunstwerken</h2>
+            <div className="flex justify-between items-center bg-white/50 backdrop-blur-md p-4 rounded-3xl border sticky top-24 z-30 shadow-sm">
+              <div className="flex items-center gap-4">
+                 <Button variant="ghost" size="sm" onClick={selectAll} className="text-[10px] uppercase font-black tracking-widest">
+                   {selectedArtIds.length === (artworks?.length || 0) ? <CheckSquare className="w-4 h-4 mr-2" /> : <Square className="w-4 h-4 mr-2" />}
+                   {selectedArtIds.length > 0 ? `${selectedArtIds.length} geselecteerd` : 'Selecteer alles'}
+                 </Button>
+
+                 {selectedArtIds.length > 0 && (
+                   <div className="flex items-center gap-2 animate-in slide-in-from-left-2 duration-300">
+                     <div className="h-6 w-px bg-black/10 mx-2" />
+                     <Button size="sm" variant="outline" onClick={() => setIsBulkRoomDialogOpen(true)} className="rounded-full text-[10px] font-black uppercase">
+                       <ArrowRightLeft className="w-3 h-3 mr-2" /> Verplaatsen
+                     </Button>
+                     <Button size="sm" variant="outline" onClick={() => handleBulkUpdateStatus('featured', true)} className="rounded-full text-[10px] font-black uppercase text-yellow-600">
+                       <Star className="w-3 h-3 mr-2 fill-yellow-600" /> Featured
+                     </Button>
+                     <Button size="sm" variant="outline" onClick={() => handleBulkUpdateStatus('inShop', true)} className="rounded-full text-[10px] font-black uppercase text-blue-600">
+                       <ShoppingBag className="w-3 h-3 mr-2" /> In Shop
+                     </Button>
+                     <Button size="sm" variant="destructive" onClick={handleBulkDelete} className="rounded-full text-[10px] font-black uppercase">
+                       <Trash2 className="w-3 h-3 mr-2" /> Verwijderen
+                     </Button>
+                     <Button variant="ghost" size="sm" onClick={() => setSelectedArtIds([])} className="rounded-full">
+                       <X className="w-4 h-4" />
+                     </Button>
+                   </div>
+                 )}
+              </div>
+              
               <Button onClick={() => handleOpenArtworkDialog()} className="rounded-full px-8 h-12 bg-accent">
                 <Plus className="w-4 h-4 mr-2" /> Werk Toevoegen
               </Button>
             </div>
+
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
                {artworks?.map((art: any) => {
                  const imgSrc = art.image || art.imageUrl;
+                 const isSelected = selectedArtIds.includes(art.id);
                  return (
-                   <Card key={art.id} className="p-4 rounded-2xl border-none shadow-md bg-white group relative overflow-hidden">
-                      <div className="aspect-square rounded-xl overflow-hidden bg-black/5 mb-4 flex items-center justify-center">
+                   <Card 
+                     key={art.id} 
+                     className={cn(
+                       "p-4 rounded-2xl border-none shadow-md transition-all duration-300 group relative overflow-hidden",
+                       isSelected ? "bg-accent/5 ring-2 ring-accent" : "bg-white"
+                     )}
+                   >
+                      <button 
+                        onClick={() => toggleSelection(art.id)}
+                        className={cn(
+                          "absolute top-6 left-6 z-20 w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all",
+                          isSelected ? "bg-accent border-accent text-white" : "bg-white/80 border-black/10 opacity-0 group-hover:opacity-100"
+                        )}
+                      >
+                        {isSelected && <CheckSquare className="w-4 h-4" />}
+                      </button>
+
+                      <div className="aspect-square rounded-xl overflow-hidden bg-black/5 mb-4 flex items-center justify-center cursor-pointer" onClick={() => toggleSelection(art.id)}>
                         {imgSrc ? (
                           <img src={imgSrc} className="w-full h-full object-cover" alt={art.title} />
                         ) : (
                           <Palette className="w-8 h-8 opacity-20" />
                         )}
                       </div>
-                      <h3 className="font-bold text-sm truncate">{art.title}</h3>
-                      <p className="text-[10px] opacity-40 uppercase font-black tracking-widest">{art.year} • {art.roomSlug}</p>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                           <h3 className="font-bold text-sm truncate">{art.title}</h3>
+                           {art.featured && <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />}
+                        </div>
+                        <p className="text-[10px] opacity-40 uppercase font-black tracking-widest">{art.year} • {art.roomSlug}</p>
+                      </div>
+
                       <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                         <Button size="sm" onClick={() => handleOpenArtworkDialog(art)} className="rounded-full bg-white text-black hover:bg-white/90">
+                         <Button size="sm" onClick={(e) => { e.stopPropagation(); handleOpenArtworkDialog(art); }} className="rounded-full bg-white text-black hover:bg-white/90">
                            <Edit3 className="w-4 h-4" />
                          </Button>
-                         <Button size="sm" variant="destructive" onClick={() => handleDeleteArtwork(art.id)} className="rounded-full">
+                         <Button size="sm" variant="destructive" onClick={(e) => { e.stopPropagation(); handleDeleteArtwork(art.id); }} className="rounded-full">
                            <Trash2 className="w-4 h-4" />
                          </Button>
                       </div>
@@ -393,12 +553,52 @@ export default function AdminPage() {
         </Tabs>
       </div>
 
+      {/* Bulk Room Dialog */}
+      <Dialog open={isBulkRoomDialogOpen} onOpenChange={setIsBulkRoomDialogOpen}>
+        <DialogContent className="max-w-xl rounded-[2rem] p-8 border-none shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="font-headline text-2xl italic">Bulk Verplaatsen</DialogTitle>
+            <DialogDescription>Verplaats {selectedArtIds.length} geselecteerde items naar een andere zaal.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-6 py-4">
+            <div className="space-y-2">
+              <Label className="text-[10px] uppercase font-black tracking-widest ml-2 opacity-40">Bestaande Zaal</Label>
+              <Select value={bulkRoomForm.roomSlug} onValueChange={v => setBulkRoomForm({...bulkRoomForm, roomSlug: v})}>
+                <SelectTrigger className="rounded-xl bg-black/5 border-none h-12">
+                  <SelectValue placeholder="Kies een zaal" />
+                </SelectTrigger>
+                <SelectContent>
+                  {rooms?.map((r: any) => (
+                    <SelectItem key={r.id} value={r.slug}>{r.title}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2 text-center opacity-40 font-black text-[9px] uppercase tracking-widest">Of</div>
+            <div className="space-y-2">
+              <Label className="text-[10px] uppercase font-black tracking-widest ml-2 opacity-40">Maak een nieuwe zaal</Label>
+              <Input 
+                value={bulkRoomForm.newRoomTitle} 
+                onChange={e => setBulkRoomForm({...bulkRoomForm, newRoomTitle: e.target.value})} 
+                className="rounded-xl bg-black/5 border-none h-12" 
+                placeholder="Naam nieuwe zaal..." 
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={handleBulkRoomSave} disabled={isProcessing} className="w-full h-14 rounded-2xl bg-primary">
+              {isProcessing ? <Loader2 className="animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+              Selectie Verplaatsen
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Room Dialog */}
       <Dialog open={isRoomDialogOpen} onOpenChange={setIsRoomDialogOpen}>
         <DialogContent className="max-w-xl rounded-[2rem] p-8 border-none shadow-2xl">
           <DialogHeader>
             <DialogTitle className="font-headline text-2xl italic">{editingRoom ? 'Zaal Bewerken' : 'Nieuwe Zaal'}</DialogTitle>
-            <DialogDescription>Voer de details van de museumzaal in.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-6 py-4">
             <div className="space-y-2">
