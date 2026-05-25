@@ -1,4 +1,5 @@
 
+
 /**
  * @fileOverview Museum Utilities voor sorteren en data-verwerking.
  */
@@ -65,3 +66,19 @@ export const sortArtworksByTitle = (a: any, b: any) => {
   // 3. Als laatste op het achtervoegsel (bijv. 'a' of 'b')
   return pA.suffix.localeCompare(pB.suffix);
 };
+
+/**
+ * Data sanitisatie helpers
+ */
+export const cleanString = (val?: string): string | null => {
+  if (!val) return null;
+  const trimmed = val.trim();
+  return trimmed.length > 0 ? trimmed : null;
+};
+
+export const cleanArray = (arr?: any[]): string[] => {
+  return (arr ?? [])
+    .map(v => typeof v === 'string' ? v.trim() : v)
+    .filter(v => v !== null && v !== undefined && v !== "");
+};
+

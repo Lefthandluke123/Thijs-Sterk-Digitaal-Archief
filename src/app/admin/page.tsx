@@ -65,12 +65,26 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { verifyAdminPassword } from '@/lib/admin-actions';
 import { cn } from '@/lib/utils';
-import { sortArtworksByTitle, MUSEUM_TAGS } from '@/lib/museum-utils';
+import { sortArtworksByTitle } from '@/lib/museum-utils';
 
 /**
- * @fileOverview AdminPage: Productie-grade collectiebeheer.
- * Ondersteunt multi-room kunstwerken, bulk tagging en zaal-opschoning.
+ * @fileOverview AdminPage: Productie-grade collectiebeheer met data-sanitisatie.
+ * Voorkomt 'empty string' errors in Firestore en UI.
  */
+
+// Helper: Sanitizeer string
+const cleanString = (val?: string): string | null => {
+  if (!val) return null;
+  const trimmed = val.trim();
+  return trimmed.length > 0 ? trimmed : null;
+};
+
+// Helper: Sanitizeer array
+const cleanArray = (arr?: any[]): string[] => {
+  return (arr ?? [])
+    .map(v => typeof v === 'string' ? v.trim() : v)
+    .filter(v => v !== null && v !== undefined && v !== "");
+};
 
 export default function AdminPage() {
   const firestore = useFirestore();
@@ -172,21 +186,24 @@ export default function AdminPage() {
     setIsProcessing(true);
 
     const batch = writeBatch(firestore);
-    const tagsToAdd = bulkForm.addTags.split(',').map(t => t.trim()).filter(Boolean);
-    const tagsToRemove = bulkForm.removeTags.split(',').map(t => t.trim()).filter(Boolean);
+    const tagsToAdd = cleanArray(bulkForm.addTags.split(','));
+    const tagsToRemove = cleanArray(bulkForm.removeTags.split(','));
+    const roomIdsToAdd = cleanArray(bulkForm.addRoomIds);
+    const roomIdsToRemove = cleanArray(bulkForm.removeRoomIds);
 
     for (const id of selectedArtIds) {
       const artRef = doc(firestore, 'artworks', id);
       const updateData: any = { updatedAt: serverTimestamp() };
 
-      if (bulkForm.addRoomIds.length > 0) updateData.roomIds = arrayUnion(...bulkForm.addRoomIds);
-      if (bulkForm.removeRoomIds.length > 0) updateData.roomIds = arrayRemove(...bulkForm.removeRoomIds);
+      if (roomIdsToAdd.length > 0) updateData.roomIds = arrayUnion(...roomIdsToAdd);
+      if (roomIdsToRemove.length > 0) updateData.roomIds = arrayRemove(...roomIdsToRemove);
       if (tagsToAdd.length > 0) updateData.tags = arrayUnion(...tagsToAdd);
       if (tagsToRemove.length > 0) updateData.tags = arrayRemove(...tagsToRemove);
       
       if (bulkForm.featured !== 'keep') updateData.featured = bulkForm.featured === 'yes';
       if (bulkForm.inShop !== 'keep') updateData.inShop = bulkForm.inShop === 'yes';
 
+      console.log(`BULK UPDATE [${id}]`, updateData);
       batch.update(artRef, updateData);
     }
 
@@ -205,7 +222,25 @@ export default function AdminPage() {
   // --- Room Actions ---
   const handleSaveRoom = async () => {
     if (!firestore) return;
-    const data = { ...roomForm, updatedAt: serverTimestamp() };
+    
+    const title = cleanString(roomForm.title);
+    const slug = cleanString(roomForm.slug);
+
+    if (!title || !slug) {
+      toast({ variant: "destructive", title: "Validatiefout", description: "Titel en Slug zijn verplicht." });
+      return;
+    }
+
+    const data = { 
+      ...roomForm, 
+      title, 
+      slug, 
+      description: cleanString(roomForm.description) || "",
+      updatedAt: serverTimestamp() 
+    };
+
+    console.log("WRITE TO FIRESTORE (ROOM)", data);
+
     try {
       if (editingRoom) {
         await updateDoc(doc(firestore, 'rooms', editingRoom.id), data);
@@ -225,7 +260,6 @@ export default function AdminPage() {
     setIsProcessing(true);
     const batch = writeBatch(firestore);
     
-    // Verwijder referentie uit alle artworks
     const linkedArtworks = dbArtworks?.filter((a: any) => a.roomIds?.includes(roomId)) || [];
     linkedArtworks.forEach((art: any) => {
       batch.update(doc(firestore, 'artworks', art.id), {
@@ -234,7 +268,6 @@ export default function AdminPage() {
       });
     });
 
-    // Verwijder de zaal zelf
     batch.delete(doc(firestore, 'rooms', roomId));
 
     try {
@@ -250,13 +283,30 @@ export default function AdminPage() {
   // --- Artwork Actions ---
   const handleSaveArtwork = async () => {
     if (!firestore) return;
-    const tags = artworkForm.tags.split(',').map(t => t.trim()).filter(Boolean);
+    
+    const title = cleanString(artworkForm.title);
+    if (!title) {
+      toast({ variant: "destructive", title: "Validatiefout", description: "Titel is verplicht." });
+      return;
+    }
+
+    const tags = cleanArray(artworkForm.tags.split(','));
+    const roomIds = cleanArray(artworkForm.roomIds);
+    const slug = cleanString(artworkForm.slug) || title.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
+
     const data = {
       ...artworkForm,
+      title,
+      displayTitle: cleanString(artworkForm.displayTitle) || title,
+      slug,
+      image: cleanString(artworkForm.image) || "",
+      description: cleanString(artworkForm.description) || "",
       tags,
+      roomIds,
       updatedAt: serverTimestamp(),
-      slug: artworkForm.slug || artworkForm.title.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '')
     };
+
+    console.log("WRITE TO FIRESTORE (ARTWORK)", data);
 
     try {
       if (editingArtwork) {
@@ -482,6 +532,35 @@ export default function AdminPage() {
                   <Input value={bulkForm.removeTags} onChange={e => setBulkForm(p => ({ ...p, removeTags: e.target.value }))} placeholder="Foutieve tag..." className="rounded-xl h-12" />
                </div>
             </div>
+
+            <div className="grid md:grid-cols-2 gap-6 pt-4 border-t border-black/5">
+               <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase opacity-40">Homepage (Featured)</Label>
+                  <Select value={bulkForm.featured} onValueChange={(v: any) => setBulkForm(p => ({ ...p, featured: v }))}>
+                     <SelectTrigger className="h-12 rounded-xl">
+                        <SelectValue />
+                     </SelectTrigger>
+                     <SelectContent>
+                        <SelectItem value="keep">Geen wijziging</SelectItem>
+                        <SelectItem value="yes">Toon op Homepage</SelectItem>
+                        <SelectItem value="no">Verwijder van Homepage</SelectItem>
+                     </SelectContent>
+                  </Select>
+               </div>
+               <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase opacity-40">Museumwinkel</Label>
+                  <Select value={bulkForm.inShop} onValueChange={(v: any) => setBulkForm(p => ({ ...p, inShop: v }))}>
+                     <SelectTrigger className="h-12 rounded-xl">
+                        <SelectValue />
+                     </SelectTrigger>
+                     <SelectContent>
+                        <SelectItem value="keep">Geen wijziging</SelectItem>
+                        <SelectItem value="yes">In Winkel</SelectItem>
+                        <SelectItem value="no">Uit Winkel</SelectItem>
+                     </SelectContent>
+                  </Select>
+               </div>
+            </div>
           </div>
           <DialogFooter>
              <Button variant="ghost" onClick={() => setIsBulkEditConfirmOpen(false)}>Annuleren</Button>
@@ -594,3 +673,4 @@ export default function AdminPage() {
     </div>
   );
 }
+
