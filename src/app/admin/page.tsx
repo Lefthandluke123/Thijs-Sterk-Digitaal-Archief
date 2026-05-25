@@ -43,7 +43,8 @@ import {
   Monitor,
   Type,
   Maximize,
-  Grid
+  Grid,
+  Library
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -54,7 +55,8 @@ import {
   DialogContent, 
   DialogTitle, 
   DialogHeader, 
-  DialogFooter
+  DialogFooter,
+  DialogDescription
 } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -84,6 +86,11 @@ export default function AdminPage() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [activeTab, setActiveTab] = useState('artworks');
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Settings UI State
+  const [bgSettings, setBgSettings] = useState<Record<string, string>>({});
+  const [isImagePickerOpen, setIsImagePickerOpen] = useState(false);
+  const [pickerTarget, setPickerTarget] = useState<string | null>(null);
 
   // Bulk State
   const [selectedArtIds, setSelectedArtIds] = useState<string[]>([]);
@@ -156,6 +163,18 @@ export default function AdminPage() {
   }, [firestore, isAuthorized]);
   const { data: settings } = useDoc(settingsRef);
 
+  useEffect(() => {
+    if (settings) {
+      const initialBgs: Record<string, string> = {
+        backgroundImageUrl: settings.backgroundImageUrl || ''
+      };
+      PAGES.forEach(page => {
+        initialBgs[`backgroundImageUrl_${page.id}`] = settings[`backgroundImageUrl_${page.id}`] || '';
+      });
+      setBgSettings(initialBgs);
+    }
+  }, [settings]);
+
   const filteredAndSortedArtworks = useMemo(() => {
     if (!rawArtworks) return [];
     let list = rawArtworks.map(a => normalizeArtwork(a.id, a));
@@ -178,7 +197,6 @@ export default function AdminPage() {
     const formData = new FormData(e.currentTarget);
     const updates: any = { updatedAt: serverTimestamp() };
 
-    // Verwerk globale settings & Stramien
     const fields = [
       'backgroundImageUrl', 'backgroundOpacity', 'bgColor', 'primaryColor', 'accentColor',
       'baseFontSize', 'lineHeight', 'headingScale', 'containerWidth', 'radius', 'bodyFont', 'headFont'
@@ -195,11 +213,13 @@ export default function AdminPage() {
       }
     });
 
-    // Verwerk pagina-specifieke settings
+    // Overwrite with state-managed background URLs
+    Object.entries(bgSettings).forEach(([key, val]) => {
+      updates[key] = cleanString(val);
+    });
+
     PAGES.forEach(page => {
-      const url = formData.get(`backgroundImageUrl_${page.id}`);
       const opacity = formData.get(`backgroundOpacity_${page.id}`);
-      if (url !== null) updates[`backgroundImageUrl_${page.id}`] = cleanString(url);
       if (opacity !== null) updates[`backgroundOpacity_${page.id}`] = parseInt(opacity as string, 10);
       
       const bioImagesStr = formData.get(`bioImages_${page.id}`);
@@ -216,6 +236,19 @@ export default function AdminPage() {
     } finally {
       setIsSavingSettings(false);
     }
+  };
+
+  const openImagePicker = (targetField: string) => {
+    setPickerTarget(targetField);
+    setIsImagePickerOpen(true);
+  };
+
+  const selectImageFromArchive = (imageUrl: string) => {
+    if (pickerTarget) {
+      setBgSettings(prev => ({ ...prev, [pickerTarget]: imageUrl }));
+    }
+    setIsImagePickerOpen(false);
+    setPickerTarget(null);
   };
 
   const handleBulkSave = async () => {
@@ -550,9 +583,19 @@ export default function AdminPage() {
                               </AccordionTrigger>
                               <AccordionContent className="space-y-8 pt-4 pb-8">
                                  <div className="grid md:grid-cols-2 gap-8">
-                                    <div className="space-y-2">
+                                    <div className="space-y-4">
                                        <Label className="text-[10px] uppercase font-black opacity-40">Afbeelding URL</Label>
-                                       <Input name="backgroundImageUrl" defaultValue={settings?.backgroundImageUrl || ""} placeholder="https://..." className="h-12 rounded-xl bg-black/5 border-none" />
+                                       <div className="flex gap-2">
+                                          <Input 
+                                            value={bgSettings.backgroundImageUrl || ''} 
+                                            onChange={e => setBgSettings(p => ({...p, backgroundImageUrl: e.target.value}))}
+                                            placeholder="https://..." 
+                                            className="h-12 rounded-xl bg-black/5 border-none flex-1" 
+                                          />
+                                          <Button type="button" onClick={() => openImagePicker('backgroundImageUrl')} size="icon" variant="outline" className="h-12 w-12 rounded-xl border-accent/20 text-accent">
+                                             <Library className="w-5 h-5" />
+                                          </Button>
+                                       </div>
                                     </div>
                                     <div className="space-y-4">
                                        <div className="flex justify-between items-center">
@@ -573,9 +616,19 @@ export default function AdminPage() {
                                  <AccordionContent className="space-y-8 pt-4 pb-8">
                                     <div className="grid md:grid-cols-2 gap-8">
                                        <div className="space-y-6">
-                                          <div className="space-y-2">
+                                          <div className="space-y-4">
                                              <Label className="text-[10px] uppercase font-black opacity-40">Specifieke Achtergrond URL</Label>
-                                             <Input name={`backgroundImageUrl_${page.id}`} defaultValue={settings?.[`backgroundImageUrl_${page.id}`] || ""} placeholder="Laat leeg voor globaal..." className="h-12 rounded-xl bg-black/5 border-none" />
+                                             <div className="flex gap-2">
+                                                <Input 
+                                                  value={bgSettings[`backgroundImageUrl_${page.id}`] || ''} 
+                                                  onChange={e => setBgSettings(p => ({...p, [`backgroundImageUrl_${page.id}`]: e.target.value}))}
+                                                  placeholder="Laat leeg voor globaal..." 
+                                                  className="h-12 rounded-xl bg-black/5 border-none flex-1" 
+                                                />
+                                                <Button type="button" onClick={() => openImagePicker(`backgroundImageUrl_${page.id}`)} size="icon" variant="outline" className="h-12 w-12 rounded-xl border-accent/20 text-accent">
+                                                   <Library className="w-5 h-5" />
+                                                </Button>
+                                             </div>
                                           </div>
                                           <div className="space-y-4">
                                              <div className="flex justify-between items-center">
@@ -613,6 +666,34 @@ export default function AdminPage() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Image Picker Dialog */}
+      <Dialog open={isImagePickerOpen} onOpenChange={setIsImagePickerOpen}>
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto rounded-[2.5rem] p-10">
+          <DialogHeader>
+            <DialogTitle className="font-headline text-3xl italic">Kies uit Archief</DialogTitle>
+            <DialogDescription className="text-xs uppercase tracking-widest font-black opacity-40">Selecteer een kunstwerk als achtergrond</DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4 py-8">
+             {filteredAndSortedArtworks.map((art: any) => (
+               <button 
+                key={art.id} 
+                onClick={() => selectImageFromArchive(art.image)}
+                className="group relative aspect-square rounded-2xl overflow-hidden bg-black/5 border hover:ring-2 ring-accent transition-all"
+               >
+                 {art.image ? (
+                   <img src={art.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={art.title} />
+                 ) : (
+                   <div className="w-full h-full flex items-center justify-center opacity-10"><ImageIcon className="w-6 h-6" /></div>
+                 )}
+                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-end p-2 transition-opacity">
+                    <p className="text-[8px] text-white font-bold truncate w-full">{art.displayTitle || art.title}</p>
+                 </div>
+               </button>
+             ))}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Bulk Dialog */}
       <Dialog open={isBulkDialogOpen} onOpenChange={setIsBulkEditConfirmOpen}>
