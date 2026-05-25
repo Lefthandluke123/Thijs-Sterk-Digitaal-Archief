@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -12,7 +13,7 @@ interface DeepZoomViewerProps {
 
 /**
  * @fileOverview DeepZoomViewer component met OpenSeadragon.
- * GEZALVDE VERSIE - NIET REFACTOREREN ZONDER VALIDATIE.
+ * STABILIZED VERSION - Beheert cursor states en Command+klik interactie.
  * 
  * INTERACTIE-FLOW:
  * 1. Default: cursor-zoom-in (plusje).
@@ -20,11 +21,6 @@ interface DeepZoomViewerProps {
  * 3. Slepen (Drag): cursor-grabbing (handje).
  * 4. Klik: Inzoomen op cursor.
  * 5. Command/Ctrl + Klik: Uitzoomen (factor 2).
- * 
- * ARCHITECTUUR:
- * - Gebruikt OpenSeadragon canvas binnen een geforceerde cursor-container.
- * - homeFillsViewer: false garandeert 'fit-to-screen' start.
- * - pointer-events op parent containers moeten op 'none' staan om dit canvas te bereiken.
  */
 export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({ 
   imageUrl, 
@@ -95,10 +91,6 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
           maxZoomLevel: 10,
           autoResize: true,
           preserveViewport: false,
-          zoomInButton: undefined,
-          zoomOutButton: undefined,
-          homeButton: undefined,
-          fullPageButton: undefined,
         });
 
         viewerRef.current.addHandler('open', () => {

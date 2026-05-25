@@ -1,10 +1,11 @@
+
 "use client";
 
 import React, { useState, useMemo, useCallback } from 'react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
-import { Loader2, Maximize2, Play, Eraser, Share2, Copy } from 'lucide-react';
+import { Loader2, Maximize2, Play, Eraser, Share2, Copy, Filter } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ArtworkViewer } from '@/components/artwork-viewer';
 import { useLanguage } from '@/components/language-provider';
