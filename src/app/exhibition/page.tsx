@@ -14,7 +14,6 @@ function ExhibitionContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const firestore = useFirestore();
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const currentRoomSlug = searchParams.get('room');
   const [scrollX, setScrollX] = useState(0);
@@ -48,27 +47,16 @@ function ExhibitionContent() {
   const nextRoom = currentIndex < (rooms?.length || 0) - 1 ? rooms?.[currentIndex + 1] : null;
 
   const handleStep = (delta: number) => {
-    setScrollX(prev => {
-      const newVal = prev + delta;
-      return Math.max(0, newVal);
-    });
+    setScrollX(prev => Math.max(0, prev + delta));
   };
 
-  // Verbeterde wheel-handling om conflicten met Zoom te voorkomen
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
-      // Alleen reageren als er GEEN kunstwerk-detailvenster (met zoom) open staat
+      // Alleen scrollen als er geen artwork detail open staat
       if (selectedArtwork) return;
       
-      // Controleer of de target binnen de interactieve viewer valt
-      const target = e.target as HTMLElement;
-      if (target.closest('.openseadragon-container')) return;
-
-      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
-        handleStep(e.deltaY * 3);
-      } else {
-        handleStep(e.deltaX * 3);
-      }
+      const delta = Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+      handleStep(delta * 2);
     };
     
     window.addEventListener('wheel', handleWheel, { passive: true });
@@ -113,9 +101,7 @@ function ExhibitionContent() {
                       <img 
                         src={art.image || art.imageUrl} 
                         className="relative block max-h-[50vh] max-w-[40vw] w-auto h-auto object-contain mx-auto" 
-                        style={{ 
-                          filter: `brightness(${art.brightness || 1})`,
-                        }} 
+                        style={{ filter: `brightness(${art.brightness || 1})` }}
                         alt={art.displayTitle || art.title} 
                       />
                    </div>
@@ -146,12 +132,12 @@ function ExhibitionContent() {
       </div>
 
       <div className="absolute bottom-12 left-0 right-0 z-30 flex justify-center gap-24 items-center">
-        <button onClick={() => handleStep(-1000)} className="p-10 rounded-full bg-white/40 backdrop-blur-md border text-black/30 hover:text-accent transition-all active:scale-90 shadow-xl group" aria-label="Scroll naar links"><ChevronLeft className="w-20 h-20 transition-transform group-hover:-translate-x-1" /></button>
+        <button onClick={() => handleStep(-1000)} className="p-10 rounded-full bg-white/40 backdrop-blur-md border text-black/30 hover:text-accent transition-all active:scale-90 shadow-xl group"><ChevronLeft className="w-20 h-20 transition-transform group-hover:-translate-x-1" /></button>
         <div className="flex flex-col items-center gap-2">
            <span className="text-[8px] font-black uppercase tracking-[0.4em] opacity-40">Wandel door de collectie</span>
            <div className="w-48 h-0.5 bg-black/5 rounded-full" />
         </div>
-        <button onClick={() => handleStep(1000)} className="p-10 rounded-full bg-white/40 backdrop-blur-md border text-black/30 hover:text-accent transition-all active:scale-90 shadow-xl group" aria-label="Scroll naar rechts"><ChevronRight className="w-20 h-20 transition-transform group-hover:translate-x-1" /></button>
+        <button onClick={() => handleStep(1000)} className="p-10 rounded-full bg-white/40 backdrop-blur-md border text-black/30 hover:text-accent transition-all active:scale-90 shadow-xl group"><ChevronRight className="w-20 h-20 transition-transform group-hover:translate-x-1" /></button>
       </div>
 
       <ArtworkViewer 

@@ -50,9 +50,7 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
       if (e.key === 'Escape') setShowMetadata(false);
     };
     window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleNext, handlePrev]);
 
   if (!item) {
@@ -67,13 +65,12 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
 
   return (
     <main className="fixed inset-0 z-[100] bg-background flex flex-col items-center justify-center overflow-hidden">
-      {/* Header Plaque */}
-      <div className="absolute top-0 left-0 right-0 z-[140] p-8 md:p-12 flex items-center justify-between pointer-events-none">
-        <div className="flex items-center gap-8 pointer-events-auto">
+      {/* Header Overlay */}
+      <div className="absolute top-0 left-0 right-0 z-[140] p-8 md:p-12 flex items-center justify-between">
+        <div className="flex items-center gap-8">
           <Link 
             href="/gallery" 
             className="p-5 rounded-full bg-white/90 backdrop-blur-xl border border-black/5 hover:bg-accent hover:text-accent-foreground transition-all group shadow-xl"
-            aria-label="Terug naar overzicht"
           >
             <ArrowLeft className="w-6 h-6 group-hover:-translate-x-1 transition-transform" />
           </Link>
@@ -88,35 +85,30 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
         <button 
           onClick={() => setShowMetadata(!showMetadata)}
           className={cn(
-            "p-5 rounded-full backdrop-blur-xl border border-black/5 transition-all shadow-xl pointer-events-auto",
+            "p-5 rounded-full backdrop-blur-xl border border-black/5 transition-all shadow-xl",
             showMetadata ? "bg-accent text-accent-foreground" : "bg-white/90 text-foreground hover:bg-white"
           )}
-          aria-label="Toon informatie"
         >
           {showMetadata ? <X className="w-6 h-6" /> : <Info className="w-6 h-6" />}
         </button>
       </div>
 
-      {/* Navigation Paddles - Increased Z-index and explicit pointer control */}
-      <div className="absolute inset-x-8 top-1/2 -translate-y-1/2 z-[130] flex justify-between pointer-events-none">
-        <button 
-          onClick={handlePrev} 
-          className="p-8 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 text-foreground pointer-events-auto hover:bg-accent hover:text-accent-foreground transition-all active:scale-90 shadow-2xl group"
-          aria-label="Vorig werk"
-        >
-          <ChevronLeft className="w-12 h-12 opacity-40 group-hover:opacity-100" />
-        </button>
-        <button 
-          onClick={handleNext} 
-          className="p-8 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 text-foreground pointer-events-auto hover:bg-accent hover:text-accent-foreground transition-all active:scale-90 shadow-2xl group"
-          aria-label="Volgend werk"
-        >
-          <ChevronRight className="w-12 h-12 opacity-40 group-hover:opacity-100" />
-        </button>
-      </div>
+      {/* Navigation Paddles */}
+      <button 
+        onClick={handlePrev} 
+        className="absolute left-8 top-1/2 -translate-y-1/2 z-[130] p-8 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 text-foreground hover:bg-accent hover:text-accent-foreground transition-all active:scale-90 shadow-2xl group"
+      >
+        <ChevronLeft className="w-12 h-12 opacity-40 group-hover:opacity-100" />
+      </button>
+      <button 
+        onClick={handleNext} 
+        className="absolute right-8 top-1/2 -translate-y-1/2 z-[130] p-8 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 text-foreground hover:bg-accent hover:text-accent-foreground transition-all active:scale-90 shadow-2xl group"
+      >
+        <ChevronRight className="w-12 h-12 opacity-40 group-hover:opacity-100" />
+      </button>
 
-      {/* Immersive Viewer Container */}
-      <div className="w-[90vw] h-[85vh] flex items-center justify-center animate-subtle-fade z-[110] pointer-events-auto">
+      {/* Viewer Container */}
+      <div className="w-[90vw] h-[85vh] flex items-center justify-center animate-subtle-fade z-[110]">
         {displayImage && (
           <DeepZoomViewer 
             key={`${item.id}-${currentIndex}`}
@@ -126,12 +118,12 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
         )}
       </div>
 
-      {/* Premium Museum Plaque (Info Overlay) - Pointer events none on wrapper, auto on card */}
+      {/* Info Plaque */}
       <div className={cn(
-        "absolute bottom-0 left-0 right-0 flex flex-col items-center justify-center transition-all duration-1000 ease-in-out z-[150] p-12 pointer-events-none",
-        showMetadata ? "opacity-100 translate-y-0" : "opacity-0 translate-y-24"
+        "absolute bottom-0 left-0 right-0 flex flex-col items-center justify-center transition-all duration-1000 ease-in-out z-[150] p-12",
+        showMetadata ? "opacity-100 translate-y-0" : "opacity-0 translate-y-24 pointer-events-none"
       )}>
-        <div className="museum-label max-w-3xl w-full pointer-events-auto shadow-[0_50px_100px_-20px_rgba(0,0,0,0.3)] border border-black/5">
+        <div className="museum-label max-w-3xl w-full shadow-[0_50px_100px_-20px_rgba(0,0,0,0.3)] border border-black/5">
           <h2 className="text-3xl md:text-5xl font-headline font-light italic text-foreground leading-tight text-center">{item.displayTitle || item.title}</h2>
           
           <div className="flex flex-wrap gap-x-12 gap-y-4 justify-center items-center py-4">
@@ -161,8 +153,8 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
         </div>
       </div>
       
-      {/* Visual Progress Line */}
-      <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-[140] flex gap-3 items-center pointer-events-auto">
+      {/* Progress Line */}
+      <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-[140] flex gap-3 items-center">
         <span className="text-[9px] font-black tracking-widest opacity-30">{currentIndex + 1}</span>
         <div className="flex gap-1.5">
           {artworks.map((_, i) => (
@@ -170,7 +162,6 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
               key={i} 
               onClick={() => setCurrentIndex(i)}
               className={cn("h-1 rounded-full transition-all duration-700", i === currentIndex ? "w-16 bg-accent" : "w-3 bg-black/10 hover:bg-black/30")} 
-              aria-label={`Ga naar werk ${i + 1}`}
             />
           ))}
         </div>

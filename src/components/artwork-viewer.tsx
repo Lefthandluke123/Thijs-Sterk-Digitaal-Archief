@@ -90,17 +90,16 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
     <div 
       role="dialog"
       aria-modal="true"
-      aria-label={`Detailweergave van ${artwork.displayTitle || artwork.title}`}
       className="fixed inset-0 z-[9999] bg-background flex flex-col items-center justify-center overflow-hidden animate-in fade-in duration-1000"
     >
       {/* Header Plaque */}
-      <div className="absolute top-0 left-0 right-0 z-[10000] p-8 md:p-12 flex items-center justify-between pointer-events-none">
-        <div className="hidden md:flex flex-col border-l-2 border-accent/20 pl-8 pointer-events-auto">
+      <div className="absolute top-0 left-0 right-0 z-[10000] p-8 md:p-12 flex items-center justify-between">
+        <div className="hidden md:flex flex-col border-l-2 border-accent/20 pl-8">
            <h1 className="font-headline text-3xl italic leading-tight text-foreground">{artwork.displayTitle || artwork.title}</h1>
            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-accent/60 mt-2">{artwork.year} &bull; {artwork.medium}</p>
         </div>
 
-        <div className="flex items-center gap-4 pointer-events-auto">
+        <div className="flex items-center gap-4">
            <ShareButton 
              title={artwork.displayTitle || artwork.title}
              url={artworkUrl}
@@ -152,35 +151,33 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
       </div>
 
       {/* Navigation Arrows */}
-      <div className="absolute inset-x-12 top-1/2 -translate-y-1/2 flex justify-between px-8 pointer-events-none z-[10000]">
+      <div className="absolute inset-x-12 top-1/2 -translate-y-1/2 flex justify-between px-8 z-[10000] pointer-events-none">
         <button 
           onClick={(e) => { e.stopPropagation(); if(onPrev) onPrev(); }} 
           className={cn(
-            "p-10 rounded-full bg-white/20 backdrop-blur-3xl pointer-events-auto hover:bg-accent hover:text-accent-foreground transition-all border border-white/40 shadow-2xl active:scale-90 group",
+            "p-10 rounded-full bg-white/20 backdrop-blur-3xl hover:bg-accent hover:text-accent-foreground transition-all border border-white/40 shadow-2xl active:scale-90 group pointer-events-auto",
             !onPrev && "opacity-0 pointer-events-none"
           )}
-          aria-label="Vorig werk"
         >
           <ChevronLeft className="w-12 h-12 opacity-40 group-hover:opacity-100" />
         </button>
         <button 
           onClick={(e) => { e.stopPropagation(); if(onNext) onNext(); }} 
           className={cn(
-            "p-10 rounded-full bg-white/20 backdrop-blur-3xl pointer-events-auto hover:bg-accent hover:text-accent-foreground transition-all border border-white/40 shadow-2xl active:scale-90 group",
+            "p-10 rounded-full bg-white/20 backdrop-blur-3xl hover:bg-accent hover:text-accent-foreground transition-all border border-white/40 shadow-2xl active:scale-90 group pointer-events-auto",
             !onNext && "opacity-0 pointer-events-none"
           )}
-          aria-label="Volgend werk"
         >
           <ChevronRight className="w-12 h-12 opacity-40 group-hover:opacity-100" />
         </button>
       </div>
 
-      {/* Premium Museum Plaque (Info Overlay) */}
+      {/* Info Overlay */}
       <div className={cn(
-        "absolute bottom-0 left-0 right-0 flex flex-col items-center justify-center transition-all duration-1000 ease-in-out z-[10010] p-16 pointer-events-none", 
-        showMetadata ? "opacity-100 translate-y-0" : "opacity-0 translate-y-32"
+        "absolute bottom-0 left-0 right-0 flex flex-col items-center justify-center transition-all duration-1000 ease-in-out z-[10010] p-16", 
+        showMetadata ? "opacity-100 translate-y-0" : "opacity-0 translate-y-32 pointer-events-none"
       )}>
-        <div className="museum-label max-w-4xl w-full pointer-events-auto text-center">
+        <div className="museum-label max-w-4xl w-full text-center">
           <h2 className="text-4xl md:text-6xl font-headline font-light italic text-foreground leading-tight">{artwork.displayTitle || artwork.title}</h2>
           
           <div className="flex flex-wrap gap-x-16 gap-y-4 justify-center items-center py-6">
