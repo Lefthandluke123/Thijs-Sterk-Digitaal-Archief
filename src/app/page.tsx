@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from 'react';
@@ -25,23 +24,22 @@ export default function Home() {
     <main className="min-h-screen bg-background pt-16 md:pt-32">
       <Hero />
       
-      {/* Introductie Galerie */}
       <IntroductionGallery />
 
-      {/* Dynamic Rooms Selection */}
-      <section className="py-20 px-4">
+      <section className="py-20 px-4" aria-labelledby="rooms-heading">
         <div className="container mx-auto max-w-7xl">
+          <h2 id="rooms-heading" className="sr-only">Navigeer naar museumzalen</h2>
           <div className="grid md:grid-cols-3 gap-8">
             {rooms?.map((room: any) => (
               <Link 
                 key={room.id} 
                 href={`/room/${room.slug}`}
-                className="group p-10 bg-secondary/10 rounded-[2.5rem] border border-black/5 hover:bg-secondary/20 transition-all hover:scale-[1.02]"
+                className="group p-10 bg-secondary/10 rounded-[2.5rem] border border-black/5 hover:bg-secondary/20 transition-all hover:scale-[1.02] focus-visible:ring-4 focus-visible:ring-accent"
               >
                 <h3 className="font-headline text-3xl mb-4 italic group-hover:text-accent">{room.title}</h3>
                 <p className="text-sm text-muted-foreground line-clamp-2 mb-6 font-light">{room.description}</p>
                 <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-accent">
-                  Betreed Zaal <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                  Betreed Zaal <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
                 </div>
               </Link>
             ))}

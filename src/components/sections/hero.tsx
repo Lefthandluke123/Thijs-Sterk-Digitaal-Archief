@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -42,9 +41,9 @@ export function Hero() {
     : siteSettings?.homeHeroTitle || 'Een leven gewijd aan Licht, Ruimte en Water';
 
   return (
-    <section className="relative min-h-[70vh] flex flex-col items-center justify-center pt-24 pb-16 px-4 overflow-hidden">
+    <section className="relative min-h-[70vh] flex flex-col items-center justify-center pt-24 pb-16 px-4 overflow-hidden" aria-labelledby="hero-heading">
       <div className="container mx-auto z-10 text-center">
-        <h1 className="font-headline text-3xl md:text-5xl font-medium tracking-tight text-foreground mb-12 max-w-4xl mx-auto leading-[1.1]">
+        <h1 id="hero-heading" className="font-headline text-3xl md:text-5xl font-medium tracking-tight text-foreground mb-12 max-w-4xl mx-auto leading-[1.1]">
           {heroTitle.split(' ').map((word, i, arr) => 
             i >= arr.length - 3 ? <span key={i} className="italic text-accent">{word} </span> : word + ' '
           )}
@@ -53,7 +52,7 @@ export function Hero() {
         <div className="flex flex-col items-center justify-center gap-10">
           <Button size="lg" variant="ghost" className="rounded-full px-12 text-accent/60 hover:text-accent font-bold uppercase tracking-[0.25em] text-[10px] h-10 transition-all" asChild>
             <Link href="#about">
-              <BookOpen className="mr-2 w-3 h-3" />
+              <BookOpen className="mr-2 w-3 h-3" aria-hidden="true" />
               Introductie
             </Link>
           </Button>
@@ -61,7 +60,7 @@ export function Hero() {
           <div className="flex flex-col items-center justify-center gap-6 w-full max-w-sm">
             <Button variant="outline" size="lg" className="w-full rounded-full px-10 border-2 border-accent/30 text-accent hover:bg-accent/5 font-bold uppercase tracking-[0.25em] text-[11px] h-14 transition-all shadow-sm" asChild>
               <Link href="/gallery">
-                <Sparkles className="mr-2 w-4 h-4" />
+                <Sparkles className="mr-2 w-4 h-4" aria-hidden="true" />
                 {t('hero_start_walk')}
               </Link>
             </Button>
@@ -69,7 +68,7 @@ export function Hero() {
             <div className="w-full flex flex-col items-center gap-4">
               <Button size="lg" className="w-full rounded-full px-10 bg-accent hover:bg-accent/90 text-accent-foreground font-bold uppercase tracking-[0.25em] text-[12px] h-16 shadow-xl transition-all scale-105 active:scale-95" asChild>
                 <Link href="/curator">
-                  <Layout className="mr-3 w-5 h-5" />
+                  <Layout className="mr-3 w-5 h-5" aria-hidden="true" />
                   {t('hero_your_room')}
                 </Link>
               </Button>
@@ -85,21 +84,22 @@ export function Hero() {
       </div>
 
       <div className="container mx-auto mt-20 z-10 px-4 max-w-6xl">
-        <div 
-          className="relative aspect-[21/9] w-full rounded-[2.5rem] overflow-hidden shadow-[0_40px_80px_-20px_rgba(0,0,0,0.25)] border-2 border-white/20 cursor-pointer group"
+        <button 
+          className="relative aspect-[21/9] w-full rounded-[2.5rem] overflow-hidden shadow-[0_40px_80px_-20px_rgba(0,0,0,0.25)] border-2 border-white/20 cursor-pointer group focus-visible:ring-4 focus-visible:ring-accent"
           onClick={() => setSelectedArtwork(artwork || { imageUrl: heroImage, title: "Maannacht" })}
+          aria-label={`Bekijk werk: ${artwork?.displayTitle || artwork?.title || 'Maannacht'}`}
         >
           <Image
             src={heroImage}
-            alt="Hero Image"
+            alt={artwork?.displayTitle || artwork?.title || 'Monumentaal werk van Thijs Sterk'}
             fill
             className="object-cover transition-transform duration-1000 group-hover:scale-105"
             priority
           />
           <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-            <Maximize2 className="text-white w-10 h-10 drop-shadow-2xl" />
+            <Maximize2 className="text-white w-10 h-10 drop-shadow-2xl" aria-hidden="true" />
           </div>
-        </div>
+        </button>
       </div>
 
       <ArtworkViewer 

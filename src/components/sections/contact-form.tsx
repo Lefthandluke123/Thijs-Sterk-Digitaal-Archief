@@ -17,10 +17,10 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
 const formSchema = z.object({
-  name: z.string().min(2),
-  email: z.string().email(),
-  subject: z.string().min(5),
-  message: z.string().min(10),
+  name: z.string().min(2, { message: "Naam is te kort" }),
+  email: z.string().email({ message: "Ongeldig e-mailadres" }),
+  subject: z.string().min(5, { message: "Onderwerp is te kort" }),
+  message: z.string().min(10, { message: "Bericht moet minimaal 10 karakters bevatten" }),
 });
 
 export function ContactForm() {
@@ -102,13 +102,13 @@ export function ContactForm() {
   }
 
   return (
-    <section className="py-24 bg-background px-4" id="contact">
+    <section className="py-24 bg-background px-4" id="contact" aria-labelledby="contact-heading">
       <div className="container mx-auto max-w-6xl">
         <div className="grid lg:grid-cols-2 gap-20 items-start">
           <div className="space-y-8">
             <div className="space-y-4">
               <span className="text-accent font-black tracking-[0.4em] uppercase text-[11px] block">{t('nav_collections')} & Archief</span>
-              <h2 className="font-headline text-3xl md:text-4xl lg:text-5xl font-medium leading-tight">
+              <h2 id="contact-heading" className="font-headline text-3xl md:text-4xl lg:text-5xl font-medium leading-tight">
                 {contactTitle.split(' ').map((word, i, arr) => 
                   i === arr.length - 1 ? <span key={i} className="italic text-accent">{word}</span> : word + ' '
                 )}
@@ -122,16 +122,16 @@ export function ContactForm() {
             
             <div className="grid sm:grid-cols-2 gap-10 pt-8">
               <div className="flex items-center gap-5">
-                <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center text-primary shadow-inner"><Mail className="w-5 h-5" /></div>
+                <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center text-primary shadow-inner"><Mail className="w-5 h-5" aria-hidden="true" /></div>
                 <div>
-                  <h4 className="font-black text-[9px] uppercase tracking-widest text-accent">E-mail</h4>
+                  <h3 className="font-black text-[9px] uppercase tracking-widest text-accent">E-mail</h3>
                   <p className="text-base font-medium">info@thijssterk.nl</p>
                 </div>
               </div>
               <div className="flex items-center gap-5">
-                <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center text-primary shadow-inner"><Phone className="w-5 h-5" /></div>
+                <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center text-primary shadow-inner"><Phone className="w-5 h-5" aria-hidden="true" /></div>
                 <div>
-                  <h4 className="font-black text-[9px] uppercase tracking-widest text-accent">{t('contact_phone')}</h4>
+                  <h3 className="font-black text-[9px] uppercase tracking-widest text-accent">{t('contact_phone')}</h3>
                   <p className="text-base font-medium">06-53716249</p>
                 </div>
               </div>
@@ -142,37 +142,37 @@ export function ContactForm() {
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <div className="grid sm:grid-cols-2 gap-6">
-                  <FormField control={form.control} name="name" render={({ field }) => (
+                  <FormField control={form.control} name="name" render={({ field, fieldState }) => (
                     <FormItem>
                       <FormLabel className="text-[10px] uppercase tracking-[0.2em] font-black text-accent">{labelName}</FormLabel>
-                      <FormControl><Input placeholder="..." className="bg-background/70 border-none h-12 rounded-xl text-base px-5" {...field} /></FormControl>
+                      <FormControl><Input placeholder="..." aria-required="true" aria-invalid={!!fieldState.error} className="bg-background/70 border-none h-12 rounded-xl text-base px-5" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
-                  <FormField control={form.control} name="email" render={({ field }) => (
+                  <FormField control={form.control} name="email" render={({ field, fieldState }) => (
                     <FormItem>
                       <FormLabel className="text-[10px] uppercase tracking-[0.2em] font-black text-accent">{labelEmail}</FormLabel>
-                      <FormControl><Input placeholder="..." className="bg-background/70 border-none h-12 rounded-xl text-base px-5" {...field} /></FormControl>
+                      <FormControl><Input placeholder="..." type="email" aria-required="true" aria-invalid={!!fieldState.error} className="bg-background/70 border-none h-12 rounded-xl text-base px-5" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
                 </div>
-                <FormField control={form.control} name="subject" render={({ field }) => (
+                <FormField control={form.control} name="subject" render={({ field, fieldState }) => (
                   <FormItem>
                     <FormLabel className="text-[10px] uppercase tracking-[0.2em] font-black text-accent">{labelSubject}</FormLabel>
-                    <FormControl><Input placeholder="..." className="bg-background/70 border-none h-12 rounded-xl text-base px-5" {...field} /></FormControl>
+                    <FormControl><Input placeholder="..." aria-required="true" aria-invalid={!!fieldState.error} className="bg-background/70 border-none h-12 rounded-xl text-base px-5" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
-                <FormField control={form.control} name="message" render={({ field }) => (
+                <FormField control={form.control} name="message" render={({ field, fieldState }) => (
                   <FormItem>
                     <FormLabel className="text-[10px] uppercase tracking-[0.2em] font-black text-accent">{labelMessage}</FormLabel>
-                    <FormControl><Textarea placeholder="..." className="min-h-[160px] bg-background/70 border-none resize-none p-6 rounded-2xl text-base" {...field} /></FormControl>
+                    <FormControl><Textarea placeholder="..." aria-required="true" aria-invalid={!!fieldState.error} className="min-h-[160px] bg-background/70 border-none resize-none p-6 rounded-2xl text-base" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 <Button type="submit" size="lg" disabled={isSubmitting} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-full h-16 font-black uppercase tracking-[0.2em] text-[11px] shadow-lg hover:scale-[1.02] transition-all">
-                  {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin mr-3" /> : <Send className="mr-3 w-5 h-5" />}
+                  {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin mr-3" /> : <Send className="mr-3 w-5 h-5" aria-hidden="true" />}
                   {buttonSend}
                 </Button>
               </form>

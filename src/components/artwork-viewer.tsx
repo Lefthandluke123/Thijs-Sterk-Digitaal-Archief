@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -90,6 +89,9 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
 
   return (
     <div 
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Detailweergave van ${artwork.displayTitle || artwork.title}`}
       style={{ 
         position: 'fixed', 
         inset: 0, 
@@ -117,19 +119,36 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
          />
 
          {audio && (
-           <button onClick={toggleAudio} className={cn("p-4 rounded-full backdrop-blur-md border border-black/5 transition-all flex items-center gap-3 shadow-lg", isPlaying ? "bg-accent text-accent-foreground" : "bg-white/80 text-foreground")}>
+           <button 
+            onClick={toggleAudio} 
+            aria-label={isPlaying ? t('viewer_telling') : t('viewer_listen_story')}
+            className={cn("p-4 rounded-full backdrop-blur-md border border-black/5 transition-all flex items-center gap-3 shadow-lg", isPlaying ? "bg-accent text-accent-foreground" : "bg-white/80 text-foreground")}
+           >
               {isPlaying ? <Pause className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
               <span className="text-[10px] font-black uppercase tracking-widest hidden md:inline">{isPlaying ? t('viewer_telling') : t('viewer_listen_story')}</span>
            </button>
          )}
 
-         <button onClick={() => setShowMetadata(!showMetadata)} className={cn("p-4 rounded-full backdrop-blur-md border border-black/5 transition-all shadow-lg", showMetadata ? "bg-accent text-accent-foreground" : "bg-white/80 text-foreground")}><Info className="w-5 h-5" /></button>
-         <button onClick={onClose} className="p-4 bg-white/80 backdrop-blur-md rounded-full text-foreground hover:bg-destructive hover:text-white transition-all border border-black/5 shadow-lg"><X className="w-5 h-5 opacity-60" /></button>
+         <button 
+          onClick={() => setShowMetadata(!showMetadata)} 
+          aria-label="Informatie over dit werk"
+          className={cn("p-4 rounded-full backdrop-blur-md border border-black/5 transition-all shadow-lg", showMetadata ? "bg-accent text-accent-foreground" : "bg-white/80 text-foreground")}
+         >
+           <Info className="w-5 h-5" />
+         </button>
+         <button 
+          onClick={onClose} 
+          aria-label="Sluit detailweergave"
+          className="p-4 bg-white/80 backdrop-blur-md rounded-full text-foreground hover:bg-destructive hover:text-white transition-all border border-black/5 shadow-lg"
+         >
+           <X className="w-5 h-5 opacity-60" />
+         </button>
       </div>
 
       <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-8 pointer-events-none z-[10000]">
         <button 
           onClick={(e) => { e.stopPropagation(); if(onPrev) onPrev(); }} 
+          aria-label="Vorig kunstwerk"
           className={cn(
             "p-5 rounded-full bg-white/40 backdrop-blur-md pointer-events-auto hover:bg-accent hover:text-accent-foreground transition-all border border-black/5 shadow-xl",
             !onPrev && "opacity-0 pointer-events-none"
@@ -139,6 +158,7 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
         </button>
         <button 
           onClick={(e) => { e.stopPropagation(); if(onNext) onNext(); }} 
+          aria-label="Volgend kunstwerk"
           className={cn(
             "p-5 rounded-full bg-white/40 backdrop-blur-md pointer-events-auto hover:bg-accent hover:text-accent-foreground transition-all border border-black/5 shadow-xl",
             !onNext && "opacity-0 pointer-events-none"
@@ -156,7 +176,7 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
           <h2 className="text-2xl md:text-5xl font-headline font-light italic text-foreground leading-tight">{artwork.displayTitle || artwork.title}</h2>
           <div className="text-[12px] font-bold tracking-[0.2em] text-accent flex flex-wrap gap-x-8 gap-y-2 justify-center items-center uppercase">
             <span>{artwork.year || 'Onbekend'}</span>
-            <span className="w-1 h-1 rounded-full bg-accent/30" />
+            <span className="w-1 h-1 rounded-full bg-accent/30" aria-hidden="true" />
             <span>{artwork.medium}</span>
           </div>
           <p className="text-sm md:text-base text-muted-foreground font-light leading-relaxed max-w-2xl mx-auto">{artwork.description}</p>

@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useCallback, useEffect } from 'react';
@@ -45,14 +44,14 @@ export function PortfolioGrid() {
   }, [selectedArtwork, navigateDisplay]);
 
   return (
-    <section className="py-20 bg-background px-4" id="portfolio">
+    <section className="py-20 bg-background px-4" id="portfolio" aria-labelledby="portfolio-heading">
       <div className="container mx-auto max-w-7xl">
         <div className="flex flex-col md:flex-row items-end justify-between mb-12 gap-8">
           <div className="max-w-2xl">
-            <h2 className="font-headline text-[13px] md:text-[15px] font-light mb-2 tracking-tight uppercase">
+            <h2 id="portfolio-heading" className="font-headline text-[13px] md:text-[15px] font-light mb-2 tracking-tight uppercase">
               Meester <span className="italic">Selectie</span>
             </h2>
-            <div className="h-px w-12 bg-accent/30" />
+            <div className="h-px w-12 bg-accent/30" aria-hidden="true" />
           </div>
         </div>
 
@@ -62,37 +61,43 @@ export function PortfolioGrid() {
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
             {displayArtworks.map(art => {
               const imgSrc = art.image || art.imageUrl;
+              const title = art.displayTitle || art.title;
               return (
                 <article 
                   key={art.id} 
-                  className="group relative cursor-pointer" 
-                  onClick={() => setSelectedArtwork(art)}
+                  className="group relative"
                 >
-                  <div className="relative aspect-square overflow-hidden rounded-2xl bg-muted/30 transition-all duration-700 group-hover:shadow-2xl flex items-center justify-center">
-                    {imgSrc ? (
-                      <img 
-                        src={imgSrc} 
-                        className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-[1.1]" 
-                        style={{ filter: `brightness(${art.brightness || 1})` }} 
-                        alt={art.title}
-                      />
-                    ) : (
-                      <Palette className="w-8 h-8 opacity-10" />
-                    )}
-                    <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                      <Maximize2 className="text-white w-6 h-6" />
+                  <button 
+                    onClick={() => setSelectedArtwork(art)}
+                    aria-label={`Bekijk detail van ${title}`}
+                    className="w-full text-left focus-visible:ring-4 focus-visible:ring-accent rounded-2xl overflow-hidden"
+                  >
+                    <div className="relative aspect-square overflow-hidden rounded-2xl bg-muted/30 transition-all duration-700 group-hover:shadow-2xl flex items-center justify-center">
+                      {imgSrc ? (
+                        <img 
+                          src={imgSrc} 
+                          className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-[1.1]" 
+                          style={{ filter: `brightness(${art.brightness || 1})` }} 
+                          alt={`Schilderij: ${title}`}
+                          loading="lazy"
+                        />
+                      ) : (
+                        <Palette className="w-8 h-8 opacity-10" aria-hidden="true" />
+                      )}
+                      <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                        <Maximize2 className="text-white w-6 h-6" aria-hidden="true" />
+                      </div>
                     </div>
-                  </div>
+                  </button>
                   <div className="mt-3 text-center px-1">
                     <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground group-hover:text-foreground transition-colors truncate">
-                      {art.title}
+                      {title}
                     </h3>
                     <Link 
                       href={`/art/${art.slug}`} 
-                      onClick={(e) => e.stopPropagation()}
-                      className="mt-1 text-[8px] font-bold text-accent opacity-0 group-hover:opacity-100 flex items-center justify-center gap-1 transition-all"
+                      className="mt-1 text-[8px] font-bold text-accent opacity-0 group-hover:opacity-100 flex items-center justify-center gap-1 transition-all focus-visible:opacity-100"
                     >
-                      Details <ArrowRight className="w-2 h-2" />
+                      Details <ArrowRight className="w-2 h-2" aria-hidden="true" />
                     </Link>
                   </div>
                 </article>

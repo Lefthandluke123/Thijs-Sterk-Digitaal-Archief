@@ -35,6 +35,11 @@
   h1, h2, h3, h4, h5, h6 {
     @apply font-headline text-foreground font-medium;
   }
+
+  /* Focus indicators voor keyboard gebruikers */
+  :focus-visible {
+    @apply outline-none ring-2 ring-accent ring-offset-2 ring-offset-background;
+  }
   
   /* Maximale Foto Bescherming */
   img {
@@ -43,7 +48,7 @@
     -moz-user-drag: none;
     -o-user-drag: none;
     user-select: none;
-    -webkit-touch-callout: none; /* Schakelt 'opslaan' menu uit op iOS */
+    -webkit-touch-callout: none;
     pointer-events: auto;
   }
   
