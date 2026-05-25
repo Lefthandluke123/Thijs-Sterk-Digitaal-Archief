@@ -19,7 +19,7 @@ import {
   Plus,
   LayoutDashboard,
   Layers,
-  Settings as SettingsIcon,
+  Languages,
   X,
   RefreshCw,
   DatabaseZap,
@@ -30,7 +30,9 @@ import {
   Star,
   ShoppingBag,
   ExternalLink,
-  Edit3
+  Edit3,
+  Settings as SettingsIcon,
+  Sparkles
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -312,6 +314,9 @@ export default function AdminPage() {
             <TabsTrigger value="rooms" className="rounded-full px-8 h-12 uppercase font-black text-[11px] tracking-widest">
               <Layers className="w-4 h-4 mr-2" /> Zalen
             </TabsTrigger>
+            <TabsTrigger value="translations" className="rounded-full px-8 h-12 uppercase font-black text-[11px] tracking-widest">
+              <Languages className="w-4 h-4 mr-2" /> Vertalingen
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="artworks" className="space-y-8">
@@ -434,6 +439,30 @@ export default function AdminPage() {
                 ))}
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="translations" className="space-y-8">
+            <Card className="p-12 rounded-[3rem] border-none shadow-2xl bg-white text-center space-y-8 overflow-hidden relative">
+              <div className="absolute top-0 right-0 p-8 opacity-5">
+                <Languages className="w-48 h-48" />
+              </div>
+              <div className="relative z-10 space-y-6">
+                <div className="w-20 h-20 bg-accent/10 rounded-full flex items-center justify-center mx-auto">
+                   <Sparkles className="w-10 h-10 text-accent" />
+                </div>
+                <div className="space-y-2">
+                  <h2 className="font-headline text-4xl italic">Vertaal Station</h2>
+                  <p className="text-muted-foreground max-w-lg mx-auto leading-relaxed">
+                    Beheer de website-inhoud in alle 5 talen. Gebruik de ingebouwde AI om je Nederlandse teksten razendsnel te vertalen voor een internationaal publiek.
+                  </p>
+                </div>
+                <Button size="lg" className="h-16 px-12 rounded-full bg-primary text-primary-foreground font-black uppercase tracking-widest text-[12px] shadow-xl hover:scale-105 transition-all" asChild>
+                  <Link href="/admin/translate">
+                    Open Vertaal Station <Sparkles className="w-4 h-4 ml-3" />
+                  </Link>
+                </Button>
+              </div>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
