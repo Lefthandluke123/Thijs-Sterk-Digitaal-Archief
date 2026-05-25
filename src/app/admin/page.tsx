@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -43,7 +42,8 @@ import {
   ShoppingBag,
   Type,
   Tag,
-  Settings2
+  Settings2,
+  Search
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -70,6 +70,7 @@ export default function AdminPage() {
   const [password, setPassword] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [activeTab, setActiveTab] = useState('artworks');
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Bulk State
   const [selectedArtIds, setSelectedArtIds] = useState<string[]>([]);
@@ -131,10 +132,22 @@ export default function AdminPage() {
   }, [firestore, isAuthorized]);
   const { data: dbArtworks } = useCollection(artworksQuery);
 
-  const sortedArtworks = useMemo(() => {
+  const filteredAndSortedArtworks = useMemo(() => {
     if (!dbArtworks) return [];
-    return [...dbArtworks].sort(sortArtworksByTitle);
-  }, [dbArtworks]);
+    let list = [...dbArtworks];
+    
+    if (searchTerm) {
+      const s = searchTerm.toLowerCase();
+      list = list.filter((a: any) => 
+        (a.title || "").toLowerCase().includes(s) || 
+        (a.displayTitle || "").toLowerCase().includes(s) ||
+        (a.tags || []).some((t: string) => t.toLowerCase().includes(s)) ||
+        (a.roomSlug || "").toLowerCase().includes(s)
+      );
+    }
+    
+    return list.sort(sortArtworksByTitle);
+  }, [dbArtworks, searchTerm]);
 
   const roomsQuery = useMemoFirebase(() => {
     if (!firestore || !isAuthorized) return null;
@@ -150,9 +163,9 @@ export default function AdminPage() {
   };
 
   const selectAll = () => {
-    if (!dbArtworks) return;
-    if (selectedArtIds.length === dbArtworks.length) setSelectedArtIds([]);
-    else setSelectedArtIds(dbArtworks.map(a => (a as any).id));
+    if (!filteredAndSortedArtworks) return;
+    if (selectedArtIds.length === filteredAndSortedArtworks.length) setSelectedArtIds([]);
+    else setSelectedArtIds(filteredAndSortedArtworks.map(a => (a as any).id));
   };
 
   const handleBulkDelete = async () => {
@@ -457,10 +470,20 @@ export default function AdminPage() {
           </TabsList>
 
           <TabsContent value="artworks" className="space-y-8">
-            <div className="flex justify-between items-center bg-white/50 backdrop-blur-md p-4 rounded-3xl border sticky top-24 z-30 shadow-sm">
-              <div className="flex items-center gap-4">
+            <div className="flex flex-col md:flex-row gap-6 justify-between items-start md:items-center bg-white/50 backdrop-blur-md p-6 rounded-[2.5rem] border sticky top-24 z-30 shadow-sm">
+              <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
+                 <div className="relative w-full md:w-64">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-30" />
+                    <Input 
+                      placeholder="Zoek op titel, zaal of tag..." 
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-12 h-12 rounded-full bg-white border-none shadow-inner text-xs"
+                    />
+                 </div>
+
                  <Button variant="ghost" size="sm" onClick={selectAll} className="text-[10px] uppercase font-black tracking-widest">
-                   {selectedArtIds.length === (dbArtworks?.length || 0) ? <CheckSquare className="w-4 h-4 mr-2" /> : <Square className="w-4 h-4 mr-2" />}
+                   {selectedArtIds.length === (filteredAndSortedArtworks?.length || 0) ? <CheckSquare className="w-4 h-4 mr-2" /> : <Square className="w-4 h-4 mr-2" />}
                    {selectedArtIds.length > 0 ? `${selectedArtIds.length} geselecteerd` : 'Selecteer alles'}
                  </Button>
 
@@ -480,13 +503,13 @@ export default function AdminPage() {
                  )}
               </div>
               
-              <Button onClick={() => handleOpenArtworkDialog()} className="rounded-full px-8 h-12 bg-accent text-white">
+              <Button onClick={() => handleOpenArtworkDialog()} className="rounded-full px-8 h-12 bg-accent text-white w-full md:w-auto">
                 <Plus className="w-4 h-4 mr-2" /> Werk Toevoegen
               </Button>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
-               {sortedArtworks.map((art: any) => {
+               {filteredAndSortedArtworks.map((art: any) => {
                  const imgSrc = art.image || art.imageUrl;
                  const isSelected = selectedArtIds.includes(art.id);
                  return (
@@ -520,6 +543,14 @@ export default function AdminPage() {
                            {art.featured && <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />}
                         </div>
                         <p className="text-[10px] opacity-40 uppercase font-black tracking-widest">{art.title} • {art.year} • {art.roomSlug}</p>
+                        {art.tags && art.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {art.tags.slice(0, 2).map((t: string) => (
+                              <span key={t} className="text-[7px] font-bold bg-black/5 px-1.5 py-0.5 rounded-sm uppercase">{t}</span>
+                            ))}
+                            {art.tags.length > 2 && <span className="text-[7px] opacity-30">+{art.tags.length - 2}</span>}
+                          </div>
+                        )}
                       </div>
 
                       <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">

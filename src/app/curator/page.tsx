@@ -34,20 +34,20 @@ export default function CuratorPage() {
 
   const { data: dbArtworks, loading } = useCollection(artworksQuery);
 
+  // We tonen nu ELK artwork, ook als ze dezelfde afbeelding delen (bijv. studies)
   const artworks = useMemo(() => {
     if (!dbArtworks) return [];
-    const seen = new Set();
-    return dbArtworks.filter(art => {
-      const url = (art as any).image || (art as any).imageUrl;
-      if (!url || seen.has(url)) return false;
-      seen.add(url);
-      return true;
-    });
+    return dbArtworks as any[];
   }, [dbArtworks]);
 
   const filteredArtworks = useMemo(() => {
     if (activeTags.length === 0) return [];
-    return artworks.filter((art: any) => activeTags.every(tag => art.tags?.includes(tag)));
+    
+    // Case-insensitive filtering op tags om te voorkomen dat 'vroeg werk' vs 'Vroeg werk' items mist
+    return artworks.filter((art: any) => {
+      const artTags = (art.tags || []).map((t: string) => t.toLowerCase());
+      return activeTags.every(tag => artTags.includes(tag.toLowerCase()));
+    });
   }, [artworks, activeTags]);
 
   const navigateArtwork = useCallback((direction: 'next' | 'prev') => {
@@ -149,7 +149,7 @@ export default function CuratorPage() {
             <Button 
               onClick={() => setShowResults(true)} 
               disabled={activeTags.length === 0} 
-              className="rounded-full h-16 px-16 bg-primary text-primary-foreground uppercase font-black text-[11px] tracking-widest shadow-2xl hover:scale-105 active:scale-95 transition-all"
+              className="rounded-full h-16 px-16 bg-primary text-primary-foreground uppercase font-black text-[11px] tracking-widest shadow-2xl hover:scale-[1.03] active:scale-95 transition-all"
             >
               <Play className="w-4 h-4 mr-3 fill-current" /> {t('curator_open')}
             </Button>
