@@ -82,13 +82,17 @@ function NavbarContent() {
   );
 
   const LanguagePills = ({ className }: { className?: string }) => (
-    <div className={cn("flex bg-black/[0.03] rounded-full p-1 border border-black/[0.03] shadow-inner", className)}>
+    <div className={cn(
+      "flex flex-nowrap bg-black/[0.03] rounded-full p-1 border border-black/[0.03] shadow-inner overflow-x-auto no-scrollbar",
+      "-webkit-overflow-scrolling-touch", // iOS Smooth Scroll
+      className
+    )}>
       {(['nl', 'en', 'de', 'fr', 'es'] as const).map((lang) => (
         <button
           key={lang}
           onClick={() => setLanguage(lang)}
           className={cn(
-            "px-3 py-1.5 rounded-full text-[9px] font-black uppercase transition-all",
+            "px-3 py-1.5 rounded-full text-[9px] font-black uppercase transition-all flex-shrink-0 min-w-[32px]",
             language === lang 
               ? "bg-white text-accent shadow-md scale-110" 
               : "text-foreground/30 hover:text-foreground/60"
@@ -102,30 +106,34 @@ function NavbarContent() {
 
   return (
     <>
-      <nav className="fixed top-0 left-0 right-0 z-50 h-24 md:h-32 px-6 flex items-center justify-center pointer-events-none">
-        <div className="container max-w-7xl h-18 md:h-20 glass-panel rounded-full flex items-center justify-between px-8 pointer-events-auto border-white/60">
+      <nav className="fixed top-0 left-0 right-0 z-50 h-24 md:h-32 px-4 md:px-6 flex items-center justify-center pointer-events-none">
+        <div className="container max-w-7xl h-16 md:h-20 glass-panel rounded-full flex flex-nowrap items-center justify-between px-4 md:px-8 pointer-events-auto border-white/60 overflow-hidden">
           
-          <Link 
-            href="/"
-            className="flex items-center gap-6 group cursor-pointer"
-          >
-            <img 
-              src={siteSettings?.logoUrl || "/logo.png"} 
-              alt="Logo" 
-              className="h-10 md:h-12 w-auto object-contain transition-transform duration-700 group-hover:scale-105" 
-            />
-            <div className="hidden sm:flex flex-col leading-tight border-l-2 border-accent/10 pl-6">
-               <span className="font-headline font-medium text-xl md:text-2xl tracking-tight text-foreground group-hover:text-accent transition-colors">
-                 {siteTitle}
-               </span>
-               <span className="text-[8px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-accent/50 block">
-                 {siteSubtitle}
-               </span>
-            </div>
-          </Link>
+          {/* Logo Section - Bulletproof sizing */}
+          <div className="flex-shrink-0 min-w-0">
+            <Link 
+              href="/"
+              className="flex items-center gap-3 md:gap-6 group cursor-pointer"
+            >
+              <img 
+                src={siteSettings?.logoUrl || "/logo.png"} 
+                alt="Logo" 
+                className="h-8 md:h-12 w-auto object-contain transition-transform duration-700 group-hover:scale-105 flex-shrink-0" 
+              />
+              <div className="hidden sm:flex flex-col leading-tight border-l-2 border-accent/10 pl-4 md:pl-6 min-w-0">
+                 <span className="font-headline font-medium text-lg md:text-2xl tracking-tight text-foreground group-hover:text-accent transition-colors truncate">
+                   {siteTitle}
+                 </span>
+                 <span className="text-[8px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-accent/50 block truncate">
+                   {siteSubtitle}
+                 </span>
+              </div>
+            </Link>
+          </div>
           
+          {/* Desktop Navigation */}
           {mounted && (
-            <div className="hidden lg:flex items-center gap-2">
+            <div className="hidden lg:flex items-center gap-2 flex-shrink-0">
               <NavLink href="/" active={pathname === "/"}>{t('nav_home')}</NavLink>
               
               <DropdownMenu>
@@ -171,12 +179,13 @@ function NavbarContent() {
             </div>
           )}
 
-          <div className="lg:hidden flex items-center gap-3">
-            <LanguagePills className="mr-2" />
+          {/* Mobile Interaction Bar - Optimized for 1 line */}
+          <div className="lg:hidden flex items-center gap-2 md:gap-3 flex-shrink-0 min-w-0 overflow-hidden">
+            <LanguagePills className="flex-shrink-1 min-w-0 max-w-[120px] sm:max-w-none" />
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="w-12 h-12 rounded-full bg-black/5">
-                  <Menu className="w-6 h-6" />
+                <Button variant="ghost" size="icon" className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-black/5 flex-shrink-0">
+                  <Menu className="w-5 h-5 md:w-6 md:h-6" />
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-[85vw] p-0 border-none bg-background shadow-2xl">
