@@ -676,7 +676,7 @@ export default function AdminPage() {
                         <SelectValue placeholder="Kies een zaal" />
                       </SelectTrigger>
                       <SelectContent>
-                        {rooms?.map((r: any) => (
+                        {rooms?.filter((r: any) => r.slug).map((r: any) => (
                           <SelectItem key={r.id} value={r.slug}>{r.title}</SelectItem>
                         ))}
                       </SelectContent>
@@ -889,7 +889,7 @@ export default function AdminPage() {
                     <SelectValue placeholder="Kies een zaal" />
                   </SelectTrigger>
                   <SelectContent>
-                    {rooms?.map((r: any) => (
+                    {rooms?.filter((r: any) => r.slug).map((r: any) => (
                       <SelectItem key={r.id} value={r.slug}>{r.title}</SelectItem>
                     ))}
                   </SelectContent>
