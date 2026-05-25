@@ -11,7 +11,8 @@ interface DeepZoomViewerProps {
 
 /**
  * @fileOverview DeepZoomViewer component met OpenSeadragon.
- * Geoptimaliseerd voor een schone state-reset en geforceerde cursor interactie.
+ * Geoptimaliseerd voor een schone state-reset, geforceerde cursor interactie
+ * en Command+Klik ondersteuning voor uitzoomen.
  */
 export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({ 
   imageUrl, 
@@ -29,7 +30,7 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
         const OSDModule = await import('openseadragon');
         const OpenSeadragon = (OSDModule as any).default || OSDModule;
 
-        // Vernietig vorige instance volledig
+        // Vernietig vorige instance volledig voor een schone start
         if (viewerRef.current) {
           viewerRef.current.destroy();
           viewerRef.current = null;
@@ -65,6 +66,11 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
           maxZoomLevel: 10,
           autoResize: true,
           preserveViewport: false,
+          // Cursor fixes
+          zoomInButton: undefined,
+          zoomOutButton: undefined,
+          homeButton: undefined,
+          fullPageButton: undefined,
         });
 
         viewerRef.current.addHandler('open', () => {
@@ -72,6 +78,19 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
           // Forceer een schone 'fit' positie
           if (viewerRef.current && viewerRef.current.viewport) {
             viewerRef.current.viewport.goHome(true);
+          }
+        });
+
+        // TOEVOEGING: Command + Klik om uit te zoomen
+        viewerRef.current.addHandler('canvas-click', (event: any) => {
+          const isCmdOrCtrl = event.originalEvent.metaKey || event.originalEvent.ctrlKey;
+          
+          if (isCmdOrCtrl) {
+            event.preventDefaultAction = true; // Voorkom standaard zoom-in
+            if (viewerRef.current && viewerRef.current.viewport) {
+              const currentZoom = viewerRef.current.viewport.getZoom();
+              viewerRef.current.viewport.zoomTo(currentZoom / 2);
+            }
           }
         });
 
