@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from 'react';
@@ -8,7 +7,7 @@ import { usePathname } from 'next/navigation';
 
 /**
  * @fileOverview BackgroundLayer: Beheert de achtergrondafbeelding.
- * Ondersteunt nu pagina-specifieke overrides.
+ * Ondersteunt nu pagina-specifieke overrides en vloeiende transities.
  */
 export function BackgroundLayer() {
   const firestore = useFirestore();
@@ -43,7 +42,7 @@ export function BackgroundLayer() {
 
   return (
     <div 
-      className="fixed inset-0 z-[-1] pointer-events-none transition-all duration-1000 ease-in-out"
+      className="bg-fade-layer"
       style={{ 
         opacity: opacity,
         backgroundImage: `url(${bgUrl})`,

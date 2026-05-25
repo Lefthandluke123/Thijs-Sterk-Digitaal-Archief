@@ -65,6 +65,14 @@
   .museum-label {
     @apply bg-white/95 backdrop-blur-md p-5 rounded-3xl shadow-2xl border border-black/[0.03] space-y-3;
   }
+
+  .bg-fade-layer {
+    @apply fixed inset-0 z-[-1] pointer-events-none;
+    transition: all 2000ms ease-in-out;
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+  }
 }
 
 /* Subtiele animaties die prefers-reduced-motion respecteren */
