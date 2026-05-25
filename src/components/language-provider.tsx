@@ -17,7 +17,6 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-// Vaste UI strings die altijd beschikbaar moeten zijn (fallback)
 const staticTranslations: Record<Language, Record<string, string>> = {
   nl: {
     nav_home: 'Home',
@@ -29,6 +28,10 @@ const staticTranslations: Record<Language, Record<string, string>> = {
     nav_museum_subtitle: 'Licht, Ruimte en Water',
     hero_start_walk: 'Naar de zalen',
     hero_your_room: 'Maak je eigen wandeling',
+    gallery_all: 'Alle Zalen',
+    gallery_select: 'Kies een zaal om te verkennen',
+    curator_title: 'De Curator',
+    curator_subtitle: 'Creëer uw eigen expositie',
   },
   en: {
     nav_home: 'Home',
@@ -40,6 +43,10 @@ const staticTranslations: Record<Language, Record<string, string>> = {
     nav_museum_subtitle: 'Light, Space and Water',
     hero_start_walk: 'To the galleries',
     hero_your_room: 'Create your own walk',
+    gallery_all: 'All Galleries',
+    gallery_select: 'Select a gallery to explore',
+    curator_title: 'The Curator',
+    curator_subtitle: 'Create your own exhibition',
   },
   de: {
     nav_home: 'Home',
@@ -51,6 +58,10 @@ const staticTranslations: Record<Language, Record<string, string>> = {
     nav_museum_subtitle: 'Licht, Raum und Wasser',
     hero_start_walk: 'Zu den Galerien',
     hero_your_room: 'Spaziergang machen',
+    gallery_all: 'Alle Galerien',
+    gallery_select: 'Wählen Sie eine Galerie',
+    curator_title: 'Der Kurator',
+    curator_subtitle: 'Eigene Ausstellung erstellen',
   },
   fr: {
     nav_home: 'Accueil',
@@ -62,6 +73,10 @@ const staticTranslations: Record<Language, Record<string, string>> = {
     nav_museum_subtitle: 'Lumière, Espace et Eau',
     hero_start_walk: 'Vers les salles',
     hero_your_room: 'Créer promenade',
+    gallery_all: 'Toutes les Salles',
+    gallery_select: 'Choisir une salle',
+    curator_title: 'Le Conservateur',
+    curator_subtitle: 'Créez votre propre exposition',
   },
   es: {
     nav_home: 'Inicio',
@@ -73,6 +88,10 @@ const staticTranslations: Record<Language, Record<string, string>> = {
     nav_museum_subtitle: 'Luz, Espacio y Agua',
     hero_start_walk: 'A las salas',
     hero_your_room: 'Crea paseo',
+    gallery_all: 'Todas las Galerías',
+    gallery_select: 'Selecciona una galería',
+    curator_title: 'El Comisario',
+    curator_subtitle: 'Crea tu propia exposición',
   }
 };
 
@@ -89,7 +108,6 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   }, []);
 
-  // Fetch dynamische content van de server
   const settingsRef = useMemoFirebase(() => {
     if (!firestore || !mounted) return null;
     return doc(firestore, 'settings', 'site');
@@ -103,14 +121,9 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const t = (key: string) => {
-    // 1. Check eerst in de database settings voor dit specifiek veld + taal
     const dbKey = language === 'nl' ? key : `${key}_${language}`;
     if (dbSettings && dbSettings[dbKey]) return dbSettings[dbKey];
-
-    // 2. Check in database voor default (NL) veld
     if (dbSettings && dbSettings[key]) return dbSettings[key];
-
-    // 3. Fallback naar hardcoded statische strings
     return staticTranslations[language]?.[key] || staticTranslations['nl'][key] || key;
   };
 

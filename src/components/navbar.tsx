@@ -14,13 +14,11 @@ import {
 import { 
   ChevronDown, 
   Loader2, 
-  Sparkles, 
-  Languages, 
   ShoppingBag, 
   BookOpen,
   Menu,
-  Home,
-  Layers,
+  LayoutGrid,
+  Filter,
 } from 'lucide-react';
 import { useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, doc, orderBy } from 'firebase/firestore';
@@ -54,14 +52,10 @@ function NavbarContent() {
   }, [firestore, mounted]);
   const { data: siteSettings } = useDoc(siteSettingsRef);
 
-  // Gescheiden logica voor taal-afhankelijke titels
   const getSiteIdentity = () => {
     if (!mounted) return { title: "Het Digitale Retrospectief", subtitle: "Licht, Ruimte en Water" };
-    
-    // 1. Zoek naar taal-specifieke titels in de database (bijv. siteTitle_en)
     const dbTitle = siteSettings?.[`siteTitle_${language}`] || siteSettings?.siteTitle;
     const dbSubtitle = siteSettings?.[`siteSubtitle_${language}`] || siteSettings?.siteSubtitle;
-
     return {
       title: dbTitle || t('nav_museum_title'),
       subtitle: dbSubtitle || t('nav_museum_subtitle')
@@ -118,11 +112,16 @@ function NavbarContent() {
               
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className={cn("px-5 py-2.5 rounded-full text-[15px] font-bold tracking-wider uppercase transition-all duration-300 flex items-center gap-1 outline-none hover:bg-black/5", pathname.includes('/room') ? "bg-primary text-primary-foreground shadow-xl" : "text-foreground")}>
+                  <button className={cn("px-5 py-2.5 rounded-full text-[15px] font-bold tracking-wider uppercase transition-all duration-300 flex items-center gap-1 outline-none hover:bg-black/5", pathname.includes('/room') || pathname === '/gallery' ? "bg-primary text-primary-foreground shadow-xl" : "text-foreground")}>
                     {t('nav_galleries')} <ChevronDown className="w-4 h-4 opacity-50" />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="bg-background/98 backdrop-blur-2xl border-border/40 rounded-2xl min-w-[200px] p-2 shadow-2xl">
+                <DropdownMenuContent align="start" className="bg-background/98 backdrop-blur-2xl border-border/40 rounded-2xl min-w-[220px] p-2 shadow-2xl">
+                  <DropdownMenuItem asChild className="text-[13px] uppercase font-black tracking-widest focus:bg-accent focus:text-accent-foreground rounded-xl cursor-pointer p-4 mb-2 border-b border-black/5">
+                    <Link href="/gallery" className="flex w-full items-center gap-2">
+                      <LayoutGrid className="w-3.5 h-3.5" /> {t('gallery_all')}
+                    </Link>
+                  </DropdownMenuItem>
                   {rooms?.map((r: any) => (
                     <DropdownMenuItem key={r.id} asChild className="text-[13px] uppercase font-bold tracking-wide focus:bg-accent focus:text-accent-foreground rounded-xl cursor-pointer p-4 mb-1">
                       <Link href={`/room/${r.slug}`} className="flex w-full items-center">
@@ -143,7 +142,6 @@ function NavbarContent() {
                 <BookOpen className="w-4 h-4" /> Guide
               </button>
 
-              {/* Directe taalkeuze knoppen */}
               <div className="flex bg-secondary/30 rounded-full p-1 ml-2 border border-border/20">
                 {(['nl', 'en', 'de', 'fr', 'es'] as const).map((lang) => (
                   <button
@@ -174,12 +172,24 @@ function NavbarContent() {
                   </div>
                   <div className="flex-1 overflow-y-auto p-6 space-y-4">
                      <Link href="/" className="flex items-center gap-4 p-5 rounded-2xl bg-black/5 text-[14px] font-bold uppercase tracking-wider">{t('nav_home')}</Link>
+                     
                      <div className="pt-4 border-t border-border/10">
-                       <p className="text-[10px] font-black uppercase tracking-widest mb-4 px-4 opacity-40">Zalen</p>
+                       <p className="text-[10px] font-black uppercase tracking-widest mb-4 px-4 opacity-40">Ontdek de Collectie</p>
+                       <Link href="/gallery" className="flex items-center gap-4 p-5 rounded-2xl bg-accent/10 text-[14px] font-black uppercase tracking-widest text-accent mb-2 border border-accent/20">
+                         <LayoutGrid className="w-4 h-4" /> Alle Zalen Overzicht
+                       </Link>
+                       <Link href="/curator" className="flex items-center gap-4 p-5 rounded-2xl bg-black/5 text-[14px] font-bold uppercase tracking-wider mb-2">
+                         <Filter className="w-4 h-4" /> {t('nav_your_room')}
+                       </Link>
                        {rooms?.map((r: any) => (
-                         <Link key={r.id} href={`/room/${r.slug}`} className="flex items-center gap-4 p-5 rounded-2xl bg-black/5 text-[14px] font-bold uppercase tracking-wider mb-2">{r.title}</Link>
+                         <Link key={r.id} href={`/room/${r.slug}`} className="flex items-center gap-4 p-5 rounded-2xl bg-black/5 text-[14px] font-medium uppercase tracking-wider mb-2 opacity-70">{r.title}</Link>
                        ))}
                      </div>
+
+                     <div className="pt-4 border-t border-border/10">
+                        <Link href="/shop" className="flex items-center gap-4 p-5 rounded-2xl bg-black/5 text-[14px] font-bold uppercase tracking-wider mb-2">{t('nav_shop')}</Link>
+                     </div>
+
                      <div className="pt-4 border-t border-border/10">
                         <p className="text-[10px] font-black uppercase tracking-widest mb-4 px-4 opacity-40">Taal / Language</p>
                         <div className="flex flex-wrap gap-2 px-4">

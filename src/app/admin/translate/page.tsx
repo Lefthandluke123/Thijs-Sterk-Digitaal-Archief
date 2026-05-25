@@ -3,8 +3,8 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
-import { doc, updateDoc, collection, addDoc, deleteDoc, query, orderBy } from 'firebase/firestore';
+import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc, updateDoc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -17,17 +17,12 @@ import {
   Sparkles, 
   Loader2, 
   Save,
-  Plus,
-  Trash2,
-  FileText,
   Type,
   Layout,
-  Settings as SettingsIcon
 } from 'lucide-react';
 import { translateMuseumText } from '@/ai/flows/translate-flow';
 import { verifyAdminPassword } from '@/lib/admin-actions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { cn } from '@/lib/utils';
 
 const LANGUAGES = [
   { code: 'nl', label: 'Nederlands', isSource: true },
@@ -43,6 +38,10 @@ const CONTENT_FIELDS = [
   { id: 'homeHeroTitle', label: 'Hero Hoofdtitel', type: 'input', category: 'Homepage' },
   { id: 'homeBioTitle', label: 'Biografie Titel', type: 'input', category: 'Homepage' },
   { id: 'homeBio', label: 'Biografie Tekst', type: 'textarea', category: 'Homepage' },
+  { id: 'gallery_title', label: 'Zalen Overzicht Titel', type: 'input', category: 'Zalen' },
+  { id: 'gallery_select', label: 'Zalen Selectie Instructie', type: 'input', category: 'Zalen' },
+  { id: 'curator_title', label: 'Curator Titel', type: 'input', category: 'Uw Zaal' },
+  { id: 'curator_subtitle', label: 'Curator Ondertitel', type: 'input', category: 'Uw Zaal' },
   { id: 'shopIntro', label: 'Winkel Introductie', type: 'textarea', category: 'Winkel' },
 ];
 
@@ -243,7 +242,7 @@ export default function TranslateStationPage() {
                    Beheer dynamische pagina's zoals biografieën of speciale projecten met meertalige tekst- en afbeeldingsblokken.
                 </p>
                 <Button className="rounded-full px-10 h-14 uppercase font-black text-[11px] tracking-widest">
-                   Nieuwe Pagina Aanmaken <Plus className="w-4 h-4 ml-2" />
+                   Nieuwe Pagina Aanmaken
                 </Button>
              </Card>
           </TabsContent>
