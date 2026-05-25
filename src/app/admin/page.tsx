@@ -44,7 +44,8 @@ import {
   Type,
   Maximize,
   Grid,
-  Library
+  Library,
+  LayoutTemplate
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -55,7 +56,7 @@ import {
   DialogContent, 
   DialogTitle, 
   DialogHeader, 
-  DialogFooter,
+  DialogFooter, 
   DialogDescription
 } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -363,13 +364,19 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-[#f8f9fa] pt-32 px-8">
       <header className="fixed top-0 left-0 right-0 h-24 bg-white/80 backdrop-blur-md border-b z-40 px-8 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <LayoutDashboard className="w-6 h-6 text-accent" />
-          <div>
-            <h1 className="font-headline text-2xl italic">Het Digitale Archief</h1>
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4">
+            <LayoutDashboard className="w-6 h-6 text-accent" />
+            <div>
+              <h1 className="font-headline text-2xl italic">Het Digitale Archief</h1>
+            </div>
           </div>
+          <div className="h-8 w-px bg-black/5 mx-2" />
+          <Link href="/admin/translate" className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-accent text-white text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-lg">
+             <LayoutTemplate className="w-4 h-4" /> Story Designer (DTP)
+          </Link>
         </div>
-        <Link href="/" className="text-[11px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+        <Link href="/" className="text-[11px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 hover:text-accent transition-colors">
            <ArrowLeft className="w-3 h-3" /> Naar Website
         </Link>
       </header>
