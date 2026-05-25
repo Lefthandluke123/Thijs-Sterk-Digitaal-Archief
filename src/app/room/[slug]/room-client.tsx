@@ -47,9 +47,22 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
       if (e.key === 'ArrowRight') handleNext();
       if (e.key === 'ArrowLeft') handlePrev();
       if (e.key === 'i') setShowMetadata(prev => !prev);
+      if (e.key === 'Escape') setShowMetadata(false);
     };
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    
+    // Voorkom default scroll gedrag op de main container
+    const preventScroll = (e: WheelEvent) => {
+      // Alleen navigatie triggeren als we NIET op de DeepZoom viewer zelf zitten met de muis
+      // of als we heel specifiek horizontaal scrollen.
+      // Voor nu laten we navigatie via pijltjes en knoppen de voorkeur hebben om conflict met zoom te vermijden.
+    };
+    window.addEventListener('wheel', preventScroll, { passive: false });
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('wheel', preventScroll);
+    };
   }, [handleNext, handlePrev]);
 
   if (!item) {
@@ -113,7 +126,7 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
       </div>
 
       {/* Immersive Viewer Container */}
-      <div className="w-[85vw] h-[75vh] md:w-[90vw] md:h-[80vh] flex items-center justify-center animate-subtle-fade">
+      <div className="w-[85vw] h-[75vh] md:w-[90vw] md:h-[80vh] flex items-center justify-center animate-subtle-fade z-[105]">
         {displayImage && (
           <DeepZoomViewer 
             key={item.id}

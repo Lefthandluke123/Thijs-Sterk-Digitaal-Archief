@@ -1,7 +1,6 @@
-
 "use client";
 
-import React, { useState, useMemo, useEffect, Suspense } from 'react';
+import React, { useState, useMemo, useEffect, Suspense, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy } from 'firebase/firestore';
@@ -15,6 +14,7 @@ function ExhibitionContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const firestore = useFirestore();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const currentRoomSlug = searchParams.get('room');
   const [scrollX, setScrollX] = useState(0);
@@ -49,6 +49,20 @@ function ExhibitionContent() {
 
   const handleStep = (delta: number) => setScrollX(prev => Math.max(0, prev + delta));
 
+  // Voeg ondersteuning voor muiswiel horizontaal scrollen toe
+  useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+        handleStep(e.deltaY * 2);
+      } else {
+        handleStep(e.deltaX * 2);
+      }
+    };
+    
+    window.addEventListener('wheel', handleWheel, { passive: true });
+    return () => window.removeEventListener('wheel', handleWheel);
+  }, []);
+
   if (loading || !rooms) return <div className="h-screen flex items-center justify-center bg-white"><Loader2 className="animate-spin text-accent" /></div>;
 
   return (
@@ -67,7 +81,7 @@ function ExhibitionContent() {
         <h1 className="text-black/70 font-headline text-5xl font-medium italic tracking-tight">{activeRoom?.title}</h1>
       </div>
 
-      <div className="relative flex-1 flex items-center justify-center overflow-hidden">
+      <div className="relative flex-1 flex items-center justify-center overflow-hidden" ref={scrollContainerRef}>
         <div className="relative w-full h-full flex items-center transition-transform duration-1000 ease-out" style={{ transform: `translateX(${-scrollX}px)` }}>
           <div className="flex gap-[40vw] px-[50vw] items-center pt-8">
             {artworks?.map((art: any) => (
@@ -105,12 +119,12 @@ function ExhibitionContent() {
       </div>
 
       <div className="absolute bottom-12 left-0 right-0 z-30 flex justify-center gap-24 items-center">
-        <button onClick={() => handleStep(-1000)} className="p-10 rounded-full bg-white/40 backdrop-blur-md border text-black/30 hover:text-accent transition-all active:scale-90 shadow-xl group"><ChevronLeft className="w-20 h-20 transition-transform group-hover:-translate-x-1" /></button>
+        <button onClick={() => handleStep(-1000)} className="p-10 rounded-full bg-white/40 backdrop-blur-md border text-black/30 hover:text-accent transition-all active:scale-90 shadow-xl group" aria-label="Scroll naar links"><ChevronLeft className="w-20 h-20 transition-transform group-hover:-translate-x-1" /></button>
         <div className="flex flex-col items-center gap-2">
            <span className="text-[8px] font-black uppercase tracking-[0.4em] opacity-40">Wandel door de collectie</span>
            <div className="w-48 h-0.5 bg-black/5 rounded-full" />
         </div>
-        <button onClick={() => handleStep(1000)} className="p-10 rounded-full bg-white/40 backdrop-blur-md border text-black/30 hover:text-accent transition-all active:scale-90 shadow-xl group"><ChevronRight className="w-20 h-20 transition-transform group-hover:translate-x-1" /></button>
+        <button onClick={() => handleStep(1000)} className="p-10 rounded-full bg-white/40 backdrop-blur-md border text-black/30 hover:text-accent transition-all active:scale-90 shadow-xl group" aria-label="Scroll naar rechts"><ChevronRight className="w-20 h-20 transition-transform group-hover:translate-x-1" /></button>
       </div>
 
       <ArtworkViewer 
