@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -11,8 +10,8 @@ interface DeepZoomViewerProps {
 }
 
 /**
- * @fileOverview Stabiele OpenSeadragon Deep Zoom viewer met cursor-klik vergroting.
- * Nu met Command-klik (of Ctrl-klik) ondersteuning voor uitzoomen en een limiet op de zoomfactor.
+ * @fileOverview Verfijnde OpenSeadragon Viewer voor Stap 3.
+ * Fix: Herstelt het verschuiven naar rechts door striktere viewport centering en constraints.
  */
 export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({ 
   imageUrl, 
@@ -23,7 +22,6 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
   const [loading, setLoading] = useState(true);
   const [isZoomOutMode, setIsZoomOutMode] = useState(false);
 
-  // Monitor toetsenbord voor cursor-verandering (Command/Ctrl voor uitzoomen)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey) setIsZoomOutMode(true);
@@ -34,14 +32,11 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
 
     window.addEventListener('keydown', handleKeyDown, { passive: true });
     window.addEventListener('keyup', handleKeyUp, { passive: true });
-    
-    const handleBlur = () => setIsZoomOutMode(false);
-    window.addEventListener('blur', handleBlur);
+    window.addEventListener('blur', () => setIsZoomOutMode(false));
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
-      window.removeEventListener('blur', handleBlur);
     };
   }, []);
 
@@ -78,26 +73,28 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
           },
           zoomPerClick: zoomFactor,       
           
-          animationTime: 1.2,
-          blendTime: 0.1,
+          animationTime: 1.5,
+          blendTime: 0.2,
           constrainDuringPan: true,
-          visibilityRatio: 1,
-          minZoomImageRatio: 1,
+          visibilityRatio: 1.0,      // Fix: Strikter zichtbaar gebied
+          minZoomImageRatio: 1.0,    // Fix: Voorkomt 'floating' buiten beeld
           defaultZoomLevel: 0,
           minZoomLevel: 0.5,
-          maxZoomLevel: 12, // Teruggezet naar 12 op verzoek van gebruiker       
+          maxZoomLevel: 12,
+          autoResize: true,
+          preserveViewport: true,    // Fix: Behoud centrering bij resize
+          wrapHorizontal: false,
+          wrapVertical: false,
         });
 
         viewerRef.current.addHandler('open', () => {
           setLoading(false);
-          requestAnimationFrame(() => {
-            if (viewerRef.current && viewerRef.current.viewport) {
-              viewerRef.current.viewport.goHome(true);
-            }
-          });
+          // Forceer centrering na openen
+          if (viewerRef.current && viewerRef.current.viewport) {
+            viewerRef.current.viewport.goHome(true);
+          }
         });
 
-        // Custom click handler voor Command-Klik uitzoomen
         viewerRef.current.addHandler('canvas-click', (event: any) => {
           if (event.originalEvent.metaKey || event.originalEvent.ctrlKey) {
             event.preventDefaultAction = true;
@@ -113,7 +110,7 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
         }
 
       } catch (err) {
-        console.error('[DEEP ZOOM] Initialization failed:', err);
+        console.error('[DEEP ZOOM] Error:', err);
       }
     };
 
@@ -134,10 +131,10 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
   }, [isZoomOutMode]);
 
   return (
-    <div className="relative w-full h-full bg-black/5 overflow-hidden rounded-2xl shadow-2xl">
+    <div className="relative w-full h-full bg-black/[0.02] overflow-hidden rounded-3xl shadow-[0_40px_100px_-15px_rgba(0,0,0,0.25)] border border-white/40">
       {loading && (
-        <div className="absolute inset-0 flex items-center justify-center z-10 bg-background/10 backdrop-blur-sm">
-          <Loader2 className="w-10 h-10 animate-spin text-accent/40" />
+        <div className="absolute inset-0 flex items-center justify-center z-10 bg-background/20 backdrop-blur-sm">
+          <Loader2 className="w-12 h-12 animate-spin text-accent/30" />
         </div>
       )}
       <div 
