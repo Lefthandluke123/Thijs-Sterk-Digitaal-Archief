@@ -417,8 +417,12 @@ export default function AdminPage() {
                       {selectedArtIds.includes(art.id) && <CheckSquare className="w-4 h-4" />}
                     </button>
 
-                    <div className="aspect-square rounded-xl overflow-hidden bg-black/5 mb-4">
-                      <img src={art.image} className="w-full h-full object-cover" alt={art.title} />
+                    <div className="aspect-square rounded-xl overflow-hidden bg-black/5 mb-4 flex items-center justify-center">
+                      {art.image ? (
+                        <img src={art.image} className="w-full h-full object-cover" alt={art.title} />
+                      ) : (
+                        <Palette className="w-8 h-8 opacity-10" />
+                      )}
                     </div>
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
@@ -673,4 +677,3 @@ export default function AdminPage() {
     </div>
   );
 }
-
