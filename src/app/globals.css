@@ -63,7 +63,7 @@
   }
 
   .museum-label {
-    @apply bg-white/95 backdrop-blur-md p-10 rounded-[2.5rem] shadow-2xl border border-black/[0.03] space-y-4;
+    @apply bg-white/95 backdrop-blur-md p-5 rounded-3xl shadow-2xl border border-black/[0.03] space-y-3;
   }
 }
 

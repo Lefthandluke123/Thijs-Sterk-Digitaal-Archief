@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -167,15 +166,15 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
         </div>
       </div>
 
-      {/* 4. Metadata Overlay Layer */}
+      {/* 4. Metadata Overlay Layer - COMPACT VERSION */}
       <div className={cn(
         "absolute bottom-0 left-0 right-0 z-[10050] flex flex-col items-center p-8 md:p-16 pointer-events-none transition-all duration-1000 ease-in-out", 
-        showMetadata ? "opacity-100 translate-y-0" : "opacity-0 translate-y-32"
+        showMetadata ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
       )}>
-        <div className="museum-label max-w-3xl w-full text-center pointer-events-auto shadow-2xl bg-white/95 p-10 rounded-[3rem] space-y-6">
-          <h2 className="text-3xl md:text-5xl font-headline font-light italic text-foreground leading-tight">{artwork.displayTitle || artwork.title}</h2>
-          <div className="h-px w-16 bg-accent/20 mx-auto" />
-          <p className="text-xl md:text-2xl text-muted-foreground font-light leading-relaxed max-w-2xl mx-auto italic">
+        <div className="museum-label max-w-md w-full text-center pointer-events-auto shadow-2xl bg-white/95 p-5 rounded-3xl space-y-4">
+          <h2 className="text-lg md:text-xl font-headline font-light italic text-foreground leading-tight">{artwork.displayTitle || artwork.title}</h2>
+          <div className="h-px w-12 bg-accent/20 mx-auto" />
+          <p className="text-sm md:text-base text-muted-foreground font-light leading-relaxed max-w-2xl mx-auto italic">
             {artwork.description || 'Ontdek de essentie van licht en ruimte in dit meesterlijke werk van Thijs Sterk.'}
           </p>
         </div>

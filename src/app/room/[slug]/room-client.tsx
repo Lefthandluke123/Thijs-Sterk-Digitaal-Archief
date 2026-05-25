@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -130,26 +129,26 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
         </button>
       </div>
 
-      {/* 4. Info Plaque Overlay */}
+      {/* 4. Info Plaque Overlay - COMPACT VERSION */}
       <div className={cn(
         "absolute bottom-0 left-0 right-0 z-[160] flex flex-col items-center p-8 md:p-12 pointer-events-none transition-all duration-1000 ease-in-out",
-        showMetadata ? "opacity-100 translate-y-0" : "opacity-0 translate-y-24"
+        showMetadata ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
       )}>
-        <div className="museum-label max-w-2xl w-full shadow-2xl border border-black/5 pointer-events-auto bg-white/95 p-8 rounded-[2.5rem] space-y-4">
-          <h2 className="text-2xl md:text-4xl font-headline font-light italic text-foreground leading-tight text-center">{item.displayTitle || item.title}</h2>
+        <div className="museum-label max-w-md w-full shadow-2xl border border-black/5 pointer-events-auto bg-white/95 p-5 rounded-3xl space-y-3">
+          <h2 className="text-lg md:text-xl font-headline font-light italic text-foreground leading-tight text-center">{item.displayTitle || item.title}</h2>
           
-          <div className="flex gap-8 justify-center items-center py-3 border-y border-black/5">
+          <div className="flex gap-6 justify-center items-center py-2 border-y border-black/5">
             <div className="text-center">
-              <p className="text-[8px] font-black uppercase tracking-widest text-accent opacity-50">Periode</p>
-              <p className="text-sm font-medium">{item.year || 'Interactief'}</p>
+              <p className="text-[7px] font-black uppercase tracking-widest text-accent opacity-50">Periode</p>
+              <p className="text-xs font-medium">{item.year || 'Interactief'}</p>
             </div>
             <div className="text-center">
-              <p className="text-[8px] font-black uppercase tracking-widest text-accent opacity-50">Techniek</p>
-              <p className="text-sm font-medium">{item.medium || 'Olieverf op doek'}</p>
+              <p className="text-[7px] font-black uppercase tracking-widest text-accent opacity-50">Techniek</p>
+              <p className="text-xs font-medium">{item.medium || 'Olieverf op doek'}</p>
             </div>
           </div>
 
-          <p className="text-lg md:text-xl text-muted-foreground font-light leading-relaxed text-center italic">
+          <p className="text-sm md:text-base text-muted-foreground font-light leading-relaxed text-center italic">
             {item.description || 'De essentie van licht en ruimte in een verstild Noord-Hollands landschap.'}
           </p>
         </div>
