@@ -1,158 +1,33 @@
 
 "use client";
 
-import React, { useState } from 'react';
-import Image from 'next/image';
+import React from 'react';
 import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import { cn } from '@/lib/utils';
-import { Maximize2 } from 'lucide-react';
-import { ArtworkViewer } from '@/components/artwork-viewer';
-import { useLanguage } from '@/components/language-provider';
+import { StoryRenderer } from '@/components/story-renderer';
+import { Loader2, Palette } from 'lucide-react';
 
 export default function PeterBesPage() {
-  const [activeArtwork, setActiveArtwork] = useState<any | null>(null);
-  const [selectedArtworkId, setSelectedArtworkId] = useState<string | null>(null);
   const firestore = useFirestore();
-  const { language } = useLanguage();
+  const storyRef = useMemoFirebase(() => firestore ? doc(firestore, 'stories', 'peter-bes') : null, [firestore]);
+  const { data: storyData, loading } = useDoc(storyRef);
 
-  const siteSettingsRef = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return doc(firestore, 'settings', 'site');
-  }, [firestore]);
-  const { data: siteSettings } = useDoc(siteSettingsRef);
-
-  const linkedArtworkRef = useMemoFirebase(() => {
-    if (!firestore || !selectedArtworkId) return null;
-    return doc(firestore, 'artworks', selectedArtworkId);
-  }, [firestore, selectedArtworkId]);
-  
-  const { data: selectedArtwork } = useDoc(linkedArtworkRef);
-
-  React.useEffect(() => {
-    if (selectedArtwork) {
-      setActiveArtwork(selectedArtwork);
-    }
-  }, [selectedArtwork]);
-
-  const bioText = (language !== 'nl' && siteSettings?.[`peterBesBio_${language}`])
-    ? siteSettings[`peterBesBio_${language}`]
-    : siteSettings?.peterBesBio || `Peter Bes was een leerling van Thijs Sterk. Onder de vleugels van zijn meester ontwikkelde hij een eigen vormentaal die diep geworteld is in de Noord-Hollandse traditie. Zijn verhalen over het leven in het atelier geven een uniek inkijkje in de werkwijze van Sterk.`;
-  
-  const images = siteSettings?.peterBesBioImages || [];
-  const hasMultipleImages = images.length > 1;
-
-  // Gebruik een archief-afbeelding uit eigen storage als er geen specifieke foto is ingesteld
-  const defaultArchiveImageUrl = "https://firebasestorage.googleapis.com/v0/b/studio-7311695883-2090f.firebasestorage.app/o/artworks%2F1778851761925_vh0ad_2_I.jpg?alt=media";
-
-  const handlePortraitClick = (url: string, index: number) => {
-    setActiveArtwork({
-      imageUrl: url,
-      title: `Portret Peter Bes`,
-      series: "Leerling",
-      year: index === 0 ? "Atelierfoto" : `Archief ${index + 1}`,
-      medium: "Fotografie",
-      id: `peter-${index}`
-    });
-  };
-
-  const renderTextWithLinks = (text: string) => {
-    if (!text) return "";
-    const parts = text.split(/(\[\[.*?\]\])/g);
-    return parts.map((part, i) => {
-      const match = part.match(/\[\[(.*?)\|(.*?)\]\]/);
-      if (match) {
-        const [_, id, label] = match;
-        return (
-          <button
-            key={i}
-            onClick={() => { setSelectedArtworkId(id); }}
-            className="text-accent hover:underline font-bold inline-block decoration-accent/30 underline-offset-4"
-          >
-            {label}
-          </button>
-        );
-      }
-      return part;
-    });
-  };
+  if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-accent" /></div>;
 
   return (
-    <main className="min-h-screen bg-background pt-24 pb-32">
-      <div className="container mx-auto px-6 max-w-7xl">
-        <div className="grid lg:grid-cols-12 gap-16 items-start">
-          <div className={cn("lg:col-span-5 space-y-8", !hasMultipleImages && "lg:sticky lg:top-24")}>
-            {images.length > 0 ? (
-              <div className={cn("grid gap-6", images.length === 2 ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-1")}>
-                {images.map((url: string, idx: number) => (
-                  <div 
-                    key={idx} 
-                    className={cn(
-                      "relative overflow-hidden rounded-2xl shadow-2xl bg-secondary/20 transition-all duration-700 hover:scale-[1.02] cursor-pointer group",
-                      idx === 0 ? "aspect-[3/4]" : "aspect-square"
-                    )}
-                    onClick={() => handlePortraitClick(url, idx)}
-                  >
-                    <Image 
-                      src={url} 
-                      alt={`Peter Bes - Foto ${idx + 1}`} 
-                      fill 
-                      className="object-cover" 
-                      data-ai-hint="portrait artist man"
-                    />
-                    <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <Maximize2 className="text-white w-8 h-8 drop-shadow-2xl" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div 
-                className="relative aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl bg-secondary/20 cursor-pointer group"
-                onClick={() => handlePortraitClick(defaultArchiveImageUrl, 0)}
-              >
-                <Image 
-                  src={defaultArchiveImageUrl} 
-                  alt="Peter Bes Archief" 
-                  fill 
-                  className="object-cover transition-transform duration-1000 group-hover:scale-[1.02] grayscale" 
-                  data-ai-hint="portrait artist man"
-                />
-                <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <Maximize2 className="text-white w-8 h-8 drop-shadow-2xl" />
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="lg:col-span-7 space-y-12">
-            <div className="space-y-4">
-              <span className="text-accent font-black tracking-[0.3em] uppercase text-[10px] block text-accent/80">Leerling & Kunstenaar</span>
-              <h1 className="font-headline text-4xl md:text-6xl font-light leading-tight text-foreground">Peter <span className="italic">Bes</span></h1>
-            </div>
-            
-            <div className="space-y-8 text-2xl text-foreground leading-relaxed font-light whitespace-pre-line border-l-2 border-accent/10 pl-8">
-              {renderTextWithLinks(bioText)}
-            </div>
-
-            <div className="pt-12 border-t border-black/5 grid grid-cols-2 gap-8">
-              <div>
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-accent mb-2">Mentorschap</h4>
-                <p className="text-base font-light leading-relaxed text-foreground/80">De invloed van Thijs Sterk op de ontwikkeling van de Noord-Hollandse schilderkunst.</p>
-              </div>
-              <div>
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-accent mb-2">Herinnering</h4>
-                <p className="text-base font-light leading-relaxed text-foreground/80">Verhalen uit het atelier die de mens achter de schilder Thijs Sterk belichten.</p>
-              </div>
-            </div>
-          </div>
+    <main className="min-h-screen bg-background pt-32 pb-48">
+      <div className="container mx-auto px-6 max-w-5xl">
+        <div className="mb-20 space-y-4">
+           <div className="inline-flex items-center gap-3 px-4 py-1 rounded-full bg-accent/5 border border-accent/10">
+              <Palette className="w-3.5 h-3.5 text-accent" />
+              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-accent">De Leerling</span>
+           </div>
+           <h1 className="font-headline text-5xl md:text-7xl font-light leading-tight">
+             Peter <span className="italic">Bes</span>
+           </h1>
         </div>
+        {storyData?.blocks ? <StoryRenderer blocks={storyData.blocks} /> : <div className="py-20 text-center opacity-20 italic">Content wordt ontworpen...</div>}
       </div>
-
-      <ArtworkViewer 
-        artwork={activeArtwork} 
-        onClose={() => { setActiveArtwork(null); setSelectedArtworkId(null); }} 
-      />
     </main>
   );
 }

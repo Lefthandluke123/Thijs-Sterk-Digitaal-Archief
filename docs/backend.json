@@ -38,6 +38,28 @@
       },
       "required": ["title", "slug", "image"]
     },
+    "StoryPage": {
+      "title": "StoryPage",
+      "description": "Een dynamische pagina met rijke layout (DTP-stijl).",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "blocks": { 
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": { "type": "string", "enum": ["text", "image", "heading"] },
+              "content": { "type": "string" },
+              "imageUrl": { "type": "string" },
+              "layout": { "type": "string", "enum": ["full", "left", "right"] },
+              "style": { "type": "object" }
+            }
+          }
+        }
+      }
+    },
     "Tag": {
       "title": "Tag",
       "description": "Geregistreerde metadata tag.",
@@ -54,6 +76,7 @@
     "/rooms/{roomId}": { "schema": "Room", "description": "Museumzalen" },
     "/artworks/{artworkId}": { "schema": "Artwork", "description": "Kunstwerken met multi-room support" },
     "/tags/{tagId}": { "schema": "Tag", "description": "Geregistreerde tags" },
+    "/stories/{storyId}": { "schema": "StoryPage", "description": "Rijke content pagina's" },
     "/settings/site": { "schema": "Settings", "description": "Website configuratie" }
   }
 }

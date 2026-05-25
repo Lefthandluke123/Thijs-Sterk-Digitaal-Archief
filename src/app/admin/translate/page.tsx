@@ -3,8 +3,8 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
+import { doc, updateDoc, collection, setDoc, serverTimestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -19,10 +19,14 @@ import {
   Save,
   Type,
   Layout,
+  LayoutTemplate,
+  Plus
 } from 'lucide-react';
 import { translateMuseumText } from '@/ai/flows/translate-flow';
 import { verifyAdminPassword } from '@/lib/admin-actions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { StoryEditor, StoryBlock } from '@/components/story-editor';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const LANGUAGES = [
   { code: 'nl', label: 'Nederlands', isSource: true },
@@ -45,6 +49,13 @@ const CONTENT_FIELDS = [
   { id: 'shopIntro', label: 'Winkel Introductie', type: 'textarea', category: 'Winkel' },
 ];
 
+const PRESET_PAGES = [
+  { id: 'beatrijs', label: 'Beatrijs Sterk' },
+  { id: 'hanneke', label: 'Hanneke Sterk' },
+  { id: 'peter-bes', label: 'Peter Bes' },
+  { id: 'leo-duppen', label: 'Leo Duppen' },
+];
+
 export default function TranslateStationPage() {
   const firestore = useFirestore();
   const [isAuthorized, setIsAuthorized] = useState(false);
@@ -53,6 +64,10 @@ export default function TranslateStationPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [translatingField, setTranslatingField] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('translations');
+
+  // Story state
+  const [selectedStoryId, setSelectedStoryId] = useState<string>('beatrijs');
+  const [storyBlocks, setStoryBlocks] = useState<StoryBlock[]>([]);
 
   const [formData, setFormData] = useState<Record<string, string>>({});
 
@@ -67,9 +82,23 @@ export default function TranslateStationPage() {
   
   const { data: settings } = useDoc(settingsRef);
 
+  const storyRef = useMemoFirebase(() => {
+    if (!firestore || !isAuthorized || !selectedStoryId) return null;
+    return doc(firestore, 'stories', selectedStoryId);
+  }, [firestore, isAuthorized, selectedStoryId]);
+  const { data: storyData } = useDoc(storyRef);
+
   useEffect(() => {
     if (settings) setFormData(settings as Record<string, string>);
   }, [settings]);
+
+  useEffect(() => {
+    if (storyData?.blocks) {
+      setStoryBlocks(storyData.blocks);
+    } else {
+      setStoryBlocks([]);
+    }
+  }, [storyData]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -112,8 +141,12 @@ export default function TranslateStationPage() {
     if (!settingsRef) return;
     setIsSaving(true);
     try {
-      await updateDoc(settingsRef, formData);
-      toast({ title: "Opgeslagen" });
+      if (activeTab === 'translations') {
+        await updateDoc(settingsRef, formData);
+      } else if (activeTab === 'stories' && storyRef) {
+        await setDoc(storyRef, { blocks: storyBlocks, updatedAt: serverTimestamp() }, { merge: true });
+      }
+      toast({ title: "Wijzigingen opgeslagen" });
     } catch (error) {
       toast({ variant: "destructive", title: "Fout bij opslaan" });
     } finally {
@@ -125,10 +158,10 @@ export default function TranslateStationPage() {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
         <Card className="max-w-md w-full p-12 rounded-[2.5rem] shadow-2xl space-y-8">
-           <h1 className="font-headline text-3xl text-center">Translation Hub</h1>
+           <h1 className="font-headline text-3xl text-center italic">Translation <span className="text-accent">Hub</span></h1>
            <form onSubmit={handleLogin} className="space-y-6">
               <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="h-14 rounded-2xl text-center" placeholder="Wachtwoord" />
-              <Button type="submit" disabled={isVerifying} className="w-full h-14 rounded-2xl">Ontgrendelen</Button>
+              <Button type="submit" disabled={isVerifying} className="w-full h-14 rounded-2xl bg-primary">Ontgrendelen</Button>
            </form>
         </Card>
       </div>
@@ -139,85 +172,88 @@ export default function TranslateStationPage() {
 
   return (
     <div className="min-h-screen bg-[#f8f9fa] pt-32">
-      <header className="h-24 bg-white/80 backdrop-blur-md border-b fixed top-0 left-0 right-0 z-50 px-8 flex items-center justify-between">
+      <header className="h-24 bg-white/80 backdrop-blur-md border-b fixed top-0 left-0 right-0 z-50 px-8 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-6">
           <Link href="/admin" className="p-3 hover:bg-black/5 rounded-full transition-colors">
             <ArrowLeft className="w-6 h-6" />
           </Link>
-          <h1 className="font-headline text-2xl italic">Translation <span className="text-accent">Station</span></h1>
+          <div className="flex flex-col">
+            <h1 className="font-headline text-2xl italic leading-none">Content <span className="text-accent">&</span> Layout</h1>
+            <span className="text-[9px] font-black uppercase tracking-[0.3em] opacity-40 mt-1">DTP Architecture Active</span>
+          </div>
         </div>
-        <Button onClick={handleSave} disabled={isSaving} className="h-14 px-10 rounded-2xl bg-primary shadow-xl">
+        <Button onClick={handleSave} disabled={isSaving} className="h-14 px-10 rounded-2xl bg-primary shadow-xl hover:scale-[1.02] transition-all">
           {isSaving ? <Loader2 className="animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-          Wijzigingen Opslaan
+          Alle Wijzigingen Opslaan
         </Button>
       </header>
 
       <main className="max-w-7xl mx-auto px-8 pb-32">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-12">
-          <TabsList className="bg-white p-1 rounded-full w-fit mx-auto h-14 shadow-md border">
-            <TabsTrigger value="translations" className="rounded-full px-8 h-12 uppercase font-black text-[11px] tracking-widest">
-              <Type className="w-4 h-4 mr-2" /> Teksten
+          <TabsList className="bg-white p-1.5 rounded-full w-fit mx-auto h-16 shadow-md border">
+            <TabsTrigger value="translations" className="rounded-full px-10 h-13 uppercase font-black text-[10px] tracking-widest">
+              <Type className="w-4 h-4 mr-2" /> Teksten & Vertalingen
             </TabsTrigger>
-            <TabsTrigger value="stories" className="rounded-full px-8 h-12 uppercase font-black text-[11px] tracking-widest">
-              <Layout className="w-4 h-4 mr-2" /> Story Pages
+            <TabsTrigger value="stories" className="rounded-full px-10 h-13 uppercase font-black text-[10px] tracking-widest">
+              <LayoutTemplate className="w-4 h-4 mr-2" /> Story Designer
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="translations" className="space-y-16">
             {categories.map(cat => (
               <section key={cat} className="space-y-8">
-                <h2 className="font-headline text-3xl italic opacity-40">{cat}</h2>
-                <div className="grid gap-10">
+                <h2 className="font-headline text-3xl italic opacity-40 border-l-4 border-accent pl-6">{cat}</h2>
+                <div className="grid gap-8">
                   {CONTENT_FIELDS.filter(f => f.category === cat).map(field => (
-                    <Card key={field.id} className="p-8 rounded-[2rem] border-none shadow-xl bg-white">
-                      <div className="flex justify-between items-start mb-8">
-                        <Label className="text-xs font-black uppercase tracking-widest text-accent/40">{field.label}</Label>
+                    <Card key={field.id} className="p-8 rounded-[2.5rem] border-none shadow-xl bg-white space-y-6">
+                      <div className="flex justify-between items-start">
+                        <Label className="text-[11px] font-black uppercase tracking-widest text-accent/40">{field.label}</Label>
                         <Button 
                           size="sm" 
                           variant="secondary"
                           onClick={() => handleTranslateField(field.id)}
                           disabled={translatingField === field.id}
-                          className="rounded-full px-6 bg-accent/5 hover:bg-accent text-accent hover:text-white"
+                          className="rounded-full px-6 bg-accent/5 hover:bg-accent text-accent hover:text-white transition-all"
                         >
                           {translatingField === field.id ? <Loader2 className="animate-spin mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />}
-                          AI Translate
+                          AI Auto-Vertaal (EU)
                         </Button>
                       </div>
 
-                      <div className="grid gap-8">
+                      <div className="grid gap-10">
                         <div className="space-y-2">
-                          <span className="text-[10px] font-black bg-primary text-primary-foreground px-2 py-0.5 rounded">NL (Bron)</span>
+                          <span className="text-[9px] font-black bg-primary text-primary-foreground px-3 py-1 rounded-full">BRON: NEDERLANDS</span>
                           {field.type === 'textarea' ? (
                             <Textarea 
                               value={formData[field.id] || ''} 
                               onChange={e => setFormData({ ...formData, [field.id]: e.target.value })}
-                              className="bg-black/5 border-none min-h-[120px] rounded-xl"
+                              className="bg-black/5 border-none min-h-[140px] rounded-2xl text-lg p-6 focus:ring-accent"
                             />
                           ) : (
                             <Input 
                               value={formData[field.id] || ''} 
                               onChange={e => setFormData({ ...formData, [field.id]: e.target.value })}
-                              className="bg-black/5 border-none h-12 rounded-xl"
+                              className="bg-black/5 border-none h-14 rounded-xl text-lg px-6"
                             />
                           )}
                         </div>
 
-                        <div className="grid md:grid-cols-2 gap-6 pt-6 border-t border-black/5">
+                        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 pt-6 border-t border-black/5">
                           {LANGUAGES.filter(l => !l.isSource).map(lang => (
                             <div key={lang.code} className="space-y-2">
-                              <span className="text-[10px] font-black bg-accent/10 text-accent px-2 py-0.5 rounded uppercase">{lang.code}</span>
+                              <span className="text-[9px] font-black bg-accent/10 text-accent px-3 py-1 rounded-full uppercase">{lang.code}</span>
                               {field.type === 'textarea' ? (
                                 <Textarea 
                                   value={formData[`${field.id}_${lang.code}`] || ''} 
                                   onChange={e => setFormData({ ...formData, [`${field.id}_${lang.code}`]: e.target.value })}
-                                  className="border-2 border-black/5 min-h-[100px] rounded-xl text-sm"
+                                  className="border-2 border-black/5 min-h-[100px] rounded-2xl text-sm"
                                   placeholder={`${lang.label}...`}
                                 />
                               ) : (
                                 <Input 
                                   value={formData[`${field.id}_${lang.code}`] || ''} 
                                   onChange={e => setFormData({ ...formData, [`${field.id}_${lang.code}`]: e.target.value })}
-                                  className="border-2 border-black/5 h-11 rounded-xl text-sm"
+                                  className="border-2 border-black/5 h-12 rounded-xl text-sm"
                                   placeholder={`${lang.label}...`}
                                 />
                               )}
@@ -232,19 +268,47 @@ export default function TranslateStationPage() {
             ))}
           </TabsContent>
 
-          <TabsContent value="stories">
-             <Card className="p-20 text-center rounded-[3rem] border-dashed border-4 border-black/5 bg-transparent">
-                <div className="w-20 h-20 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                   <Layout className="w-10 h-10 text-accent" />
+          <TabsContent value="stories" className="space-y-12">
+             <div className="max-w-4xl mx-auto space-y-12">
+                <Card className="p-8 rounded-[3rem] bg-white border-none shadow-2xl flex flex-col md:flex-row items-center justify-between gap-6">
+                   <div className="flex items-center gap-6">
+                      <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center text-accent">
+                         <LayoutTemplate className="w-8 h-8" />
+                      </div>
+                      <div>
+                         <h3 className="font-headline text-2xl italic leading-tight">Story Designer</h3>
+                         <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Selecteer de pagina die u wilt ontwerpen</p>
+                      </div>
+                   </div>
+                   <div className="min-w-[280px]">
+                      <Select value={selectedStoryId} onValueChange={setSelectedStoryId}>
+                        <SelectTrigger className="h-14 rounded-2xl bg-black/5 border-none text-sm font-bold uppercase tracking-widest px-6">
+                          <SelectValue placeholder="Pagina kiezen..." />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-2xl shadow-2xl border-none p-2">
+                           {PRESET_PAGES.map(p => (
+                             <SelectItem key={p.id} value={p.id} className="rounded-xl p-4 text-xs font-bold uppercase">{p.label}</SelectItem>
+                           ))}
+                        </SelectContent>
+                      </Select>
+                   </div>
+                </Card>
+
+                <div className="space-y-8">
+                   <div className="flex items-center justify-between px-6">
+                      <h2 className="font-headline text-3xl italic opacity-30">Layout Designer</h2>
+                      <div className="flex gap-2">
+                         <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                         <span className="text-[9px] font-black uppercase tracking-widest">Live Preview</span>
+                      </div>
+                   </div>
+                   
+                   <StoryEditor 
+                    blocks={storyBlocks} 
+                    onChange={setStoryBlocks} 
+                  />
                 </div>
-                <h2 className="font-headline text-3xl italic mb-4">Storytelling Module</h2>
-                <p className="text-muted-foreground max-w-md mx-auto mb-8">
-                   Beheer dynamische pagina's zoals biografieën of speciale projecten met meertalige tekst- en afbeeldingsblokken.
-                </p>
-                <Button className="rounded-full px-10 h-14 uppercase font-black text-[11px] tracking-widest">
-                   Nieuwe Pagina Aanmaken
-                </Button>
-             </Card>
+             </div>
           </TabsContent>
         </Tabs>
       </main>
