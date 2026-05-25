@@ -103,13 +103,14 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
            <ShareButton 
              title={artwork.displayTitle || artwork.title}
              url={artworkUrl}
+             className="pointer-events-auto"
            />
 
            {audio && (
              <button 
               onClick={toggleAudio} 
               className={cn(
-                "p-6 rounded-full backdrop-blur-3xl border border-black/5 transition-all flex items-center gap-4 shadow-xl", 
+                "p-6 rounded-full backdrop-blur-3xl border border-black/5 transition-all flex items-center gap-4 shadow-xl pointer-events-auto", 
                 isPlaying ? "bg-accent text-accent-foreground" : "bg-white/90 text-foreground hover:bg-white"
               )}
              >
@@ -121,7 +122,7 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
            <button 
             onClick={() => setShowMetadata(!showMetadata)} 
             className={cn(
-              "p-6 rounded-full backdrop-blur-3xl border border-black/5 transition-all shadow-xl", 
+              "p-6 rounded-full backdrop-blur-3xl border border-black/5 transition-all shadow-xl pointer-events-auto", 
               showMetadata ? "bg-accent text-accent-foreground" : "bg-white/90 text-foreground hover:bg-white"
             )}
            >
@@ -130,7 +131,7 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
 
            <button 
             onClick={onClose} 
-            className="p-6 bg-white/90 backdrop-blur-3xl rounded-full text-foreground hover:bg-destructive hover:text-white transition-all border border-black/5 shadow-xl"
+            className="p-6 bg-white/90 backdrop-blur-3xl rounded-full text-foreground hover:bg-destructive hover:text-white transition-all border border-black/5 shadow-xl pointer-events-auto"
            >
              <X className="w-6 h-6 opacity-60" />
            </button>
@@ -138,11 +139,11 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
       </div>
 
       {/* Main Viewer Area */}
-      <div className="w-full h-full flex items-center justify-center p-8 md:p-24 animate-subtle-fade">
+      <div className="w-full h-full flex items-center justify-center p-8 md:p-24 z-[9999]">
         {displayImage && (
-          <div className="w-full h-full max-w-[95vw] max-h-[85vh] animate-in zoom-in-95 duration-1000">
+          <div className="w-full h-full max-w-[95vw] max-h-[85vh]">
             <DeepZoomViewer 
-              key={artwork.id}
+              key={artwork.id} // Forceert zoom-reset bij wisselen van werk
               imageUrl={displayImage} 
               brightness={artwork.brightness || 1}
             />
@@ -177,7 +178,7 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
         "absolute bottom-0 left-0 right-0 flex flex-col items-center justify-center transition-all duration-1000 ease-in-out z-[10010] p-16", 
         showMetadata ? "opacity-100 translate-y-0" : "opacity-0 translate-y-32 pointer-events-none"
       )}>
-        <div className="museum-label max-w-4xl w-full text-center">
+        <div className="museum-label max-w-4xl w-full text-center pointer-events-auto shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)]">
           <h2 className="text-4xl md:text-6xl font-headline font-light italic text-foreground leading-tight">{artwork.displayTitle || artwork.title}</h2>
           
           <div className="flex flex-wrap gap-x-16 gap-y-4 justify-center items-center py-6">

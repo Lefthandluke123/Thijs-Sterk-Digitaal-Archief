@@ -9,6 +9,10 @@ interface DeepZoomViewerProps {
   brightness?: number;
 }
 
+/**
+ * @fileOverview DeepZoomViewer component met OpenSeadragon.
+ * Geoptimaliseerd voor een 'contain' startpositie (geen ongewenste zoom bij start).
+ */
 export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({ 
   imageUrl, 
   brightness = 1 
@@ -25,8 +29,10 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
         const OSDModule = await import('openseadragon');
         const OpenSeadragon = (OSDModule as any).default || OSDModule;
 
+        // Vernietig vorige instantie volledig om state-leakage te voorkomen
         if (viewerRef.current) {
           viewerRef.current.destroy();
+          viewerRef.current = null;
         }
 
         setLoading(true);
@@ -49,7 +55,7 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
             scrollToZoom: true,
             pinchToZoom: true,
           },
-          animationTime: 1.2,
+          animationTime: 0.8, // Sneller maar nog steeds vloeiend
           blendTime: 0.1,
           constrainDuringPan: true,
           visibilityRatio: 1.0,
@@ -58,13 +64,14 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
           minZoomLevel: 0.5,
           maxZoomLevel: 10,
           autoResize: true,
-          preserveViewport: true,
-          homeFillsViewer: true,
+          preserveViewport: false, // CRUCIAAL: reset viewport state bij nieuwe image
+          homeFillsViewer: false,   // CRUCIAAL: start 'contain', niet 'cover' (voorkomt inzoomen bij start)
           centerImageOnce: true
         });
 
         viewerRef.current.addHandler('open', () => {
           setLoading(false);
+          // Forceer neutrale schaal en positie na openen
           if (viewerRef.current && viewerRef.current.viewport) {
             viewerRef.current.viewport.goHome(true);
           }
@@ -75,9 +82,11 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
       }
     };
 
-    initOSD();
+    // Gebruik een kleine timeout om te zorgen dat de container-afmetingen stabiel zijn
+    const timer = setTimeout(initOSD, 50);
 
     return () => {
+      clearTimeout(timer);
       if (viewerRef.current) {
         viewerRef.current.destroy();
         viewerRef.current = null;
@@ -97,7 +106,8 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
         className="w-full h-full outline-none" 
         style={{ 
           filter: `brightness(${brightness})`,
-          display: 'block'
+          display: 'block',
+          transform: 'none' // Zorg dat er geen residual CSS transforms zijn
         }} 
       />
     </div>

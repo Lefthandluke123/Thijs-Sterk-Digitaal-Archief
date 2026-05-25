@@ -70,7 +70,7 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
         <div className="flex items-center gap-8">
           <Link 
             href="/gallery" 
-            className="p-5 rounded-full bg-white/90 backdrop-blur-xl border border-black/5 hover:bg-accent hover:text-accent-foreground transition-all group shadow-xl"
+            className="p-5 rounded-full bg-white/90 backdrop-blur-xl border border-black/5 hover:bg-accent hover:text-accent-foreground transition-all group shadow-xl pointer-events-auto"
           >
             <ArrowLeft className="w-6 h-6 group-hover:-translate-x-1 transition-transform" />
           </Link>
@@ -85,7 +85,7 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
         <button 
           onClick={() => setShowMetadata(!showMetadata)}
           className={cn(
-            "p-5 rounded-full backdrop-blur-xl border border-black/5 transition-all shadow-xl",
+            "p-5 rounded-full backdrop-blur-xl border border-black/5 transition-all shadow-xl pointer-events-auto",
             showMetadata ? "bg-accent text-accent-foreground" : "bg-white/90 text-foreground hover:bg-white"
           )}
         >
@@ -96,22 +96,22 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
       {/* Navigation Paddles */}
       <button 
         onClick={handlePrev} 
-        className="absolute left-8 top-1/2 -translate-y-1/2 z-[130] p-8 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 text-foreground hover:bg-accent hover:text-accent-foreground transition-all active:scale-90 shadow-2xl group"
+        className="absolute left-8 top-1/2 -translate-y-1/2 z-[130] p-8 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 text-foreground hover:bg-accent hover:text-accent-foreground transition-all active:scale-90 shadow-2xl group pointer-events-auto"
       >
         <ChevronLeft className="w-12 h-12 opacity-40 group-hover:opacity-100" />
       </button>
       <button 
         onClick={handleNext} 
-        className="absolute right-8 top-1/2 -translate-y-1/2 z-[130] p-8 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 text-foreground hover:bg-accent hover:text-accent-foreground transition-all active:scale-90 shadow-2xl group"
+        className="absolute right-8 top-1/2 -translate-y-1/2 z-[130] p-8 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 text-foreground hover:bg-accent hover:text-accent-foreground transition-all active:scale-90 shadow-2xl group pointer-events-auto"
       >
         <ChevronRight className="w-12 h-12 opacity-40 group-hover:opacity-100" />
       </button>
 
-      {/* Viewer Container */}
-      <div className="w-[90vw] h-[85vh] flex items-center justify-center animate-subtle-fade z-[110]">
+      {/* Viewer Container - GEEN schaal-animatie hier voor correcte OSD initialisatie */}
+      <div className="w-[90vw] h-[85vh] flex items-center justify-center z-[110]">
         {displayImage && (
           <DeepZoomViewer 
-            key={`${item.id}-${currentIndex}`}
+            key={`${item.id}-${currentIndex}`} // Forceert volledige re-mount en zoom-reset
             imageUrl={displayImage} 
             brightness={item.brightness || 1}
           />
@@ -123,7 +123,7 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
         "absolute bottom-0 left-0 right-0 flex flex-col items-center justify-center transition-all duration-1000 ease-in-out z-[150] p-12",
         showMetadata ? "opacity-100 translate-y-0" : "opacity-0 translate-y-24 pointer-events-none"
       )}>
-        <div className="museum-label max-w-3xl w-full shadow-[0_50px_100px_-20px_rgba(0,0,0,0.3)] border border-black/5">
+        <div className="museum-label max-w-3xl w-full shadow-[0_50px_100px_-20px_rgba(0,0,0,0.3)] border border-black/5 pointer-events-auto">
           <h2 className="text-3xl md:text-5xl font-headline font-light italic text-foreground leading-tight text-center">{item.displayTitle || item.title}</h2>
           
           <div className="flex flex-wrap gap-x-12 gap-y-4 justify-center items-center py-4">
