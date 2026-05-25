@@ -1,6 +1,7 @@
+
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Share2, Loader2, Check, Link as LinkIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -14,17 +15,19 @@ interface ShareButtonProps {
   className?: string;
 }
 
-/**
- * @fileOverview Subtle sharing component that prioritizes native share and falls back to a clean link copy or social popup.
- */
 export function ShareButton({ title, description, url, className }: ShareButtonProps) {
   const [isSharing, setIsSharing] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleShare = async () => {
+    if (!mounted) return;
     setIsSharing(true);
     
-    // 1. Try Native Share (iOS/Android)
     if (typeof navigator !== 'undefined' && navigator.share) {
       try {
         await navigator.share({
@@ -41,7 +44,6 @@ export function ShareButton({ title, description, url, className }: ShareButtonP
       }
     }
 
-    // 2. Fallback to Facebook popup (discreet)
     const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
     window.open(fbUrl, '_blank', 'width=600,height=500,location=no,menubar=no,status=no,toolbar=no');
     
@@ -54,11 +56,15 @@ export function ShareButton({ title, description, url, className }: ShareButtonP
 
   const copyToClipboard = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!mounted) return;
     navigator.clipboard.writeText(url);
     setCopied(true);
     toast({ title: "Link gekopieerd!" });
     setTimeout(() => setCopied(false), 2000);
   };
+
+  // Render niets totdat we op de client zijn om mismatches in de URL-prop te voorkomen
+  if (!mounted) return <div className={cn("h-12 w-12", className)} />;
 
   return (
     <div className={cn("flex items-center gap-2", className)}>

@@ -1,6 +1,7 @@
+
 'use client';
 
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import { initializeFirebase } from './index';
 import { FirebaseProvider } from './provider';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
@@ -8,9 +9,13 @@ import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 export const FirebaseClientProvider: React.FC<{
   children: React.ReactNode;
 }> = ({ children }) => {
-  const { firebaseApp, firestore, auth, storage } = useMemo(() => initializeFirebase(), []);
+  // Gebruik state om te zorgen dat we pas initialiseren op de client
+  const [instances, setInstances] = useState(() => initializeFirebase());
 
   useEffect(() => {
+    // Forceer een re-init op de client mocht de eerste pass (SSR) nulls hebben opgeleverd
+    setInstances(initializeFirebase());
+    
     // Globale event listeners om het kopiëren van foto's te bemoeilijken
     const handleContextMenu = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
@@ -28,30 +33,24 @@ export const FirebaseClientProvider: React.FC<{
       }
     };
 
-    // Voorkom ook bepaalde toetscombinaties voor inspecteren (optioneel, maar effectief)
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (
-        (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) ||
-        (e.ctrlKey && e.key === 'U') ||
-        e.key === 'F12'
-      ) {
-        // e.preventDefault(); // Alleen inschakelen voor extreme bescherming
-      }
-    };
-
     document.addEventListener('contextmenu', handleContextMenu);
     document.addEventListener('dragstart', handleDragStart);
-    document.addEventListener('keydown', handleKeyDown);
     
     return () => {
       document.removeEventListener('contextmenu', handleContextMenu);
       document.removeEventListener('dragstart', handleDragStart);
-      document.removeEventListener('keydown', handleKeyDown);
     };
   }, []);
 
+  // Als we nog geen instances hebben (tijdens SSR), renderen we de provider met nulls
+  // De FirebaseProvider context is al ingesteld om hiermee om te gaan.
   return (
-    <FirebaseProvider firebaseApp={firebaseApp} firestore={firestore} auth={auth} storage={storage}>
+    <FirebaseProvider 
+      firebaseApp={instances.firebaseApp as any} 
+      firestore={instances.firestore as any} 
+      auth={instances.auth as any} 
+      storage={instances.storage as any}
+    >
       <FirebaseErrorListener />
       {children}
     </FirebaseProvider>

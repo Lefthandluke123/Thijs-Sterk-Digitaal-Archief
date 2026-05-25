@@ -19,13 +19,18 @@ export default function SharedRoomPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
+  const [shareUrl, setShareUrl] = useState('');
 
-  const roomRef = useMemoFirebase(() => id ? doc(firestore!, 'shared_rooms', id as string) : null, [firestore, id]);
+  useEffect(() => {
+    setShareUrl(window.location.href);
+  }, []);
+
+  const roomRef = useMemoFirebase(() => id && firestore ? doc(firestore, 'shared_rooms', id as string) : null, [firestore, id]);
   const { data: room, loading: roomLoading } = useDoc(roomRef);
 
   const artworksQuery = useMemoFirebase(() => {
-    if (!room?.artworkIds || room.artworkIds.length === 0) return null;
-    return query(collection(firestore!, 'artworks'), where(documentId(), 'in', room.artworkIds));
+    if (!room?.artworkIds || room.artworkIds.length === 0 || !firestore) return null;
+    return query(collection(firestore, 'artworks'), where(documentId(), 'in', room.artworkIds));
   }, [firestore, room]);
 
   const { data: artworks, loading: artLoading } = useCollection(artworksQuery);
@@ -36,7 +41,6 @@ export default function SharedRoomPage() {
   }, [artworks, room]);
 
   const activeArtwork: any = sortedArtworks[currentIndex];
-  const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
 
   useEffect(() => {
     if (audio) {

@@ -7,7 +7,15 @@ import { getAuth, Auth } from 'firebase/auth';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
 import { firebaseConfig } from './config';
 
+/**
+ * @fileOverview SSR-safe Firebase initialisatie.
+ */
 export function initializeFirebase() {
+  // Voorkom initialisatie tijdens SSR
+  if (typeof window === 'undefined') {
+    return { firebaseApp: null, firestore: null, auth: null, storage: null };
+  }
+
   const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
   const firestore = getFirestore(app);
   const auth = getAuth(app);

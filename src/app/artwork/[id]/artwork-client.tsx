@@ -1,23 +1,22 @@
 
 "use client";
 
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Info, Mic, Pause } from 'lucide-react';
 import { ShareButton } from '@/components/share-button';
 import { useLanguage } from '@/components/language-provider';
 import { cn } from '@/lib/utils';
 
-/**
- * @fileOverview Client Component voor de artwork detail weergave.
- * Nu met Ultra-Explicit Grid Centering op de volledige viewport.
- */
 export function ArtworkClientPage({ artwork }: { artwork: any }) {
   const { language } = useLanguage();
   const [showMetadata, setShowMetadata] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [shareUrl, setShareUrl] = useState('');
   
-  const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
+  useEffect(() => {
+    setShareUrl(window.location.href);
+  }, []);
 
   const audioUrl = artwork.audioUrls?.[language] || artwork.audioUrls?.['nl'];
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -52,7 +51,6 @@ export function ArtworkClientPage({ artwork }: { artwork: any }) {
         overflow: 'hidden' 
       }}
     >
-      {/* UI Overlay Top */}
       <div className="absolute top-0 left-0 right-0 z-[120] p-6 md:p-10 flex items-center justify-between pointer-events-none">
         <div className="flex items-center gap-6 pointer-events-auto">
           <Link 
@@ -100,7 +98,6 @@ export function ArtworkClientPage({ artwork }: { artwork: any }) {
         </div>
       </div>
 
-      {/* THE MAIN IMAGE - NAKED CENTERING */}
       {displayImage && (
         <img 
           src={displayImage} 
@@ -117,7 +114,6 @@ export function ArtworkClientPage({ artwork }: { artwork: any }) {
         />
       )}
 
-      {/* Metadata Panel */}
       <div className={cn(
         "absolute bottom-0 left-0 right-0 bg-background/95 backdrop-blur-2xl border-t border-black/5 flex flex-col items-center justify-center text-center transition-all duration-700 ease-in-out z-[130] overflow-y-auto",
         showMetadata ? "h-auto min-h-[30vh] opacity-100 py-12 translate-y-0" : "h-0 opacity-0 pointer-events-none translate-y-12"

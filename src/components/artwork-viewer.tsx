@@ -30,11 +30,17 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
   const [showMetadata, setShowMetadata] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
+  const [artworkUrl, setArtworkUrl] = useState('');
   
   const pathname = usePathname();
   const { language, t } = useLanguage();
 
-  // Toetsenbord ondersteuning
+  useEffect(() => {
+    if (artwork && typeof window !== 'undefined') {
+      setArtworkUrl(`${window.location.origin}/art/${artwork.slug || artwork.id}`);
+    }
+  }, [artwork]);
+
   useEffect(() => {
     if (!artwork) return;
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -76,12 +82,10 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
     setIsPlaying(!isPlaying);
   };
 
-  // Uitsluiting voor specifieke routes waar de viewer niet gewenst is
   if (!artwork || pathname.startsWith('/room') || pathname.startsWith('/artwork')) {
     return null;
   }
 
-  const artworkUrl = `${window.location.origin}/art/${artwork.slug || artwork.id}`;
   const displayImage = artwork.image || artwork.imageUrl || artwork.url;
 
   return (
