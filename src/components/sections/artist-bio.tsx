@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from 'react';
@@ -78,14 +77,14 @@ export function ArtistBio() {
   };
 
   return (
-    <section className="py-32 bg-secondary/20 px-4" id="about">
-      <div className="container mx-auto max-w-7xl">
-        <div className="grid lg:grid-cols-12 gap-20 items-start">
+    <section className="py-24 bg-secondary/20 px-4" id="about">
+      <div className="container mx-auto max-w-6xl">
+        <div className="grid lg:grid-cols-12 gap-16 items-start">
           <div className="lg:col-span-5 order-2 lg:order-1 sticky top-32">
             <div className="relative">
-              <div className="absolute -top-8 -left-8 w-32 h-32 border-t-4 border-l-4 border-accent/60 hidden md:block" />
+              <div className="absolute -top-6 -left-6 w-24 h-24 border-t-4 border-l-4 border-accent/40 hidden md:block" />
               <div 
-                className="relative aspect-[3/4] rounded-[2.5rem] overflow-hidden shadow-[0_40px_100px_-20px_rgba(0,0,0,0.3)] bg-muted/20 cursor-pointer group"
+                className="relative aspect-[3/4] rounded-[2rem] overflow-hidden shadow-[0_30px_60px_-15px_rgba(0,0,0,0.2)] bg-muted/20 cursor-pointer group"
                 onClick={handleMainPortraitClick}
               >
                 <Image
@@ -96,42 +95,42 @@ export function ArtistBio() {
                   data-ai-hint="vintage artist portrait"
                 />
                 <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <Maximize2 className="text-white w-10 h-10 drop-shadow-2xl" />
+                  <Maximize2 className="text-white w-8 h-8 drop-shadow-2xl" />
                 </div>
               </div>
             </div>
           </div>
           
-          <div className="lg:col-span-7 order-1 lg:order-2 space-y-12">
+          <div className="lg:col-span-7 order-1 lg:order-2 space-y-8">
             <div className="space-y-4">
-              <span className="text-accent font-black tracking-[0.4em] uppercase text-sm block">De Biografie</span>
-              <h2 className="font-headline text-5xl md:text-7xl lg:text-8xl font-medium mb-8 leading-[1.1]">
+              <span className="text-accent font-black tracking-[0.4em] uppercase text-[11px] block">De Biografie</span>
+              <h2 className="font-headline text-3xl md:text-4xl lg:text-5xl font-medium mb-6 leading-tight">
                 {bioTitle.split(' ').map((word, i, arr) => 
                   i === arr.length - 1 ? <span key={i} className="italic text-accent">{word}</span> : word + ' '
                 )}
               </h2>
             </div>
             
-            <div className="space-y-10 text-2xl text-foreground/80 leading-relaxed font-light whitespace-pre-line border-l-4 border-accent/20 pl-10">
+            <div className="space-y-8 text-lg text-foreground/80 leading-relaxed font-light whitespace-pre-line border-l-4 border-accent/10 pl-8">
               {renderTextWithLinks(bioText)}
             </div>
             
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-12 mt-20 pt-16 border-t border-border/40">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 mt-12 pt-12 border-t border-border/40">
               <div>
-                <h4 className="font-headline text-3xl font-medium text-foreground mb-2">1913</h4>
-                <p className="text-[11px] font-black uppercase tracking-widest text-accent/60">Geboortejaar</p>
+                <h4 className="font-headline text-2xl font-medium text-foreground mb-1">1913</h4>
+                <p className="text-[10px] font-black uppercase tracking-widest text-accent/60">Geboortejaar</p>
               </div>
               <div>
-                <h4 className="font-headline text-3xl font-medium text-foreground mb-2">Monumentaal</h4>
-                <p className="text-[11px] font-black uppercase tracking-widest text-accent/60">Wandkunst</p>
+                <h4 className="font-headline text-2xl font-medium text-foreground mb-1">Monumentaal</h4>
+                <p className="text-[10px] font-black uppercase tracking-widest text-accent/60">Wandkunst</p>
               </div>
               <div>
-                <h4 className="font-headline text-3xl font-medium text-foreground mb-2">Glas</h4>
-                <p className="text-[11px] font-black uppercase tracking-widest text-accent/60">In lood</p>
+                <h4 className="font-headline text-2xl font-medium text-foreground mb-1">Glas</h4>
+                <p className="text-[10px] font-black uppercase tracking-widest text-accent/60">In lood</p>
               </div>
               <div>
-                <h4 className="font-headline text-3xl font-medium text-foreground mb-2">Internationaal</h4>
-                <p className="text-[11px] font-black uppercase tracking-widest text-accent/60">Exposities</p>
+                <h4 className="font-headline text-2xl font-medium text-foreground mb-1">Internationaal</h4>
+                <p className="text-[10px] font-black uppercase tracking-widest text-accent/60">Exposities</p>
               </div>
             </div>
           </div>

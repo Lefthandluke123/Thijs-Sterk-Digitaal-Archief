@@ -41,40 +41,40 @@ export function Hero() {
     : siteSettings?.homeHeroTitle || 'Een leven gewijd aan Licht, Ruimte en Water';
 
   return (
-    <section className="relative min-h-[85vh] flex flex-col items-center justify-center pt-32 pb-16 px-4 overflow-hidden">
+    <section className="relative min-h-[70vh] flex flex-col items-center justify-center pt-24 pb-16 px-4 overflow-hidden">
       <div className="container mx-auto z-10 text-center">
-        <h1 className="font-headline text-4xl md:text-7xl lg:text-8xl font-medium tracking-tight text-foreground mb-16 max-w-6xl mx-auto leading-[1.05]">
+        <h1 className="font-headline text-3xl md:text-4xl lg:text-5xl font-medium tracking-tight text-foreground mb-12 max-w-4xl mx-auto leading-[1.1]">
           {heroTitle.split(' ').map((word, i, arr) => 
             i >= arr.length - 3 ? <span key={i} className="italic text-accent">{word} </span> : word + ' '
           )}
         </h1>
         
-        <div className="flex flex-col items-center justify-center gap-12">
-          <Button size="lg" variant="ghost" className="rounded-full px-16 text-accent/60 hover:text-accent font-bold uppercase tracking-[0.25em] text-[11px] h-12 transition-all" asChild>
+        <div className="flex flex-col items-center justify-center gap-10">
+          <Button size="lg" variant="ghost" className="rounded-full px-12 text-accent/60 hover:text-accent font-bold uppercase tracking-[0.25em] text-[10px] h-10 transition-all" asChild>
             <Link href="#about">
-              <BookOpen className="mr-3 w-4 h-4" />
+              <BookOpen className="mr-2 w-3 h-3" />
               Introductie
             </Link>
           </Button>
 
-          <div className="flex flex-col items-center justify-center gap-6 w-full max-w-md">
-            <Button variant="outline" size="lg" className="w-full rounded-full px-12 border-2 border-accent/30 text-accent hover:bg-accent/5 font-bold uppercase tracking-[0.25em] text-[12px] h-16 transition-all shadow-sm" asChild>
+          <div className="flex flex-col items-center justify-center gap-6 w-full max-w-sm">
+            <Button variant="outline" size="lg" className="w-full rounded-full px-10 border-2 border-accent/30 text-accent hover:bg-accent/5 font-bold uppercase tracking-[0.25em] text-[11px] h-14 transition-all shadow-sm" asChild>
               <Link href="/gallery">
-                <Sparkles className="mr-3 w-5 h-5" />
+                <Sparkles className="mr-2 w-4 h-4" />
                 {t('hero_start_walk')}
               </Link>
             </Button>
 
             <div className="w-full flex flex-col items-center gap-4">
-              <Button size="lg" className="w-full rounded-full px-12 bg-accent hover:bg-accent/90 text-accent-foreground font-bold uppercase tracking-[0.25em] text-[13px] h-20 shadow-2xl transition-all scale-105 active:scale-95" asChild>
+              <Button size="lg" className="w-full rounded-full px-10 bg-accent hover:bg-accent/90 text-accent-foreground font-bold uppercase tracking-[0.25em] text-[12px] h-16 shadow-xl transition-all scale-105 active:scale-95" asChild>
                 <Link href="/curator">
-                  <Layout className="mr-3 w-6 h-6" />
+                  <Layout className="mr-3 w-5 h-5" />
                   {t('hero_your_room')}
                 </Link>
               </Button>
               
               <div className="animate-in fade-in slide-in-from-top-2 duration-1000">
-                 <p className="text-[11px] font-black uppercase tracking-[0.4em] text-accent opacity-60 leading-relaxed max-w-xs mx-auto">
+                 <p className="text-[10px] font-black uppercase tracking-[0.3em] text-accent opacity-60 leading-relaxed max-w-xs mx-auto">
                    Kies uw eigen rondleiding langs het werk van Thijs op basis van thema&apos;s
                  </p>
               </div>
@@ -83,9 +83,9 @@ export function Hero() {
         </div>
       </div>
 
-      <div className="container mx-auto mt-24 z-10 px-4 max-w-7xl">
+      <div className="container mx-auto mt-20 z-10 px-4 max-w-6xl">
         <div 
-          className="relative aspect-[21/9] w-full rounded-[3rem] overflow-hidden shadow-[0_60px_100px_-20px_rgba(0,0,0,0.3)] border-2 border-white/20 cursor-pointer group"
+          className="relative aspect-[21/9] w-full rounded-[2.5rem] overflow-hidden shadow-[0_40px_80px_-20px_rgba(0,0,0,0.25)] border-2 border-white/20 cursor-pointer group"
           onClick={() => setSelectedArtwork(artwork || { imageUrl: heroImage, title: "Maannacht" })}
         >
           <Image
@@ -96,7 +96,7 @@ export function Hero() {
             priority
           />
           <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-            <Maximize2 className="text-white w-12 h-12" />
+            <Maximize2 className="text-white w-10 h-10 drop-shadow-2xl" />
           </div>
         </div>
       </div>

@@ -9,7 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
-import { Send, Mail, MapPin, Phone, Loader2 } from 'lucide-react';
+import { Send, Mail, Phone, Loader2 } from 'lucide-react';
 import { useLanguage } from '@/components/language-provider';
 import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
@@ -102,77 +102,77 @@ export function ContactForm() {
   }
 
   return (
-    <section className="py-32 bg-background px-4" id="contact">
-      <div className="container mx-auto max-w-7xl">
-        <div className="grid lg:grid-cols-2 gap-24 items-start">
-          <div className="space-y-10">
+    <section className="py-24 bg-background px-4" id="contact">
+      <div className="container mx-auto max-w-6xl">
+        <div className="grid lg:grid-cols-2 gap-20 items-start">
+          <div className="space-y-8">
             <div className="space-y-4">
-              <span className="text-accent font-black tracking-[0.4em] uppercase text-sm block">{t('nav_collections')} & Archief</span>
-              <h2 className="font-headline text-5xl md:text-7xl lg:text-8xl font-medium leading-[1.1]">
+              <span className="text-accent font-black tracking-[0.4em] uppercase text-[11px] block">{t('nav_collections')} & Archief</span>
+              <h2 className="font-headline text-3xl md:text-4xl lg:text-5xl font-medium leading-tight">
                 {contactTitle.split(' ').map((word, i, arr) => 
                   i === arr.length - 1 ? <span key={i} className="italic text-accent">{word}</span> : word + ' '
                 )}
               </h2>
             </div>
             
-            <div className="space-y-8 text-foreground/80 text-2xl leading-relaxed font-light">
+            <div className="space-y-6 text-foreground/80 text-xl leading-relaxed font-light">
               <p>{contactIntro}</p>
-              <p className="italic font-normal text-accent/80 border-l-4 border-accent/20 pl-8">{contactQuote}</p>
+              <p className="italic font-normal text-accent/80 border-l-4 border-accent/10 pl-6 text-lg">{contactQuote}</p>
             </div>
             
-            <div className="grid sm:grid-cols-2 gap-12 pt-12">
-              <div className="flex items-center gap-6">
-                <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center text-primary shadow-inner"><Mail className="w-6 h-6" /></div>
+            <div className="grid sm:grid-cols-2 gap-10 pt-8">
+              <div className="flex items-center gap-5">
+                <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center text-primary shadow-inner"><Mail className="w-5 h-5" /></div>
                 <div>
-                  <h4 className="font-black text-[11px] uppercase tracking-widest text-accent">E-mail</h4>
-                  <p className="text-lg font-medium">info@thijssterk.nl</p>
+                  <h4 className="font-black text-[9px] uppercase tracking-widest text-accent">E-mail</h4>
+                  <p className="text-base font-medium">info@thijssterk.nl</p>
                 </div>
               </div>
-              <div className="flex items-center gap-6">
-                <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center text-primary shadow-inner"><Phone className="w-6 h-6" /></div>
+              <div className="flex items-center gap-5">
+                <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center text-primary shadow-inner"><Phone className="w-5 h-5" /></div>
                 <div>
-                  <h4 className="font-black text-[11px] uppercase tracking-widest text-accent">{t('contact_phone')}</h4>
-                  <p className="text-lg font-medium">06-53716249</p>
+                  <h4 className="font-black text-[9px] uppercase tracking-widest text-accent">{t('contact_phone')}</h4>
+                  <p className="text-base font-medium">06-53716249</p>
                 </div>
               </div>
             </div>
           </div>
           
-          <div className="bg-secondary/30 p-10 md:p-16 rounded-[3rem] border border-border/40 shadow-2xl backdrop-blur-sm">
+          <div className="bg-secondary/20 p-8 md:p-12 rounded-[2rem] border border-border/20 shadow-xl backdrop-blur-sm">
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                <div className="grid sm:grid-cols-2 gap-8">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <div className="grid sm:grid-cols-2 gap-6">
                   <FormField control={form.control} name="name" render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-[11px] uppercase tracking-[0.2em] font-black text-accent">{labelName}</FormLabel>
-                      <FormControl><Input placeholder="..." className="bg-background/80 border-none h-14 rounded-2xl text-lg px-6" {...field} /></FormControl>
+                      <FormLabel className="text-[10px] uppercase tracking-[0.2em] font-black text-accent">{labelName}</FormLabel>
+                      <FormControl><Input placeholder="..." className="bg-background/70 border-none h-12 rounded-xl text-base px-5" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
                   <FormField control={form.control} name="email" render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-[11px] uppercase tracking-[0.2em] font-black text-accent">{labelEmail}</FormLabel>
-                      <FormControl><Input placeholder="..." className="bg-background/80 border-none h-14 rounded-2xl text-lg px-6" {...field} /></FormControl>
+                      <FormLabel className="text-[10px] uppercase tracking-[0.2em] font-black text-accent">{labelEmail}</FormLabel>
+                      <FormControl><Input placeholder="..." className="bg-background/70 border-none h-12 rounded-xl text-base px-5" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
                 </div>
                 <FormField control={form.control} name="subject" render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-[11px] uppercase tracking-[0.2em] font-black text-accent">{labelSubject}</FormLabel>
-                    <FormControl><Input placeholder="..." className="bg-background/80 border-none h-14 rounded-2xl text-lg px-6" {...field} /></FormControl>
+                    <FormLabel className="text-[10px] uppercase tracking-[0.2em] font-black text-accent">{labelSubject}</FormLabel>
+                    <FormControl><Input placeholder="..." className="bg-background/70 border-none h-12 rounded-xl text-base px-5" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="message" render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-[11px] uppercase tracking-[0.2em] font-black text-accent">{labelMessage}</FormLabel>
-                    <FormControl><Textarea placeholder="..." className="min-h-[200px] bg-background/80 border-none resize-none p-8 rounded-[2rem] text-lg" {...field} /></FormControl>
+                    <FormLabel className="text-[10px] uppercase tracking-[0.2em] font-black text-accent">{labelMessage}</FormLabel>
+                    <FormControl><Textarea placeholder="..." className="min-h-[160px] bg-background/70 border-none resize-none p-6 rounded-2xl text-base" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
-                <Button type="submit" size="lg" disabled={isSubmitting} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-full h-20 font-black uppercase tracking-[0.3em] text-[13px] shadow-2xl hover:scale-[1.02] transition-all">
-                  {isSubmitting ? <Loader2 className="w-6 h-6 animate-spin mr-3" /> : <Send className="mr-3 w-6 h-6" />}
+                <Button type="submit" size="lg" disabled={isSubmitting} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-full h-16 font-black uppercase tracking-[0.2em] text-[11px] shadow-lg hover:scale-[1.02] transition-all">
+                  {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin mr-3" /> : <Send className="mr-3 w-5 h-5" />}
                   {buttonSend}
                 </Button>
               </form>
