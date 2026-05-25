@@ -4,13 +4,15 @@
 import React from 'react';
 import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
+import { usePathname } from 'next/navigation';
 
 /**
- * @fileOverview BackgroundLayer: Beheert de globale achtergrondafbeelding van het museum.
- * De opacity en afbeelding zijn instelbaar via de Admin settings.
+ * @fileOverview BackgroundLayer: Beheert de achtergrondafbeelding.
+ * Ondersteunt nu pagina-specifieke overrides.
  */
 export function BackgroundLayer() {
   const firestore = useFirestore();
+  const pathname = usePathname();
 
   const settingsRef = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -19,14 +21,29 @@ export function BackgroundLayer() {
 
   const { data: settings } = useDoc(settingsRef);
 
-  const bgUrl = settings?.backgroundImageUrl;
-  const opacity = typeof settings?.backgroundOpacity === 'number' ? settings.backgroundOpacity / 100 : 0;
+  // Bepaal de huidige page-key op basis van het pad
+  const getPageKey = () => {
+    if (pathname === '/') return 'home';
+    if (pathname.startsWith('/gallery')) return 'gallery';
+    if (pathname.startsWith('/shop')) return 'shop';
+    if (pathname.startsWith('/curator')) return 'curator';
+    if (pathname.startsWith('/exhibition')) return 'exhibition';
+    const parts = pathname.split('/').filter(Boolean);
+    return parts[parts.length - 1] || 'global';
+  };
+
+  const pageKey = getPageKey();
+  
+  // Zoek naar pagina-specifieke instellingen, anders fallback naar global
+  const bgUrl = settings?.[`backgroundImageUrl_${pageKey}`] || settings?.backgroundImageUrl;
+  const rawOpacity = settings?.[`backgroundOpacity_${pageKey}`] ?? settings?.backgroundOpacity;
+  const opacity = typeof rawOpacity === 'number' ? rawOpacity / 100 : 0;
 
   if (!bgUrl) return null;
 
   return (
     <div 
-      className="fixed inset-0 z-[-1] pointer-events-none transition-opacity duration-1000"
+      className="fixed inset-0 z-[-1] pointer-events-none transition-all duration-1000 ease-in-out"
       style={{ 
         opacity: opacity,
         backgroundImage: `url(${bgUrl})`,

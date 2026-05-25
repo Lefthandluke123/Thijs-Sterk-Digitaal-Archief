@@ -28,7 +28,6 @@ import {
   Plus,
   LayoutDashboard,
   Layers,
-  Languages,
   Edit3,
   Sparkles,
   Save,
@@ -40,7 +39,8 @@ import {
   Hash,
   Image as ImageIcon,
   Sliders,
-  Settings
+  Settings,
+  Monitor
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -60,6 +60,18 @@ import { Slider } from '@/components/ui/slider';
 import { verifyAdminPassword } from '@/lib/admin-actions';
 import { cn } from '@/lib/utils';
 import { sortArtworksByTitle, cleanString, cleanArray, sanitizeArtwork, normalizeArtwork } from '@/lib/museum-utils';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+
+const PAGES = [
+  { id: 'home', label: 'Homepage' },
+  { id: 'gallery', label: 'Zalen Overzicht' },
+  { id: 'curator', label: 'Samenstellen' },
+  { id: 'shop', label: 'Winkel' },
+  { id: 'beatrijs', label: 'Beatrijs Sterk' },
+  { id: 'hanneke', label: 'Hanneke Sterk' },
+  { id: 'peter-bes', label: 'Peter Bes' },
+  { id: 'leo-duppen', label: 'Leo Duppen' },
+];
 
 export default function AdminPage() {
   const firestore = useFirestore();
@@ -131,7 +143,7 @@ export default function AdminPage() {
 
   const roomsQuery = useMemoFirebase(() => {
     if (!firestore || !isAuthorized) return null;
-    return collection(firestore, 'rooms');
+    return query(collection(firestore, 'rooms'), orderBy('order', 'asc'));
   }, [firestore, isAuthorized]);
   const { data: rooms } = useCollection(roomsQuery);
 
@@ -159,16 +171,31 @@ export default function AdminPage() {
     e.preventDefault();
     if (!settingsRef) return;
     setIsSavingSettings(true);
+    
     const formData = new FormData(e.currentTarget);
-    const updates = {
-      backgroundImageUrl: cleanString(formData.get('backgroundImageUrl')),
-      backgroundOpacity: parseInt(formData.get('backgroundOpacity') as string, 10),
-      updatedAt: serverTimestamp()
-    };
+    const updates: any = { updatedAt: serverTimestamp() };
+
+    // Verwerk globale settings
+    updates.backgroundImageUrl = cleanString(formData.get('backgroundImageUrl'));
+    updates.backgroundOpacity = parseInt(formData.get('backgroundOpacity') as string, 10);
+
+    // Verwerk pagina-specifieke settings
+    PAGES.forEach(page => {
+      const url = formData.get(`backgroundImageUrl_${page.id}`);
+      const opacity = formData.get(`backgroundOpacity_${page.id}`);
+      if (url !== null) updates[`backgroundImageUrl_${page.id}`] = cleanString(url);
+      if (opacity !== null) updates[`backgroundOpacity_${page.id}`] = parseInt(opacity as string, 10);
+      
+      // Verwerk bio images (foto-vakken)
+      const bioImagesStr = formData.get(`bioImages_${page.id}`);
+      if (bioImagesStr !== null) {
+        updates[`${page.id}BioImages`] = cleanArray(String(bioImagesStr).split(','));
+      }
+    });
 
     try {
       await updateDoc(settingsRef, updates);
-      toast({ title: "Instellingen opgeslagen" });
+      toast({ title: "Visuele instellingen opgeslagen" });
     } catch (e) {
       toast({ variant: "destructive", title: "Fout", description: "Kon instellingen niet opslaan." });
     } finally {
@@ -376,6 +403,7 @@ export default function AdminPage() {
                   <div>
                     <h3 className="font-headline text-2xl italic">{room.title}</h3>
                     <p className="text-[10px] font-black uppercase opacity-30">Slug: {room.slug}</p>
+                    <p className="text-[10px] font-bold text-accent">Volgorde: {room.order}</p>
                   </div>
                   <div className="flex gap-2">
                     <Button onClick={() => { setEditingRoom(room); setRoomForm(room); setIsRoomDialogOpen(true); }} variant="outline" className="flex-1 rounded-xl text-[10px] font-black">Bewerken</Button>
@@ -401,52 +429,82 @@ export default function AdminPage() {
           </TabsContent>
 
           <TabsContent value="settings">
-             <Card className="p-12 rounded-[3rem] bg-white border-none shadow-xl max-w-2xl mx-auto">
-                <form onSubmit={handleSaveSettings} className="space-y-10">
-                   <div className="space-y-4">
-                      <div className="flex items-center gap-3">
-                         <Sliders className="w-5 h-5 text-accent" />
-                         <h2 className="font-headline text-2xl italic">Pagina Achtergrond</h2>
-                      </div>
-                      <p className="text-sm text-muted-foreground leading-relaxed">
-                         Stel een globale achtergrondafbeelding in voor het gehele museum. Deze wordt subtiel achter de zalen en pagina's getoond.
-                      </p>
-                   </div>
+             <div className="max-w-4xl mx-auto space-y-12">
+               <Card className="p-12 rounded-[3rem] bg-white border-none shadow-xl">
+                  <form onSubmit={handleSaveSettings} className="space-y-10">
+                     <div className="space-y-4">
+                        <div className="flex items-center gap-3">
+                           <Monitor className="w-5 h-5 text-accent" />
+                           <h2 className="font-headline text-2xl italic">Visuele Styling</h2>
+                        </div>
+                        <p className="text-sm text-muted-foreground leading-relaxed">
+                           Beheer hier de globale en pagina-specifieke achtergronden en foto-secties.
+                        </p>
+                     </div>
 
-                   <div className="space-y-6">
-                      <div className="space-y-2">
-                         <Label className="text-[10px] uppercase font-black tracking-widest opacity-40">Afbeelding URL</Label>
-                         <Input 
-                            name="backgroundImageUrl" 
-                            defaultValue={settings?.backgroundImageUrl || ""} 
-                            placeholder="https://..." 
-                            className="h-14 rounded-2xl bg-black/5 border-none"
-                         />
-                      </div>
+                     <Accordion type="single" collapsible className="w-full">
+                        <AccordionItem value="global" className="border-b border-black/5">
+                           <AccordionTrigger className="font-bold text-sm uppercase tracking-widest hover:no-underline py-6">
+                              Globale Museum Achtergrond
+                           </AccordionTrigger>
+                           <AccordionContent className="space-y-8 pt-4 pb-8">
+                              <div className="space-y-2">
+                                 <Label className="text-[10px] uppercase font-black opacity-40">Afbeelding URL</Label>
+                                 <Input name="backgroundImageUrl" defaultValue={settings?.backgroundImageUrl || ""} placeholder="https://..." className="h-12 rounded-xl bg-black/5 border-none" />
+                              </div>
+                              <div className="space-y-4">
+                                 <div className="flex justify-between items-center">
+                                    <Label className="text-[10px] uppercase font-black opacity-40">Opacity (%)</Label>
+                                    <span className="text-xs font-bold text-accent">{settings?.backgroundOpacity || 0}%</span>
+                                 </div>
+                                 <Slider name="backgroundOpacity" defaultValue={[settings?.backgroundOpacity || 0]} max={100} step={1} />
+                              </div>
+                           </AccordionContent>
+                        </AccordionItem>
 
-                      <div className="space-y-6">
-                         <div className="flex justify-between items-center">
-                            <Label className="text-[10px] uppercase font-black tracking-widest opacity-40">Transparantie (Opacity)</Label>
-                            <span className="text-xs font-bold text-accent">{settings?.backgroundOpacity || 0}%</span>
-                         </div>
-                         <div className="px-2">
-                            <Slider 
-                               name="backgroundOpacity"
-                               defaultValue={[settings?.backgroundOpacity || 0]} 
-                               max={100} 
-                               step={1} 
-                               className="py-4"
-                            />
-                            <input type="hidden" name="backgroundOpacity" value={settings?.backgroundOpacity || 0} />
-                         </div>
-                      </div>
-                   </div>
+                        {PAGES.map(page => (
+                           <AccordionItem key={page.id} value={page.id} className="border-b border-black/5">
+                              <AccordionTrigger className="font-bold text-sm uppercase tracking-widest hover:no-underline py-6">
+                                 {page.label}
+                              </AccordionTrigger>
+                              <AccordionContent className="space-y-8 pt-4 pb-8">
+                                 <div className="grid md:grid-cols-2 gap-8">
+                                    <div className="space-y-6">
+                                       <div className="space-y-2">
+                                          <Label className="text-[10px] uppercase font-black opacity-40">Pagina Achtergrond URL</Label>
+                                          <Input name={`backgroundImageUrl_${page.id}`} defaultValue={settings?.[`backgroundImageUrl_${page.id}`] || ""} placeholder="Laat leeg voor global..." className="h-12 rounded-xl bg-black/5 border-none" />
+                                       </div>
+                                       <div className="space-y-4">
+                                          <div className="flex justify-between items-center">
+                                             <Label className="text-[10px] uppercase font-black opacity-40">Opacity (%)</Label>
+                                             <span className="text-xs font-bold text-accent">{settings?.[`backgroundOpacity_${page.id}`] ?? 10}%</span>
+                                          </div>
+                                          <Slider name={`backgroundOpacity_${page.id}`} defaultValue={[settings?.[`backgroundOpacity_${page.id}`] ?? 10]} max={100} step={1} />
+                                       </div>
+                                    </div>
+                                    
+                                    {page.id.includes('beatrijs') || page.id.includes('hanneke') || page.id.includes('peter') || page.id.includes('leo') ? (
+                                       <div className="space-y-4">
+                                          <div className="flex items-center gap-2">
+                                             <ImageIcon className="w-3.5 h-3.5 opacity-40" />
+                                             <Label className="text-[10px] uppercase font-black opacity-40">Foto-vakken (URL's gescheiden door komma)</Label>
+                                          </div>
+                                          <Textarea name={`bioImages_${page.id}`} defaultValue={(settings?.[`${page.id}BioImages`] || []).join(', ')} placeholder="URL 1, URL 2..." className="min-h-[120px] rounded-xl bg-black/5 border-none resize-none text-xs" />
+                                          <p className="text-[9px] text-muted-foreground italic">Deze foto's verschijnen in vakken naast de tekst en kunnen in Deep Zoom bekeken worden.</p>
+                                       </div>
+                                    ) : null}
+                                 </div>
+                              </AccordionContent>
+                           </AccordionItem>
+                        ))}
+                     </Accordion>
 
-                   <Button type="submit" disabled={isSavingSettings} className="w-full h-16 rounded-2xl bg-primary text-primary-foreground font-black uppercase tracking-widest">
-                      {isSavingSettings ? <Loader2 className="animate-spin" /> : "Visuele Instellingen Opslaan"}
-                   </Button>
-                </form>
-             </Card>
+                     <Button type="submit" disabled={isSavingSettings} className="w-full h-16 rounded-2xl bg-primary text-primary-foreground font-black uppercase tracking-widest shadow-xl">
+                        {isSavingSettings ? <Loader2 className="animate-spin" /> : "Alle Visuele Instellingen Opslaan"}
+                     </Button>
+                  </form>
+               </Card>
+             </div>
           </TabsContent>
         </Tabs>
       </div>
@@ -480,30 +538,6 @@ export default function AdminPage() {
                <div className="space-y-4">
                   <Label className="text-[10px] uppercase font-black opacity-40">Tags Toevoegen</Label>
                   <Input value={bulkForm.addTags} onChange={e => setBulkForm(p => ({ ...p, addTags: e.target.value }))} placeholder="Polder, Olieverf..." className="rounded-xl h-12" />
-               </div>
-            </div>
-            <div className="grid md:grid-cols-2 gap-6 pt-4 border-t">
-               <div className="space-y-2">
-                  <Label className="text-[10px] uppercase font-black opacity-40">Homepage (Featured)</Label>
-                  <Select value={bulkForm.featured} onValueChange={(v: any) => setBulkForm(p => ({ ...p, featured: v }))}>
-                     <SelectTrigger className="h-12 rounded-xl"><SelectValue /></SelectTrigger>
-                     <SelectContent>
-                        <SelectItem value="keep">Geen wijziging</SelectItem>
-                        <SelectItem value="yes">Ja</SelectItem>
-                        <SelectItem value="no">Nee</SelectItem>
-                     </SelectContent>
-                  </Select>
-               </div>
-               <div className="space-y-2">
-                  <Label className="text-[10px] uppercase font-black opacity-40">Museumwinkel</Label>
-                  <Select value={bulkForm.inShop} onValueChange={(v: any) => setBulkForm(p => ({ ...p, inShop: v }))}>
-                     <SelectTrigger className="h-12 rounded-xl"><SelectValue /></SelectTrigger>
-                     <SelectContent>
-                        <SelectItem value="keep">Geen wijziging</SelectItem>
-                        <SelectItem value="yes">Ja</SelectItem>
-                        <SelectItem value="no">Nee</SelectItem>
-                     </SelectContent>
-                  </Select>
                </div>
             </div>
           </div>
@@ -574,6 +608,10 @@ export default function AdminPage() {
             <div className="space-y-2">
               <Label className="text-[10px] font-black uppercase opacity-40">Slug (URL)</Label>
               <Input value={roomForm.slug} onChange={e => setRoomForm({...roomForm, slug: e.target.value.toLowerCase().replace(/ /g, '-')})} className="rounded-xl h-12" />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase opacity-40">Volgorde (Nummer)</Label>
+              <Input type="number" value={roomForm.order} onChange={e => setRoomForm({...roomForm, order: parseInt(e.target.value, 10)})} className="rounded-xl h-12" />
             </div>
           </div>
           <DialogFooter><Button onClick={handleSaveRoom} className="w-full h-14 rounded-2xl bg-primary">Zaal Opslaan</Button></DialogFooter>
