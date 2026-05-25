@@ -1,49 +1,55 @@
 
 "use client";
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, doc, deleteDoc, query, updateDoc, addDoc, serverTimestamp, orderBy, getDocs, where, writeBatch } from 'firebase/firestore';
+import { 
+  collection, 
+  doc, 
+  deleteDoc, 
+  query, 
+  updateDoc, 
+  addDoc, 
+  serverTimestamp, 
+  orderBy, 
+  setDoc 
+} from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 import { 
   Trash2, 
   Loader2, 
   ArrowLeft,
-  Search,
   Palette,
   Lock,
   Plus,
   LayoutDashboard,
   Layers,
   Languages,
-  X,
-  DatabaseZap,
-  CheckSquare,
-  Square,
-  CheckCircle2,
-  FolderInput,
-  Star,
-  ShoppingBag,
-  ExternalLink,
   Edit3,
   Sparkles,
-  FileText
+  FileText,
+  Save,
+  X
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogTitle, DialogHeader, DialogFooter } from '@/components/ui/dialog';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogTitle, 
+  DialogHeader, 
+  DialogFooter,
+  DialogDescription
+} from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { verifyAdminPassword } from '@/lib/admin-actions';
 import { cn } from '@/lib/utils';
-import placeholderData from '@/app/lib/placeholder-images.json';
-import { Checkbox } from '@/components/ui/checkbox';
 
 export default function AdminPage() {
   const firestore = useFirestore();
@@ -52,6 +58,27 @@ export default function AdminPage() {
   const [password, setPassword] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [activeTab, setActiveTab] = useState('artworks');
+
+  // Room Dialog State
+  const [isRoomDialogOpen, setIsRoomDialogOpen] = useState(false);
+  const [editingRoom, setEditingRoom] = useState<any>(null);
+  const [roomForm, setRoomForm] = useState({ title: '', slug: '', description: '', order: 0 });
+
+  // Artwork Dialog State
+  const [isArtworkDialogOpen, setIsArtworkDialogOpen] = useState(false);
+  const [editingArtwork, setEditingArtwork] = useState<any>(null);
+  const [artworkForm, setArtworkForm] = useState({ 
+    title: '', 
+    slug: '', 
+    image: '', 
+    roomSlug: '', 
+    year: '', 
+    medium: '', 
+    description: '',
+    featured: false,
+    inShop: false,
+    tags: ''
+  });
 
   useEffect(() => {
     if (sessionStorage.getItem('admin_auth') === 'true') setIsAuthorized(true);
@@ -73,13 +100,116 @@ export default function AdminPage() {
     if (!firestore || !isAuthorized) return null;
     return query(collection(firestore, 'artworks'), orderBy('createdAt', 'desc'));
   }, [firestore, isAuthorized]);
-  const { data: artworks, loading: artLoading } = useCollection(artworksQuery);
+  const { data: artworks } = useCollection(artworksQuery);
 
   const roomsQuery = useMemoFirebase(() => {
     if (!firestore || !isAuthorized) return null;
     return query(collection(firestore, 'rooms'), orderBy('order', 'asc'));
   }, [firestore, isAuthorized]);
-  const { data: rooms, loading: roomsLoading } = useCollection(roomsQuery);
+  const { data: rooms } = useCollection(roomsQuery);
+
+  // --- Room Actions ---
+  const handleOpenRoomDialog = (room?: any) => {
+    if (room) {
+      setEditingRoom(room);
+      setRoomForm({ title: room.title, slug: room.slug, description: room.description || '', order: room.order || 0 });
+    } else {
+      setEditingRoom(null);
+      setRoomForm({ title: '', slug: '', description: '', order: (rooms?.length || 0) + 1 });
+    }
+    setIsRoomDialogOpen(true);
+  };
+
+  const handleSaveRoom = async () => {
+    if (!firestore) return;
+    try {
+      if (editingRoom) {
+        await updateDoc(doc(firestore, 'rooms', editingRoom.id), roomForm);
+        toast({ title: "Zaal bijgewerkt" });
+      } else {
+        await addDoc(collection(firestore, 'rooms'), { ...roomForm, createdAt: serverTimestamp() });
+        toast({ title: "Zaal aangemaakt" });
+      }
+      setIsRoomDialogOpen(false);
+    } catch (e) {
+      toast({ variant: "destructive", title: "Fout", description: "Kon zaal niet opslaan." });
+    }
+  };
+
+  const handleDeleteRoom = async (id: string) => {
+    if (!firestore || !confirm("Weet je zeker dat je deze zaal wilt verwijderen? Kunstwerken blijven bestaan maar verliezen hun koppeling.")) return;
+    try {
+      await deleteDoc(doc(firestore, 'rooms', id));
+      toast({ title: "Zaal verwijderd" });
+    } catch (e) {
+      toast({ variant: "destructive", title: "Fout", description: "Kon zaal niet verwijderen." });
+    }
+  };
+
+  // --- Artwork Actions ---
+  const handleOpenArtworkDialog = (art?: any) => {
+    if (art) {
+      setEditingArtwork(art);
+      setArtworkForm({ 
+        title: art.title, 
+        slug: art.slug, 
+        image: art.image || art.imageUrl || '', 
+        roomSlug: art.roomSlug || '', 
+        year: art.year || '', 
+        medium: art.medium || '', 
+        description: art.description || '',
+        featured: !!art.featured,
+        inShop: !!art.inShop,
+        tags: (art.tags || []).join(', ')
+      });
+    } else {
+      setEditingArtwork(null);
+      setArtworkForm({ 
+        title: '', 
+        slug: '', 
+        image: '', 
+        roomSlug: rooms?.[0]?.slug || '', 
+        year: '', 
+        medium: 'Olieverf op doek', 
+        description: '',
+        featured: false,
+        inShop: false,
+        tags: ''
+      });
+    }
+    setIsArtworkDialogOpen(true);
+  };
+
+  const handleSaveArtwork = async () => {
+    if (!firestore) return;
+    const finalData = {
+      ...artworkForm,
+      tags: artworkForm.tags.split(',').map(t => t.trim()).filter(Boolean),
+      createdAt: editingArtwork ? editingArtwork.createdAt : serverTimestamp()
+    };
+    try {
+      if (editingArtwork) {
+        await updateDoc(doc(firestore, 'artworks', editingArtwork.id), finalData);
+        toast({ title: "Kunstwerk bijgewerkt" });
+      } else {
+        await addDoc(collection(firestore, 'artworks'), finalData);
+        toast({ title: "Kunstwerk toegevoegd" });
+      }
+      setIsArtworkDialogOpen(false);
+    } catch (e) {
+      toast({ variant: "destructive", title: "Fout", description: "Kon kunstwerk niet opslaan." });
+    }
+  };
+
+  const handleDeleteArtwork = async (id: string) => {
+    if (!firestore || !confirm("Weet je zeker dat je dit kunstwerk wilt verwijderen uit het archief?")) return;
+    try {
+      await deleteDoc(doc(firestore, 'artworks', id));
+      toast({ title: "Kunstwerk verwijderd" });
+    } catch (e) {
+      toast({ variant: "destructive", title: "Fout", description: "Kon kunstwerk niet verwijderen." });
+    }
+  };
 
   if (!isAuthorized) {
     return (
@@ -101,7 +231,7 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pt-32 px-8">
+    <div className="min-h-screen bg-[#f8f9fa] pt-32 px-8">
       <header className="fixed top-0 left-0 right-0 h-24 bg-white/80 backdrop-blur-md border-b z-40 px-8 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <LayoutDashboard className="w-6 h-6 text-accent" />
@@ -125,32 +255,64 @@ export default function AdminPage() {
               <Layers className="w-4 h-4 mr-2" /> Zalen
             </TabsTrigger>
             <TabsTrigger value="content" className="rounded-full px-8 h-12 uppercase font-black text-[11px] tracking-widest">
-              <Languages className="w-4 h-4 mr-2" /> CMS & Vertalingen
+              <Languages className="w-4 h-4 mr-2" /> Vertalingen
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="artworks" className="space-y-8">
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
-               {/* Collectie Grid hier... */}
-               <Card className="col-span-full p-20 text-center rounded-[3rem] border-dashed border-4 border-black/5 bg-transparent">
-                  <h3 className="font-headline text-2xl italic mb-4">Beheer je Kunstwerken</h3>
-                  <Button onClick={() => setActiveTab('artworks')} className="rounded-full px-10 h-14 bg-accent">
-                     <Plus className="w-4 h-4 mr-2" /> Werk Toevoegen
-                  </Button>
-               </Card>
+            <div className="flex justify-between items-center mb-8">
+              <h2 className="font-headline text-3xl italic opacity-40">Kunstwerken</h2>
+              <Button onClick={() => handleOpenArtworkDialog()} className="rounded-full px-8 h-12 bg-accent">
+                <Plus className="w-4 h-4 mr-2" /> Werk Toevoegen
+              </Button>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
+               {artworks?.map((art: any) => (
+                 <Card key={art.id} className="p-4 rounded-2xl border-none shadow-md bg-white group relative overflow-hidden">
+                    <div className="aspect-square rounded-xl overflow-hidden bg-black/5 mb-4">
+                      <img src={art.image || art.imageUrl} className="w-full h-full object-cover" alt={art.title} />
+                    </div>
+                    <h3 className="font-bold text-sm truncate">{art.title}</h3>
+                    <p className="text-[10px] opacity-40 uppercase font-black tracking-widest">{art.year} • {art.roomSlug}</p>
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                       <Button size="sm" onClick={() => handleOpenArtworkDialog(art)} className="rounded-full bg-white text-black hover:bg-white/90">
+                         <Edit3 className="w-4 h-4" />
+                       </Button>
+                       <Button size="sm" variant="destructive" onClick={() => handleDeleteArtwork(art.id)} className="rounded-full">
+                         <Trash2 className="w-4 h-4" />
+                       </Button>
+                    </div>
+                 </Card>
+               ))}
             </div>
           </TabsContent>
 
-          <TabsContent value="rooms">
-             <div className="grid md:grid-cols-3 gap-6">
-                {rooms?.map((room: any) => (
-                  <Card key={room.id} className="p-8 rounded-[2rem] border-none shadow-md bg-white">
-                    <h3 className="font-headline text-2xl italic mb-2">{room.title}</h3>
-                    <p className="text-sm opacity-60 mb-6">{room.description}</p>
-                    <Button variant="outline" className="w-full rounded-xl uppercase font-black text-[10px] tracking-widest">Bewerk Zaal</Button>
-                  </Card>
-                ))}
-             </div>
+          <TabsContent value="rooms" className="space-y-8">
+            <div className="flex justify-between items-center mb-8">
+              <h2 className="font-headline text-3xl italic opacity-40">Museum Zalen</h2>
+              <Button onClick={() => handleOpenRoomDialog()} className="rounded-full px-8 h-12 bg-accent">
+                <Plus className="w-4 h-4 mr-2" /> Nieuwe Zaal Toevoegen
+              </Button>
+            </div>
+            <div className="grid md:grid-cols-3 gap-6">
+              {rooms?.map((room: any) => (
+                <Card key={room.id} className="p-8 rounded-[2rem] border-none shadow-md bg-white space-y-4">
+                  <div>
+                    <h3 className="font-headline text-2xl italic">{room.title}</h3>
+                    <p className="text-[10px] font-black uppercase tracking-widest opacity-30">Slug: {room.slug} • Volgorde: {room.order}</p>
+                  </div>
+                  <p className="text-sm opacity-60 line-clamp-2 min-h-[40px]">{room.description}</p>
+                  <div className="flex gap-2 pt-4">
+                    <Button onClick={() => handleOpenRoomDialog(room)} variant="outline" className="flex-1 rounded-xl uppercase font-black text-[10px] tracking-widest">
+                      <Edit3 className="w-3.5 h-3.5 mr-2" /> Bewerken
+                    </Button>
+                    <Button onClick={() => handleDeleteRoom(room.id)} variant="ghost" className="rounded-xl text-destructive hover:bg-destructive/5">
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            </div>
           </TabsContent>
 
           <TabsContent value="content">
@@ -183,6 +345,112 @@ export default function AdminPage() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Room Dialog */}
+      <Dialog open={isRoomDialogOpen} onOpenChange={setIsRoomDialogOpen}>
+        <DialogContent className="max-w-xl rounded-[2rem] p-8 border-none shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="font-headline text-2xl italic">{editingRoom ? 'Zaal Bewerken' : 'Nieuwe Zaal'}</DialogTitle>
+            <DialogDescription>Voer de details van de museumzaal in.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-6 py-4">
+            <div className="space-y-2">
+              <Label className="text-[10px] uppercase font-black tracking-widest ml-2 opacity-40">Titel</Label>
+              <Input value={roomForm.title} onChange={e => setRoomForm({...roomForm, title: e.target.value})} className="rounded-xl bg-black/5 border-none h-12" placeholder="Bijv. De Vroege Jaren" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-[10px] uppercase font-black tracking-widest ml-2 opacity-40">Slug (URL)</Label>
+                <Input value={roomForm.slug} onChange={e => setRoomForm({...roomForm, slug: e.target.value.toLowerCase().replace(/ /g, '-')})} className="rounded-xl bg-black/5 border-none h-12" placeholder="vroege-jaren" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] uppercase font-black tracking-widest ml-2 opacity-40">Volgorde</Label>
+                <Input type="number" value={roomForm.order} onChange={e => setRoomForm({...roomForm, order: parseInt(e.target.value)})} className="rounded-xl bg-black/5 border-none h-12" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[10px] uppercase font-black tracking-widest ml-2 opacity-40">Beschrijving (NL)</Label>
+              <Textarea value={roomForm.description} onChange={e => setRoomForm({...roomForm, description: e.target.value})} className="rounded-2xl bg-black/5 border-none min-h-[100px]" placeholder="Korte inleiding voor de zaal..." />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={handleSaveRoom} className="w-full h-14 rounded-2xl bg-primary">
+              <Save className="w-4 h-4 mr-2" /> Zaal Opslaan
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Artwork Dialog */}
+      <Dialog open={isArtworkDialogOpen} onOpenChange={setIsArtworkDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-[2rem] p-8 border-none shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="font-headline text-2xl italic">{editingArtwork ? 'Werk Bewerken' : 'Nieuw Kunstwerk'}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-6 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-[10px] uppercase font-black tracking-widest ml-2 opacity-40">Titel</Label>
+                <Input value={artworkForm.title} onChange={e => setArtworkForm({...artworkForm, title: e.target.value})} className="rounded-xl bg-black/5 border-none" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] uppercase font-black tracking-widest ml-2 opacity-40">Slug</Label>
+                <Input value={artworkForm.slug} onChange={e => setArtworkForm({...artworkForm, slug: e.target.value.toLowerCase().replace(/ /g, '-')})} className="rounded-xl bg-black/5 border-none" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[10px] uppercase font-black tracking-widest ml-2 opacity-40">Afbeelding URL (High Res)</Label>
+              <Input value={artworkForm.image} onChange={e => setArtworkForm({...artworkForm, image: e.target.value})} className="rounded-xl bg-black/5 border-none" placeholder="https://..." />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-[10px] uppercase font-black tracking-widest ml-2 opacity-40">Jaartal</Label>
+                <Input value={artworkForm.year} onChange={e => setArtworkForm({...artworkForm, year: e.target.value})} className="rounded-xl bg-black/5 border-none" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] uppercase font-black tracking-widest ml-2 opacity-40">Techniek</Label>
+                <Input value={artworkForm.medium} onChange={e => setArtworkForm({...artworkForm, medium: e.target.value})} className="rounded-xl bg-black/5 border-none" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[10px] uppercase font-black tracking-widest ml-2 opacity-40">Zaal</Label>
+              <Select value={artworkForm.roomSlug} onValueChange={v => setArtworkForm({...artworkForm, roomSlug: v})}>
+                <SelectTrigger className="rounded-xl bg-black/5 border-none">
+                  <SelectValue placeholder="Kies een zaal" />
+                </SelectTrigger>
+                <SelectContent>
+                  {rooms?.map((r: any) => (
+                    <SelectItem key={r.id} value={r.slug}>{r.title}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[10px] uppercase font-black tracking-widest ml-2 opacity-40">Tags (komma gescheiden)</Label>
+              <Input value={artworkForm.tags} onChange={e => setArtworkForm({...artworkForm, tags: e.target.value})} className="rounded-xl bg-black/5 border-none" placeholder="Olieverf, Polder, 1960" />
+            </div>
+            <div className="flex gap-8 py-2">
+              <div className="flex items-center space-x-2">
+                <Checkbox id="featured" checked={artworkForm.featured} onCheckedChange={(v) => setArtworkForm({...artworkForm, featured: !!v})} />
+                <Label htmlFor="featured" className="text-[10px] uppercase font-black tracking-widest opacity-60">Op Homepage (Featured)</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox id="inShop" checked={artworkForm.inShop} onCheckedChange={(v) => setArtworkForm({...artworkForm, inShop: !!v})} />
+                <Label htmlFor="inShop" className="text-[10px] uppercase font-black tracking-widest opacity-60">In Museumwinkel</Label>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[10px] uppercase font-black tracking-widest ml-2 opacity-40">Beschrijving (NL)</Label>
+              <Textarea value={artworkForm.description} onChange={e => setArtworkForm({...artworkForm, description: e.target.value})} className="rounded-2xl bg-black/5 border-none min-h-[80px]" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={handleSaveArtwork} className="w-full h-14 rounded-2xl bg-primary">
+              <Palette className="w-4 h-4 mr-2" /> Kunstwerk Opslaan
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
