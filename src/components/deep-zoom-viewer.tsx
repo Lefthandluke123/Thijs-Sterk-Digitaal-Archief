@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface DeepZoomViewerProps {
   imageUrl: string;
@@ -12,7 +13,7 @@ interface DeepZoomViewerProps {
 /**
  * @fileOverview DeepZoomViewer component met OpenSeadragon.
  * Geoptimaliseerd voor een schone state-reset, geforceerde cursor interactie
- * en Command+Klik ondersteuning voor uitzoomen.
+ * en Command+Klik ondersteuning voor uitzoomen met dynamische cursor feedback.
  */
 export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({ 
   imageUrl, 
@@ -21,6 +22,26 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isZoomOutMode, setIsZoomOutMode] = useState(false);
+
+  // Luister naar Command/Ctrl toets voor cursor feedback
+  useEffect(() => {
+    const handleKeyChange = (e: KeyboardEvent) => {
+      const isCmdOrCtrl = e.metaKey || e.ctrlKey;
+      setIsZoomOutMode(isCmdOrCtrl);
+    };
+
+    window.addEventListener('keydown', handleKeyChange);
+    window.addEventListener('keyup', handleKeyChange);
+    // Ook luisteren naar focus-verlies om te voorkomen dat cursor 'vast' blijft op minnetje
+    window.addEventListener('blur', () => setIsZoomOutMode(false));
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyChange);
+      window.removeEventListener('keyup', handleKeyChange);
+      window.removeEventListener('blur', () => setIsZoomOutMode(false));
+    };
+  }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !containerRef.current || !imageUrl) return;
@@ -57,7 +78,7 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
             scrollToZoom: true,
             pinchToZoom: true,
           },
-          // Sizing en Positionering (Cruciaal voor de 'niet te ver ingezoomd' fix)
+          // Sizing en Positionering
           homeFillsViewer: false, 
           visibilityRatio: 1.0,
           constrainDuringPan: true,
@@ -66,7 +87,7 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
           maxZoomLevel: 10,
           autoResize: true,
           preserveViewport: false,
-          // Cursor fixes
+          // Cursor fixes (worden nu via CSS afgehandeld op de container)
           zoomInButton: undefined,
           zoomOutButton: undefined,
           homeButton: undefined,
@@ -81,7 +102,7 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
           }
         });
 
-        // TOEVOEGING: Command + Klik om uit te zoomen
+        // Command + Klik om uit te zoomen
         viewerRef.current.addHandler('canvas-click', (event: any) => {
           const isCmdOrCtrl = event.originalEvent.metaKey || event.originalEvent.ctrlKey;
           
@@ -89,6 +110,7 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
             event.preventDefaultAction = true; // Voorkom standaard zoom-in
             if (viewerRef.current && viewerRef.current.viewport) {
               const currentZoom = viewerRef.current.viewport.getZoom();
+              // Zoom uit met factor 2
               viewerRef.current.viewport.zoomTo(currentZoom / 2);
             }
           }
@@ -120,7 +142,13 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
       )}
       <div 
         ref={containerRef} 
-        className="w-full h-full outline-none cursor-zoom-in [&_canvas]:!cursor-zoom-in [&_canvas]:!outline-none" 
+        className={cn(
+          "w-full h-full outline-none transition-all duration-200",
+          isZoomOutMode 
+            ? "cursor-zoom-out [&_canvas]:!cursor-zoom-out" 
+            : "cursor-zoom-in [&_canvas]:!cursor-zoom-in",
+          "[&_canvas]:!outline-none"
+        )} 
         style={{ 
           filter: `brightness(${brightness})`,
           display: 'block'
