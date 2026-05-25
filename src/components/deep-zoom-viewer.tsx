@@ -17,8 +17,9 @@ interface DeepZoomViewerProps {
  * INTERACTIE-FLOW:
  * 1. Default: cursor-zoom-in (plusje).
  * 2. Command/Ctrl ingedrukt: cursor-zoom-out (minnetje).
- * 3. Klik: Inzoomen op cursor.
- * 4. Command/Ctrl + Klik: Uitzoomen (factor 2).
+ * 3. Slepen (Drag): cursor-grabbing (handje).
+ * 4. Klik: Inzoomen op cursor.
+ * 5. Command/Ctrl + Klik: Uitzoomen (factor 2).
  * 
  * ARCHITECTUUR:
  * - Gebruikt OpenSeadragon canvas binnen een geforceerde cursor-container.
@@ -33,6 +34,7 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
   const viewerRef = useRef<any>(null);
   const [loading, setLoading] = useState(true);
   const [isZoomOutMode, setIsZoomOutMode] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   // Luister naar Command/Ctrl toets voor dynamische cursor feedback
   useEffect(() => {
@@ -106,6 +108,14 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
           }
         });
 
+        // Detecteer slepen voor handje-cursor
+        viewerRef.current.addHandler('canvas-drag', () => {
+          setIsDragging(true);
+        });
+        viewerRef.current.addHandler('canvas-drag-end', () => {
+          setIsDragging(false);
+        });
+
         // Command + Klik om uit te zoomen met visuele feedback
         viewerRef.current.addHandler('canvas-click', (event: any) => {
           const isCmdOrCtrl = event.originalEvent.metaKey || event.originalEvent.ctrlKey;
@@ -146,9 +156,11 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
         ref={containerRef} 
         className={cn(
           "w-full h-full outline-none transition-all duration-200",
-          isZoomOutMode 
-            ? "cursor-zoom-out [&_canvas]:!cursor-zoom-out" 
-            : "cursor-zoom-in [&_canvas]:!cursor-zoom-in",
+          isDragging
+            ? "cursor-grabbing [&_canvas]:!cursor-grabbing"
+            : isZoomOutMode 
+              ? "cursor-zoom-out [&_canvas]:!cursor-zoom-out" 
+              : "cursor-zoom-in [&_canvas]:!cursor-zoom-in",
           "[&_canvas]:!outline-none"
         )} 
         style={{ 
