@@ -71,6 +71,7 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
           <Link 
             href="/gallery" 
             className="p-5 rounded-full bg-white/90 backdrop-blur-xl border border-black/5 hover:bg-accent hover:text-accent-foreground transition-all group shadow-xl"
+            aria-label="Terug naar overzicht"
           >
             <ArrowLeft className="w-6 h-6 group-hover:-translate-x-1 transition-transform" />
           </Link>
@@ -88,6 +89,7 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
             "p-5 rounded-full backdrop-blur-xl border border-black/5 transition-all shadow-xl pointer-events-auto",
             showMetadata ? "bg-accent text-accent-foreground" : "bg-white/90 text-foreground hover:bg-white"
           )}
+          aria-label="Informatie tonen"
         >
           {showMetadata ? <X className="w-6 h-6" /> : <Info className="w-6 h-6" />}
         </button>
@@ -96,15 +98,17 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
       {/* Navigation Paddles */}
       <button 
         onClick={handlePrev} 
-        className="absolute left-8 top-1/2 -translate-y-1/2 z-[130] p-8 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 text-foreground hover:bg-accent hover:text-accent-foreground transition-all active:scale-90 shadow-2xl group"
+        className="absolute left-8 top-1/2 -translate-y-1/2 z-[130] p-5 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 text-foreground hover:bg-accent hover:text-accent-foreground transition-all active:scale-90 shadow-2xl group pointer-events-auto"
+        aria-label="Vorig kunstwerk"
       >
-        <ChevronLeft className="w-12 h-12 opacity-40 group-hover:opacity-100" />
+        <ChevronLeft className="w-8 h-8 opacity-40 group-hover:opacity-100" />
       </button>
       <button 
         onClick={handleNext} 
-        className="absolute right-8 top-1/2 -translate-y-1/2 z-[130] p-8 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 text-foreground hover:bg-accent hover:text-accent-foreground transition-all active:scale-90 shadow-2xl group"
+        className="absolute right-8 top-1/2 -translate-y-1/2 z-[130] p-5 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 text-foreground hover:bg-accent hover:text-accent-foreground transition-all active:scale-90 shadow-2xl group pointer-events-auto"
+        aria-label="Volgend kunstwerk"
       >
-        <ChevronRight className="w-12 h-12 opacity-40 group-hover:opacity-100" />
+        <ChevronRight className="w-8 h-8 opacity-40 group-hover:opacity-100" />
       </button>
 
       {/* Viewer Container */}
@@ -162,6 +166,7 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
               key={i} 
               onClick={() => setCurrentIndex(i)}
               className={cn("h-1 rounded-full transition-all duration-700", i === currentIndex ? "w-16 bg-accent" : "w-3 bg-black/10 hover:bg-black/30")} 
+              aria-label={`Ga naar werk ${i + 1}`}
             />
           ))}
         </div>

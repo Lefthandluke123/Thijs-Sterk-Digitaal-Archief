@@ -65,7 +65,7 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
           maxZoomLevel: 10,
           autoResize: true,
           preserveViewport: false,
-          homeFillsViewer: false,
+          homeFillsViewer: false, // Forceert 'contain' mode ipv 'cover'
           centerImageOnce: true
         });
 

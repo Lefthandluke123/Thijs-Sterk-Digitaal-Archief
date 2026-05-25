@@ -131,6 +131,7 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
            <button 
             onClick={onClose} 
             className="p-6 bg-white/90 backdrop-blur-3xl rounded-full text-foreground hover:bg-destructive hover:text-white transition-all border border-black/5 shadow-xl"
+            aria-label="Sluiten"
            >
              <X className="w-6 h-6 opacity-60" />
            </button>
@@ -152,20 +153,22 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
       <button 
         onClick={(e) => { e.stopPropagation(); if(onPrev) onPrev(); }} 
         className={cn(
-          "absolute left-12 top-1/2 -translate-y-1/2 z-[10000] p-10 rounded-full bg-white/20 backdrop-blur-3xl hover:bg-accent hover:text-accent-foreground transition-all border border-white/40 shadow-2xl active:scale-90 group",
+          "absolute left-12 top-1/2 -translate-y-1/2 z-[10000] p-6 rounded-full bg-white/20 backdrop-blur-3xl hover:bg-accent hover:text-accent-foreground transition-all border border-white/40 shadow-2xl active:scale-90 group pointer-events-auto",
           !onPrev && "opacity-0 pointer-events-none"
         )}
+        aria-label="Vorig kunstwerk"
       >
-        <ChevronLeft className="w-12 h-12 opacity-40 group-hover:opacity-100" />
+        <ChevronLeft className="w-8 h-8 opacity-40 group-hover:opacity-100" />
       </button>
       <button 
         onClick={(e) => { e.stopPropagation(); if(onNext) onNext(); }} 
         className={cn(
-          "absolute right-12 top-1/2 -translate-y-1/2 z-[10000] p-10 rounded-full bg-white/20 backdrop-blur-3xl hover:bg-accent hover:text-accent-foreground transition-all border border-white/40 shadow-2xl active:scale-90 group",
+          "absolute right-12 top-1/2 -translate-y-1/2 z-[10000] p-6 rounded-full bg-white/20 backdrop-blur-3xl hover:bg-accent hover:text-accent-foreground transition-all border border-white/40 shadow-2xl active:scale-90 group pointer-events-auto",
           !onNext && "opacity-0 pointer-events-none"
         )}
+        aria-label="Volgend kunstwerk"
       >
-        <ChevronRight className="w-12 h-12 opacity-40 group-hover:opacity-100" />
+        <ChevronRight className="w-8 h-8 opacity-40 group-hover:opacity-100" />
       </button>
 
       {/* Info Overlay */}
