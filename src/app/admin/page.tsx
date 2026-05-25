@@ -42,7 +42,8 @@ import {
   Star,
   ShoppingBag,
   Type,
-  Tag
+  Tag,
+  Settings2
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -72,10 +73,17 @@ export default function AdminPage() {
 
   // Bulk State
   const [selectedArtIds, setSelectedArtIds] = useState<string[]>([]);
-  const [isBulkRoomDialogOpen, setIsBulkRoomDialogOpen] = useState(false);
-  const [isBulkTagDialogOpen, setIsBulkTagDialogOpen] = useState(false);
-  const [bulkRoomForm, setBulkRoomForm] = useState({ roomSlug: '', newRoomTitle: '' });
-  const [bulkTagInput, setBulkTagInput] = useState("");
+  const [isBulkEditDialogOpen, setIsBulkEditConfirmOpen] = useState(false);
+  const [bulkForm, setBulkForm] = useState({
+    roomSlug: '',
+    newRoomTitle: '',
+    tags: '',
+    tagMode: 'add' as 'add' | 'set',
+    updateRoom: false,
+    updateTags: false,
+    featured: 'keep' as 'keep' | 'yes' | 'no',
+    inShop: 'keep' as 'keep' | 'yes' | 'no'
+  });
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Room Dialog State
@@ -168,76 +176,24 @@ export default function AdminPage() {
     }
   };
 
-  const handleBulkUpdateStatus = async (field: 'featured' | 'inShop', value: boolean) => {
-    if (!firestore || !selectedArtIds.length) return;
-    setIsProcessing(true);
-    const batch = writeBatch(firestore);
-    selectedArtIds.forEach(id => {
-      batch.update(doc(firestore, 'artworks', id), { [field]: value });
-    });
-
-    try {
-      await batch.commit();
-      toast({ title: `Status bijgewerkt voor ${selectedArtIds.length} items` });
-      setSelectedArtIds([]);
-    } catch (e) {
-      toast({ variant: "destructive", title: "Fout", description: "Kon status niet bijwerken." });
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const handleBulkTagSave = async (mode: 'add' | 'set') => {
+  const handleBulkSave = async () => {
     if (!firestore || !selectedArtIds.length) return;
     setIsProcessing(true);
 
-    const newTags = bulkTagInput.split(',').map(t => t.trim()).filter(Boolean);
-    const batch = writeBatch(firestore);
+    let finalRoomSlug = bulkForm.roomSlug;
 
-    // Voor 'add' moeten we eerst de huidige tags ophalen, dus we doen dit per document
-    // Maar batch commit kan tot 500 documenten aan.
-    try {
-      for (const id of selectedArtIds) {
-        const artRef = doc(firestore, 'artworks', id);
-        if (mode === 'set') {
-          batch.update(artRef, { tags: newTags });
-        } else {
-          const currentArt = dbArtworks?.find((a: any) => a.id === id) as any;
-          const existingTags = currentArt?.tags || [];
-          const combinedTags = Array.from(new Set([...existingTags, ...newTags]));
-          batch.update(artRef, { tags: combinedTags });
-        }
-      }
-
-      await batch.commit();
-      toast({ title: `Tags bijgewerkt voor ${selectedArtIds.length} items` });
-      setIsBulkTagDialogOpen(false);
-      setBulkTagInput("");
-      setSelectedArtIds([]);
-    } catch (e) {
-      toast({ variant: "destructive", title: "Fout", description: "Kon tags niet bijwerken." });
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const handleBulkRoomSave = async () => {
-    if (!firestore || !selectedArtIds.length) return;
-    setIsProcessing(true);
-
-    let finalRoomSlug = bulkRoomForm.roomSlug;
-
-    if (bulkRoomForm.newRoomTitle.trim()) {
-      const existingRoom = rooms?.find(r => r.title.toLowerCase() === bulkRoomForm.newRoomTitle.trim().toLowerCase());
+    // 1. Handle New Room Creation if needed
+    if (bulkForm.updateRoom && bulkForm.newRoomTitle.trim()) {
+      const existingRoom = rooms?.find(r => r.title.toLowerCase() === bulkForm.newRoomTitle.trim().toLowerCase());
       if (existingRoom) {
         finalRoomSlug = existingRoom.slug;
       } else {
-        const newSlug = bulkRoomForm.newRoomTitle.trim().toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
+        const newSlug = bulkForm.newRoomTitle.trim().toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
         const newRoomRef = doc(collection(firestore, 'rooms'));
         await setDoc(newRoomRef, {
-          title: bulkRoomForm.newRoomTitle.trim(),
+          title: bulkForm.newRoomTitle.trim(),
           slug: newSlug,
-          description: `Collectie van ${bulkRoomForm.newRoomTitle.trim()}`,
+          description: `Collectie van ${bulkForm.newRoomTitle.trim()}`,
           order: (rooms?.length || 0) + 1,
           createdAt: serverTimestamp()
         });
@@ -245,26 +201,67 @@ export default function AdminPage() {
       }
     }
 
-    if (!finalRoomSlug) {
-      toast({ variant: "destructive", title: "Fout", description: "Geen zaal geselecteerd." });
-      setIsProcessing(false);
-      return;
-    }
-
     const batch = writeBatch(firestore);
-    selectedArtIds.forEach(id => {
-      batch.update(doc(firestore, 'artworks', id), { roomSlug: finalRoomSlug });
-    });
+    const newTags = bulkForm.tags.split(',').map(t => t.trim()).filter(Boolean);
+
+    for (const id of selectedArtIds) {
+      const artRef = doc(firestore, 'artworks', id);
+      const updateData: any = {};
+
+      if (bulkForm.updateRoom && finalRoomSlug) {
+        updateData.roomSlug = finalRoomSlug;
+      }
+
+      if (bulkForm.updateTags) {
+        if (bulkForm.tagMode === 'set') {
+          updateData.tags = newTags;
+        } else {
+          const currentArt = dbArtworks?.find((a: any) => a.id === id) as any;
+          const existingTags = currentArt?.tags || [];
+          updateData.tags = Array.from(new Set([...existingTags, ...newTags]));
+        }
+      }
+
+      if (bulkForm.featured !== 'keep') {
+        updateData.featured = bulkForm.featured === 'yes';
+      }
+
+      if (bulkForm.inShop !== 'keep') {
+        updateData.inShop = bulkForm.inShop === 'yes';
+      }
+
+      if (Object.keys(updateData).length > 0) {
+        batch.update(artRef, updateData);
+      }
+    }
 
     try {
       await batch.commit();
-      toast({ title: `${selectedArtIds.length} kunstwerken verplaatst naar ${finalRoomSlug}` });
-      setIsBulkRoomDialogOpen(false);
+      toast({ title: `Selectie van ${selectedArtIds.length} items bijgewerkt` });
+      setIsBulkEditConfirmOpen(false);
       setSelectedArtIds([]);
+      // Reset form
+      setBulkForm({
+        roomSlug: '',
+        newRoomTitle: '',
+        tags: '',
+        tagMode: 'add',
+        updateRoom: false,
+        updateTags: false,
+        featured: 'keep',
+        inShop: 'keep'
+      });
     } catch (e) {
-      toast({ variant: "destructive", title: "Fout", description: "Kon items niet verplaatsen." });
+      toast({ variant: "destructive", title: "Fout", description: "Kon wijzigingen niet doorvoeren." });
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  const addTagToBulkInput = (tag: string) => {
+    const currentTags = bulkForm.tags.split(',').map(t => t.trim()).filter(Boolean);
+    if (!currentTags.includes(tag)) {
+      setBulkForm({ ...bulkForm, tags: [...currentTags, tag].join(', '), updateTags: true });
     }
   };
 
@@ -411,13 +408,6 @@ export default function AdminPage() {
     }
   };
 
-  const addTagToInput = (tag: string) => {
-    const currentTags = bulkTagInput.split(',').map(t => t.trim()).filter(Boolean);
-    if (!currentTags.includes(tag)) {
-      setBulkTagInput([...currentTags, tag].join(', '));
-    }
-  };
-
   if (!isAuthorized) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-6">
@@ -477,17 +467,8 @@ export default function AdminPage() {
                  {selectedArtIds.length > 0 && (
                    <div className="flex items-center gap-2 animate-in slide-in-from-left-2 duration-300">
                      <div className="h-6 w-px bg-black/10 mx-2" />
-                     <Button size="sm" variant="outline" onClick={() => setIsBulkRoomDialogOpen(true)} className="rounded-full text-[10px] font-black uppercase">
-                       <ArrowRightLeft className="w-3 h-3 mr-2" /> Verplaatsen
-                     </Button>
-                     <Button size="sm" variant="outline" onClick={() => setIsBulkTagDialogOpen(true)} className="rounded-full text-[10px] font-black uppercase">
-                       <Tag className="w-3 h-3 mr-2" /> Taggen
-                     </Button>
-                     <Button size="sm" variant="outline" onClick={() => handleBulkUpdateStatus('featured', true)} className="rounded-full text-[10px] font-black uppercase text-yellow-600">
-                       <Star className="w-3 h-3 mr-2 fill-yellow-600" /> Featured
-                     </Button>
-                     <Button size="sm" variant="outline" onClick={() => handleBulkUpdateStatus('inShop', true)} className="rounded-full text-[10px] font-black uppercase text-blue-600">
-                       <ShoppingBag className="w-3 h-3 mr-2" /> In Shop
+                     <Button size="sm" variant="outline" onClick={() => setIsBulkEditConfirmOpen(true)} className="rounded-full text-[10px] font-black uppercase bg-accent/5 border-accent/20 text-accent">
+                       <Settings2 className="w-3 h-3 mr-2" /> Bulk Bewerken
                      </Button>
                      <Button size="sm" variant="destructive" onClick={handleBulkDelete} className="rounded-full text-[10px] font-black uppercase">
                        <Trash2 className="w-3 h-3 mr-2" /> Verwijderen
@@ -499,7 +480,7 @@ export default function AdminPage() {
                  )}
               </div>
               
-              <Button onClick={() => handleOpenArtworkDialog()} className="rounded-full px-8 h-12 bg-accent">
+              <Button onClick={() => handleOpenArtworkDialog()} className="rounded-full px-8 h-12 bg-accent text-white">
                 <Plus className="w-4 h-4 mr-2" /> Werk Toevoegen
               </Button>
             </div>
@@ -558,7 +539,7 @@ export default function AdminPage() {
           <TabsContent value="rooms" className="space-y-8">
             <div className="flex justify-between items-center mb-8">
               <h2 className="font-headline text-3xl italic opacity-40">Museum Zalen</h2>
-              <Button onClick={() => handleOpenRoomDialog()} className="rounded-full px-8 h-12 bg-accent">
+              <Button onClick={() => handleOpenRoomDialog()} className="rounded-full px-8 h-12 bg-accent text-white">
                 <Plus className="w-4 h-4 mr-2" /> Nieuwe Zaal Toevoegen
               </Button>
             </div>
@@ -599,7 +580,7 @@ export default function AdminPage() {
                   </p>
                 </div>
                 <div className="flex gap-4">
-                  <Button size="lg" className="h-16 px-12 rounded-full bg-primary font-black uppercase tracking-widest text-[12px] shadow-xl" asChild>
+                  <Button size="lg" className="h-16 px-12 rounded-full bg-primary font-black uppercase tracking-widest text-[12px] shadow-xl text-white" asChild>
                     <Link href="/admin/translate">
                       Open Vertaal Station <ArrowLeft className="w-4 h-4 ml-3 rotate-180" />
                     </Link>
@@ -614,104 +595,160 @@ export default function AdminPage() {
         </Tabs>
       </div>
 
-      {/* Bulk Tag Dialog */}
-      <Dialog open={isBulkTagDialogOpen} onOpenChange={setIsBulkTagDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-[2rem] p-8 border-none shadow-2xl">
+      {/* Unified Bulk Edit Dialog */}
+      <Dialog open={isBulkEditDialogOpen} onOpenChange={setIsBulkEditConfirmOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto rounded-[2.5rem] p-10 border-none shadow-2xl">
           <DialogHeader>
-            <DialogTitle className="font-headline text-2xl italic">Bulk Taggen</DialogTitle>
-            <DialogDescription>Voeg tags toe aan of overschrijf tags voor {selectedArtIds.length} items.</DialogDescription>
+            <DialogTitle className="font-headline text-3xl italic text-accent">Bulk Bewerken</DialogTitle>
+            <DialogDescription className="text-sm font-medium opacity-60">
+              Pas {selectedArtIds.length} kunstwerken tegelijk aan. Laat velden ongewijzigd als je ze niet wilt aanpassen.
+            </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-6 py-4">
-             <div className="space-y-4">
-                <Label className="text-[10px] uppercase font-black tracking-widest ml-2 opacity-40">Huidige Selectie Tags (komma gescheiden)</Label>
-                <Input 
-                  value={bulkTagInput} 
-                  onChange={e => setBulkTagInput(e.target.value)} 
-                  className="h-12 rounded-xl bg-black/5 border-none" 
-                  placeholder="Bijv. Olieverf, Polder..." 
+
+          <div className="grid gap-10 py-6">
+            {/* Room Selection */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <Checkbox 
+                  id="bulk-update-room" 
+                  checked={bulkForm.updateRoom} 
+                  onCheckedChange={(v) => setBulkForm({...bulkForm, updateRoom: !!v})} 
                 />
-             </div>
-
-             <div className="space-y-6">
-                <h4 className="text-[10px] font-black uppercase tracking-widest border-b pb-2 opacity-30">Snel Menu</h4>
-                {Object.entries(MUSEUM_TAGS).map(([cat, tags]) => (
-                  <div key={cat} className="space-y-2">
-                    <p className="text-[9px] font-bold text-accent/60 uppercase tracking-widest">{cat}</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {tags.map(tag => (
-                        <Button 
-                          key={tag} 
-                          variant="secondary" 
-                          size="sm" 
-                          onClick={() => addTagToInput(tag)}
-                          className="h-7 text-[9px] font-bold uppercase rounded-md hover:bg-accent hover:text-white"
-                        >
-                          + {tag}
-                        </Button>
-                      ))}
-                    </div>
+                <Label htmlFor="bulk-update-room" className="text-[11px] font-black uppercase tracking-widest opacity-60">Verplaatsen naar Zaal</Label>
+              </div>
+              
+              {bulkForm.updateRoom && (
+                <div className="grid md:grid-cols-2 gap-6 p-6 bg-black/5 rounded-3xl animate-in fade-in slide-in-from-top-2 duration-300">
+                  <div className="space-y-2">
+                    <Label className="text-[10px] uppercase font-black tracking-widest ml-2 opacity-40">Bestaande Zaal</Label>
+                    <Select value={bulkForm.roomSlug} onValueChange={v => setBulkForm({...bulkForm, roomSlug: v})}>
+                      <SelectTrigger className="rounded-xl bg-white border-none shadow-sm h-12">
+                        <SelectValue placeholder="Kies een zaal" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {rooms?.map((r: any) => (
+                          <SelectItem key={r.id} value={r.slug}>{r.title}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                ))}
-             </div>
-          </div>
-          <DialogFooter className="flex flex-col sm:flex-row gap-3">
-            <Button 
-              variant="outline"
-              onClick={() => handleBulkTagSave('add')} 
-              disabled={isProcessing} 
-              className="flex-1 h-14 rounded-2xl border-2"
-            >
-              {isProcessing ? <Loader2 className="animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
-              Toevoegen aan bestaande
-            </Button>
-            <Button 
-              onClick={() => handleBulkTagSave('set')} 
-              disabled={isProcessing} 
-              className="flex-1 h-14 rounded-2xl bg-primary"
-            >
-              {isProcessing ? <Loader2 className="animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-              Overschrijven
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+                  <div className="space-y-2">
+                    <Label className="text-[10px] uppercase font-black tracking-widest ml-2 opacity-40">Of maak nieuwe zaal</Label>
+                    <Input 
+                      value={bulkForm.newRoomTitle} 
+                      onChange={e => setBulkForm({...bulkForm, newRoomTitle: e.target.value})} 
+                      className="rounded-xl bg-white border-none shadow-sm h-12" 
+                      placeholder="Naam nieuwe zaal..." 
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
 
-      {/* Bulk Room Dialog */}
-      <Dialog open={isBulkRoomDialogOpen} onOpenChange={setIsBulkRoomDialogOpen}>
-        <DialogContent className="max-w-xl rounded-[2rem] p-8 border-none shadow-2xl">
-          <DialogHeader>
-            <DialogTitle className="font-headline text-2xl italic">Bulk Verplaatsen</DialogTitle>
-            <DialogDescription>Verplaats {selectedArtIds.length} geselecteerde items naar een andere zaal.</DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-6 py-4">
-            <div className="space-y-2">
-              <Label className="text-[10px] uppercase font-black tracking-widest ml-2 opacity-40">Bestaande Zaal</Label>
-              <Select value={bulkRoomForm.roomSlug} onValueChange={v => setBulkRoomForm({...bulkRoomForm, roomSlug: v})}>
-                <SelectTrigger className="rounded-xl bg-black/5 border-none h-12">
-                  <SelectValue placeholder="Kies een zaal" />
-                </SelectTrigger>
-                <SelectContent>
-                  {rooms?.map((r: any) => (
-                    <SelectItem key={r.id} value={r.slug}>{r.title}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            {/* Tagging */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <Checkbox 
+                  id="bulk-update-tags" 
+                  checked={bulkForm.updateTags} 
+                  onCheckedChange={(v) => setBulkForm({...bulkForm, updateTags: !!v})} 
+                />
+                <Label htmlFor="bulk-update-tags" className="text-[11px] font-black uppercase tracking-widest opacity-60">Tags Aanpassen</Label>
+              </div>
+
+              {bulkForm.updateTags && (
+                <div className="space-y-6 p-6 bg-black/5 rounded-3xl animate-in fade-in slide-in-from-top-2 duration-300">
+                  <div className="flex gap-4 mb-4">
+                    <Button 
+                      variant={bulkForm.tagMode === 'add' ? 'default' : 'outline'} 
+                      size="sm" 
+                      onClick={() => setBulkForm({...bulkForm, tagMode: 'add'})}
+                      className="rounded-full text-[10px] font-black uppercase"
+                    >
+                      Toevoegen
+                    </Button>
+                    <Button 
+                      variant={bulkForm.tagMode === 'set' ? 'default' : 'outline'} 
+                      size="sm" 
+                      onClick={() => setBulkForm({...bulkForm, tagMode: 'set'})}
+                      className="rounded-full text-[10px] font-black uppercase"
+                    >
+                      Overschrijven
+                    </Button>
+                  </div>
+                  
+                  <Input 
+                    value={bulkForm.tags} 
+                    onChange={e => setBulkForm({...bulkForm, tags: e.target.value})} 
+                    className="h-12 rounded-xl bg-white border-none shadow-sm" 
+                    placeholder="Bijv. Olieverf, Polder..." 
+                  />
+
+                  <div className="space-y-6 pt-4 border-t border-black/5">
+                    <h4 className="text-[9px] font-black uppercase tracking-widest opacity-30">Snel Menu</h4>
+                    {Object.entries(MUSEUM_TAGS).map(([cat, tags]) => (
+                      <div key={cat} className="space-y-2">
+                        <p className="text-[8px] font-bold text-accent/60 uppercase tracking-widest">{cat}</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {tags.map(tag => (
+                            <Button 
+                              key={tag} 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => addTagToBulkInput(tag)}
+                              className="h-7 text-[9px] font-bold uppercase rounded-md border border-black/5 hover:bg-accent hover:text-white"
+                            >
+                              + {tag}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-            <div className="space-y-2 text-center opacity-40 font-black text-[9px] uppercase tracking-widest">Of</div>
-            <div className="space-y-2">
-              <Label className="text-[10px] uppercase font-black tracking-widest ml-2 opacity-40">Maak een nieuwe zaal</Label>
-              <Input 
-                value={bulkRoomForm.newRoomTitle} 
-                onChange={e => setBulkRoomForm({...bulkRoomForm, newRoomTitle: e.target.value})} 
-                className="rounded-xl bg-black/5 border-none h-12" 
-                placeholder="Naam nieuwe zaal..." 
-              />
+
+            {/* Flags */}
+            <div className="grid md:grid-cols-2 gap-8 p-6 bg-accent/5 rounded-3xl border border-accent/10">
+               <div className="space-y-3">
+                  <Label className="text-[10px] uppercase font-black tracking-widest opacity-40 ml-1">Op Homepage (Featured)</Label>
+                  <Select value={bulkForm.featured} onValueChange={v => setBulkForm({...bulkForm, featured: v as any})}>
+                    <SelectTrigger className="rounded-xl bg-white border-none h-11 shadow-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="keep">Ongewijzigd laten</SelectItem>
+                      <SelectItem value="yes">Ja, toon op homepage</SelectItem>
+                      <SelectItem value="no">Nee, niet tonen</SelectItem>
+                    </SelectContent>
+                  </Select>
+               </div>
+               <div className="space-y-3">
+                  <Label className="text-[10px] uppercase font-black tracking-widest opacity-40 ml-1">In Museumwinkel</Label>
+                  <Select value={bulkForm.inShop} onValueChange={v => setBulkForm({...bulkForm, inShop: v as any})}>
+                    <SelectTrigger className="rounded-xl bg-white border-none h-11 shadow-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="keep">Ongewijzigd laten</SelectItem>
+                      <SelectItem value="yes">Ja, te koop</SelectItem>
+                      <SelectItem value="no">Nee, niet te koop</SelectItem>
+                    </SelectContent>
+                  </Select>
+               </div>
             </div>
           </div>
-          <DialogFooter>
-            <Button onClick={handleBulkRoomSave} disabled={isProcessing} className="w-full h-14 rounded-2xl bg-primary">
+
+          <DialogFooter className="gap-3 pt-6 border-t border-black/5 mt-4">
+            <Button variant="ghost" onClick={() => setIsBulkEditConfirmOpen(false)} className="rounded-full px-8">Annuleren</Button>
+            <Button 
+              onClick={handleBulkSave} 
+              disabled={isProcessing} 
+              className="rounded-full px-12 h-14 bg-primary text-white shadow-xl hover:scale-105 transition-all"
+            >
               {isProcessing ? <Loader2 className="animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-              Selectie Verplaatsen
+              Wijzigingen Toepassen
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -744,7 +781,7 @@ export default function AdminPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button onClick={handleSaveRoom} className="w-full h-14 rounded-2xl bg-primary">
+            <Button onClick={handleSaveRoom} className="w-full h-14 rounded-2xl bg-primary text-white">
               <Save className="w-4 h-4 mr-2" /> Zaal Opslaan
             </Button>
           </DialogFooter>
@@ -863,7 +900,7 @@ export default function AdminPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button onClick={handleSaveArtwork} className="w-full h-14 rounded-2xl bg-primary">
+            <Button onClick={handleSaveArtwork} className="w-full h-14 rounded-2xl bg-primary text-white">
               <Palette className="w-4 h-4 mr-2" /> Kunstwerk Opslaan
             </Button>
           </DialogFooter>
