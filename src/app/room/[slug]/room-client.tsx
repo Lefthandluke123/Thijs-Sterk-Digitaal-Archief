@@ -68,7 +68,7 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
   return (
     <main className="fixed inset-0 z-[100] bg-background flex flex-col items-center justify-center overflow-hidden">
       {/* Header Plaque */}
-      <div className="absolute top-0 left-0 right-0 z-[120] p-8 md:p-12 flex items-center justify-between pointer-events-none">
+      <div className="absolute top-0 left-0 right-0 z-[140] p-8 md:p-12 flex items-center justify-between pointer-events-none">
         <div className="flex items-center gap-8 pointer-events-auto">
           <Link 
             href="/gallery" 
@@ -97,18 +97,18 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
         </button>
       </div>
 
-      {/* Navigation Paddles */}
-      <div className="absolute inset-x-8 top-1/2 -translate-y-1/2 z-[110] flex justify-between pointer-events-none">
+      {/* Navigation Paddles - Increased Z-index and explicit pointer control */}
+      <div className="absolute inset-x-8 top-1/2 -translate-y-1/2 z-[130] flex justify-between pointer-events-none">
         <button 
           onClick={handlePrev} 
-          className="p-8 rounded-full bg-white/20 backdrop-blur-3xl border border-white/40 text-foreground pointer-events-auto hover:bg-accent hover:text-accent-foreground transition-all active:scale-90 shadow-2xl group"
+          className="p-8 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 text-foreground pointer-events-auto hover:bg-accent hover:text-accent-foreground transition-all active:scale-90 shadow-2xl group"
           aria-label="Vorig werk"
         >
           <ChevronLeft className="w-12 h-12 opacity-40 group-hover:opacity-100" />
         </button>
         <button 
           onClick={handleNext} 
-          className="p-8 rounded-full bg-white/20 backdrop-blur-3xl border border-white/40 text-foreground pointer-events-auto hover:bg-accent hover:text-accent-foreground transition-all active:scale-90 shadow-2xl group"
+          className="p-8 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 text-foreground pointer-events-auto hover:bg-accent hover:text-accent-foreground transition-all active:scale-90 shadow-2xl group"
           aria-label="Volgend werk"
         >
           <ChevronRight className="w-12 h-12 opacity-40 group-hover:opacity-100" />
@@ -116,22 +116,22 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
       </div>
 
       {/* Immersive Viewer Container */}
-      <div className="w-[85vw] h-[75vh] md:w-[90vw] md:h-[80vh] flex items-center justify-center animate-subtle-fade z-[105] pointer-events-auto">
+      <div className="w-[90vw] h-[85vh] flex items-center justify-center animate-subtle-fade z-[110] pointer-events-auto">
         {displayImage && (
           <DeepZoomViewer 
-            key={item.id}
+            key={`${item.id}-${currentIndex}`}
             imageUrl={displayImage} 
             brightness={item.brightness || 1}
           />
         )}
       </div>
 
-      {/* Premium Museum Plaque (Info Overlay) */}
+      {/* Premium Museum Plaque (Info Overlay) - Pointer events none on wrapper, auto on card */}
       <div className={cn(
-        "absolute bottom-0 left-0 right-0 flex flex-col items-center justify-center transition-all duration-1000 ease-in-out z-[130] p-12 pointer-events-none",
+        "absolute bottom-0 left-0 right-0 flex flex-col items-center justify-center transition-all duration-1000 ease-in-out z-[150] p-12 pointer-events-none",
         showMetadata ? "opacity-100 translate-y-0" : "opacity-0 translate-y-24"
       )}>
-        <div className="museum-label max-w-3xl w-full pointer-events-auto">
+        <div className="museum-label max-w-3xl w-full pointer-events-auto shadow-[0_50px_100px_-20px_rgba(0,0,0,0.3)] border border-black/5">
           <h2 className="text-3xl md:text-5xl font-headline font-light italic text-foreground leading-tight text-center">{item.displayTitle || item.title}</h2>
           
           <div className="flex flex-wrap gap-x-12 gap-y-4 justify-center items-center py-4">
@@ -162,7 +162,7 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
       </div>
       
       {/* Visual Progress Line */}
-      <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-[115] flex gap-3 items-center pointer-events-auto">
+      <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-[140] flex gap-3 items-center pointer-events-auto">
         <span className="text-[9px] font-black tracking-widest opacity-30">{currentIndex + 1}</span>
         <div className="flex gap-1.5">
           {artworks.map((_, i) => (

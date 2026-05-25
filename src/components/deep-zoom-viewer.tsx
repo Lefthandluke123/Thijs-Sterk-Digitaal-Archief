@@ -50,11 +50,12 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
 
         if (!containerRef.current) return;
 
-        // Vernietig oude instance indien aanwezig
+        // Vernietig oude instance indien aanwezig om lekken te voorkomen
         if (viewerRef.current) {
           viewerRef.current.destroy();
         }
 
+        setLoading(true);
         const zoomFactor = 2.5;
 
         viewerRef.current = OpenSeadragon({
@@ -81,8 +82,8 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
           animationTime: 1.2,
           blendTime: 0.1,
           constrainDuringPan: true,
-          visibilityRatio: 1.0,      // Fix: Houd schilderij in frame
-          minZoomImageRatio: 1.0,    // Fix: Voorkom dat schilderij te klein wordt en 'dwaalt'
+          visibilityRatio: 1.0,
+          minZoomImageRatio: 1.0,
           defaultZoomLevel: 0,
           minZoomLevel: 0.5,
           maxZoomLevel: 10,
@@ -112,14 +113,6 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
           }
         });
 
-        // Blokkeer default page scroll op de viewer
-        if (viewerRef.current.canvas) {
-          viewerRef.current.canvas.style.cursor = "zoom-in";
-          viewerRef.current.canvas.addEventListener('wheel', (e: WheelEvent) => {
-            e.preventDefault();
-          }, { passive: false });
-        }
-
       } catch (err) {
         console.error('[DEEP ZOOM] Error:', err);
       }
@@ -142,19 +135,20 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
   }, [isZoomOutMode]);
 
   return (
-    <div className="relative w-full h-full bg-black/[0.01] overflow-hidden rounded-3xl shadow-[0_40px_100px_-15px_rgba(0,0,0,0.25)] border border-white/40">
+    <div className="relative w-full h-full bg-transparent overflow-hidden rounded-3xl group">
       {loading && (
-        <div className="absolute inset-0 flex items-center justify-center z-10 bg-background/20 backdrop-blur-sm">
+        <div className="absolute inset-0 flex items-center justify-center z-10 bg-background/20 backdrop-blur-sm transition-opacity duration-500">
           <Loader2 className="w-12 h-12 animate-spin text-accent/30" />
         </div>
       )}
       <div 
         ref={containerRef} 
-        className="w-full h-full" 
+        className="w-full h-full outline-none" 
         style={{ 
           filter: `brightness(${brightness})`,
           display: 'block',
-          touchAction: 'none'
+          touchAction: 'none',
+          pointerEvents: 'auto'
         }} 
       />
     </div>

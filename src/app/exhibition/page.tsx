@@ -54,12 +54,16 @@ function ExhibitionContent() {
     });
   };
 
-  // Ondersteuning voor muiswiel horizontaal scrollen
+  // Verbeterde wheel-handling om conflicten met Zoom te voorkomen
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
-      // Alleen reageren als er geen modaal venster open staat
+      // Alleen reageren als er GEEN kunstwerk-detailvenster (met zoom) open staat
       if (selectedArtwork) return;
       
+      // Controleer of de target binnen de interactieve viewer valt
+      const target = e.target as HTMLElement;
+      if (target.closest('.openseadragon-container')) return;
+
       if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
         handleStep(e.deltaY * 3);
       } else {
@@ -98,7 +102,7 @@ function ExhibitionContent() {
 
       <div className="relative flex-1 flex items-center justify-center overflow-hidden">
         <div 
-          className="relative w-full h-full flex items-center transition-transform duration-1000 ease-out" 
+          className="relative w-full h-full flex items-center transition-transform duration-[1.2s] ease-out" 
           style={{ transform: `translateX(${-scrollX}px)` }}
         >
           <div className="flex gap-[40vw] px-[50vw] items-center pt-8">
