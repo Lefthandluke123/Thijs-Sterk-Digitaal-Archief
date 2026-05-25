@@ -107,17 +107,21 @@ export default function CuratorPage() {
 
   return (
     <main className="min-h-screen bg-background pt-24 pb-32 px-6">
-      <div className="container mx-auto max-w-4xl text-center space-y-8">
-        <div className="space-y-4">
-          <h1 className="font-headline text-3xl md:text-4xl font-light italic text-accent">{t('curator_subtitle')}</h1>
-          <p className="text-[10px] font-bold uppercase tracking-[0.4em] opacity-40">{t('curator_title')}</p>
+      <div className="container mx-auto max-w-4xl text-center space-y-12">
+        <div className="space-y-6">
+          <h1 className="font-headline text-3xl md:text-5xl font-light italic text-accent leading-tight">
+            {t('curator_subtitle')}
+          </h1>
+          <p className="text-lg md:text-2xl text-foreground font-light leading-relaxed max-w-3xl mx-auto border-l-4 border-accent/10 pl-8 text-left italic">
+            {t('curator_title')}
+          </p>
         </div>
 
-        <div className="grid gap-8 text-left max-w-3xl mx-auto">
+        <div className="grid gap-10 text-left max-w-3xl mx-auto pt-8 border-t border-black/5">
           {Object.entries(MUSEUM_TAGS).map(([cat, tags]) => (
             <div key={cat} className="space-y-4">
-              <h2 className="text-[9px] font-black uppercase tracking-[0.2em] text-accent/60 border-b border-accent/10 pb-2">{cat}</h2>
-              <div className="flex flex-wrap gap-2">
+              <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-accent/60 border-b border-accent/10 pb-2">{cat}</h2>
+              <div className="flex flex-wrap gap-2.5">
                 {tags.map(tag => {
                   const active = activeTags.includes(tag);
                   return (
@@ -128,8 +132,10 @@ export default function CuratorPage() {
                         setShowResults(false); 
                       }} 
                       className={cn(
-                        "px-4 py-2 rounded-lg text-[11px] font-bold uppercase transition-all border-2", 
-                        active ? "bg-accent text-accent-foreground border-accent scale-105 shadow-md" : "bg-white hover:border-accent/40"
+                        "px-5 py-2.5 rounded-xl text-[11px] font-bold uppercase transition-all border-2", 
+                        active 
+                          ? "bg-accent text-accent-foreground border-accent scale-105 shadow-lg" 
+                          : "bg-white hover:border-accent/40 text-foreground/70"
                       )}
                     >
                       {tag}
@@ -141,31 +147,31 @@ export default function CuratorPage() {
           ))}
         </div>
 
-        <div className="flex flex-col items-center gap-8 pt-10">
+        <div className="flex flex-col items-center gap-8 pt-12">
           <div className="flex flex-wrap justify-center gap-4">
-            <Button onClick={() => { setActiveTags([]); setShowResults(false); }} variant="outline" className="rounded-full h-12 px-8 uppercase font-black text-[10px]">
-              <Eraser className="w-3.5 h-3.5 mr-2" /> {t('curator_clear') || "Wissen"}
+            <Button onClick={() => { setActiveTags([]); setShowResults(false); }} variant="outline" className="rounded-full h-14 px-10 uppercase font-black text-[10px] border-2">
+              <Eraser className="w-4 h-4 mr-2" /> {t('curator_clear') || "Wissen"}
             </Button>
             <Button 
               onClick={() => setShowResults(true)} 
               disabled={activeTags.length === 0} 
-              className="rounded-full h-12 px-12 bg-primary text-primary-foreground uppercase font-black text-[10px] shadow-lg hover:scale-105 active:scale-95 transition-all"
+              className="rounded-full h-14 px-14 bg-primary text-primary-foreground uppercase font-black text-[10px] shadow-xl hover:scale-105 active:scale-95 transition-all"
             >
-              <Play className="w-3.5 h-3.5 mr-2" /> {t('curator_open') || "Openen"}
+              <Play className="w-4 h-4 mr-2" /> {t('curator_open') || "Openen"}
             </Button>
             {showResults && filteredArtworks.length > 0 && (
-              <Button onClick={() => setShareDialog("")} className="rounded-full h-12 px-8 bg-accent text-accent-foreground uppercase font-black text-[10px] shadow-lg animate-in zoom-in duration-300">
-                <Share2 className="w-3.5 h-3.5 mr-2" /> Deel Expositie
+              <Button onClick={() => setShareDialog("")} className="rounded-full h-14 px-10 bg-accent text-accent-foreground uppercase font-black text-[10px] shadow-xl animate-in zoom-in duration-300">
+                <Share2 className="w-4 h-4 mr-2" /> Deel Expositie
               </Button>
             )}
           </div>
         </div>
 
         {showResults && (
-          <div className="mt-16 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 animate-in fade-in slide-in-from-bottom-8 duration-700">
+          <div className="mt-20 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 animate-in fade-in slide-in-from-bottom-8 duration-1000">
             {filteredArtworks.map((item: any) => (
               <div key={item.id} className="group cursor-pointer space-y-3" onClick={() => setSelectedArtwork(item)}>
-                <div className="relative aspect-[4/5] overflow-hidden rounded-lg bg-muted/20 shadow-md transition-all duration-700 group-hover:shadow-xl flex items-center justify-center p-2">
+                <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-muted/20 shadow-md transition-all duration-700 group-hover:shadow-2xl flex items-center justify-center p-3 border border-black/5">
                   <img 
                     src={item.image || item.imageUrl} 
                     className="max-w-full max-h-full object-contain transition-transform duration-1000 group-hover:scale-110" 
@@ -179,7 +185,7 @@ export default function CuratorPage() {
                   </div>
                 </div>
                 <div className="text-center">
-                  <h3 className="text-[9px] font-black uppercase tracking-widest opacity-40 group-hover:opacity-100 transition-opacity truncate">
+                  <h3 className="font-headline text-base italic text-muted-foreground group-hover:text-accent transition-colors truncate">
                     {item.displayTitle || item.title}
                   </h3>
                 </div>
@@ -190,43 +196,43 @@ export default function CuratorPage() {
       </div>
 
       <Dialog open={shareDialog !== null} onOpenChange={(open) => !open && setShareDialog(null)}>
-        <DialogContent className="max-w-md rounded-[2rem] p-8 border-none shadow-2xl">
+        <DialogContent className="max-w-md rounded-[2.5rem] p-10 border-none shadow-2xl">
           <DialogHeader>
-            <DialogTitle className="font-headline text-2xl italic">Expositie Delen</DialogTitle>
-            <DialogDescription className="text-[10px] uppercase tracking-widest font-bold opacity-60">
+            <DialogTitle className="font-headline text-3xl italic text-accent">Expositie Delen</DialogTitle>
+            <DialogDescription className="text-[10px] uppercase tracking-[0.2em] font-bold opacity-40">
               Creëer een unieke link naar uw selectie
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-6 pt-4">
+          <div className="space-y-6 pt-6">
             {shareDialog === "" ? (
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label className="text-[9px] font-black uppercase tracking-widest ml-2 opacity-40">Titel van uw kamer</Label>
+                  <Label className="text-[10px] uppercase tracking-widest ml-2 opacity-60 font-black">Titel van uw kamer</Label>
                   <Input 
                     value={roomTitle} 
                     onChange={(e) => setRoomTitle(e.target.value)} 
-                    placeholder="Bijv. Licht over de Polder" 
-                    className="h-12 rounded-xl bg-black/5 border-none focus:ring-accent" 
+                    placeholder="Bijv. Mijn Favoriete Werken" 
+                    className="h-14 rounded-2xl bg-black/5 border-none focus:ring-accent text-base" 
                   />
                 </div>
                 <Button 
                   onClick={handleShare} 
                   disabled={isSharing} 
-                  className="w-full h-12 rounded-xl bg-accent text-accent-foreground font-black uppercase tracking-widest text-[10px]"
+                  className="w-full h-16 rounded-2xl bg-accent text-accent-foreground font-black uppercase tracking-widest text-[11px] shadow-xl hover:scale-[1.02] transition-all"
                 >
                   {isSharing ? <Loader2 className="animate-spin" /> : "Link Genereren"}
                 </Button>
               </div>
             ) : shareDialog ? (
-              <div className="space-y-6 animate-in fade-in duration-500">
-                 <div className="p-5 bg-black/5 rounded-xl break-all font-mono text-[10px] border border-black/5 leading-relaxed text-accent">
+              <div className="space-y-6 animate-in fade-in duration-700">
+                 <div className="p-6 bg-black/5 rounded-2xl break-all font-mono text-[11px] border border-black/5 leading-relaxed text-accent">
                    {shareDialog}
                  </div>
                  <Button 
                     onClick={() => copyToClipboard(shareDialog)} 
-                    className="w-full h-12 rounded-xl bg-primary text-primary-foreground font-black uppercase tracking-widest text-[10px]"
+                    className="w-full h-16 rounded-2xl bg-primary text-primary-foreground font-black uppercase tracking-widest text-[11px] shadow-xl"
                  >
-                   <Copy className="w-3.5 h-3.5 mr-2" /> Kopieer Link
+                   <Copy className="w-4 h-4 mr-2" /> Kopieer Link
                  </Button>
               </div>
             ) : null}

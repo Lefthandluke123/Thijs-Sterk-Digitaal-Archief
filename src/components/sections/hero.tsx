@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -43,7 +44,7 @@ export function Hero() {
   return (
     <section className="relative min-h-[70vh] flex flex-col items-center justify-center pt-24 pb-16 px-4 overflow-hidden">
       <div className="container mx-auto z-10 text-center">
-        <h1 className="font-headline text-3xl md:text-4xl lg:text-5xl font-medium tracking-tight text-foreground mb-12 max-w-4xl mx-auto leading-[1.1]">
+        <h1 className="font-headline text-3xl md:text-5xl font-medium tracking-tight text-foreground mb-12 max-w-4xl mx-auto leading-[1.1]">
           {heroTitle.split(' ').map((word, i, arr) => 
             i >= arr.length - 3 ? <span key={i} className="italic text-accent">{word} </span> : word + ' '
           )}
@@ -73,9 +74,9 @@ export function Hero() {
                 </Link>
               </Button>
               
-              <div className="animate-in fade-in slide-in-from-top-2 duration-1000">
-                 <p className="text-[10px] font-black uppercase tracking-[0.3em] text-accent opacity-60 leading-relaxed max-w-xs mx-auto">
-                   Kies uw eigen rondleiding langs het werk van Thijs op basis van thema&apos;s
+              <div className="animate-in fade-in slide-in-from-top-2 duration-1000 mt-2">
+                 <p className="text-sm font-medium text-accent opacity-80 leading-relaxed max-w-xs mx-auto italic">
+                   Kies uw eigen thema&apos;s en word de conservator van uw eigen archief-expositie.
                  </p>
               </div>
             </div>
