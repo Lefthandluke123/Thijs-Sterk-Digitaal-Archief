@@ -21,6 +21,16 @@ interface RoomClientProps {
   roomTitle?: string;
 }
 
+/**
+ * @fileOverview RoomClient: Beheert de immersieve zaal-ervaring.
+ * GEZALVDE VERSIE - Z-INDEX HIERARCHIE IS CRUCIAAL.
+ * 
+ * Lagen (Z-Index):
+ * 110: DeepZoomViewer (Canvas interactie laag)
+ * 140: Navigatie UI (Pijlen, Progressie) - Moet pointer-events: auto hebben.
+ * 150: Global Header Overlay (Terug knop, Info knop)
+ * 160: Info Plaque (Het 'museum-label' dat omhoog schuift)
+ */
 export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showMetadata, setShowMetadata] = useState(false);
@@ -73,7 +83,7 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
         </div>
       </div>
 
-      {/* 2. UI Layer - Navigatie Pijlen (Altijd bovenop, nooit geblokkeerd) */}
+      {/* 2. UI Layer - Navigatie Pijlen (Hoogste prioriteit voor clicks) */}
       <div className="absolute inset-0 z-[140] pointer-events-none flex items-center justify-between px-6 md:px-12">
         <button 
           onClick={handlePrev}

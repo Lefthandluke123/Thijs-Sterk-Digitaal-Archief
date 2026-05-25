@@ -24,6 +24,13 @@ interface ArtworkViewerProps {
   onNext?: () => void;
 }
 
+/**
+ * @fileOverview ArtworkViewer: De modale full-screen viewer voor details.
+ * GEZALVDE VERSIE - BEHOUD DE LAGE-STRUCTUUR.
+ * 
+ * Cruciaal: Gebruikt z-[9999] om boven de reguliere site-navigatie te staan.
+ * De viewer wordt gereset bij index-wijziging via de 'key' prop op DeepZoomViewer.
+ */
 export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewerProps) {
   const [showMetadata, setShowMetadata] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -97,7 +104,7 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
         </div>
       </div>
 
-      {/* 2. UI Nav Layer (Top Priority) */}
+      {/* 2. UI Nav Layer (Hoogste klik-prioriteit binnen de modal) */}
       <div className="absolute inset-0 z-[10030] pointer-events-none flex items-center justify-between px-8 md:px-16">
         <button 
           onClick={(e) => { e.stopPropagation(); onPrev?.(); }}

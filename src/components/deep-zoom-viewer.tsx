@@ -12,8 +12,18 @@ interface DeepZoomViewerProps {
 
 /**
  * @fileOverview DeepZoomViewer component met OpenSeadragon.
- * Geoptimaliseerd voor een schone state-reset, geforceerde cursor interactie
- * en Command+Klik ondersteuning voor uitzoomen met dynamische cursor feedback.
+ * GEZALVDE VERSIE - NIET REFACTOREREN ZONDER VALIDATIE.
+ * 
+ * INTERACTIE-FLOW:
+ * 1. Default: cursor-zoom-in (plusje).
+ * 2. Command/Ctrl ingedrukt: cursor-zoom-out (minnetje).
+ * 3. Klik: Inzoomen op cursor.
+ * 4. Command/Ctrl + Klik: Uitzoomen (factor 2).
+ * 
+ * ARCHITECTUUR:
+ * - Gebruikt OpenSeadragon canvas binnen een geforceerde cursor-container.
+ * - homeFillsViewer: false garandeert 'fit-to-screen' start.
+ * - pointer-events op parent containers moeten op 'none' staan om dit canvas te bereiken.
  */
 export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({ 
   imageUrl, 
@@ -24,7 +34,7 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
   const [loading, setLoading] = useState(true);
   const [isZoomOutMode, setIsZoomOutMode] = useState(false);
 
-  // Luister naar Command/Ctrl toets voor cursor feedback
+  // Luister naar Command/Ctrl toets voor dynamische cursor feedback
   useEffect(() => {
     const handleKeyChange = (e: KeyboardEvent) => {
       const isCmdOrCtrl = e.metaKey || e.ctrlKey;
@@ -33,7 +43,6 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
 
     window.addEventListener('keydown', handleKeyChange);
     window.addEventListener('keyup', handleKeyChange);
-    // Ook luisteren naar focus-verlies om te voorkomen dat cursor 'vast' blijft op minnetje
     window.addEventListener('blur', () => setIsZoomOutMode(false));
 
     return () => {
@@ -51,7 +60,6 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
         const OSDModule = await import('openseadragon');
         const OpenSeadragon = (OSDModule as any).default || OSDModule;
 
-        // Vernietig vorige instance volledig voor een schone start
         if (viewerRef.current) {
           viewerRef.current.destroy();
           viewerRef.current = null;
@@ -67,7 +75,6 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
             url: imageUrl,
             buildPyramid: true
           },
-          // Interactie instellingen
           showNavigationControl: false,
           gestureSettingsMouse: {
             scrollToZoom: true,
@@ -78,7 +85,6 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
             scrollToZoom: true,
             pinchToZoom: true,
           },
-          // Sizing en Positionering
           homeFillsViewer: false, 
           visibilityRatio: 1.0,
           constrainDuringPan: true,
@@ -87,7 +93,6 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
           maxZoomLevel: 10,
           autoResize: true,
           preserveViewport: false,
-          // Cursor fixes (worden nu via CSS afgehandeld op de container)
           zoomInButton: undefined,
           zoomOutButton: undefined,
           homeButton: undefined,
@@ -96,21 +101,19 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
 
         viewerRef.current.addHandler('open', () => {
           setLoading(false);
-          // Forceer een schone 'fit' positie
           if (viewerRef.current && viewerRef.current.viewport) {
             viewerRef.current.viewport.goHome(true);
           }
         });
 
-        // Command + Klik om uit te zoomen
+        // Command + Klik om uit te zoomen met visuele feedback
         viewerRef.current.addHandler('canvas-click', (event: any) => {
           const isCmdOrCtrl = event.originalEvent.metaKey || event.originalEvent.ctrlKey;
           
           if (isCmdOrCtrl) {
-            event.preventDefaultAction = true; // Voorkom standaard zoom-in
+            event.preventDefaultAction = true; 
             if (viewerRef.current && viewerRef.current.viewport) {
               const currentZoom = viewerRef.current.viewport.getZoom();
-              // Zoom uit met factor 2
               viewerRef.current.viewport.zoomTo(currentZoom / 2);
             }
           }
@@ -121,7 +124,6 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
       }
     };
 
-    // Gebruik een kleine delay voor stabiele DOM-berekening
     const timer = setTimeout(initOSD, 100);
 
     return () => {
