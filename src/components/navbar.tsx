@@ -23,13 +23,28 @@ import { useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase
 import { collection, query, doc, orderBy } from 'firebase/firestore';
 import { useLanguage } from '@/components/language-provider';
 import { MuseumGuide } from './museum-guide';
+import { LanguageSwitcher } from './language-switcher';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 
 /**
- * @fileOverview Navbar: Beheert de hoofdnavigatie en de Language Pill Box.
- * STRUCTURELE FIX: Language buttons zijn fysiek verplaatst naar een aparte box buiten de menu-scope.
+ * @fileOverview Navbar: Layout container voor navigatie en site-identiteit.
+ * DECOUPLED VERSIE: Language switching is verplaatst naar een onafhankelijke component.
  */
+
+const NavLink = ({ href, children, active }: { href: string; children: React.ReactNode; active: boolean }) => (
+  <Link 
+    href={href}
+    className={cn(
+      "px-5 py-2.5 rounded-full text-[10px] font-black tracking-[0.2em] uppercase transition-all flex items-center gap-2",
+      active 
+        ? "bg-accent text-accent-foreground shadow-lg scale-105" 
+        : "text-foreground/60 hover:text-accent hover:bg-accent/5"
+    )}
+  >
+    {children}
+  </Link>
+);
 
 function NavbarContent() {
   const pathname = usePathname();
@@ -37,7 +52,7 @@ function NavbarContent() {
   const [guideOpen, setGuideOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const firestore = useFirestore();
-  const { language, setLanguage, t } = useLanguage();
+  const { language, t } = useLanguage();
 
   useEffect(() => {
     setMounted(true);
@@ -72,47 +87,6 @@ function NavbarContent() {
     setMobileMenuOpen(false);
   }, [pathname]);
 
-  const NavLink = ({ href, children, active }: { href: string; children: React.ReactNode; active: boolean }) => (
-    <Link 
-      href={href}
-      className={cn(
-        "px-5 py-2.5 rounded-full text-[10px] font-black tracking-[0.2em] uppercase transition-all flex items-center gap-2",
-        active 
-          ? "bg-accent text-accent-foreground shadow-lg scale-105" 
-          : "text-foreground/60 hover:text-accent hover:bg-accent/5"
-      )}
-    >
-      {children}
-    </Link>
-  );
-
-  /**
-   * De Language Pill Box: Een structureel aparte widget voor taalkeuze.
-   * Voorkomt menu-conflict en regelt eigen horizontal scroll op mobile.
-   */
-  const LanguagePillBox = ({ className }: { className?: string }) => (
-    <div className={cn(
-      "flex flex-nowrap items-center bg-black/[0.03] rounded-full p-1 border border-black/[0.03] shadow-inner no-scrollbar",
-      "overflow-x-auto -webkit-overflow-scrolling-touch",
-      className
-    )}>
-      {(['nl', 'en', 'de', 'fr', 'es'] as const).map((lang) => (
-        <button
-          key={lang}
-          onClick={() => setLanguage(lang)}
-          className={cn(
-            "px-3 py-1.5 rounded-full text-[9px] font-black uppercase transition-all flex-shrink-0 min-w-[32px] h-7 flex items-center justify-center",
-            language === lang 
-              ? "bg-white text-accent shadow-md scale-110 z-10" 
-              : "text-foreground/30 hover:text-foreground/60"
-          )}
-        >
-          {lang}
-        </button>
-      ))}
-    </div>
-  );
-
   return (
     <>
       <nav className="fixed top-0 left-0 right-0 z-50 h-24 md:h-32 px-4 md:px-6 flex items-center justify-center pointer-events-none">
@@ -137,10 +111,9 @@ function NavbarContent() {
             </Link>
           </div>
           
-          {/* 2. Desktop Layout: Nav Menu + Apart Language Box */}
+          {/* 2. Desktop Layout: Nav Menu + Independent Switcher */}
           {mounted && (
             <div className="hidden lg:flex items-center gap-2 flex-shrink-0">
-              {/* Nav Menu Items */}
               <div className="flex items-center gap-1 mr-4">
                 <NavLink href="/" active={pathname === "/"}>{t('nav_home')}</NavLink>
                 
@@ -173,10 +146,8 @@ function NavbarContent() {
                 <NavLink href="/shop" active={pathname === "/shop"}><ShoppingBag className="w-4 h-4" /> {t('nav_shop')}</NavLink>
               </div>
 
-              {/* Functional Separator */}
               <div className="h-8 w-px bg-black/5 mx-2" />
 
-              {/* Guide Button */}
               <button 
                 onClick={() => setGuideOpen(true)} 
                 className="px-5 py-2.5 rounded-full text-[10px] font-black tracking-[0.2em] uppercase transition-all flex items-center gap-2 hover:bg-accent/5 text-accent border border-accent/10 ml-2"
@@ -184,14 +155,15 @@ function NavbarContent() {
                 <BookOpen className="w-4 h-4" /> Gids
               </button>
 
-              {/* Dedicated Language Pill Box */}
-              <LanguagePillBox className="ml-4" />
+              {/* Standalone Language Widget */}
+              <LanguageSwitcher className="ml-4" />
             </div>
           )}
 
-          {/* 3. Mobile Layout: Interaction Bar (Language Box + Hamburger) */}
+          {/* 3. Mobile Layout: Peer Interaction (Switcher + Hamburger) */}
           <div className="lg:hidden flex items-center gap-2 md:gap-3 flex-shrink-0 min-w-0">
-            <LanguagePillBox className="max-w-[120px] sm:max-w-none flex-shrink-1 min-w-0" />
+            {/* Altijd zichtbare globale taal-control */}
+            <LanguageSwitcher className="max-w-[120px] sm:max-w-none flex-shrink-1 min-w-0" />
             
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
               <SheetTrigger asChild>
