@@ -467,8 +467,8 @@ export default function AdminPage() {
                  {selectedArtIds.length > 0 && (
                    <div className="flex items-center gap-2 animate-in slide-in-from-left-2 duration-300">
                      <div className="h-6 w-px bg-black/10 mx-2" />
-                     <Button size="sm" variant="outline" onClick={() => setIsBulkEditConfirmOpen(true)} className="rounded-full text-[10px] font-black uppercase bg-accent/5 border-accent/20 text-accent">
-                       <Settings2 className="w-3 h-3 mr-2" /> Bulk Bewerken
+                     <Button size="sm" variant="outline" onClick={() => setIsBulkEditConfirmOpen(true)} className="rounded-full text-[10px] font-black uppercase bg-accent text-white border-accent shadow-md hover:scale-105 transition-transform">
+                       <Settings2 className="w-3 h-3 mr-2" /> {selectedArtIds.length} Items Bulk Bewerken
                      </Button>
                      <Button size="sm" variant="destructive" onClick={handleBulkDelete} className="rounded-full text-[10px] font-black uppercase">
                        <Trash2 className="w-3 h-3 mr-2" /> Verwijderen
@@ -494,7 +494,7 @@ export default function AdminPage() {
                      key={art.id} 
                      className={cn(
                        "p-4 rounded-2xl border-none shadow-md transition-all duration-300 group relative overflow-hidden",
-                       isSelected ? "bg-accent/5 ring-2 ring-accent" : "bg-white"
+                       isSelected ? "bg-accent/5 ring-2 ring-accent scale-[0.98]" : "bg-white hover:scale-[1.02]"
                      )}
                    >
                       <button 
@@ -599,11 +599,30 @@ export default function AdminPage() {
       <Dialog open={isBulkEditDialogOpen} onOpenChange={setIsBulkEditConfirmOpen}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto rounded-[2.5rem] p-10 border-none shadow-2xl">
           <DialogHeader>
-            <DialogTitle className="font-headline text-3xl italic text-accent">Bulk Bewerken</DialogTitle>
+            <DialogTitle className="font-headline text-3xl italic text-accent">{selectedArtIds.length} Kunstwerken Bewerken</DialogTitle>
             <DialogDescription className="text-sm font-medium opacity-60">
-              Pas {selectedArtIds.length} kunstwerken tegelijk aan. Laat velden ongewijzigd als je ze niet wilt aanpassen.
+              U past momenteel een selectie van {selectedArtIds.length} werken aan. Uw wijzigingen worden op alle geselecteerde items toegepast.
             </DialogDescription>
           </DialogHeader>
+
+          {/* Visual confirmation of selected items */}
+          <div className="flex -space-x-4 overflow-hidden py-4 px-2 bg-black/5 rounded-3xl my-6">
+            {selectedArtIds.slice(0, 12).map(id => {
+              const art = dbArtworks?.find((a: any) => a.id === id) as any;
+              return (
+                <div key={id} className="w-14 h-14 rounded-full border-4 border-white overflow-hidden bg-muted shrink-0 shadow-lg animate-in zoom-in duration-300">
+                  {art?.image || art?.imageUrl ? (
+                    <img src={art.image || art.imageUrl} className="w-full h-full object-cover" alt="preview" />
+                  ) : <Palette className="w-6 h-6 m-auto opacity-20" />}
+                </div>
+              );
+            })}
+            {selectedArtIds.length > 12 && (
+              <div className="w-14 h-14 rounded-full border-4 border-white bg-accent text-white flex items-center justify-center text-[10px] font-black shrink-0 shadow-lg">
+                +{selectedArtIds.length - 12}
+              </div>
+            )}
+          </div>
 
           <div className="grid gap-10 py-6">
             {/* Room Selection */}
@@ -748,7 +767,7 @@ export default function AdminPage() {
               className="rounded-full px-12 h-14 bg-primary text-white shadow-xl hover:scale-105 transition-all"
             >
               {isProcessing ? <Loader2 className="animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-              Wijzigingen Toepassen
+              Wijzigingen op {selectedArtIds.length} items Toepassen
             </Button>
           </DialogFooter>
         </DialogContent>
