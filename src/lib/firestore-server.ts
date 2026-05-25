@@ -3,7 +3,7 @@ import { firebaseConfig } from '@/firebase/config';
 
 /**
  * @fileOverview Server-side Firestore data fetching via REST API.
- * Geoptimaliseerd voor betrouwbare parsing van runQuery resultaten en slug normalisatie.
+ * Geoptimaliseerd voor multi-room architecture en betrouwbare data parsing.
  */
 
 const PROJECT_ID = firebaseConfig.projectId;
@@ -49,40 +49,20 @@ const mapDocument = (doc: any) => {
   return data;
 };
 
-/**
- * Haalt alle zalen op via een eenvoudige GET collectie-oproep.
- */
 export async function getRoomsServer() {
   try {
-    const res = await fetch(`${BASE_URL}/rooms`, {
-      next: { revalidate: 30 }
-    });
-    if (!res.ok) {
-      console.error('[ROOM DEBUG] getRoomsServer response not ok:', res.status);
-      return [];
-    }
+    const res = await fetch(`${BASE_URL}/rooms`, { next: { revalidate: 60 } });
+    if (!res.ok) return [];
     const json = await res.json();
-    
-    const results = (json.documents || [])
+    return (json.documents || [])
       .map(mapDocument)
-      .filter(Boolean)
+      .filter((r: any) => r && r.isPublic !== false)
       .sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
-    
-    return results;
-  } catch (e) {
-    console.error('[ROOM DEBUG] getRoomsServer failed:', e);
-    return [];
-  }
+  } catch (e) { return []; }
 }
 
-/**
- * Haalt een zaal op basis van slug via runQuery.
- */
 export async function getRoomBySlugServer(slug: string) {
   try {
-    const normalizedSlug = (slug || "").toLowerCase().trim();
-    if (!normalizedSlug) return null;
-
     const url = `${BASE_URL}:runQuery`;
     const res = await fetch(url, {
       method: 'POST',
@@ -94,40 +74,21 @@ export async function getRoomBySlugServer(slug: string) {
             fieldFilter: {
               field: { fieldPath: 'slug' },
               op: 'EQUAL',
-              value: { stringValue: normalizedSlug }
+              value: { stringValue: slug.toLowerCase().trim() }
             }
           },
           limit: 1
         }
       }),
-      next: { revalidate: 30 }
+      next: { revalidate: 60 }
     });
-    
-    if (!res.ok) return null;
-    
     const results = await res.json();
-    if (!Array.isArray(results)) return null;
-    
-    for (const entry of results) {
-      if (entry && entry.document) {
-        return mapDocument(entry.document);
-      }
-    }
-    return null;
-  } catch (e) {
-    console.error('[ROOM DEBUG] getRoomBySlugServer failed:', e);
-    return null;
-  }
+    return results?.[0]?.document ? mapDocument(results[0].document) : null;
+  } catch (e) { return null; }
 }
 
-/**
- * Haalt alle kunstwerken voor een zaal op via runQuery.
- */
-export async function getArtworksByRoomSlugServer(roomSlug: string) {
+export async function getArtworksByRoomIdServer(roomId: string) {
   try {
-    const normalizedSlug = (roomSlug || "").toLowerCase().trim();
-    if (!normalizedSlug) return [];
-
     const url = `${BASE_URL}:runQuery`;
     const res = await fetch(url, {
       method: 'POST',
@@ -137,44 +98,22 @@ export async function getArtworksByRoomSlugServer(roomSlug: string) {
           from: [{ collectionId: 'artworks' }],
           where: {
             fieldFilter: {
-              field: { fieldPath: 'roomSlug' },
-              op: 'EQUAL',
-              value: { stringValue: normalizedSlug }
+              field: { fieldPath: 'roomIds' },
+              op: 'ARRAY_CONTAINS',
+              value: { stringValue: roomId }
             }
           }
         }
       }),
-      next: { revalidate: 30 }
+      next: { revalidate: 60 }
     });
-    
-    if (!res.ok) return [];
-    
     const results = await res.json();
-    if (!Array.isArray(results)) return [];
-    
-    const artworks: any[] = [];
-    for (const entry of results) {
-      if (entry && entry.document) {
-        const mapped = mapDocument(entry.document);
-        if (mapped) artworks.push(mapped);
-      }
-    }
-    
-    return artworks;
-  } catch (e) {
-    console.error('[ARTWORK DEBUG] getArtworksByRoomSlugServer failed:', e);
-    return [];
-  }
+    return results.filter((r: any) => r.document).map((r: any) => mapDocument(r.document));
+  } catch (e) { return []; }
 }
 
-/**
- * Haalt een specifiek kunstwerk op basis van slug via runQuery.
- */
 export async function getArtworkBySlugServer(slug: string) {
   try {
-    const normalizedSlug = (slug || "").toLowerCase().trim();
-    if (!normalizedSlug) return null;
-
     const url = `${BASE_URL}:runQuery`;
     const res = await fetch(url, {
       method: 'POST',
@@ -186,45 +125,22 @@ export async function getArtworkBySlugServer(slug: string) {
             fieldFilter: {
               field: { fieldPath: 'slug' },
               op: 'EQUAL',
-              value: { stringValue: normalizedSlug }
+              value: { stringValue: slug }
             }
           },
           limit: 1
         }
-      }),
-      next: { revalidate: 30 }
+      })
     });
-    
-    if (!res.ok) return null;
-    
     const results = await res.json();
-    if (!Array.isArray(results)) return null;
-    
-    for (const entry of results) {
-      if (entry && entry.document) {
-        return mapDocument(entry.document);
-      }
-    }
-    return null;
-  } catch (e) {
-    console.error('[ARTWORK DEBUG] getArtworkBySlugServer failed:', e);
-    return null;
-  }
+    return results?.[0]?.document ? mapDocument(results[0].document) : null;
+  } catch (e) { return null; }
 }
 
-/**
- * Haalt een kunstwerk op via een directe GET met Document ID.
- */
 export async function getArtworkServer(id: string) {
   try {
-    const res = await fetch(`${BASE_URL}/artworks/${id}`, {
-      next: { revalidate: 30 }
-    });
+    const res = await fetch(`${BASE_URL}/artworks/${id}`);
     if (!res.ok) return null;
-    const json = await res.json();
-    return mapDocument(json);
-  } catch (e) {
-    console.error('[ARTWORK DEBUG] getArtworkServer failed:', e);
-    return null;
-  }
+    return mapDocument(await res.json());
+  } catch (e) { return null; }
 }

@@ -9,20 +9,23 @@
         "title": { "type": "string" },
         "slug": { "type": "string" },
         "description": { "type": "string" },
-        "order": { "type": "number" }
+        "order": { "type": "number" },
+        "isPublic": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["title", "slug"]
     },
     "Artwork": {
       "title": "Artwork",
-      "description": "Een kunstwerk gekoppeld aan een zaal via roomSlug.",
+      "description": "Een kunstwerk gekoppeld aan meerdere zalen en tags.",
       "type": "object",
       "properties": {
-        "title": { "type": "string", "description": "Interne archief-titel" },
-        "displayTitle": { "type": "string", "description": "Publieke titel voor de website" },
+        "title": { "type": "string" },
+        "displayTitle": { "type": "string" },
         "slug": { "type": "string" },
         "image": { "type": "string" },
-        "roomSlug": { "type": "string" },
+        "roomIds": { "type": "array", "items": { "type": "string" } },
         "tags": { "type": "array", "items": { "type": "string" } },
         "year": { "type": "string" },
         "medium": { "type": "string" },
@@ -30,51 +33,27 @@
         "brightness": { "type": "number" },
         "featured": { "type": "boolean" },
         "inShop": { "type": "boolean" },
-        "audioUrls": { "type": "object" },
-        "createdAt": { "type": "string", "format": "date-time" }
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["title", "slug", "image", "roomSlug"]
+      "required": ["title", "slug", "image"]
     },
-    "Page": {
-      "title": "Page",
-      "description": "Een dynamische storytelling pagina (bijv. biografieën).",
+    "Tag": {
+      "title": "Tag",
+      "description": "Geregistreerde metadata tag.",
       "type": "object",
       "properties": {
-        "title": { "type": "string" },
+        "name": { "type": "string" },
         "slug": { "type": "string" },
-        "sections": { 
-          "type": "array", 
-          "items": { 
-            "type": "object",
-            "properties": {
-              "type": { "type": "string", "enum": ["text", "image", "quote", "gallery"] },
-              "content": { "type": "string" },
-              "imageUrl": { "type": "string" },
-              "caption": { "type": "string" }
-            }
-          }
-        }
-      }
-    },
-    "Settings": {
-      "title": "Settings",
-      "description": "Website configuratie en alle dynamische teksten.",
-      "type": "object",
-      "properties": {
-        "siteTitle": { "type": "string" },
-        "siteSubtitle": { "type": "string" },
-        "logoUrl": { "type": "string" },
-        "adminEmail": { "type": "string" },
-        "stripeEnabled": { "type": "boolean" },
-        "stripeSecretKey": { "type": "string" }
+        "usageCount": { "type": "number" }
       }
     }
   },
   "auth": { "providers": ["google"] },
   "firestore": {
-    "/rooms/{roomId}": { "schema": "Room", "description": "Collectie van alle museumzalen" },
-    "/artworks/{artworkId}": { "schema": "Artwork", "description": "Collectie van alle kunstwerken" },
-    "/pages/{pageId}": { "schema": "Page", "description": "Dynamische content pagina's" },
-    "/settings/site": { "schema": "Settings", "description": "Algemene instellingen en vertalingen" }
+    "/rooms/{roomId}": { "schema": "Room", "description": "Museumzalen" },
+    "/artworks/{artworkId}": { "schema": "Artwork", "description": "Kunstwerken met multi-room support" },
+    "/tags/{tagId}": { "schema": "Tag", "description": "Geregistreerde tags" },
+    "/settings/site": { "schema": "Settings", "description": "Website configuratie" }
   }
 }
