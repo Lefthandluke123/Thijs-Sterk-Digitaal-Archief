@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    /* Verfijnd galerij-palet: iets rustiger en neutraler */
+    /* Verfijnd galerij-palet met de terugkeer van het karakteristieke groen */
     --background: 40 10% 96%;
     --foreground: 201 45% 10%;
     --card: 0 0% 100%;
@@ -17,11 +17,14 @@
     --secondary-foreground: 201 45% 10%;
     --muted: 40 5% 85%;
     --muted-foreground: 201 15% 35%;
-    --accent: 35 90% 18%;
+    
+    /* Thijs Sterk Groen: Een diepe, natuurlijke poldergroen */
+    --accent: 142 30% 25%;
     --accent-foreground: 0 0% 100%;
+    
     --border: 201 15% 90%;
     --input: 201 15% 90%;
-    --ring: 35 90% 18%;
+    --ring: 142 30% 25%;
     --radius: 1.5rem;
   }
 }
@@ -37,7 +40,7 @@
     @apply font-headline text-foreground font-medium tracking-tight;
   }
   
-  /* Universele Focus Indicator */
+  /* Universele Focus Indicator voor toegankelijkheid */
   :focus-visible {
     @apply outline-none ring-2 ring-accent ring-offset-2 ring-offset-background;
   }
