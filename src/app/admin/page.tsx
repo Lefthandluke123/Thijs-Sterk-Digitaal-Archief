@@ -12,7 +12,6 @@ import {
   updateDoc, 
   addDoc, 
   serverTimestamp, 
-  orderBy, 
   writeBatch,
   arrayUnion,
   arrayRemove
@@ -34,15 +33,10 @@ import {
   Sparkles,
   Save,
   CheckSquare,
-  Square,
   X,
   Star,
-  Type,
-  Tag,
-  Settings2,
   Search,
-  Eye,
-  EyeOff,
+  Settings2,
   Hash,
   Image as ImageIcon
 } from 'lucide-react';
@@ -55,20 +49,14 @@ import {
   DialogContent, 
   DialogTitle, 
   DialogHeader, 
-  DialogFooter,
-  DialogDescription
+  DialogFooter
 } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { verifyAdminPassword } from '@/lib/admin-actions';
 import { cn } from '@/lib/utils';
-import { sortArtworksByTitle, cleanString, cleanArray, sanitizeArtwork } from '@/lib/museum-utils';
-
-/**
- * @fileOverview AdminPage: Bulletproof beheer met sanitization layer.
- * Voorkomt "" crashes en corrupte data.
- */
+import { sortArtworksByTitle, cleanString, cleanArray, sanitizeArtwork, normalizeArtwork } from '@/lib/museum-utils';
 
 export default function AdminPage() {
   const firestore = useFirestore();
@@ -129,22 +117,24 @@ export default function AdminPage() {
     setIsVerifying(false);
   };
 
-  // Queries
+  // Queries - We verwijderen orderBy(createdAt) omdat docs zonder dat veld dan worden overgeslagen
   const artworksQuery = useMemoFirebase(() => {
     if (!firestore || !isAuthorized) return null;
-    return query(collection(firestore, 'artworks'), orderBy('createdAt', 'desc'));
+    return collection(firestore, 'artworks');
   }, [firestore, isAuthorized]);
-  const { data: dbArtworks } = useCollection(artworksQuery);
+  const { data: rawArtworks } = useCollection(artworksQuery);
 
   const roomsQuery = useMemoFirebase(() => {
     if (!firestore || !isAuthorized) return null;
-    return query(collection(firestore, 'rooms'), orderBy('order', 'asc'));
+    return collection(firestore, 'rooms');
   }, [firestore, isAuthorized]);
   const { data: rooms } = useCollection(roomsQuery);
 
   const filteredAndSortedArtworks = useMemo(() => {
-    if (!dbArtworks) return [];
-    let list = [...dbArtworks];
+    if (!rawArtworks) return [];
+    
+    // Soft normalization toepassen op alle docs
+    let list = rawArtworks.map(a => normalizeArtwork(a.id, a));
     
     if (searchTerm) {
       const s = searchTerm.toLowerCase();
@@ -156,7 +146,7 @@ export default function AdminPage() {
     }
     
     return list.sort(sortArtworksByTitle);
-  }, [dbArtworks, searchTerm]);
+  }, [rawArtworks, searchTerm]);
 
   const handleBulkSave = async () => {
     if (!firestore || !selectedArtIds.length) return;
@@ -231,7 +221,7 @@ export default function AdminPage() {
     if (!firestore || !confirm("Weet je zeker?")) return;
     setIsProcessing(true);
     const batch = writeBatch(firestore);
-    const linkedArtworks = dbArtworks?.filter((a: any) => a.roomIds?.includes(roomId)) || [];
+    const linkedArtworks = rawArtworks?.filter((a: any) => a.roomIds?.includes(roomId)) || [];
     linkedArtworks.forEach((art: any) => {
       batch.update(doc(firestore, 'artworks', art.id), {
         roomIds: arrayRemove(roomId),
@@ -312,7 +302,7 @@ export default function AdminPage() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
           <TabsList className="bg-muted p-1 rounded-full w-fit mx-auto h-14 border">
             <TabsTrigger value="artworks" className="rounded-full px-8 h-12 uppercase font-black text-[11px] tracking-widest">
-              <Palette className="w-4 h-4 mr-2" /> Collectie
+              <Palette className="w-4 h-4 mr-2" /> Collectie ({filteredAndSortedArtworks.length})
             </TabsTrigger>
             <TabsTrigger value="rooms" className="rounded-full px-8 h-12 uppercase font-black text-[11px] tracking-widest">
               <Layers className="w-4 h-4 mr-2" /> Zalen
@@ -353,8 +343,8 @@ export default function AdminPage() {
                     </button>
 
                     <div className="aspect-square rounded-xl overflow-hidden bg-black/5 mb-4 flex items-center justify-center">
-                      {cleanString(art.image) ? (
-                        <img src={art.image} className="w-full h-full object-cover" alt={art.title || "Kunstwerk"} />
+                      {art.image ? (
+                        <img src={art.image} className="w-full h-full object-cover" alt={art.title} />
                       ) : (
                         <ImageIcon className="w-8 h-8 opacity-10" />
                       )}
@@ -408,7 +398,7 @@ export default function AdminPage() {
                <Hash className="w-12 h-12 mx-auto text-accent opacity-20" />
                <h2 className="font-headline text-3xl italic">Tags</h2>
                <div className="flex flex-wrap gap-2 justify-center">
-                  {Array.from(new Set(dbArtworks?.flatMap((a: any) => a.tags || []) || [])).sort().map((tag: string) => (
+                  {Array.from(new Set(rawArtworks?.flatMap((a: any) => a.tags || []) || [])).sort().map((tag: string) => (
                     <Badge key={tag} variant="secondary" className="px-4 py-1.5 rounded-full text-[10px] font-black uppercase">
                       {tag}
                     </Badge>
@@ -423,14 +413,13 @@ export default function AdminPage() {
       <Dialog open={isBulkDialogOpen} onOpenChange={setIsBulkEditConfirmOpen}>
         <DialogContent className="max-w-3xl rounded-[2.5rem] p-10">
           <DialogHeader>
-            <DialogTitle className="font-headline text-3xl italic">{selectedArtIds.length} Werken</DialogTitle>
+            <DialogTitle className="font-headline text-3xl italic">{selectedArtIds.length} Werken Bewerken</DialogTitle>
           </DialogHeader>
           <div className="grid gap-8 py-6">
-            {/* Thumbs Preview */}
             <div className="flex gap-2 overflow-x-auto pb-4 no-scrollbar">
-               {dbArtworks?.filter((a: any) => selectedArtIds.includes(a.id)).map((a: any) => (
+               {rawArtworks?.filter((a: any) => selectedArtIds.includes(a.id)).map((a: any) => (
                  <div key={a.id} className="w-12 h-12 rounded-lg bg-black/5 overflow-hidden shrink-0 border">
-                    {cleanString(a.image) ? <img src={a.image} className="w-full h-full object-cover" /> : <ImageIcon className="w-full h-full p-2 opacity-10" />}
+                    {a.image ? <img src={a.image} className="w-full h-full object-cover" /> : <ImageIcon className="w-full h-full p-2 opacity-10" />}
                  </div>
                ))}
             </div>
@@ -506,7 +495,7 @@ export default function AdminPage() {
             <div className="space-y-2">
               <Label className="text-[10px] uppercase font-black opacity-40">Zalen</Label>
               <div className="flex flex-wrap gap-2 p-3 bg-black/5 rounded-xl">
-                 {rooms?.filter((r: any) => cleanString(r.slug)).map((r: any) => (
+                 {rooms?.map((r: any) => (
                    <label key={r.id} className={cn("px-4 py-1.5 rounded-full border text-[10px] font-black uppercase cursor-pointer transition-all", artworkForm.roomIds?.includes(r.id) ? "bg-accent text-white border-accent" : "bg-white border-black/5 opacity-50")}>
                      <input type="checkbox" className="hidden" checked={artworkForm.roomIds?.includes(r.id)} onChange={e => setArtworkForm(p => ({ ...p, roomIds: e.target.checked ? [...(p.roomIds || []), r.id] : (p.roomIds || []).filter(id => id !== r.id) }))} />
                      {r.title}

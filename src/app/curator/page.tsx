@@ -1,8 +1,9 @@
+
 "use client";
 
 import React, { useState, useMemo, useCallback } from 'react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Loader2, Maximize2, Play, Eraser, Share2, Copy, Filter } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -14,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-import { MUSEUM_TAGS } from '@/lib/museum-utils';
+import { MUSEUM_TAGS, normalizeArtwork } from '@/lib/museum-utils';
 
 export default function CuratorPage() {
   const [activeTags, setActiveTags] = useState<string[]>([]);
@@ -29,21 +30,19 @@ export default function CuratorPage() {
   
   const artworksQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'artworks'), orderBy('createdAt', 'desc'));
+    return collection(firestore, 'artworks');
   }, [firestore]);
 
   const { data: dbArtworks, loading } = useCollection(artworksQuery);
 
-  // We tonen nu ELK artwork, ook als ze dezelfde afbeelding delen (bijv. studies)
   const artworks = useMemo(() => {
     if (!dbArtworks) return [];
-    return dbArtworks as any[];
+    return dbArtworks.map(a => normalizeArtwork(a.id, a));
   }, [dbArtworks]);
 
   const filteredArtworks = useMemo(() => {
-    if (activeTags.length === 0) return [];
+    if (activeTags.length === 0) return artworks; // Toon alles als er geen tags zijn gekozen
     
-    // Case-insensitive filtering op tags om te voorkomen dat 'vroeg werk' vs 'Vroeg werk' items mist
     return artworks.filter((art: any) => {
       const artTags = (art.tags || []).map((t: string) => t.toLowerCase());
       return activeTags.every(tag => artTags.includes(tag.toLowerCase()));
@@ -60,8 +59,7 @@ export default function CuratorPage() {
   }, [selectedArtwork, filteredArtworks]);
 
   const handleShare = () => {
-    if (!firestore) return;
-    if (filteredArtworks.length === 0) return;
+    if (!firestore || filteredArtworks.length === 0) return;
 
     setIsSharing(true);
     const roomsCollection = collection(firestore, 'shared_rooms');
@@ -72,7 +70,7 @@ export default function CuratorPage() {
     const roomData = {
       title: roomTitle || "Mijn Expositie",
       description: `Een samengestelde selectie door een bezoeker van Het Digitale Retrospectief.`,
-      artworkIds: filteredArtworks.map(a => (a as any).id),
+      artworkIds: filteredArtworks.map(a => a.id),
       createdAt: serverTimestamp(),
       lang: language
     };
@@ -148,7 +146,6 @@ export default function CuratorPage() {
             </Button>
             <Button 
               onClick={() => setShowResults(true)} 
-              disabled={activeTags.length === 0} 
               className="rounded-full h-16 px-16 bg-primary text-primary-foreground uppercase font-black text-[11px] tracking-widest shadow-2xl hover:scale-[1.03] active:scale-95 transition-all"
             >
               <Play className="w-4 h-4 mr-3 fill-current" /> {t('curator_open')}
@@ -170,12 +167,16 @@ export default function CuratorPage() {
             {filteredArtworks.map((item: any) => (
               <div key={item.id} className="group cursor-pointer space-y-4" onClick={() => setSelectedArtwork(item)}>
                 <div className="relative aspect-[4/5] overflow-hidden rounded-[2.5rem] bg-black/[0.02] shadow-md transition-all duration-700 group-hover:shadow-2xl flex items-center justify-center p-4 border border-black/5">
-                  <img 
-                    src={item.image || item.imageUrl} 
-                    className="max-w-full max-h-full object-contain transition-transform duration-[1.5s] group-hover:scale-110" 
-                    style={{ filter: `brightness(${item.brightness || 1})` }} 
-                    alt={item.title}
-                  />
+                  {item.image ? (
+                    <img 
+                      src={item.image} 
+                      className="max-w-full max-h-full object-contain transition-transform duration-[1.5s] group-hover:scale-110" 
+                      style={{ filter: `brightness(${item.brightness || 1})` }} 
+                      alt={item.title}
+                    />
+                  ) : (
+                    <ImageIcon className="w-12 h-12 opacity-10" />
+                  )}
                   <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-500">
                     <div className="p-3 rounded-full bg-white/30 backdrop-blur-xl scale-90 group-hover:scale-100 transition-transform duration-500">
                       <Maximize2 className="text-white w-6 h-6" />

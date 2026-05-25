@@ -2,6 +2,8 @@
 /**
  * @fileOverview Museum Utilities voor sorteren en data-verwerking.
  * Inclusief Hardening Layer voor Firestore data integriteit.
+ * 
+ * UPDATE: Soft-normalization toegevoegd om dataverlies in de UI te voorkomen.
  */
 
 import { serverTimestamp } from 'firebase/firestore';
@@ -20,18 +22,42 @@ export const MUSEUM_TAGS = {
 };
 
 /**
- * Centraal sanitization filter voor Artwork data.
- * Voorkomt empty strings, undefined en corrupte arrays in Firestore.
+ * Normaliseert Firestore data voor veilig gebruik in de UI.
+ * Verbergt NOOIT data, maar geeft fallbacks voor lege velden.
+ */
+export function normalizeArtwork(id: string, data: any) {
+  return {
+    id,
+    title: cleanString(data.title) || "Ongetiteld",
+    displayTitle: cleanString(data.displayTitle) || cleanString(data.title) || "Ongetiteld",
+    slug: cleanString(data.slug) || id,
+    image: cleanString(data.image || data.imageUrl || data.url) || null,
+    description: cleanString(data.description) || "",
+    year: cleanString(data.year) || "Onbekend",
+    medium: cleanString(data.medium) || "Schilderij",
+    tags: cleanArray(data.tags),
+    roomIds: cleanArray(data.roomIds),
+    featured: Boolean(data.featured),
+    inShop: Boolean(data.inShop),
+    brightness: typeof data.brightness === 'number' ? data.brightness : 1,
+    createdAt: data.createdAt || null,
+    updatedAt: data.updatedAt || null,
+  };
+}
+
+/**
+ * Centraal sanitization filter voor Artwork data (Writes).
+ * Voorkomt empty strings en corrupte types in Firestore.
  */
 export function sanitizeArtwork(input: any) {
   return {
-    title: cleanString(input.title) || "Naamloos",
-    displayTitle: cleanString(input.displayTitle) || cleanString(input.title),
-    slug: cleanString(input.slug),
-    image: cleanString(input.image),
+    title: cleanString(input.title) || "Ongetiteld",
+    displayTitle: cleanString(input.displayTitle) || cleanString(input.title) || "Ongetiteld",
+    slug: cleanString(input.slug) || null,
+    image: cleanString(input.image) || null,
     description: cleanString(input.description) || "",
     year: cleanString(input.year) || "",
-    medium: cleanString(input.medium) || "Olieverf op doek",
+    medium: cleanString(input.medium) || "",
     tags: cleanArray(input.tags),
     roomIds: cleanArray(input.roomIds),
     featured: Boolean(input.featured),
@@ -40,16 +66,17 @@ export function sanitizeArtwork(input: any) {
   };
 }
 
-export function cleanString(v?: string | null): string | null {
-  if (!v || typeof v !== 'string') return null;
-  const s = v.trim();
+export function cleanString(v?: any): string | null {
+  if (v === undefined || v === null) return null;
+  const s = String(v).trim();
   return s.length > 0 ? s : null;
 }
 
 export function cleanArray(arr?: any[]): string[] {
   if (!arr || !Array.isArray(arr)) return [];
   return arr
-    .map(v => typeof v === 'string' ? v.trim() : String(v).trim())
+    .filter(v => v !== null && v !== undefined)
+    .map(v => String(v).trim())
     .filter(v => v.length > 0 && v !== "undefined" && v !== "null");
 }
 
