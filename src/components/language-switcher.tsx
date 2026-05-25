@@ -1,12 +1,21 @@
+
 "use client";
 
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/components/language-provider';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Globe } from 'lucide-react';
 
 /**
- * @fileOverview LanguageSwitcher: Een standalone pillbox UI voor 5 talen.
- * Ontworpen voor maximale consistentie en anti-overflow op kleine schermen.
+ * @fileOverview LanguageSwitcher: Een stabiele dropdown voor taalkeuze.
+ * Vervangt de complexe pillbox om layout-conflicten en overflow te voorkomen.
  */
 
 interface LanguageSwitcherProps {
@@ -14,42 +23,40 @@ interface LanguageSwitcherProps {
 }
 
 const LANGUAGES = [
-  { code: 'nl', label: 'NL' },
-  { code: 'en', label: 'EN' },
-  { code: 'de', label: 'DE' },
-  { code: 'fr', label: 'FR' },
-  { code: 'es', label: 'ES' },
+  { code: 'nl', label: 'Nederlands' },
+  { code: 'en', label: 'English' },
+  { code: 'de', label: 'Deutsch' },
+  { code: 'fr', label: 'Français' },
+  { code: 'es', label: 'Español' },
 ] as const;
 
 export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
   const { language, setLanguage } = useLanguage();
 
   return (
-    <div className={cn(
-      "flex flex-nowrap items-center bg-black/[0.04] rounded-full p-1 border border-black/5 shadow-inner no-scrollbar",
-      "overflow-x-auto -webkit-overflow-scrolling-touch min-w-0 max-w-full",
-      className
-    )}>
-      {LANGUAGES.map((lang) => (
-        <button
-          key={lang.code}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            setLanguage(lang.code as any);
-          }}
-          className={cn(
-            "px-3.5 py-1.5 rounded-full text-[10px] font-black uppercase transition-all duration-500 flex-shrink-0 min-w-[36px] h-7 flex items-center justify-center outline-none",
-            language === lang.code 
-              ? "bg-white text-accent shadow-md scale-105 z-10" 
-              : "text-foreground/30 hover:text-foreground/60"
-          )}
-          aria-label={`Switch to ${lang.label}`}
-          aria-pressed={language === lang.code}
-        >
-          {lang.label}
-        </button>
-      ))}
+    <div className={cn("flex items-center gap-2", className)}>
+      <Select 
+        value={language} 
+        onValueChange={(val) => setLanguage(val as any)}
+      >
+        <SelectTrigger className="w-[140px] h-10 rounded-full bg-black/[0.04] border-black/5 shadow-inner text-[10px] font-black uppercase tracking-widest focus:ring-accent">
+          <div className="flex items-center gap-2">
+            <Globe className="w-3.5 h-3.5 opacity-40" />
+            <SelectValue placeholder="Taal" />
+          </div>
+        </SelectTrigger>
+        <SelectContent className="bg-white/95 backdrop-blur-2xl border-black/5 rounded-2xl shadow-2xl">
+          {LANGUAGES.map((lang) => (
+            <SelectItem 
+              key={lang.code} 
+              value={lang.code}
+              className="text-[10px] font-bold uppercase tracking-widest focus:bg-accent focus:text-accent-foreground rounded-xl cursor-pointer p-3"
+            >
+              {lang.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   );
 }

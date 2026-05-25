@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, Suspense } from 'react';
@@ -28,8 +29,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/s
 import { Button } from '@/components/ui/button';
 
 /**
- * @fileOverview Navbar: Centrale navigatie met geïntegreerde Language Pills.
- * De taalkeuze is nu zowel in de navbar als in de mobiele sheet aanwezig.
+ * @fileOverview Navbar: Centrale navigatie met stabiele Dropdown Language Switcher.
  */
 
 const NavLink = ({ href, children, active }: { href: string; children: React.ReactNode; active: boolean }) => (
@@ -90,7 +90,7 @@ function NavbarContent() {
   return (
     <>
       <nav className="fixed top-0 left-0 right-0 z-50 h-24 md:h-32 px-4 md:px-6 flex items-center justify-center pointer-events-none">
-        <div className="container max-w-7xl h-16 md:h-22 glass-panel rounded-full flex flex-nowrap items-center justify-between px-4 md:px-8 pointer-events-auto border-white/60 overflow-hidden shadow-2xl">
+        <div className="container max-w-7xl h-16 md:h-22 glass-panel rounded-full flex flex-nowrap items-center justify-between px-4 md:px-8 pointer-events-auto border-white/60 shadow-2xl">
           
           {/* 1. Identity Section */}
           <div className="flex-shrink-0 min-w-0">
@@ -111,10 +111,10 @@ function NavbarContent() {
             </Link>
           </div>
           
-          {/* 2. Desktop Layout: Nav Menu + Pills */}
+          {/* 2. Desktop Layout */}
           {mounted && (
             <div className="hidden lg:flex items-center gap-2 flex-shrink-0">
-              <div className="flex items-center gap-1 mr-2">
+              <div className="flex items-center gap-1">
                 <NavLink href="/" active={pathname === "/"}>{t('nav_home')}</NavLink>
                 
                 <DropdownMenu>
@@ -128,7 +128,7 @@ function NavbarContent() {
                       {t('nav_galleries')} <ChevronDown className="w-3 h-3 opacity-30" />
                     </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="center" className="bg-white/95 backdrop-blur-2xl border-black/5 rounded-3xl min-w-[240px] p-2 shadow-2xl mt-4 animate-in fade-in slide-in-from-top-4 duration-500">
+                  <DropdownMenuContent align="center" className="bg-white/95 backdrop-blur-2xl border-black/5 rounded-3xl min-w-[240px] p-2 shadow-2xl mt-4">
                     <DropdownMenuItem asChild className="text-[10px] uppercase font-black tracking-widest focus:bg-accent focus:text-accent-foreground rounded-2xl cursor-pointer p-4 mb-1 border-b border-black/5">
                       <Link href="/gallery" className="flex w-full items-center gap-3">
                         <LayoutGrid className="w-4 h-4 opacity-40" /> {t('gallery_all')}
@@ -159,14 +159,12 @@ function NavbarContent() {
             </div>
           )}
 
-          {/* 3. Mobile Layout: Fast Access Switcher + Hamburger */}
-          <div className="lg:hidden flex items-center gap-2 md:gap-3 flex-shrink-0 min-w-0">
-            <LanguageSwitcher className="max-w-[140px] sm:max-w-none" />
-            
+          {/* 3. Mobile Layout */}
+          <div className="lg:hidden flex items-center gap-3 flex-shrink-0">
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-black/5 flex-shrink-0">
-                  <Menu className="w-5 h-5 md:w-6 md:h-6" />
+                <Button variant="ghost" size="icon" className="w-12 h-12 rounded-full bg-black/5">
+                  <Menu className="w-6 h-6" />
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-[85vw] p-0 border-none bg-background shadow-2xl">
@@ -175,15 +173,15 @@ function NavbarContent() {
                   <div className="p-10 border-b border-black/5 bg-primary text-primary-foreground rounded-bl-[4rem]">
                     <span className="font-headline text-3xl font-medium italic">{siteTitle}</span>
                     <p className="text-[10px] uppercase tracking-[0.3em] opacity-40 mt-3">{siteSubtitle}</p>
-                    <div className="mt-8">
-                       <LanguageSwitcher className="bg-white/10 border-white/10" />
+                    <div className="mt-10">
+                       <LanguageSwitcher className="opacity-90" />
                     </div>
                   </div>
                   <div className="flex-1 overflow-y-auto p-8 space-y-8">
                      <div className="space-y-3">
                        <Link href="/" className="flex items-center gap-4 p-6 rounded-3xl bg-black/5 text-[13px] font-black uppercase tracking-widest">{t('nav_home')}</Link>
                        <Link href="/shop" className="flex items-center gap-4 p-6 rounded-3xl bg-black/5 text-[13px] font-black uppercase tracking-widest">{t('nav_shop')}</Link>
-                       <button onClick={() => { setMobileMenuOpen(false); setGuideOpen(true); }} className="flex w-full items-center gap-4 p-6 rounded-3xl bg-accent/5 text-[13px] font-black uppercase tracking-widest text-accent border border-accent/10 shadow-sm">
+                       <button onClick={() => { setMobileMenuOpen(false); setGuideOpen(true); }} className="flex w-full items-center gap-4 p-6 rounded-3xl bg-accent/5 text-[13px] font-black uppercase tracking-widest text-accent border border-accent/10">
                          <BookOpen className="w-6 h-6" /> Museum Gids
                        </button>
                      </div>
@@ -198,7 +196,7 @@ function NavbarContent() {
                        </Link>
                        <div className="grid grid-cols-1 gap-2.5 pt-4">
                          {rooms?.map((r: any) => (
-                           <Link key={r.id} href={`/room/${r.slug}`} className="p-5 rounded-2xl bg-black/[0.02] text-[12px] font-bold uppercase tracking-wider opacity-70 hover:bg-accent/5 hover:opacity-100">{r.title}</Link>
+                           <Link key={r.id} href={`/room/${r.slug}`} className="p-5 rounded-2xl bg-black/[0.02] text-[12px] font-bold uppercase tracking-wider opacity-70">{r.title}</Link>
                          ))}
                        </div>
                      </div>
