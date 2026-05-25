@@ -113,13 +113,13 @@ export default function CuratorPage() {
 
   return (
     <main className="min-h-screen bg-background pt-24 pb-32 px-6">
-      <div className="container mx-auto max-w-4xl text-center space-y-10">
+      <div className="container mx-auto max-w-4xl text-center space-y-8">
         <div className="space-y-4">
-          <h1 className="font-headline text-3xl md:text-5xl font-light italic text-accent">{t('curator_title')}</h1>
-          <p className="text-[11px] font-bold uppercase tracking-[0.4em] opacity-40">{t('curator_subtitle')}</p>
+          <h1 className="font-headline text-3xl md:text-4xl font-light italic text-accent">{t('curator_subtitle')}</h1>
+          <p className="text-[10px] font-bold uppercase tracking-[0.4em] opacity-40">{t('curator_title')}</p>
         </div>
 
-        <div className="grid gap-8 text-left">
+        <div className="grid gap-8 text-left max-w-3xl mx-auto">
           {Object.entries(TAG_CATEGORIES).map(([cat, tags]) => (
             <div key={cat} className="space-y-4">
               <h2 className="text-[9px] font-black uppercase tracking-[0.2em] text-accent/60 border-b border-accent/10 pb-2">{cat}</h2>
@@ -134,7 +134,7 @@ export default function CuratorPage() {
                         setShowResults(false); 
                       }} 
                       className={cn(
-                        "px-4 py-2 rounded-lg text-[12px] font-bold uppercase transition-all border-2", 
+                        "px-4 py-2 rounded-lg text-[11px] font-bold uppercase transition-all border-2", 
                         active ? "bg-accent text-accent-foreground border-accent scale-105 shadow-md" : "bg-white hover:border-accent/40"
                       )}
                     >
@@ -150,14 +150,14 @@ export default function CuratorPage() {
         <div className="flex flex-col items-center gap-8 pt-10">
           <div className="flex flex-wrap justify-center gap-4">
             <Button onClick={() => { setActiveTags([]); setShowResults(false); }} variant="outline" className="rounded-full h-12 px-8 uppercase font-black text-[10px]">
-              <Eraser className="w-3.5 h-3.5 mr-2" /> {t('curator_clear')}
+              <Eraser className="w-3.5 h-3.5 mr-2" /> {t('curator_clear') || "Wissen"}
             </Button>
             <Button 
               onClick={() => setShowResults(true)} 
               disabled={activeTags.length === 0} 
               className="rounded-full h-12 px-12 bg-primary text-primary-foreground uppercase font-black text-[10px] shadow-lg hover:scale-105 active:scale-95 transition-all"
             >
-              <Play className="w-3.5 h-3.5 mr-2" /> {t('curator_open')}
+              <Play className="w-3.5 h-3.5 mr-2" /> {t('curator_open') || "Openen"}
             </Button>
             {showResults && filteredArtworks.length > 0 && (
               <Button onClick={() => setShareDialog("")} className="rounded-full h-12 px-8 bg-accent text-accent-foreground uppercase font-black text-[10px] shadow-lg animate-in zoom-in duration-300">
