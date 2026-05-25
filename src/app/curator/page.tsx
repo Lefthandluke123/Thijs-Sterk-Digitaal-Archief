@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useCallback } from 'react';
@@ -72,7 +71,7 @@ export default function CuratorPage() {
 
     const roomData = {
       title: roomTitle || "Mijn Expositie",
-      description: `Een gecureerde selectie door een bezoeker van Het Digitale Retrospectief.`,
+      description: `Een samengestelde selectie door een bezoeker van Het Digitale Retrospectief.`,
       artworkIds: filteredArtworks.map(a => (a as any).id),
       createdAt: serverTimestamp(),
       lang: language
@@ -102,7 +101,7 @@ export default function CuratorPage() {
         <div className="space-y-6 animate-subtle-fade">
           <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-accent/5 border border-accent/10 mx-auto">
             <Filter className="w-3.5 h-3.5 text-accent" />
-            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-accent">Curator Module</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-accent">Expositie Samenstellen</span>
           </div>
           <h1 className="font-headline text-4xl md:text-6xl font-medium tracking-tight text-foreground leading-tight">
             {t('curator_subtitle')}
