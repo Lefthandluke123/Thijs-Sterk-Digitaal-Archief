@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { 
@@ -13,7 +13,8 @@ import {
   addDoc, 
   serverTimestamp, 
   orderBy, 
-  writeBatch
+  writeBatch,
+  setDoc
 } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -37,7 +38,8 @@ import {
   ArrowRightLeft,
   X,
   Star,
-  ShoppingBag
+  ShoppingBag,
+  Type
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -55,6 +57,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { verifyAdminPassword } from '@/lib/admin-actions';
 import { cn } from '@/lib/utils';
+import { sortArtworksByTitle } from '@/lib/museum-utils';
 
 export default function AdminPage() {
   const firestore = useFirestore();
@@ -80,6 +83,7 @@ export default function AdminPage() {
   const [editingArtwork, setEditingArtwork] = useState<any>(null);
   const [artworkForm, setArtworkForm] = useState({ 
     title: '', 
+    displayTitle: '',
     slug: '', 
     image: '', 
     roomSlug: '', 
@@ -112,7 +116,12 @@ export default function AdminPage() {
     if (!firestore || !isAuthorized) return null;
     return query(collection(firestore, 'artworks'), orderBy('createdAt', 'desc'));
   }, [firestore, isAuthorized]);
-  const { data: artworks } = useCollection(artworksQuery);
+  const { data: dbArtworks } = useCollection(artworksQuery);
+
+  const sortedArtworks = useMemo(() => {
+    if (!dbArtworks) return [];
+    return [...dbArtworks].sort(sortArtworksByTitle);
+  }, [dbArtworks]);
 
   const roomsQuery = useMemoFirebase(() => {
     if (!firestore || !isAuthorized) return null;
@@ -128,9 +137,9 @@ export default function AdminPage() {
   };
 
   const selectAll = () => {
-    if (!artworks) return;
-    if (selectedArtIds.length === artworks.length) setSelectedArtIds([]);
-    else setSelectedArtIds(artworks.map(a => (a as any).id));
+    if (!dbArtworks) return;
+    if (selectedArtIds.length === dbArtworks.length) setSelectedArtIds([]);
+    else setSelectedArtIds(dbArtworks.map(a => (a as any).id));
   };
 
   const handleBulkDelete = async () => {
@@ -263,8 +272,9 @@ export default function AdminPage() {
     if (art) {
       setEditingArtwork(art);
       setArtworkForm({ 
-        title: art.title, 
-        slug: art.slug, 
+        title: art.title || '', 
+        displayTitle: art.displayTitle || '',
+        slug: art.slug || '', 
         image: art.image || art.imageUrl || '', 
         roomSlug: art.roomSlug || '', 
         newRoomTitle: '',
@@ -279,6 +289,7 @@ export default function AdminPage() {
       setEditingArtwork(null);
       setArtworkForm({ 
         title: '', 
+        displayTitle: '',
         slug: '', 
         image: '', 
         roomSlug: rooms?.[0]?.slug || '', 
@@ -324,7 +335,8 @@ export default function AdminPage() {
 
     const finalData = {
       title: artworkForm.title,
-      slug: artworkForm.slug,
+      displayTitle: artworkForm.displayTitle,
+      slug: artworkForm.slug || artworkForm.title.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, ''),
       image: artworkForm.image,
       roomSlug: finalRoomSlug,
       year: artworkForm.year,
@@ -412,7 +424,7 @@ export default function AdminPage() {
             <div className="flex justify-between items-center bg-white/50 backdrop-blur-md p-4 rounded-3xl border sticky top-24 z-30 shadow-sm">
               <div className="flex items-center gap-4">
                  <Button variant="ghost" size="sm" onClick={selectAll} className="text-[10px] uppercase font-black tracking-widest">
-                   {selectedArtIds.length === (artworks?.length || 0) ? <CheckSquare className="w-4 h-4 mr-2" /> : <Square className="w-4 h-4 mr-2" />}
+                   {selectedArtIds.length === (dbArtworks?.length || 0) ? <CheckSquare className="w-4 h-4 mr-2" /> : <Square className="w-4 h-4 mr-2" />}
                    {selectedArtIds.length > 0 ? `${selectedArtIds.length} geselecteerd` : 'Selecteer alles'}
                  </Button>
 
@@ -444,7 +456,7 @@ export default function AdminPage() {
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
-               {artworks?.map((art: any) => {
+               {sortedArtworks.map((art: any) => {
                  const imgSrc = art.image || art.imageUrl;
                  const isSelected = selectedArtIds.includes(art.id);
                  return (
@@ -474,10 +486,10 @@ export default function AdminPage() {
                       </div>
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                           <h3 className="font-bold text-sm truncate">{art.title}</h3>
+                           <h3 className="font-bold text-sm truncate">{art.displayTitle || art.title}</h3>
                            {art.featured && <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />}
                         </div>
-                        <p className="text-[10px] opacity-40 uppercase font-black tracking-widest">{art.year} • {art.roomSlug}</p>
+                        <p className="text-[10px] opacity-40 uppercase font-black tracking-widest">{art.title} • {art.year} • {art.roomSlug}</p>
                       </div>
 
                       <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
@@ -635,16 +647,27 @@ export default function AdminPage() {
             <DialogTitle className="font-headline text-2xl italic">{editingArtwork ? 'Werk Bewerken' : 'Nieuw Kunstwerk'}</DialogTitle>
           </DialogHeader>
           <div className="grid gap-6 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-[10px] uppercase font-black tracking-widest ml-2 opacity-40">Titel</Label>
-                <Input value={artworkForm.title} onChange={e => setArtworkForm({...artworkForm, title: e.target.value})} className="rounded-xl bg-black/5 border-none" />
+            <div className="space-y-4 p-5 bg-accent/5 rounded-2xl border border-accent/10">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-[10px] uppercase font-black tracking-widest ml-2 opacity-40 flex items-center gap-2">
+                    <Edit3 className="w-3 h-3" /> Archief Titel (Sorteertype)
+                  </Label>
+                  <Input value={artworkForm.title} onChange={e => setArtworkForm({...artworkForm, title: e.target.value})} className="rounded-xl bg-white border-none shadow-sm h-12" placeholder="Bijv. 13 XII" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[10px] uppercase font-black tracking-widest ml-2 opacity-40 flex items-center gap-2">
+                    <Type className="w-3 h-3" /> Publieke Titel
+                  </Label>
+                  <Input value={artworkForm.displayTitle} onChange={e => setArtworkForm({...artworkForm, displayTitle: e.target.value})} className="rounded-xl bg-white border-none shadow-sm h-12" placeholder="Bijv. Licht over de Polder" />
+                </div>
               </div>
               <div className="space-y-2">
-                <Label className="text-[10px] uppercase font-black tracking-widest ml-2 opacity-40">Slug</Label>
-                <Input value={artworkForm.slug} onChange={e => setArtworkForm({...artworkForm, slug: e.target.value.toLowerCase().replace(/ /g, '-')})} className="rounded-xl bg-black/5 border-none" />
+                <Label className="text-[10px] uppercase font-black tracking-widest ml-2 opacity-40">Slug (URL)</Label>
+                <Input value={artworkForm.slug} onChange={e => setArtworkForm({...artworkForm, slug: e.target.value.toLowerCase().replace(/ /g, '-')})} className="rounded-xl bg-white border-none shadow-sm h-10" placeholder="bijv-licht-over-de-polder" />
               </div>
             </div>
+
             <div className="space-y-2">
               <Label className="text-[10px] uppercase font-black tracking-widest ml-2 opacity-40">Afbeelding URL (High Res)</Label>
               <Input value={artworkForm.image} onChange={e => setArtworkForm({...artworkForm, image: e.target.value})} className="rounded-xl bg-black/5 border-none" placeholder="https://..." />

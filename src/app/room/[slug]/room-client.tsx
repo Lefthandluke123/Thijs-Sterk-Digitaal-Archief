@@ -1,11 +1,12 @@
 
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { ArrowLeft, Info, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { sortArtworksByTitle } from '@/lib/museum-utils';
 
 // Laad DeepZoomViewer dynamisch om SSR issues met OpenSeadragon te voorkomen
 const DeepZoomViewer = dynamic(() => import('@/components/deep-zoom-viewer').then(mod => mod.DeepZoomViewer), { 
@@ -22,10 +23,15 @@ interface RoomClientProps {
   roomTitle?: string;
 }
 
-export function RoomClient({ artworks, roomTitle }: RoomClientProps) {
+export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showMetadata, setShowMetadata] = useState(false);
   
+  const artworks = useMemo(() => {
+    if (!dbArtworks) return [];
+    return [...dbArtworks].sort(sortArtworksByTitle);
+  }, [dbArtworks]);
+
   const item = artworks[currentIndex];
 
   const handleNext = useCallback(() => {
@@ -79,7 +85,7 @@ export function RoomClient({ artworks, roomTitle }: RoomClientProps) {
             <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
           </Link>
           <div className="hidden md:flex flex-col">
-            <h1 className="font-headline text-2xl italic text-foreground leading-tight">{item.title}</h1>
+            <h1 className="font-headline text-2xl italic text-foreground leading-tight">{item.displayTitle || item.title}</h1>
             <span className="text-[9px] font-black uppercase tracking-[0.3em] text-accent">
               Zaal: {roomTitle || item.roomSlug}
             </span>
@@ -128,7 +134,7 @@ export function RoomClient({ artworks, roomTitle }: RoomClientProps) {
         showMetadata ? "h-auto min-h-[30vh] opacity-100 py-12 translate-y-0" : "h-0 opacity-0 pointer-events-none translate-y-12"
       )}>
         <div className="max-w-4xl mx-auto space-y-6 px-10">
-          <h2 className="text-2xl md:text-5xl font-headline font-light italic text-foreground leading-tight">{item.title}</h2>
+          <h2 className="text-2xl md:text-5xl font-headline font-light italic text-foreground leading-tight">{item.displayTitle || item.title}</h2>
           <div className="text-[12px] font-bold tracking-[0.2em] text-accent flex flex-wrap gap-x-8 gap-y-2 justify-center items-center uppercase">
             {item.year && (
               <>

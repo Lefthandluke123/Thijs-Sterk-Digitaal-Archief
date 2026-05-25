@@ -9,6 +9,7 @@ import { ArtworkViewer } from '@/components/artwork-viewer';
 import { Loader2, ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/components/language-provider';
+import { sortArtworksByTitle } from '@/lib/museum-utils';
 
 function ExhibitionContent() {
   const searchParams = useSearchParams();
@@ -29,7 +30,12 @@ function ExhibitionContent() {
     if (!firestore || !currentRoomSlug) return null;
     return query(collection(firestore, 'artworks'), where('roomSlug', '==', currentRoomSlug));
   }, [firestore, currentRoomSlug]);
-  const { data: artworks, loading } = useCollection(artworksQuery);
+  const { data: dbArtworks, loading } = useCollection(artworksQuery);
+
+  const artworks = useMemo(() => {
+    if (!dbArtworks) return [];
+    return [...dbArtworks].sort(sortArtworksByTitle);
+  }, [dbArtworks]);
 
   useEffect(() => {
     if (rooms && rooms.length > 0 && !currentRoomSlug) {
@@ -61,26 +67,25 @@ function ExhibitionContent() {
         <h1 className="text-black/70 font-headline text-5xl font-medium italic tracking-tight">{activeRoom?.title}</h1>
       </div>
 
-      <div className="relative flex-1 flex items-center justify-center overflow-hidden border-4 border-red-500/10">
+      <div className="relative flex-1 flex items-center justify-center overflow-hidden">
         <div className="relative w-full h-full flex items-center transition-transform duration-1000 ease-out" style={{ transform: `translateX(${-scrollX}px)` }}>
           <div className="flex gap-[40vw] px-[50vw] items-center pt-8">
             {artworks?.map((art: any) => (
               <div key={art.id} className="relative group shrink-0 flex items-center justify-center" onClick={() => setSelectedArtwork(art)}>
-                {/* Horizontal Scroll Item Frame - Nuclear Centering */}
-                <div className="relative flex flex-col bg-white shadow-2xl border border-black/[0.03] cursor-pointer transition-all duration-700 hover:scale-[1.01] items-center justify-center overflow-hidden border-red-500/20">
+                <div className="relative flex flex-col bg-white shadow-2xl border border-black/[0.03] cursor-pointer transition-all duration-700 hover:scale-[1.01] items-center justify-center overflow-hidden">
                    <div className="p-8 pb-4 flex items-center justify-center bg-gray-50/30 w-full">
                       <img 
                         src={art.image || art.imageUrl} 
-                        className="relative block max-h-[50vh] max-w-[40vw] w-auto h-auto object-contain mx-auto border-2 border-red-500/5" 
+                        className="relative block max-h-[50vh] max-w-[40vw] w-auto h-auto object-contain mx-auto" 
                         style={{ 
                           filter: `brightness(${art.brightness || 1})`,
                           position: 'relative'
                         }} 
-                        alt={art.title} 
+                        alt={art.displayTitle || art.title} 
                       />
                    </div>
                    <div className="w-full px-8 py-6 border-t border-black/[0.03] bg-white text-center">
-                      <h3 className="text-black text-[9px] font-bold uppercase tracking-[0.2em] mb-1 truncate">{art.title}</h3>
+                      <h3 className="text-black text-[11px] font-bold uppercase tracking-[0.2em] mb-1 truncate">{art.displayTitle || art.title}</h3>
                       <p className="text-accent text-[8px] font-bold uppercase tracking-widest">{art.year} &bull; {art.medium}</p>
                    </div>
                 </div>
@@ -108,7 +113,20 @@ function ExhibitionContent() {
         <button onClick={() => handleStep(1000)} className="p-10 rounded-full bg-white/40 backdrop-blur-md border text-black/30 hover:text-accent transition-all active:scale-90 shadow-xl group"><ChevronRight className="w-20 h-20 transition-transform group-hover:translate-x-1" /></button>
       </div>
 
-      <ArtworkViewer artwork={selectedArtwork} onClose={() => setSelectedArtwork(null)} />
+      <ArtworkViewer 
+        artwork={selectedArtwork} 
+        onClose={() => setSelectedArtwork(null)} 
+        onNext={() => {
+           if(!artworks || !selectedArtwork) return;
+           const idx = artworks.findIndex(a => a.id === selectedArtwork.id);
+           if(idx < artworks.length - 1) setSelectedArtwork(artworks[idx + 1]);
+        }}
+        onPrev={() => {
+           if(!artworks || !selectedArtwork) return;
+           const idx = artworks.findIndex(a => a.id === selectedArtwork.id);
+           if(idx > 0) setSelectedArtwork(artworks[idx - 1]);
+        }}
+      />
     </main>
   );
 }

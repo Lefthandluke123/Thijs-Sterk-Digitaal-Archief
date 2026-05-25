@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -8,6 +9,7 @@ import { ArtworkViewer } from '@/components/artwork-viewer';
 import { Maximize2, Loader2, LayoutGrid } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/components/language-provider';
+import { sortArtworksByTitle } from '@/lib/museum-utils';
 
 export function GalleryClient({ initialRoomSlug }: { initialRoomSlug: string | null }) {
   const searchParams = useSearchParams();
@@ -34,7 +36,12 @@ export function GalleryClient({ initialRoomSlug }: { initialRoomSlug: string | n
     if (!firestore || !currentRoomSlug) return null;
     return query(collection(firestore, 'artworks'), where('roomSlug', '==', currentRoomSlug));
   }, [firestore, currentRoomSlug]);
-  const { data: artworks, loading: artLoading } = useCollection(artworksQuery);
+  const { data: dbArtworks, loading: artLoading } = useCollection(artworksQuery);
+
+  const artworks = useMemo(() => {
+    if (!dbArtworks) return [];
+    return [...dbArtworks].sort(sortArtworksByTitle);
+  }, [dbArtworks]);
 
   const activeRoom = useMemo(() => rooms?.find((r: any) => r.slug === currentRoomSlug), [rooms, currentRoomSlug]);
 
@@ -109,7 +116,7 @@ export function GalleryClient({ initialRoomSlug }: { initialRoomSlug: string | n
                     {displayImage ? (
                       <img 
                         src={displayImage} 
-                        alt={item.title} 
+                        alt={item.displayTitle || item.title} 
                         className="max-w-full max-h-full object-contain transition-all duration-1000 ease-out group-hover:scale-110"
                         style={{ filter: `brightness(${item.brightness || 1})` }}
                       />
@@ -126,7 +133,7 @@ export function GalleryClient({ initialRoomSlug }: { initialRoomSlug: string | n
                   </div>
                   <div className="mt-5 text-center space-y-1">
                     <h3 className="font-headline text-base italic text-muted-foreground group-hover:text-accent transition-colors truncate">
-                      {item.title}
+                      {item.displayTitle || item.title}
                     </h3>
                     <p className="text-[8px] font-black uppercase tracking-widest opacity-30">
                       {item.year || 'Interactief'} &bull; {item.medium || 'Olieverf'}

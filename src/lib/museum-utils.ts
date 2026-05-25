@@ -1,3 +1,4 @@
+
 /**
  * @fileOverview Museum Utilities voor sorteren en data-verwerking.
  */
@@ -18,7 +19,7 @@ export const parseTitleForSort = (title: string) => {
   const romanPattern = /\b(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII|XIV|XV|XVI|XVII|XVIII|XIX|XX)\b/gi;
   const matches = Array.from(title.matchAll(romanPattern));
   
-  // Gebruik het LAATSTE Romeinse cijfer (bijv. in "13 XII" is XII de serie)
+  // Gebruik het LAATSTE Romeinse cijfer (bijv. in "13 XII" is XII de serie/zaal)
   const lastRoman = matches.length > 0 ? matches[matches.length - 1][0] : null;
   
   // Zoek naar gewone nummers en eventuele letters (bijv. "24a")
@@ -37,8 +38,8 @@ export const parseTitleForSort = (title: string) => {
  * Dit zorgt ervoor dat "31 II" vóór "13 XII" komt (Zaal II vs Zaal XII).
  */
 export const sortArtworksByTitle = (a: any, b: any) => {
-  const pA = parseTitleForSort(a.displayTitle || a.title || '');
-  const pB = parseTitleForSort(b.displayTitle || b.title || '');
+  const pA = parseTitleForSort(a.title || '');
+  const pB = parseTitleForSort(b.title || '');
   
   // 1. Eerst sorteren op Romeins cijfer (Zaal/Serie)
   if (pA.romanVal !== pB.romanVal) {
