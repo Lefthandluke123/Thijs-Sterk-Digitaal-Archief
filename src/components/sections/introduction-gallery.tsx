@@ -1,23 +1,29 @@
-
 "use client";
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, limit, orderBy } from 'firebase/firestore';
 import { ArtworkViewer } from '@/components/artwork-viewer';
 import { Maximize2, Loader2, ArrowRight, Layers } from 'lucide-react';
 import Link from 'next/link';
-import { cn } from '@/lib/utils';
 
+/**
+ * @fileOverview De kennismakings-galerij op de homepage.
+ * Gebruikt mounted-guard om hydration errors te voorkomen bij Firebase data.
+ */
 export function IntroductionGallery() {
+  const [mounted, setMounted] = useState(false);
   const [selectedArtwork, setSelectedArtwork] = useState<any | null>(null);
   const firestore = useFirestore();
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const artworksQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    // Haal 20 verschillende werken op voor de kennismaking
+    if (!firestore || !mounted) return null;
     return query(collection(firestore, 'artworks'), limit(20), orderBy('createdAt', 'desc'));
-  }, [firestore]);
+  }, [firestore, mounted]);
 
   const { data: artworks, loading } = useCollection(artworksQuery);
 
@@ -46,7 +52,7 @@ export function IntroductionGallery() {
           </p>
         </div>
 
-        {loading ? (
+        {!mounted || loading ? (
           <div className="flex flex-col items-center justify-center py-32 space-y-4">
             <Loader2 className="animate-spin text-accent w-8 h-8 opacity-40" />
             <p className="text-[10px] font-black uppercase tracking-widest opacity-20">Collectie wordt voorbereid...</p>

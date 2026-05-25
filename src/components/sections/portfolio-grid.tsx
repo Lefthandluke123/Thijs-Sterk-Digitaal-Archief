@@ -1,20 +1,25 @@
 "use client";
 
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where, limit, orderBy } from 'firebase/firestore';
+import { collection, query, where, limit } from 'firebase/firestore';
 import { ArtworkViewer } from '@/components/artwork-viewer';
-import { Maximize2, Loader2, Star, ArrowRight } from 'lucide-react';
+import { Maximize2, Loader2, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 
 export function PortfolioGrid() {
+  const [mounted, setMounted] = useState(false);
   const [selectedArtwork, setSelectedArtwork] = useState<any | null>(null);
   const firestore = useFirestore();
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const artworksQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !mounted) return null;
     return query(collection(firestore, 'artworks'), where('featured', '==', true), limit(18));
-  }, [firestore]);
+  }, [firestore, mounted]);
 
   const { data: displayArtworks, loading } = useCollection(artworksQuery);
 
@@ -50,7 +55,7 @@ export function PortfolioGrid() {
           </div>
         </div>
 
-        {loading ? (
+        {!mounted || loading ? (
           <div className="flex justify-center py-24"><Loader2 className="animate-spin opacity-30" /></div>
         ) : displayArtworks && displayArtworks.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">

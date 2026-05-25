@@ -1,37 +1,42 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Maximize2, Sparkles, Layout, BookOpen } from 'lucide-react';
 import { useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
-import { collection, query, where, limit, doc, orderBy } from 'firebase/firestore';
+import { collection, query, where, limit, doc } from 'firebase/firestore';
 import { ArtworkViewer } from '@/components/artwork-viewer';
 import { useLanguage } from '@/components/language-provider';
 import Link from 'next/link';
 
 export function Hero() {
+  const [mounted, setMounted] = useState(false);
   const [selectedArtwork, setSelectedArtwork] = useState<any | null>(null);
   const firestore = useFirestore();
   const { language, t } = useLanguage();
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const siteSettingsRef = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !mounted) return null;
     return doc(firestore, 'settings', 'site');
-  }, [firestore]);
+  }, [firestore, mounted]);
   const { data: siteSettings } = useDoc(siteSettingsRef);
 
   const featuredQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !mounted) return null;
     return query(collection(firestore, 'artworks'), where('featured', '==', true), limit(1));
-  }, [firestore]);
+  }, [firestore, mounted]);
 
   const { data: featured } = useCollection(featuredQuery);
   const artwork = featured?.[0];
   
   const heroImage = artwork?.image || artwork?.imageUrl || 'https://firebasestorage.googleapis.com/v0/b/studio-7311695883-2090f.firebasestorage.app/o/artworks%2F1778851761923_x2p82k_maannacht%20copy.jpg?alt=media';
 
-  const heroTitle = (language !== 'nl' && siteSettings?.[`homeHeroTitle_${language}`]) 
+  const heroTitle = (mounted && language !== 'nl' && siteSettings?.[`homeHeroTitle_${language}`]) 
     ? siteSettings[`homeHeroTitle_${language}`] 
     : siteSettings?.homeHeroTitle || 'Een leven gewijd aan Licht, Ruimte en Water';
 
@@ -45,7 +50,6 @@ export function Hero() {
         </h1>
         
         <div className="flex flex-col items-center justify-center gap-8">
-          {/* Hoofdactie: Introductie (Biografie) */}
           <Button size="lg" className="rounded-full px-16 bg-accent hover:bg-accent/90 text-accent-foreground font-bold uppercase tracking-[0.25em] text-[13px] h-16 shadow-2xl transition-all" asChild>
             <Link href="#about">
               <BookOpen className="mr-3 w-6 h-6" />
