@@ -23,7 +23,13 @@ export function IntroductionGallery() {
     return query(collection(firestore, 'artworks'), limit(100), orderBy('createdAt', 'desc'));
   }, [firestore, mounted]);
 
-  const { data: allArtworks, loading } = useCollection(artworksQuery);
+  const { data: allArtworks, loading: artLoading } = useCollection(artworksQuery);
+
+  const roomsQuery = useMemoFirebase(() => {
+    if (!firestore || !mounted) return null;
+    return query(collection(firestore, 'rooms'), orderBy('order', 'asc'));
+  }, [firestore, mounted]);
+  const { data: rooms } = useCollection(roomsQuery);
 
   const curatedArtworks = useMemo(() => {
     if (!allArtworks) return [];
@@ -43,6 +49,15 @@ export function IntroductionGallery() {
     if (uniqueSelection.length === 0) return allArtworks.slice(0, 4);
     return uniqueSelection;
   }, [allArtworks]);
+
+  const getArtworkRoomSlug = (item: any) => {
+    if (item.roomSlug) return item.roomSlug;
+    if (item.roomIds?.length > 0 && rooms) {
+      const firstRoom = rooms.find(r => r.id === item.roomIds[0]);
+      return firstRoom?.slug || 'gallery';
+    }
+    return 'gallery';
+  };
 
   const navigateArtwork = useCallback((direction: 'next' | 'prev') => {
     if (!selectedArtwork || !curatedArtworks) return;
@@ -65,7 +80,7 @@ export function IntroductionGallery() {
           <p className="text-lg text-muted-foreground font-light max-w-2xl mx-auto">Een dwarsdoorsnede van het oeuvre.</p>
         </div>
 
-        {!mounted || loading ? (
+        {!mounted || artLoading ? (
           <div className="flex flex-col items-center justify-center py-32 space-y-4">
             <Loader2 className="animate-spin text-accent w-8 h-8 opacity-20" />
             <p className="text-[10px] font-black uppercase tracking-widest opacity-20">Laden...</p>
@@ -75,6 +90,7 @@ export function IntroductionGallery() {
             {curatedArtworks?.map((item: any) => {
               const displayImage = cleanString(item.image || item.imageUrl);
               const title = item.displayTitle || item.title;
+              const roomSlug = getArtworkRoomSlug(item);
               return (
                 <div key={item.id} className="group flex flex-col space-y-6 animate-subtle-fade">
                   <button 
@@ -104,7 +120,7 @@ export function IntroductionGallery() {
                       <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-60">{item.year} &bull; {item.medium}</p>
                     </div>
                     <Link 
-                      href={`/gallery?room=${item.roomSlug}`}
+                      href={`/gallery?room=${roomSlug}`}
                       className="inline-flex items-center gap-3 px-6 py-2.5 rounded-full border border-black/5 text-accent text-[10px] font-black uppercase tracking-widest hover:bg-accent hover:text-accent-foreground transition-all"
                     >
                       Verken Serie <ArrowRight className="w-3 h-3" />

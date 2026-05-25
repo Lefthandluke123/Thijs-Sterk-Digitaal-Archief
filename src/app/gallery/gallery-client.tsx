@@ -32,10 +32,17 @@ export function GalleryClient({ initialRoomSlug }: { initialRoomSlug: string | n
     }
   }, [rooms, currentRoomSlug, router]);
 
+  const activeRoom = useMemo(() => rooms?.find((r: any) => r.slug === currentRoomSlug), [rooms, currentRoomSlug]);
+
   const artworksQuery = useMemoFirebase(() => {
-    if (!firestore || !currentRoomSlug) return null;
-    return query(collection(firestore, 'artworks'), where('roomSlug', '==', currentRoomSlug));
-  }, [firestore, currentRoomSlug]);
+    if (!firestore || !activeRoom) return null;
+    // Gebruik de nieuwe multi-room architectuur: zoek op roomId in de roomIds array
+    return query(
+      collection(firestore, 'artworks'), 
+      where('roomIds', 'array-contains', activeRoom.id)
+    );
+  }, [firestore, activeRoom]);
+
   const { data: dbArtworks, loading: artLoading } = useCollection(artworksQuery);
 
   const artworks = useMemo(() => {
@@ -43,10 +50,8 @@ export function GalleryClient({ initialRoomSlug }: { initialRoomSlug: string | n
     return [...dbArtworks].sort(sortArtworksByTitle);
   }, [dbArtworks]);
 
-  const activeRoom = useMemo(() => rooms?.find((r: any) => r.slug === currentRoomSlug), [rooms, currentRoomSlug]);
-
   const navigateArtwork = useCallback((direction: 'next' | 'prev') => {
-    if (!selectedArtwork || !artworks) return;
+    if (!selectedArtwork || artworks.length === 0) return;
     const currentIndex = artworks.findIndex((a: any) => a.id === selectedArtwork.id);
     const nextIndex = direction === 'next' 
       ? (currentIndex + 1) % artworks.length 
@@ -102,9 +107,14 @@ export function GalleryClient({ initialRoomSlug }: { initialRoomSlug: string | n
             <Loader2 className="animate-spin text-accent w-6 h-6 opacity-40" />
             <p className="text-[9px] font-black uppercase tracking-widest opacity-20">Laden van kunstwerken...</p>
           </div>
+        ) : artworks.length === 0 ? (
+          <div className="text-center py-32 space-y-4 opacity-30">
+            <LayoutGrid className="w-12 h-12 mx-auto" />
+            <p className="text-xs font-black uppercase tracking-widest">Nog geen werken in deze zaal</p>
+          </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8">
-            {artworks?.map((item: any) => {
+            {artworks.map((item: any) => {
               const displayImage = item.image || item.imageUrl;
               return (
                 <article 

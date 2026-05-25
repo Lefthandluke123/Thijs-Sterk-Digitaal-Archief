@@ -1,6 +1,7 @@
+
 "use client";
 
-import React, { useState, useMemo, useEffect, Suspense, useRef } from 'react';
+import React, { useState, useMemo, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy } from 'firebase/firestore';
@@ -25,10 +26,16 @@ function ExhibitionContent() {
   }, [firestore]);
   const { data: rooms } = useCollection(roomsQuery);
 
+  const activeRoom = useMemo(() => rooms?.find((r: any) => r.slug === currentRoomSlug), [rooms, currentRoomSlug]);
+
   const artworksQuery = useMemoFirebase(() => {
-    if (!firestore || !currentRoomSlug) return null;
-    return query(collection(firestore, 'artworks'), where('roomSlug', '==', currentRoomSlug));
-  }, [firestore, currentRoomSlug]);
+    if (!firestore || !activeRoom) return null;
+    // Zoek via de roomIds array voor de actieve zaal ID
+    return query(
+      collection(firestore, 'artworks'), 
+      where('roomIds', 'array-contains', activeRoom.id)
+    );
+  }, [firestore, activeRoom]);
   const { data: dbArtworks, loading } = useCollection(artworksQuery);
 
   const artworks = useMemo(() => {
@@ -42,7 +49,6 @@ function ExhibitionContent() {
     }
   }, [rooms, currentRoomSlug, router]);
 
-  const activeRoom = rooms?.find((r: any) => r.slug === currentRoomSlug);
   const currentIndex = rooms?.findIndex((r: any) => r.slug === currentRoomSlug) ?? -1;
   const nextRoom = currentIndex < (rooms?.length || 0) - 1 ? rooms?.[currentIndex + 1] : null;
 
@@ -52,13 +58,10 @@ function ExhibitionContent() {
 
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
-      // Alleen scrollen als er geen artwork detail open staat
       if (selectedArtwork) return;
-      
       const delta = Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
       handleStep(delta * 2);
     };
-    
     window.addEventListener('wheel', handleWheel, { passive: true });
     return () => window.removeEventListener('wheel', handleWheel);
   }, [selectedArtwork]);
@@ -94,24 +97,28 @@ function ExhibitionContent() {
           style={{ transform: `translateX(${-scrollX}px)` }}
         >
           <div className="flex gap-[40vw] px-[50vw] items-center pt-8">
-            {artworks?.map((art: any) => (
-              <div key={art.id} className="relative group shrink-0 flex items-center justify-center" onClick={() => setSelectedArtwork(art)}>
-                <div className="relative flex flex-col bg-white shadow-2xl border border-black/[0.03] cursor-pointer transition-all duration-700 hover:scale-[1.01] items-center justify-center overflow-hidden">
-                   <div className="p-8 pb-4 flex items-center justify-center bg-gray-50/30 w-full">
-                      <img 
-                        src={art.image || art.imageUrl} 
-                        className="relative block max-h-[50vh] max-w-[40vw] w-auto h-auto object-contain mx-auto" 
-                        style={{ filter: `brightness(${art.brightness || 1})` }}
-                        alt={art.displayTitle || art.title} 
-                      />
-                   </div>
-                   <div className="w-full px-8 py-6 border-t border-black/[0.03] bg-white text-center">
-                      <h3 className="text-black text-[11px] font-bold uppercase tracking-[0.2em] mb-1 truncate">{art.displayTitle || art.title}</h3>
-                      <p className="text-accent text-[8px] font-bold uppercase tracking-widest">{art.year} &bull; {art.medium}</p>
-                   </div>
+            {artworks?.length === 0 ? (
+              <div className="shrink-0 w-[40vw] text-center opacity-20 italic">Geen werken gevonden in deze zaal</div>
+            ) : (
+              artworks?.map((art: any) => (
+                <div key={art.id} className="relative group shrink-0 flex items-center justify-center" onClick={() => setSelectedArtwork(art)}>
+                  <div className="relative flex flex-col bg-white shadow-2xl border border-black/[0.03] cursor-pointer transition-all duration-700 hover:scale-[1.01] items-center justify-center overflow-hidden">
+                     <div className="p-8 pb-4 flex items-center justify-center bg-gray-50/30 w-full">
+                        <img 
+                          src={art.image || art.imageUrl} 
+                          className="relative block max-h-[50vh] max-w-[40vw] w-auto h-auto object-contain mx-auto" 
+                          style={{ filter: `brightness(${art.brightness || 1})` }}
+                          alt={art.displayTitle || art.title} 
+                        />
+                     </div>
+                     <div className="w-full px-8 py-6 border-t border-black/[0.03] bg-white text-center">
+                        <h3 className="text-black text-[11px] font-bold uppercase tracking-[0.2em] mb-1 truncate">{art.displayTitle || art.title}</h3>
+                        <p className="text-accent text-[8px] font-bold uppercase tracking-widest">{art.year} &bull; {art.medium}</p>
+                     </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
 
             {nextRoom && (
               <div className="shrink-0 w-[50vw] flex flex-col items-center justify-center text-center opacity-40 group hover:opacity-100 transition-opacity">
