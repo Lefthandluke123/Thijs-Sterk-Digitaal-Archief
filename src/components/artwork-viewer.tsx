@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { X, ChevronLeft, ChevronRight, Info, Mic, Pause } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -51,14 +51,6 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
   }, [artwork, onNext, onPrev, onClose]);
 
   useEffect(() => {
-    if (!artwork) {
-      setShowMetadata(false);
-      if (audio) audio.pause();
-      setIsPlaying(false);
-    }
-  }, [artwork, audio]);
-
-  useEffect(() => {
     if (audio) {
       audio.pause();
       setIsPlaying(false);
@@ -90,21 +82,55 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
     <div 
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-[9999] bg-background flex flex-col items-center justify-center overflow-hidden animate-in fade-in duration-1000"
+      className="fixed inset-0 z-[9999] bg-background flex flex-col items-center justify-center overflow-hidden animate-in fade-in duration-700"
     >
-      {/* Header Plaque */}
-      <div className="absolute top-0 left-0 right-0 z-[10000] p-8 md:p-12 flex items-center justify-between pointer-events-none">
+      {/* 1. Viewer Background Layer */}
+      <div className="absolute inset-0 z-[10010] flex items-center justify-center p-12 md:p-24">
+        <div className="w-full h-full max-w-[95vw] max-h-[85vh]">
+          {displayImage && (
+            <DeepZoomViewer 
+              key={artwork.id} 
+              imageUrl={displayImage} 
+              brightness={artwork.brightness || 1}
+            />
+          )}
+        </div>
+      </div>
+
+      {/* 2. UI Nav Layer (Top Priority) */}
+      <div className="absolute inset-0 z-[10030] pointer-events-none flex items-center justify-between px-8 md:px-16">
+        <button 
+          onClick={(e) => { e.stopPropagation(); onPrev?.(); }}
+          className={cn(
+            "pointer-events-auto p-6 rounded-full bg-white/20 backdrop-blur-3xl border border-white/40 shadow-2xl hover:bg-accent hover:text-accent-foreground transition-all group active:scale-90",
+            !onPrev && "opacity-0 pointer-events-none"
+          )}
+          aria-label="Vorig kunstwerk"
+        >
+          <ChevronLeft className="w-10 h-10 opacity-40 group-hover:opacity-100" />
+        </button>
+        <button 
+          onClick={(e) => { e.stopPropagation(); onNext?.(); }}
+          className={cn(
+            "pointer-events-auto p-6 rounded-full bg-white/20 backdrop-blur-3xl border border-white/40 shadow-2xl hover:bg-accent hover:text-accent-foreground transition-all group active:scale-90",
+            !onNext && "opacity-0 pointer-events-none"
+          )}
+          aria-label="Volgend kunstwerk"
+        >
+          <ChevronRight className="w-10 h-10 opacity-40 group-hover:opacity-100" />
+        </button>
+      </div>
+
+      {/* 3. Header Controls Layer */}
+      <div className="absolute top-0 left-0 right-0 z-[10040] p-8 md:p-12 flex items-center justify-between pointer-events-none">
         <div className="hidden md:flex flex-col border-l-2 border-accent/20 pl-8 pointer-events-auto">
-           <h1 className="font-headline text-3xl italic leading-tight text-foreground">{artwork.displayTitle || artwork.title}</h1>
-           <p className="text-[10px] font-black uppercase tracking-[0.4em] text-accent/60 mt-2">{artwork.year} &bull; {artwork.medium}</p>
+           <h1 className="font-headline text-3xl italic text-foreground">{artwork.displayTitle || artwork.title}</h1>
+           <p className="text-[10px] font-black uppercase tracking-[0.4em] text-accent mt-2">{artwork.year} &bull; {artwork.medium}</p>
         </div>
 
         <div className="flex items-center gap-4 pointer-events-auto">
-           <ShareButton 
-             title={artwork.displayTitle || artwork.title}
-             url={artworkUrl}
-           />
-
+           <ShareButton title={artwork.displayTitle || artwork.title} url={artworkUrl} />
+           
            {audio && (
              <button 
               onClick={toggleAudio} 
@@ -114,7 +140,6 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
               )}
              >
                 {isPlaying ? <Pause className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
-                <span className="text-[11px] font-black uppercase tracking-widest hidden lg:inline">{isPlaying ? t('viewer_telling') : t('viewer_listen_story')}</span>
              </button>
            )}
 
@@ -131,77 +156,23 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
            <button 
             onClick={onClose} 
             className="p-6 bg-white/90 backdrop-blur-3xl rounded-full text-foreground hover:bg-destructive hover:text-white transition-all border border-black/5 shadow-xl"
-            aria-label="Sluiten"
            >
-             <X className="w-6 h-6 opacity-60" />
+             <X className="w-6 h-6" />
            </button>
         </div>
       </div>
 
-      {/* Main Viewer Area */}
-      <div className="w-[95vw] h-[85vh] flex items-center justify-center z-[9998]">
-        {displayImage && (
-          <DeepZoomViewer 
-            key={artwork.id} 
-            imageUrl={displayImage} 
-            brightness={artwork.brightness || 1}
-          />
-        )}
-      </div>
-
-      {/* Navigation Arrows - Stabiele UI laag */}
-      <div className="absolute inset-x-12 top-1/2 -translate-y-1/2 z-[10000] flex justify-between pointer-events-none">
-        <button 
-          onClick={(e) => { e.stopPropagation(); if(onPrev) onPrev(); }} 
-          className={cn(
-            "p-6 rounded-full bg-white/20 backdrop-blur-3xl hover:bg-accent hover:text-accent-foreground transition-all border border-white/40 shadow-2xl active:scale-90 group pointer-events-auto",
-            !onPrev && "opacity-0 pointer-events-none"
-          )}
-          aria-label="Vorig kunstwerk"
-        >
-          <ChevronLeft className="w-8 h-8 opacity-40 group-hover:opacity-100" />
-        </button>
-        <button 
-          onClick={(e) => { e.stopPropagation(); if(onNext) onNext(); }} 
-          className={cn(
-            "p-6 rounded-full bg-white/20 backdrop-blur-3xl hover:bg-accent hover:text-accent-foreground transition-all border border-white/40 shadow-2xl active:scale-90 group pointer-events-auto",
-            !onNext && "opacity-0 pointer-events-none"
-          )}
-          aria-label="Volgend kunstwerk"
-        >
-          <ChevronRight className="w-8 h-8 opacity-40 group-hover:opacity-100" />
-        </button>
-      </div>
-
-      {/* Info Overlay */}
+      {/* 4. Metadata Overlay Layer */}
       <div className={cn(
-        "absolute bottom-0 left-0 right-0 flex flex-col items-center justify-center transition-all duration-1000 ease-in-out z-[10010] p-16 pointer-events-none", 
+        "absolute bottom-0 left-0 right-0 z-[10050] flex flex-col items-center p-16 pointer-events-none transition-all duration-1000 ease-in-out", 
         showMetadata ? "opacity-100 translate-y-0" : "opacity-0 translate-y-32"
       )}>
-        <div className="museum-label max-w-4xl w-full text-center pointer-events-auto shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)]">
+        <div className="museum-label max-w-4xl w-full text-center pointer-events-auto shadow-2xl bg-white/95 p-12 rounded-[3rem] space-y-8">
           <h2 className="text-4xl md:text-6xl font-headline font-light italic text-foreground leading-tight">{artwork.displayTitle || artwork.title}</h2>
-          
-          <div className="flex flex-wrap gap-x-16 gap-y-4 justify-center items-center py-6">
-            <div className="space-y-1">
-              <p className="text-[10px] font-black uppercase tracking-widest text-accent opacity-50">Jaartal</p>
-              <p className="text-xl font-medium">{artwork.year || 'Interactief'}</p>
-            </div>
-            <div className="h-12 w-px bg-black/5 hidden md:block" />
-            <div className="space-y-1">
-              <p className="text-[10px] font-black uppercase tracking-widest text-accent opacity-50">Techniek</p>
-              <p className="text-xl font-medium">{artwork.medium || 'Olieverf op doek'}</p>
-            </div>
-          </div>
-
-          <p className="text-2xl md:text-3xl text-muted-foreground font-light leading-relaxed max-w-3xl mx-auto italic border-t border-black/5 pt-10">
+          <div className="h-px w-24 bg-accent/20 mx-auto" />
+          <p className="text-2xl md:text-3xl text-muted-foreground font-light leading-relaxed max-w-3xl mx-auto italic">
             {artwork.description || 'Ontdek de essentie van licht en ruimte in dit meesterlijke werk van Thijs Sterk.'}
           </p>
-
-          <div className="pt-8">
-            <button onClick={() => setShowMetadata(false)} className="text-[10px] font-black uppercase tracking-[0.5em] text-accent hover:text-accent/60 transition-colors border-b border-accent/10 pb-1">
-              Sluit informatie
-            </button>
-          </div>
         </div>
       </div>
     </div>

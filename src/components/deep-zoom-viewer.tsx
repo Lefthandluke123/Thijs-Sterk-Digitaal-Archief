@@ -11,7 +11,7 @@ interface DeepZoomViewerProps {
 
 /**
  * @fileOverview DeepZoomViewer component met OpenSeadragon.
- * Geoptimaliseerd voor een 'contain' startpositie met een geforceerde vergrootglas cursor.
+ * Geoptimaliseerd voor een schone state-reset en geforceerde cursor interactie.
  */
 export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({ 
   imageUrl, 
@@ -29,6 +29,7 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
         const OSDModule = await import('openseadragon');
         const OpenSeadragon = (OSDModule as any).default || OSDModule;
 
+        // Vernietig vorige instance volledig
         if (viewerRef.current) {
           viewerRef.current.destroy();
           viewerRef.current = null;
@@ -44,6 +45,7 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
             url: imageUrl,
             buildPyramid: true
           },
+          // Interactie instellingen
           showNavigationControl: false,
           gestureSettingsMouse: {
             scrollToZoom: true,
@@ -54,33 +56,32 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
             scrollToZoom: true,
             pinchToZoom: true,
           },
-          animationTime: 0.8,
-          blendTime: 0.1,
-          constrainDuringPan: true,
+          // Sizing en Positionering (Cruciaal voor de 'niet te ver ingezoomd' fix)
+          homeFillsViewer: false, 
           visibilityRatio: 1.0,
-          minZoomImageRatio: 1.0,
+          constrainDuringPan: true,
           defaultZoomLevel: 0,
           minZoomLevel: 0.5,
           maxZoomLevel: 10,
           autoResize: true,
           preserveViewport: false,
-          homeFillsViewer: false, // Forceert 'contain' mode
-          centerImageOnce: true
         });
 
         viewerRef.current.addHandler('open', () => {
           setLoading(false);
+          // Forceer een schone 'fit' positie
           if (viewerRef.current && viewerRef.current.viewport) {
             viewerRef.current.viewport.goHome(true);
           }
         });
 
       } catch (err) {
-        console.error('[DEEP ZOOM] Error:', err);
+        console.error('[DEEP ZOOM] Initialization Error:', err);
       }
     };
 
-    const timer = setTimeout(initOSD, 50);
+    // Gebruik een kleine delay voor stabiele DOM-berekening
+    const timer = setTimeout(initOSD, 100);
 
     return () => {
       clearTimeout(timer);
@@ -92,15 +93,15 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
   }, [imageUrl]);
 
   return (
-    <div className="relative w-full h-full bg-transparent overflow-hidden rounded-3xl">
+    <div className="relative w-full h-full bg-transparent overflow-hidden">
       {loading && (
-        <div className="absolute inset-0 flex items-center justify-center z-10 bg-background/20 backdrop-blur-sm">
-          <Loader2 className="w-12 h-12 animate-spin text-accent/30" />
+        <div className="absolute inset-0 flex items-center justify-center z-10 bg-background/10 backdrop-blur-sm">
+          <Loader2 className="w-10 h-10 animate-spin text-accent" />
         </div>
       )}
       <div 
         ref={containerRef} 
-        className="w-full h-full outline-none cursor-zoom-in [&_canvas]:!cursor-zoom-in" 
+        className="w-full h-full outline-none cursor-zoom-in [&_canvas]:!cursor-zoom-in [&_canvas]:!outline-none" 
         style={{ 
           filter: `brightness(${brightness})`,
           display: 'block'
