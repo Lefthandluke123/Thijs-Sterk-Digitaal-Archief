@@ -11,7 +11,7 @@ interface DeepZoomViewerProps {
 
 /**
  * @fileOverview DeepZoomViewer component met OpenSeadragon.
- * Geoptimaliseerd voor een 'contain' startpositie (geen ongewenste zoom bij start).
+ * Geoptimaliseerd voor een 'contain' startpositie met een vergrootglas cursor.
  */
 export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({ 
   imageUrl, 
@@ -55,7 +55,7 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
             scrollToZoom: true,
             pinchToZoom: true,
           },
-          animationTime: 0.8, // Sneller maar nog steeds vloeiend
+          animationTime: 0.8,
           blendTime: 0.1,
           constrainDuringPan: true,
           visibilityRatio: 1.0,
@@ -64,14 +64,13 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
           minZoomLevel: 0.5,
           maxZoomLevel: 10,
           autoResize: true,
-          preserveViewport: false, // CRUCIAAL: reset viewport state bij nieuwe image
-          homeFillsViewer: false,   // CRUCIAAL: start 'contain', niet 'cover' (voorkomt inzoomen bij start)
+          preserveViewport: false,
+          homeFillsViewer: false,
           centerImageOnce: true
         });
 
         viewerRef.current.addHandler('open', () => {
           setLoading(false);
-          // Forceer neutrale schaal en positie na openen
           if (viewerRef.current && viewerRef.current.viewport) {
             viewerRef.current.viewport.goHome(true);
           }
@@ -82,7 +81,6 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
       }
     };
 
-    // Gebruik een kleine timeout om te zorgen dat de container-afmetingen stabiel zijn
     const timer = setTimeout(initOSD, 50);
 
     return () => {
@@ -103,11 +101,11 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
       )}
       <div 
         ref={containerRef} 
-        className="w-full h-full outline-none" 
+        className="w-full h-full outline-none cursor-zoom-in [&_canvas]:!cursor-zoom-in" 
         style={{ 
           filter: `brightness(${brightness})`,
           display: 'block',
-          transform: 'none' // Zorg dat er geen residual CSS transforms zijn
+          transform: 'none'
         }} 
       />
     </div>
