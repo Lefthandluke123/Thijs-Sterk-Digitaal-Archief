@@ -3,8 +3,8 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc, setDoc, updateDoc } from 'firebase/firestore';
+import { useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
+import { doc, updateDoc, collection, addDoc, deleteDoc, query, orderBy } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -17,15 +17,16 @@ import {
   Sparkles, 
   Loader2, 
   Save,
-  Globe,
-  Type,
+  Plus,
+  Trash2,
   FileText,
-  ShoppingBag,
-  MessageSquare,
-  Lock
+  Type,
+  Layout,
+  Settings as SettingsIcon
 } from 'lucide-react';
 import { translateMuseumText } from '@/ai/flows/translate-flow';
 import { verifyAdminPassword } from '@/lib/admin-actions';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 
 const LANGUAGES = [
@@ -43,18 +44,16 @@ const CONTENT_FIELDS = [
   { id: 'homeBioTitle', label: 'Biografie Titel', type: 'input', category: 'Homepage' },
   { id: 'homeBio', label: 'Biografie Tekst', type: 'textarea', category: 'Homepage' },
   { id: 'shopIntro', label: 'Winkel Introductie', type: 'textarea', category: 'Winkel' },
-  { id: 'contactTitle', label: 'Contact Titel', type: 'input', category: 'Contact' },
-  { id: 'contactIntro', label: 'Contact Introductie', type: 'textarea', category: 'Contact' },
-  { id: 'contactQuote', label: 'Contact Citaat', type: 'input', category: 'Contact' },
 ];
 
-export default function TranslatePage() {
+export default function TranslateStationPage() {
   const firestore = useFirestore();
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [password, setPassword] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [translatingField, setTranslatingField] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('translations');
 
   const [formData, setFormData] = useState<Record<string, string>>({});
 
@@ -67,12 +66,10 @@ export default function TranslatePage() {
     return doc(firestore, 'settings', 'site');
   }, [firestore, isAuthorized]);
   
-  const { data: settings, loading: settingsLoading } = useDoc(settingsRef);
+  const { data: settings } = useDoc(settingsRef);
 
   useEffect(() => {
-    if (settings) {
-      setFormData(settings as Record<string, string>);
-    }
+    if (settings) setFormData(settings as Record<string, string>);
   }, [settings]);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -89,17 +86,13 @@ export default function TranslatePage() {
 
   const handleTranslateField = async (fieldId: string) => {
     const sourceText = formData[fieldId];
-    if (!sourceText) {
-      toast({ variant: "destructive", title: "Leeg veld", description: "Voer eerst de Nederlandse tekst in." });
-      return;
-    }
+    if (!sourceText) return toast({ variant: "destructive", title: "Leeg veld" });
 
     setTranslatingField(fieldId);
-    const targetLangs = LANGUAGES.filter(l => !l.isSource);
     const newTranslations: Record<string, string> = { ...formData };
 
     try {
-      for (const lang of targetLangs) {
+      for (const lang of LANGUAGES.filter(l => !l.isSource)) {
         const result = await translateMuseumText({
           text: sourceText,
           targetLanguage: lang.label,
@@ -108,7 +101,7 @@ export default function TranslatePage() {
         newTranslations[`${fieldId}_${lang.code}`] = result.translatedText;
       }
       setFormData(newTranslations);
-      toast({ title: "Vertaling voltooid", description: `Tekst vertaald naar 4 talen.` });
+      toast({ title: "Vertaling voltooid" });
     } catch (error: any) {
       toast({ variant: "destructive", title: "AI Fout", description: error.message });
     } finally {
@@ -121,7 +114,7 @@ export default function TranslatePage() {
     setIsSaving(true);
     try {
       await updateDoc(settingsRef, formData);
-      toast({ title: "Opgeslagen", description: "Alle vertalingen zijn bijgewerkt." });
+      toast({ title: "Opgeslagen" });
     } catch (error) {
       toast({ variant: "destructive", title: "Fout bij opslaan" });
     } finally {
@@ -132,14 +125,11 @@ export default function TranslatePage() {
   if (!isAuthorized) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
-        <Card className="max-w-md w-full p-12 rounded-[2.5rem] shadow-2xl border-none space-y-8">
-           <div className="text-center space-y-4">
-              <Lock className="w-10 h-10 text-accent mx-auto" />
-              <h1 className="font-headline text-3xl font-light italic">Vertaal Station</h1>
-           </div>
+        <Card className="max-w-md w-full p-12 rounded-[2.5rem] shadow-2xl space-y-8">
+           <h1 className="font-headline text-3xl text-center">Translation Hub</h1>
            <form onSubmit={handleLogin} className="space-y-6">
-              <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="h-14 rounded-2xl text-center" placeholder="Wachtwoord" disabled={isVerifying} />
-              <Button type="submit" disabled={isVerifying} className="w-full h-14 rounded-2xl bg-primary text-primary-foreground">{isVerifying ? <Loader2 className="animate-spin" /> : "Ontgrendelen"}</Button>
+              <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="h-14 rounded-2xl text-center" placeholder="Wachtwoord" />
+              <Button type="submit" disabled={isVerifying} className="w-full h-14 rounded-2xl">Ontgrendelen</Button>
            </form>
         </Card>
       </div>
@@ -149,117 +139,115 @@ export default function TranslatePage() {
   const categories = Array.from(new Set(CONTENT_FIELDS.map(f => f.category)));
 
   return (
-    <div className="min-h-screen bg-[#f8f9fa] flex flex-col pt-32">
-      <header className="h-24 bg-white/80 backdrop-blur-md border-b sticky top-0 z-50 px-8 flex items-center justify-between">
+    <div className="min-h-screen bg-[#f8f9fa] pt-32">
+      <header className="h-24 bg-white/80 backdrop-blur-md border-b fixed top-0 left-0 right-0 z-50 px-8 flex items-center justify-between">
         <div className="flex items-center gap-6">
           <Link href="/admin" className="p-3 hover:bg-black/5 rounded-full transition-colors">
             <ArrowLeft className="w-6 h-6" />
           </Link>
-          <div>
-            <h1 className="font-headline text-2xl flex items-center gap-3">
-              Vertaal <span className="italic">Station</span>
-              <div className="bg-accent/10 text-accent text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">AI Assisted</div>
-            </h1>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Beheer de website in 5 talen</p>
-          </div>
+          <h1 className="font-headline text-2xl italic">Translation <span className="text-accent">Station</span></h1>
         </div>
-        <Button onClick={handleSave} disabled={isSaving} className="h-14 px-10 rounded-2xl bg-primary text-primary-foreground shadow-xl hover:scale-105 transition-all">
+        <Button onClick={handleSave} disabled={isSaving} className="h-14 px-10 rounded-2xl bg-primary shadow-xl">
           {isSaving ? <Loader2 className="animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-          Instellingen Opslaan
+          Wijzigingen Opslaan
         </Button>
       </header>
 
-      <main className="flex-1 p-8 max-w-7xl mx-auto w-full pb-48">
-        <div className="space-y-16">
-          {categories.map(cat => (
-            <section key={cat} className="space-y-8">
-              <div className="flex items-center gap-4">
-                 <div className="h-px flex-1 bg-black/5" />
-                 <h2 className="font-headline text-3xl italic text-accent/60">{cat}</h2>
-                 <div className="h-px flex-1 bg-black/5" />
-              </div>
+      <main className="max-w-7xl mx-auto px-8 pb-32">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-12">
+          <TabsList className="bg-white p-1 rounded-full w-fit mx-auto h-14 shadow-md border">
+            <TabsTrigger value="translations" className="rounded-full px-8 h-12 uppercase font-black text-[11px] tracking-widest">
+              <Type className="w-4 h-4 mr-2" /> Teksten
+            </TabsTrigger>
+            <TabsTrigger value="stories" className="rounded-full px-8 h-12 uppercase font-black text-[11px] tracking-widest">
+              <Layout className="w-4 h-4 mr-2" /> Story Pages
+            </TabsTrigger>
+          </TabsList>
 
-              <div className="grid gap-12">
-                {CONTENT_FIELDS.filter(f => f.category === cat).map(field => (
-                  <Card key={field.id} className="p-8 rounded-[2rem] border-none shadow-xl bg-white overflow-hidden relative">
-                    <div className="flex justify-between items-start mb-8">
-                      <div className="space-y-1">
+          <TabsContent value="translations" className="space-y-16">
+            {categories.map(cat => (
+              <section key={cat} className="space-y-8">
+                <h2 className="font-headline text-3xl italic opacity-40">{cat}</h2>
+                <div className="grid gap-10">
+                  {CONTENT_FIELDS.filter(f => f.category === cat).map(field => (
+                    <Card key={field.id} className="p-8 rounded-[2rem] border-none shadow-xl bg-white">
+                      <div className="flex justify-between items-start mb-8">
                         <Label className="text-xs font-black uppercase tracking-widest text-accent/40">{field.label}</Label>
-                        <p className="text-[10px] font-mono opacity-30">ID: {field.id}</p>
+                        <Button 
+                          size="sm" 
+                          variant="secondary"
+                          onClick={() => handleTranslateField(field.id)}
+                          disabled={translatingField === field.id}
+                          className="rounded-full px-6 bg-accent/5 hover:bg-accent text-accent hover:text-white"
+                        >
+                          {translatingField === field.id ? <Loader2 className="animate-spin mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />}
+                          AI Translate
+                        </Button>
                       </div>
-                      <Button 
-                        size="sm" 
-                        variant="secondary"
-                        onClick={() => handleTranslateField(field.id)}
-                        disabled={translatingField === field.id}
-                        className="rounded-full px-6 h-10 bg-accent/5 hover:bg-accent text-accent hover:text-white transition-all group"
-                      >
-                        {translatingField === field.id ? (
-                          <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                        ) : (
-                          <Sparkles className="w-4 h-4 mr-2 group-hover:rotate-12 transition-transform" />
-                        )}
-                        Vertaal naar alle talen
-                      </Button>
-                    </div>
 
-                    <div className="grid gap-6">
-                      {/* Bron-taal: NL */}
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-black bg-primary text-primary-foreground px-2 py-0.5 rounded">NL</span>
-                          <span className="text-[10px] font-bold uppercase tracking-widest opacity-40">Brontekst</span>
+                      <div className="grid gap-8">
+                        <div className="space-y-2">
+                          <span className="text-[10px] font-black bg-primary text-primary-foreground px-2 py-0.5 rounded">NL (Bron)</span>
+                          {field.type === 'textarea' ? (
+                            <Textarea 
+                              value={formData[field.id] || ''} 
+                              onChange={e => setFormData({ ...formData, [field.id]: e.target.value })}
+                              className="bg-black/5 border-none min-h-[120px] rounded-xl"
+                            />
+                          ) : (
+                            <Input 
+                              value={formData[field.id] || ''} 
+                              onChange={e => setFormData({ ...formData, [field.id]: e.target.value })}
+                              className="bg-black/5 border-none h-12 rounded-xl"
+                            />
+                          )}
                         </div>
-                        {field.type === 'textarea' ? (
-                          <Textarea 
-                            value={formData[field.id] || ''} 
-                            onChange={e => setFormData({ ...formData, [field.id]: e.target.value })}
-                            className="bg-black/5 border-none min-h-[120px] rounded-xl focus:ring-accent"
-                            placeholder="Nederlandse tekst..."
-                          />
-                        ) : (
-                          <Input 
-                            value={formData[field.id] || ''} 
-                            onChange={e => setFormData({ ...formData, [field.id]: e.target.value })}
-                            className="bg-black/5 border-none h-12 rounded-xl focus:ring-accent"
-                            placeholder="Nederlandse tekst..."
-                          />
-                        )}
-                      </div>
 
-                      {/* Doel-talen */}
-                      <div className="grid md:grid-cols-2 gap-6 pt-4 border-t border-black/5">
-                        {LANGUAGES.filter(l => !l.isSource).map(lang => (
-                          <div key={lang.code} className="space-y-2">
-                            <div className="flex items-center gap-2">
+                        <div className="grid md:grid-cols-2 gap-6 pt-6 border-t border-black/5">
+                          {LANGUAGES.filter(l => !l.isSource).map(lang => (
+                            <div key={lang.code} className="space-y-2">
                               <span className="text-[10px] font-black bg-accent/10 text-accent px-2 py-0.5 rounded uppercase">{lang.code}</span>
-                              <span className="text-[10px] font-bold uppercase tracking-widest opacity-40">{lang.label}</span>
+                              {field.type === 'textarea' ? (
+                                <Textarea 
+                                  value={formData[`${field.id}_${lang.code}`] || ''} 
+                                  onChange={e => setFormData({ ...formData, [`${field.id}_${lang.code}`]: e.target.value })}
+                                  className="border-2 border-black/5 min-h-[100px] rounded-xl text-sm"
+                                  placeholder={`${lang.label}...`}
+                                />
+                              ) : (
+                                <Input 
+                                  value={formData[`${field.id}_${lang.code}`] || ''} 
+                                  onChange={e => setFormData({ ...formData, [`${field.id}_${lang.code}`]: e.target.value })}
+                                  className="border-2 border-black/5 h-11 rounded-xl text-sm"
+                                  placeholder={`${lang.label}...`}
+                                />
+                              )}
                             </div>
-                            {field.type === 'textarea' ? (
-                              <Textarea 
-                                value={formData[`${field.id}_${lang.code}`] || ''} 
-                                onChange={e => setFormData({ ...formData, [`${field.id}_${lang.code}`]: e.target.value })}
-                                className="bg-white border-2 border-black/5 min-h-[100px] rounded-xl text-sm focus:border-accent/30"
-                                placeholder={`${lang.label} vertaling...`}
-                              />
-                            ) : (
-                              <Input 
-                                value={formData[`${field.id}_${lang.code}`] || ''} 
-                                onChange={e => setFormData({ ...formData, [`${field.id}_${lang.code}`]: e.target.value })}
-                                className="bg-white border-2 border-black/5 h-11 rounded-xl text-sm focus:border-accent/30"
-                                placeholder={`${lang.label} vertaling...`}
-                              />
-                            )}
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            </section>
-          ))}
-        </div>
+                    </Card>
+                  ))}
+                </div>
+              </section>
+            ))}
+          </TabsContent>
+
+          <TabsContent value="stories">
+             <Card className="p-20 text-center rounded-[3rem] border-dashed border-4 border-black/5 bg-transparent">
+                <div className="w-20 h-20 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                   <Layout className="w-10 h-10 text-accent" />
+                </div>
+                <h2 className="font-headline text-3xl italic mb-4">Storytelling Module</h2>
+                <p className="text-muted-foreground max-w-md mx-auto mb-8">
+                   Beheer dynamische pagina's zoals biografieën of speciale projecten met meertalige tekst- en afbeeldingsblokken.
+                </p>
+                <Button className="rounded-full px-10 h-14 uppercase font-black text-[11px] tracking-widest">
+                   Nieuwe Pagina Aanmaken <Plus className="w-4 h-4 ml-2" />
+                </Button>
+             </Card>
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );

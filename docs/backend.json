@@ -38,26 +38,38 @@
       },
       "required": ["title", "slug", "image", "roomSlug"]
     },
-    "SharedRoom": {
-      "title": "SharedRoom",
-      "description": "Een door een gebruiker samengestelde expositie.",
+    "Page": {
+      "title": "Page",
+      "description": "Een dynamische storytelling pagina (bijv. biografieën).",
       "type": "object",
       "properties": {
         "title": { "type": "string" },
-        "description": { "type": "string" },
-        "artworkIds": { "type": "array", "items": { "type": "string" } },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "lang": { "type": "string" }
+        "slug": { "type": "string" },
+        "sections": { 
+          "type": "array", 
+          "items": { 
+            "type": "object",
+            "properties": {
+              "type": { "type": "string", "enum": ["text", "image", "quote", "gallery"] },
+              "content": { "type": "string" },
+              "imageUrl": { "type": "string" },
+              "caption": { "type": "string" }
+            }
+          }
+        }
       }
     },
     "Settings": {
       "title": "Settings",
-      "description": "Website configuratie.",
+      "description": "Website configuratie en alle dynamische teksten.",
       "type": "object",
       "properties": {
         "siteTitle": { "type": "string" },
         "siteSubtitle": { "type": "string" },
-        "logoUrl": { "type": "string" }
+        "logoUrl": { "type": "string" },
+        "adminEmail": { "type": "string" },
+        "stripeEnabled": { "type": "boolean" },
+        "stripeSecretKey": { "type": "string" }
       }
     }
   },
@@ -65,7 +77,7 @@
   "firestore": {
     "/rooms/{roomId}": { "schema": "Room", "description": "Collectie van alle museumzalen" },
     "/artworks/{artworkId}": { "schema": "Artwork", "description": "Collectie van alle kunstwerken" },
-    "/shared_rooms/{roomId}": { "schema": "SharedRoom", "description": "Gedeelde exposities" },
-    "/settings/site": { "schema": "Settings", "description": "Algemene instellingen" }
+    "/pages/{pageId}": { "schema": "Page", "description": "Dynamische content pagina's" },
+    "/settings/site": { "schema": "Settings", "description": "Algemene instellingen en vertalingen" }
   }
 }
