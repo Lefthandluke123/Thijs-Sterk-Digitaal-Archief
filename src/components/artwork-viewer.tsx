@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { X, ChevronLeft, ChevronRight, Info, Mic, Pause } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -8,12 +8,11 @@ import { useLanguage } from '@/components/language-provider';
 import { ShareButton } from './share-button';
 import { usePathname } from 'next/navigation';
 
-// Laad DeepZoomViewer dynamisch om SSR issues te voorkomen
 const DeepZoomViewer = dynamic(() => import('./deep-zoom-viewer').then(mod => mod.DeepZoomViewer), { 
   ssr: false,
   loading: () => (
-    <div className="w-full h-full flex items-center justify-center bg-black/5">
-      <div className="w-8 h-8 border-4 border-accent border-t-transparent rounded-full animate-spin" />
+    <div className="w-full h-full flex items-center justify-center bg-black/[0.02]">
+      <div className="w-10 h-10 border-4 border-accent border-t-transparent rounded-full animate-spin" />
     </div>
   )
 });
@@ -92,94 +91,115 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
       role="dialog"
       aria-modal="true"
       aria-label={`Detailweergave van ${artwork.displayTitle || artwork.title}`}
-      style={{ 
-        position: 'fixed', 
-        inset: 0, 
-        zIndex: 9999, 
-        backgroundColor: '#f4f4f2', 
-        display: 'grid', 
-        placeItems: 'center',
-        overflow: 'hidden'
-      }}
+      className="fixed inset-0 z-[9999] bg-[#f8f9f7] flex flex-col items-center justify-center overflow-hidden animate-in fade-in duration-700"
     >
-      <div className="w-[90vw] h-[80vh] flex items-center justify-center">
+      {/* Header Controls */}
+      <div className="absolute top-0 left-0 right-0 z-[10000] p-6 md:p-12 flex items-center justify-between pointer-events-none">
+        <div className="hidden md:flex flex-col border-l-2 border-accent/20 pl-6 pointer-events-auto">
+           <h1 className="font-headline text-2xl md:text-3xl italic leading-tight text-foreground">{artwork.displayTitle || artwork.title}</h1>
+           <p className="text-[9px] font-black uppercase tracking-[0.4em] text-accent/60 mt-1">{artwork.year} &bull; {artwork.medium}</p>
+        </div>
+
+        <div className="flex items-center gap-3 pointer-events-auto">
+           <ShareButton 
+             title={artwork.displayTitle || artwork.title}
+             url={artworkUrl}
+           />
+
+           {audio && (
+             <button 
+              onClick={toggleAudio} 
+              className={cn(
+                "p-5 rounded-full backdrop-blur-3xl border border-black/5 transition-all flex items-center gap-4 shadow-xl", 
+                isPlaying ? "bg-accent text-accent-foreground" : "bg-white/80 text-foreground hover:bg-white"
+              )}
+             >
+                {isPlaying ? <Pause className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+                <span className="text-[10px] font-black uppercase tracking-widest hidden lg:inline">{isPlaying ? t('viewer_telling') : t('viewer_listen_story')}</span>
+             </button>
+           )}
+
+           <button 
+            onClick={() => setShowMetadata(!showMetadata)} 
+            className={cn(
+              "p-5 rounded-full backdrop-blur-3xl border border-black/5 transition-all shadow-xl", 
+              showMetadata ? "bg-accent text-accent-foreground" : "bg-white/80 text-foreground hover:bg-white"
+            )}
+           >
+             <Info className="w-5 h-5" />
+           </button>
+
+           <button 
+            onClick={onClose} 
+            className="p-5 bg-white/80 backdrop-blur-3xl rounded-full text-foreground hover:bg-destructive hover:text-white transition-all border border-black/5 shadow-xl"
+           >
+             <X className="w-5 h-5 opacity-60" />
+           </button>
+        </div>
+      </div>
+
+      {/* Main Viewer Area */}
+      <div className="w-full h-full flex items-center justify-center p-4 md:p-24">
         {displayImage && (
-          <DeepZoomViewer 
-            key={artwork.id}
-            imageUrl={displayImage} 
-            brightness={artwork.brightness || 1}
-          />
+          <div className="w-full h-full max-w-[95vw] max-h-[85vh] shadow-[0_60px_120px_-20px_rgba(0,0,0,0.4)] rounded-2xl overflow-hidden animate-in zoom-in-95 duration-1000">
+            <DeepZoomViewer 
+              key={artwork.id}
+              imageUrl={displayImage} 
+              brightness={artwork.brightness || 1}
+            />
+          </div>
         )}
       </div>
 
-      <div className="absolute top-8 right-8 z-[10000] flex items-center gap-4">
-         <ShareButton 
-           title={artwork.displayTitle || artwork.title}
-           url={artworkUrl}
-         />
-
-         {audio && (
-           <button 
-            onClick={toggleAudio} 
-            aria-label={isPlaying ? t('viewer_telling') : t('viewer_listen_story')}
-            className={cn("p-4 rounded-full backdrop-blur-md border border-black/5 transition-all flex items-center gap-3 shadow-lg", isPlaying ? "bg-accent text-accent-foreground" : "bg-white/80 text-foreground")}
-           >
-              {isPlaying ? <Pause className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-              <span className="text-[10px] font-black uppercase tracking-widest hidden md:inline">{isPlaying ? t('viewer_telling') : t('viewer_listen_story')}</span>
-           </button>
-         )}
-
-         <button 
-          onClick={() => setShowMetadata(!showMetadata)} 
-          aria-label="Informatie over dit werk"
-          className={cn("p-4 rounded-full backdrop-blur-md border border-black/5 transition-all shadow-lg", showMetadata ? "bg-accent text-accent-foreground" : "bg-white/80 text-foreground")}
-         >
-           <Info className="w-5 h-5" />
-         </button>
-         <button 
-          onClick={onClose} 
-          aria-label="Sluit detailweergave"
-          className="p-4 bg-white/80 backdrop-blur-md rounded-full text-foreground hover:bg-destructive hover:text-white transition-all border border-black/5 shadow-lg"
-         >
-           <X className="w-5 h-5 opacity-60" />
-         </button>
-      </div>
-
+      {/* Navigation Arrows */}
       <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-8 pointer-events-none z-[10000]">
         <button 
           onClick={(e) => { e.stopPropagation(); if(onPrev) onPrev(); }} 
-          aria-label="Vorig kunstwerk"
           className={cn(
-            "p-5 rounded-full bg-white/40 backdrop-blur-md pointer-events-auto hover:bg-accent hover:text-accent-foreground transition-all border border-black/5 shadow-xl",
+            "p-6 rounded-full bg-white/20 backdrop-blur-2xl pointer-events-auto hover:bg-accent hover:text-accent-foreground transition-all border border-white/20 shadow-2xl active:scale-90",
             !onPrev && "opacity-0 pointer-events-none"
           )}
         >
-          <ChevronLeft className="w-10 h-10 opacity-40" />
+          <ChevronLeft className="w-10 h-10 opacity-60" />
         </button>
         <button 
           onClick={(e) => { e.stopPropagation(); if(onNext) onNext(); }} 
-          aria-label="Volgend kunstwerk"
           className={cn(
-            "p-5 rounded-full bg-white/40 backdrop-blur-md pointer-events-auto hover:bg-accent hover:text-accent-foreground transition-all border border-black/5 shadow-xl",
+            "p-6 rounded-full bg-white/20 backdrop-blur-2xl pointer-events-auto hover:bg-accent hover:text-accent-foreground transition-all border border-white/20 shadow-2xl active:scale-90",
             !onNext && "opacity-0 pointer-events-none"
           )}
         >
-          <ChevronRight className="w-10 h-10 opacity-40" />
+          <ChevronRight className="w-10 h-10 opacity-60" />
         </button>
       </div>
 
+      {/* Info Overlay */}
       <div className={cn(
-        "absolute bottom-0 left-0 right-0 bg-background/95 backdrop-blur-2xl border-t border-black/5 flex flex-col items-center justify-center text-center transition-all duration-700 ease-in-out z-[10010]", 
-        showMetadata ? "h-[30vh] opacity-100 py-12 px-10 translate-y-0" : "h-0 opacity-0 pointer-events-none translate-y-12"
+        "absolute bottom-0 left-0 right-0 bg-white/95 backdrop-blur-3xl border-t border-black/5 flex flex-col items-center justify-center text-center transition-all duration-700 ease-in-out z-[10010]", 
+        showMetadata ? "h-auto min-h-[35vh] opacity-100 py-16 px-10 translate-y-0" : "h-0 opacity-0 pointer-events-none translate-y-24"
       )}>
-        <div className="max-w-4xl mx-auto space-y-6">
-          <h2 className="text-2xl md:text-5xl font-headline font-light italic text-foreground leading-tight">{artwork.displayTitle || artwork.title}</h2>
-          <div className="text-[12px] font-bold tracking-[0.2em] text-accent flex flex-wrap gap-x-8 gap-y-2 justify-center items-center uppercase">
-            <span>{artwork.year || 'Onbekend'}</span>
-            <span className="w-1 h-1 rounded-full bg-accent/30" aria-hidden="true" />
-            <span>{artwork.medium}</span>
+        <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+          <h2 className="text-3xl md:text-5xl font-headline font-light italic text-foreground leading-tight">{artwork.displayTitle || artwork.title}</h2>
+          
+          <div className="flex flex-wrap gap-x-10 gap-y-3 justify-center items-center">
+            <div className="space-y-1">
+              <p className="text-[9px] font-black uppercase tracking-widest text-accent opacity-50">Jaartal</p>
+              <p className="text-base font-bold">{artwork.year || 'Onbekend'}</p>
+            </div>
+            <div className="h-8 w-px bg-black/5" />
+            <div className="space-y-1">
+              <p className="text-[9px] font-black uppercase tracking-widest text-accent opacity-50">Techniek</p>
+              <p className="text-base font-bold">{artwork.medium || 'Olieverf op doek'}</p>
+            </div>
           </div>
-          <p className="text-sm md:text-base text-muted-foreground font-light leading-relaxed max-w-2xl mx-auto">{artwork.description}</p>
+
+          <p className="text-lg md:text-xl text-muted-foreground font-light leading-relaxed max-w-2xl mx-auto italic px-6">
+            {artwork.description || 'Ontdek de essentie van licht en ruimte in dit meesterlijke werk van Thijs Sterk.'}
+          </p>
+
+          <button onClick={() => setShowMetadata(false)} className="text-[10px] font-black uppercase tracking-[0.4em] text-accent border-b border-accent/20 pb-1 hover:opacity-60 transition-opacity">
+            Sluit informatie
+          </button>
         </div>
       </div>
     </div>

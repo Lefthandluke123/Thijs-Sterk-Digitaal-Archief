@@ -7,10 +7,6 @@ import { ArtworkViewer } from '@/components/artwork-viewer';
 import { Maximize2, Loader2, ArrowRight, Layers } from 'lucide-react';
 import Link from 'next/link';
 
-/**
- * @fileOverview De kennismakings-galerij op de homepage.
- * Toont nu een diverse dwarsdoorsnede: Olieverf, Aquarel, Stilleven en Polder.
- */
 export function IntroductionGallery() {
   const [mounted, setMounted] = useState(false);
   const [selectedArtwork, setSelectedArtwork] = useState<any | null>(null);
@@ -56,14 +52,14 @@ export function IntroductionGallery() {
   }, [selectedArtwork, curatedArtworks]);
 
   return (
-    <section className="py-24 bg-background px-4 scroll-mt-32" id="kennismaking" aria-labelledby="intro-heading">
-      <div className="container mx-auto max-w-6xl">
-        <div className="text-center mb-16 space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 border border-accent/20 mx-auto">
-            <Layers className="w-3 h-3 text-accent" aria-hidden="true" />
-            <span className="text-[9px] font-black uppercase tracking-[0.3em] text-accent">Introductie</span>
+    <section className="py-32 bg-background px-4 scroll-mt-32" id="kennismaking" aria-labelledby="intro-heading">
+      <div className="container max-w-7xl mx-auto">
+        <div className="text-center mb-24 space-y-6">
+          <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-accent/5 border border-accent/10 mx-auto">
+            <Layers className="w-3.5 h-3.5 text-accent" />
+            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-accent">De Collectie</span>
           </div>
-          <h2 id="intro-heading" className="font-headline text-3xl md:text-5xl font-light italic text-accent leading-tight">
+          <h2 id="intro-heading" className="font-headline text-4xl md:text-5xl font-light italic text-foreground leading-tight">
             Een Kennismaking
           </h2>
           <p className="text-lg text-muted-foreground font-light max-w-2xl mx-auto leading-relaxed">
@@ -72,19 +68,19 @@ export function IntroductionGallery() {
         </div>
 
         {!mounted || loading ? (
-          <div className="flex flex-col items-center justify-center py-24 space-y-4">
-            <Loader2 className="animate-spin text-accent w-6 h-6 opacity-40" />
-            <p className="text-[9px] font-black uppercase tracking-widest opacity-20">Collectie wordt voorbereid...</p>
+          <div className="flex flex-col items-center justify-center py-32 space-y-4">
+            <Loader2 className="animate-spin text-accent w-8 h-8 opacity-20" />
+            <p className="text-[10px] font-black uppercase tracking-widest opacity-20">Curatie wordt ingeladen...</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-12 lg:gap-16">
             {curatedArtworks?.map((item: any) => {
               const displayImage = item.image || item.imageUrl;
               const title = item.displayTitle || item.title;
               return (
-                <div key={item.id} className="group flex flex-col space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <div key={item.id} className="group flex flex-col space-y-6 animate-subtle-fade">
                   <button 
-                    className="relative aspect-[4/5] overflow-hidden rounded-xl bg-secondary/10 shadow-md transition-all duration-700 hover:shadow-xl cursor-pointer flex items-center justify-center p-2 focus-visible:ring-4 focus-visible:ring-accent"
+                    className="relative aspect-[4/5] overflow-hidden rounded-[2rem] bg-black/[0.03] shadow-md transition-all duration-700 hover:shadow-2xl cursor-pointer flex items-center justify-center p-3 focus-visible:ring-4 focus-visible:ring-accent border border-black/5"
                     onClick={() => setSelectedArtwork(item)}
                     aria-label={`Bekijk ${title}`}
                   >
@@ -92,31 +88,33 @@ export function IntroductionGallery() {
                       <img 
                         src={displayImage} 
                         alt={`Werk van Thijs Sterk: ${title}`} 
-                        className="max-w-full max-h-full object-contain transition-all duration-1000 ease-out group-hover:scale-105"
+                        className="max-w-full max-h-full object-contain transition-transform duration-[1.5s] ease-out group-hover:scale-110"
                         style={{ filter: `brightness(${item.brightness || 1})` }}
                         loading="lazy"
                       />
                     )}
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-all duration-700 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                      <Maximize2 className="text-white w-6 h-6 drop-shadow-lg" aria-hidden="true" />
+                    <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center justify-center">
+                       <div className="p-3.5 rounded-full bg-white/40 backdrop-blur-xl scale-90 group-hover:scale-100 transition-transform duration-500">
+                          <Maximize2 className="text-white w-6 h-6" />
+                       </div>
                     </div>
                   </button>
                   
-                  <div className="space-y-3 text-center px-2">
-                    <div className="space-y-1">
-                      <h3 className="font-headline text-lg italic text-foreground truncate">
+                  <div className="space-y-4 text-center px-2">
+                    <div className="space-y-1.5">
+                      <h3 className="font-headline text-xl italic text-foreground truncate px-4">
                         {title}
                       </h3>
-                      <p className="text-[9px] font-black uppercase tracking-widest opacity-30">
-                        {item.year || 'Collectie'} &bull; {item.medium || 'Thijs Sterk'}
+                      <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-60">
+                        {item.year || 'Interactief'} &bull; {item.medium || 'Olieverf'}
                       </p>
                     </div>
 
                     <Link 
                       href={`/gallery?room=${item.roomSlug}`}
-                      className="inline-flex items-center gap-2 px-5 py-2 rounded-full border border-accent/20 text-accent text-[9px] font-black uppercase tracking-widest hover:bg-accent hover:text-accent-foreground transition-all duration-300"
+                      className="inline-flex items-center gap-3 px-6 py-2.5 rounded-full border border-black/5 text-accent text-[10px] font-black uppercase tracking-widest hover:bg-accent hover:text-accent-foreground transition-all duration-500"
                     >
-                      Meer uit deze serie <ArrowRight className="w-2.5 h-2.5" aria-hidden="true" />
+                      Verken Serie <ArrowRight className="w-3 h-3" />
                     </Link>
                   </div>
                 </div>

@@ -4,56 +4,70 @@
 
 @layer base {
   :root {
-    --background: 85 45% 82%;
-    --foreground: 201 45% 2%;
-    --card: 85 45% 84%;
-    --card-foreground: 201 45% 2%;
-    --popover: 85 45% 84%;
-    --popover-foreground: 201 45% 2%;
+    /* Verfijnd galerij-palet: iets rustiger en neutraler */
+    --background: 40 10% 96%;
+    --foreground: 201 45% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 201 45% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 201 45% 10%;
     --primary: 201 45% 5%;
-    --primary-foreground: 85 46% 95%;
-    --secondary: 85 35% 70%;
-    --secondary-foreground: 201 45% 5%;
-    --muted: 85 25% 60%;
-    --muted-foreground: 201 35% 10%;
-    --accent: 35 90% 22%;
+    --primary-foreground: 40 10% 98%;
+    --secondary: 40 5% 90%;
+    --secondary-foreground: 201 45% 10%;
+    --muted: 40 5% 85%;
+    --muted-foreground: 201 15% 35%;
+    --accent: 35 90% 18%;
     --accent-foreground: 0 0% 100%;
-    --border: 85 25% 50%;
-    --input: 85 25% 50%;
-    --ring: 35 90% 22%;
-    --radius: 0.5rem;
+    --border: 201 15% 90%;
+    --input: 201 15% 90%;
+    --ring: 35 90% 18%;
+    --radius: 1.5rem;
   }
 }
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border-border transition-colors duration-200;
   }
   body {
-    @apply bg-background text-foreground font-body antialiased text-[17px] leading-relaxed;
+    @apply bg-background text-foreground font-body antialiased selection:bg-accent/10 selection:text-accent;
   }
   h1, h2, h3, h4, h5, h6 {
-    @apply font-headline text-foreground font-medium;
+    @apply font-headline text-foreground font-medium tracking-tight;
   }
-
-  /* Focus indicators voor keyboard gebruikers */
+  
+  /* Universele Focus Indicator */
   :focus-visible {
     @apply outline-none ring-2 ring-accent ring-offset-2 ring-offset-background;
   }
   
-  /* Maximale Foto Bescherming */
+  /* Beveiliging & Polish voor afbeeldingen */
   img {
+    @apply select-none pointer-events-auto;
     -webkit-user-drag: none;
-    -khtml-user-drag: none;
-    -moz-user-drag: none;
-    -o-user-drag: none;
-    user-select: none;
     -webkit-touch-callout: none;
-    pointer-events: auto;
+  }
+}
+
+@layer components {
+  .glass-panel {
+    @apply bg-white/70 backdrop-blur-xl border border-white/20 shadow-xl;
   }
   
-  .no-copy {
-    user-select: none;
-    -webkit-user-drag: none;
+  .btn-museum {
+    @apply rounded-full px-8 py-3 font-bold uppercase tracking-widest text-[11px] transition-all active:scale-95 disabled:opacity-50;
+  }
+}
+
+/* Subtiele animaties die prefers-reduced-motion respecteren */
+@media (prefers-reduced-motion: no-preference) {
+  .animate-subtle-fade {
+    animation: fadeIn 0.6s ease-out forwards;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 }
