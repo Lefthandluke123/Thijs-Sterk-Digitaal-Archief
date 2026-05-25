@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
 import { 
   collection, 
   doc, 
@@ -38,7 +38,9 @@ import {
   Search,
   Settings2,
   Hash,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Sliders,
+  Settings
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -54,6 +56,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
+import { Slider } from '@/components/ui/slider';
 import { verifyAdminPassword } from '@/lib/admin-actions';
 import { cn } from '@/lib/utils';
 import { sortArtworksByTitle, cleanString, cleanArray, sanitizeArtwork, normalizeArtwork } from '@/lib/museum-utils';
@@ -79,6 +82,9 @@ export default function AdminPage() {
     inShop: 'keep' as 'keep' | 'yes' | 'no'
   });
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Settings State
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
 
   // Dialog States
   const [isRoomDialogOpen, setIsRoomDialogOpen] = useState(false);
@@ -117,7 +123,6 @@ export default function AdminPage() {
     setIsVerifying(false);
   };
 
-  // Queries - We verwijderen orderBy(createdAt) omdat docs zonder dat veld dan worden overgeslagen
   const artworksQuery = useMemoFirebase(() => {
     if (!firestore || !isAuthorized) return null;
     return collection(firestore, 'artworks');
@@ -130,12 +135,15 @@ export default function AdminPage() {
   }, [firestore, isAuthorized]);
   const { data: rooms } = useCollection(roomsQuery);
 
+  const settingsRef = useMemoFirebase(() => {
+    if (!firestore || !isAuthorized) return null;
+    return doc(firestore, 'settings', 'site');
+  }, [firestore, isAuthorized]);
+  const { data: settings } = useDoc(settingsRef);
+
   const filteredAndSortedArtworks = useMemo(() => {
     if (!rawArtworks) return [];
-    
-    // Soft normalization toepassen op alle docs
     let list = rawArtworks.map(a => normalizeArtwork(a.id, a));
-    
     if (searchTerm) {
       const s = searchTerm.toLowerCase();
       list = list.filter((a: any) => 
@@ -144,9 +152,29 @@ export default function AdminPage() {
         (a.tags || []).some((t: string) => t.toLowerCase().includes(s))
       );
     }
-    
     return list.sort(sortArtworksByTitle);
   }, [rawArtworks, searchTerm]);
+
+  const handleSaveSettings = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!settingsRef) return;
+    setIsSavingSettings(true);
+    const formData = new FormData(e.currentTarget);
+    const updates = {
+      backgroundImageUrl: cleanString(formData.get('backgroundImageUrl')),
+      backgroundOpacity: parseInt(formData.get('backgroundOpacity') as string, 10),
+      updatedAt: serverTimestamp()
+    };
+
+    try {
+      await updateDoc(settingsRef, updates);
+      toast({ title: "Instellingen opgeslagen" });
+    } catch (e) {
+      toast({ variant: "destructive", title: "Fout", description: "Kon instellingen niet opslaan." });
+    } finally {
+      setIsSavingSettings(false);
+    }
+  };
 
   const handleBulkSave = async () => {
     if (!firestore || !selectedArtIds.length) return;
@@ -187,23 +215,13 @@ export default function AdminPage() {
 
   const handleSaveRoom = async () => {
     if (!firestore) return;
-    
     const title = cleanString(roomForm.title);
     const slug = cleanString(roomForm.slug);
-
     if (!title || !slug) {
       toast({ variant: "destructive", title: "Validatiefout", description: "Titel en Slug zijn verplicht." });
       return;
     }
-
-    const data = { 
-      ...roomForm, 
-      title, 
-      slug, 
-      description: cleanString(roomForm.description) || "",
-      updatedAt: serverTimestamp() 
-    };
-
+    const data = { ...roomForm, title, slug, description: cleanString(roomForm.description) || "", updatedAt: serverTimestamp() };
     try {
       if (editingRoom) {
         await updateDoc(doc(firestore, 'rooms', editingRoom.id), data);
@@ -213,45 +231,17 @@ export default function AdminPage() {
       setIsRoomDialogOpen(false);
       toast({ title: "Zaal opgeslagen" });
     } catch (e) {
-      toast({ variant: "destructive", title: "Fout", description: "Kon zaal niet opslaan." });
-    }
-  };
-
-  const handleDeleteRoom = async (roomId: string) => {
-    if (!firestore || !confirm("Weet je zeker?")) return;
-    setIsProcessing(true);
-    const batch = writeBatch(firestore);
-    const linkedArtworks = rawArtworks?.filter((a: any) => a.roomIds?.includes(roomId)) || [];
-    linkedArtworks.forEach((art: any) => {
-      batch.update(doc(firestore, 'artworks', art.id), {
-        roomIds: arrayRemove(roomId),
-        updatedAt: serverTimestamp()
-      });
-    });
-    batch.delete(doc(firestore, 'rooms', roomId));
-    try {
-      await batch.commit();
-      toast({ title: "Zaal verwijderd" });
-    } catch (e) {
       toast({ variant: "destructive", title: "Fout" });
-    } finally {
-      setIsProcessing(false);
     }
   };
 
   const handleSaveArtwork = async () => {
     if (!firestore) return;
-    
     if (!cleanString(artworkForm.title)) {
       toast({ variant: "destructive", title: "Naam verplicht" });
       return;
     }
-
-    const cleanData = sanitizeArtwork({
-      ...artworkForm,
-      tags: artworkForm.tags.split(',')
-    });
-
+    const cleanData = sanitizeArtwork({ ...artworkForm, tags: artworkForm.tags.split(',') });
     try {
       if (editingArtwork) {
         await updateDoc(doc(firestore, 'artworks', editingArtwork.id), cleanData);
@@ -261,7 +251,7 @@ export default function AdminPage() {
       setIsArtworkDialogOpen(false);
       toast({ title: "Opgeslagen" });
     } catch (e) {
-      toast({ variant: "destructive", title: "Fout bij opslaan" });
+      toast({ variant: "destructive", title: "Fout" });
     }
   };
 
@@ -300,7 +290,7 @@ export default function AdminPage() {
 
       <div className="max-w-7xl mx-auto space-y-12 pb-32">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-          <TabsList className="bg-muted p-1 rounded-full w-fit mx-auto h-14 border">
+          <TabsList className="bg-muted p-1 rounded-full w-fit mx-auto h-14 border shadow-sm">
             <TabsTrigger value="artworks" className="rounded-full px-8 h-12 uppercase font-black text-[11px] tracking-widest">
               <Palette className="w-4 h-4 mr-2" /> Collectie ({filteredAndSortedArtworks.length})
             </TabsTrigger>
@@ -309,6 +299,9 @@ export default function AdminPage() {
             </TabsTrigger>
             <TabsTrigger value="tags" className="rounded-full px-8 h-12 uppercase font-black text-[11px] tracking-widest">
               <Hash className="w-4 h-4 mr-2" /> Tags
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="rounded-full px-8 h-12 uppercase font-black text-[11px] tracking-widest">
+              <Settings className="w-4 h-4 mr-2" /> Visueel
             </TabsTrigger>
           </TabsList>
 
@@ -386,7 +379,7 @@ export default function AdminPage() {
                   </div>
                   <div className="flex gap-2">
                     <Button onClick={() => { setEditingRoom(room); setRoomForm(room); setIsRoomDialogOpen(true); }} variant="outline" className="flex-1 rounded-xl text-[10px] font-black">Bewerken</Button>
-                    <Button onClick={() => handleDeleteRoom(room.id)} variant="ghost" className="text-destructive"><Trash2 className="w-4 h-4" /></Button>
+                    <Button onClick={() => { if(confirm("Zaal verwijderen?")) deleteDoc(doc(firestore, 'rooms', room.id)); }} variant="ghost" className="text-destructive"><Trash2 className="w-4 h-4" /></Button>
                   </div>
                 </Card>
               ))}
@@ -405,6 +398,55 @@ export default function AdminPage() {
                   ))}
                </div>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="settings">
+             <Card className="p-12 rounded-[3rem] bg-white border-none shadow-xl max-w-2xl mx-auto">
+                <form onSubmit={handleSaveSettings} className="space-y-10">
+                   <div className="space-y-4">
+                      <div className="flex items-center gap-3">
+                         <Sliders className="w-5 h-5 text-accent" />
+                         <h2 className="font-headline text-2xl italic">Pagina Achtergrond</h2>
+                      </div>
+                      <p className="text-sm text-muted-foreground leading-relaxed">
+                         Stel een globale achtergrondafbeelding in voor het gehele museum. Deze wordt subtiel achter de zalen en pagina's getoond.
+                      </p>
+                   </div>
+
+                   <div className="space-y-6">
+                      <div className="space-y-2">
+                         <Label className="text-[10px] uppercase font-black tracking-widest opacity-40">Afbeelding URL</Label>
+                         <Input 
+                            name="backgroundImageUrl" 
+                            defaultValue={settings?.backgroundImageUrl || ""} 
+                            placeholder="https://..." 
+                            className="h-14 rounded-2xl bg-black/5 border-none"
+                         />
+                      </div>
+
+                      <div className="space-y-6">
+                         <div className="flex justify-between items-center">
+                            <Label className="text-[10px] uppercase font-black tracking-widest opacity-40">Transparantie (Opacity)</Label>
+                            <span className="text-xs font-bold text-accent">{settings?.backgroundOpacity || 0}%</span>
+                         </div>
+                         <div className="px-2">
+                            <Slider 
+                               name="backgroundOpacity"
+                               defaultValue={[settings?.backgroundOpacity || 0]} 
+                               max={100} 
+                               step={1} 
+                               className="py-4"
+                            />
+                            <input type="hidden" name="backgroundOpacity" value={settings?.backgroundOpacity || 0} />
+                         </div>
+                      </div>
+                   </div>
+
+                   <Button type="submit" disabled={isSavingSettings} className="w-full h-16 rounded-2xl bg-primary text-primary-foreground font-black uppercase tracking-widest">
+                      {isSavingSettings ? <Loader2 className="animate-spin" /> : "Visuele Instellingen Opslaan"}
+                   </Button>
+                </form>
+             </Card>
           </TabsContent>
         </Tabs>
       </div>

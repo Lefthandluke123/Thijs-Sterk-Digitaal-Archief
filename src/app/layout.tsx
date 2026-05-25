@@ -1,3 +1,4 @@
+
 import type { Metadata } from 'next';
 import './globals.css';
 import { Navbar } from '@/components/navbar';
@@ -5,6 +6,7 @@ import { Footer } from '@/components/sections/footer';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { CookieConsent } from '@/components/cookie-consent';
 import { LanguageProvider } from '@/components/language-provider';
+import { BackgroundLayer } from '@/components/background-layer';
 import { Suspense } from 'react';
 import { Loader2 } from 'lucide-react';
 
@@ -63,6 +65,7 @@ export default function RootLayout({
         <FirebaseClientProvider>
           <LanguageProvider>
             <Navbar />
+            <BackgroundLayer />
             {children}
             <CookieConsent />
             <Footer />
