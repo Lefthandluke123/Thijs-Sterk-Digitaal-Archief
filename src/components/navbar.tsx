@@ -26,6 +26,11 @@ import { MuseumGuide } from './museum-guide';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 
+/**
+ * @fileOverview Navbar: Beheert de hoofdnavigatie en de Language Pill Box.
+ * STRUCTURELE FIX: Language buttons zijn fysiek verplaatst naar een aparte box buiten de menu-scope.
+ */
+
 function NavbarContent() {
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
@@ -67,13 +72,13 @@ function NavbarContent() {
     setMobileMenuOpen(false);
   }, [pathname]);
 
-  const NavLink = ({ href, children, active, className }: { href: string; children: React.ReactNode; active: boolean; className?: string }) => (
+  const NavLink = ({ href, children, active }: { href: string; children: React.ReactNode; active: boolean }) => (
     <Link 
       href={href}
       className={cn(
-        "px-6 py-3 rounded-full text-[10px] font-black tracking-[0.2em] uppercase transition-all flex items-center gap-2",
+        "px-5 py-2.5 rounded-full text-[10px] font-black tracking-[0.2em] uppercase transition-all flex items-center gap-2",
         active 
-          ? "bg-accent text-accent-foreground shadow-xl scale-105" 
+          ? "bg-accent text-accent-foreground shadow-lg scale-105" 
           : "text-foreground/60 hover:text-accent hover:bg-accent/5"
       )}
     >
@@ -81,10 +86,14 @@ function NavbarContent() {
     </Link>
   );
 
-  const LanguagePills = ({ className }: { className?: string }) => (
+  /**
+   * De Language Pill Box: Een structureel aparte widget voor taalkeuze.
+   * Voorkomt menu-conflict en regelt eigen horizontal scroll op mobile.
+   */
+  const LanguagePillBox = ({ className }: { className?: string }) => (
     <div className={cn(
-      "flex flex-nowrap bg-black/[0.03] rounded-full p-1 border border-black/[0.03] shadow-inner overflow-x-auto no-scrollbar",
-      "-webkit-overflow-scrolling-touch", // iOS Smooth Scroll
+      "flex flex-nowrap items-center bg-black/[0.03] rounded-full p-1 border border-black/[0.03] shadow-inner no-scrollbar",
+      "overflow-x-auto -webkit-overflow-scrolling-touch",
       className
     )}>
       {(['nl', 'en', 'de', 'fr', 'es'] as const).map((lang) => (
@@ -92,9 +101,9 @@ function NavbarContent() {
           key={lang}
           onClick={() => setLanguage(lang)}
           className={cn(
-            "px-3 py-1.5 rounded-full text-[9px] font-black uppercase transition-all flex-shrink-0 min-w-[32px]",
+            "px-3 py-1.5 rounded-full text-[9px] font-black uppercase transition-all flex-shrink-0 min-w-[32px] h-7 flex items-center justify-center",
             language === lang 
-              ? "bg-white text-accent shadow-md scale-110" 
+              ? "bg-white text-accent shadow-md scale-110 z-10" 
               : "text-foreground/30 hover:text-foreground/60"
           )}
         >
@@ -109,12 +118,9 @@ function NavbarContent() {
       <nav className="fixed top-0 left-0 right-0 z-50 h-24 md:h-32 px-4 md:px-6 flex items-center justify-center pointer-events-none">
         <div className="container max-w-7xl h-16 md:h-20 glass-panel rounded-full flex flex-nowrap items-center justify-between px-4 md:px-8 pointer-events-auto border-white/60 overflow-hidden">
           
-          {/* Logo Section - Bulletproof sizing */}
+          {/* 1. Identity Section */}
           <div className="flex-shrink-0 min-w-0">
-            <Link 
-              href="/"
-              className="flex items-center gap-3 md:gap-6 group cursor-pointer"
-            >
+            <Link href="/" className="flex items-center gap-3 md:gap-6 group cursor-pointer">
               <img 
                 src={siteSettings?.logoUrl || "/logo.png"} 
                 alt="Logo" 
@@ -131,57 +137,62 @@ function NavbarContent() {
             </Link>
           </div>
           
-          {/* Desktop Navigation */}
+          {/* 2. Desktop Layout: Nav Menu + Apart Language Box */}
           {mounted && (
             <div className="hidden lg:flex items-center gap-2 flex-shrink-0">
-              <NavLink href="/" active={pathname === "/"}>{t('nav_home')}</NavLink>
-              
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className={cn(
-                    "px-6 py-3 rounded-full text-[10px] font-black tracking-[0.2em] uppercase transition-all flex items-center gap-1 outline-none",
-                    pathname.includes('/room') || pathname === '/gallery' 
-                      ? "bg-accent text-accent-foreground shadow-xl scale-105" 
-                      : "text-foreground/60 hover:bg-accent/5"
-                  )}>
-                    {t('nav_galleries')} <ChevronDown className="w-3 h-3 opacity-30" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="center" className="bg-white/95 backdrop-blur-2xl border-black/5 rounded-3xl min-w-[260px] p-3 shadow-2xl mt-4 animate-in fade-in slide-in-from-top-4 duration-500">
-                  <DropdownMenuItem asChild className="text-[10px] uppercase font-black tracking-widest focus:bg-accent focus:text-accent-foreground rounded-2xl cursor-pointer p-4 mb-2 border-b border-black/5">
-                    <Link href="/gallery" className="flex w-full items-center gap-3">
-                      <LayoutGrid className="w-4 h-4 opacity-40" /> {t('gallery_all')}
-                    </Link>
-                  </DropdownMenuItem>
-                  {rooms?.map((r: any) => (
-                    <DropdownMenuItem key={r.id} asChild className="text-[10px] uppercase font-bold tracking-wider focus:bg-accent focus:text-accent-foreground rounded-2xl cursor-pointer p-4">
-                      <Link href={`/room/${r.slug}`} className="flex w-full items-center">
-                        {r.title}
+              {/* Nav Menu Items */}
+              <div className="flex items-center gap-1 mr-4">
+                <NavLink href="/" active={pathname === "/"}>{t('nav_home')}</NavLink>
+                
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className={cn(
+                      "px-5 py-2.5 rounded-full text-[10px] font-black tracking-[0.2em] uppercase transition-all flex items-center gap-1 outline-none",
+                      pathname.includes('/room') || pathname === '/gallery' 
+                        ? "bg-accent text-accent-foreground shadow-lg scale-105" 
+                        : "text-foreground/60 hover:bg-accent/5"
+                    )}>
+                      {t('nav_galleries')} <ChevronDown className="w-3 h-3 opacity-30" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="center" className="bg-white/95 backdrop-blur-2xl border-black/5 rounded-3xl min-w-[240px] p-2 shadow-2xl mt-4 animate-in fade-in slide-in-from-top-4 duration-500">
+                    <DropdownMenuItem asChild className="text-[10px] uppercase font-black tracking-widest focus:bg-accent focus:text-accent-foreground rounded-2xl cursor-pointer p-4 mb-1 border-b border-black/5">
+                      <Link href="/gallery" className="flex w-full items-center gap-3">
+                        <LayoutGrid className="w-4 h-4 opacity-40" /> {t('gallery_all')}
                       </Link>
                     </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+                    {rooms?.map((r: any) => (
+                      <DropdownMenuItem key={r.id} asChild className="text-[10px] uppercase font-bold tracking-wider focus:bg-accent focus:text-accent-foreground rounded-2xl cursor-pointer p-4">
+                        <Link href={`/room/${r.slug}`} className="flex w-full items-center">{r.title}</Link>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
 
-              <NavLink href="/curator" active={pathname === "/curator"}>{t('nav_your_room')}</NavLink>
-              <NavLink href="/shop" active={pathname === "/shop"}><ShoppingBag className="w-4 h-4" /> {t('nav_shop')}</NavLink>
+                <NavLink href="/curator" active={pathname === "/curator"}>{t('nav_your_room')}</NavLink>
+                <NavLink href="/shop" active={pathname === "/shop"}><ShoppingBag className="w-4 h-4" /> {t('nav_shop')}</NavLink>
+              </div>
 
-              <div className="h-10 w-px bg-black/5 mx-4" />
+              {/* Functional Separator */}
+              <div className="h-8 w-px bg-black/5 mx-2" />
 
+              {/* Guide Button */}
               <button 
                 onClick={() => setGuideOpen(true)} 
-                className="px-6 py-3 rounded-full text-[10px] font-black tracking-[0.2em] uppercase transition-all flex items-center gap-2 hover:bg-accent/5 text-accent border border-accent/10"
+                className="px-5 py-2.5 rounded-full text-[10px] font-black tracking-[0.2em] uppercase transition-all flex items-center gap-2 hover:bg-accent/5 text-accent border border-accent/10 ml-2"
               >
                 <BookOpen className="w-4 h-4" /> Gids
               </button>
 
-              <LanguagePills className="ml-4" />
+              {/* Dedicated Language Pill Box */}
+              <LanguagePillBox className="ml-4" />
             </div>
           )}
 
-          {/* Mobile Interaction Bar - Optimized for 1 line */}
-          <div className="lg:hidden flex items-center gap-2 md:gap-3 flex-shrink-0 min-w-0 overflow-hidden">
-            <LanguagePills className="flex-shrink-1 min-w-0 max-w-[120px] sm:max-w-none" />
+          {/* 3. Mobile Layout: Interaction Bar (Language Box + Hamburger) */}
+          <div className="lg:hidden flex items-center gap-2 md:gap-3 flex-shrink-0 min-w-0">
+            <LanguagePillBox className="max-w-[120px] sm:max-w-none flex-shrink-1 min-w-0" />
+            
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-black/5 flex-shrink-0">
@@ -199,7 +210,7 @@ function NavbarContent() {
                      <div className="space-y-3">
                        <Link href="/" className="flex items-center gap-4 p-6 rounded-3xl bg-black/5 text-[13px] font-black uppercase tracking-widest">{t('nav_home')}</Link>
                        <Link href="/shop" className="flex items-center gap-4 p-6 rounded-3xl bg-black/5 text-[13px] font-black uppercase tracking-widest">{t('nav_shop')}</Link>
-                       <button onClick={() => setGuideOpen(true)} className="flex w-full items-center gap-4 p-6 rounded-3xl bg-accent/5 text-[13px] font-black uppercase tracking-widest text-accent border border-accent/10 shadow-sm">
+                       <button onClick={() => { setMobileMenuOpen(false); setGuideOpen(true); }} className="flex w-full items-center gap-4 p-6 rounded-3xl bg-accent/5 text-[13px] font-black uppercase tracking-widest text-accent border border-accent/10 shadow-sm">
                          <BookOpen className="w-6 h-6" /> Museum Gids
                        </button>
                      </div>
