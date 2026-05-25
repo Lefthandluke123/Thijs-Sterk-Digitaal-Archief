@@ -72,6 +72,7 @@ export default function AdminPage() {
     slug: '', 
     image: '', 
     roomSlug: '', 
+    newRoomTitle: '', // Extra veld voor on-the-fly creatie
     year: '', 
     medium: '', 
     description: '',
@@ -155,6 +156,7 @@ export default function AdminPage() {
         slug: art.slug, 
         image: art.image || art.imageUrl || '', 
         roomSlug: art.roomSlug || '', 
+        newRoomTitle: '',
         year: art.year || '', 
         medium: art.medium || '', 
         description: art.description || '',
@@ -169,6 +171,7 @@ export default function AdminPage() {
         slug: '', 
         image: '', 
         roomSlug: rooms?.[0]?.slug || '', 
+        newRoomTitle: '',
         year: '', 
         medium: 'Olieverf op doek', 
         description: '',
@@ -182,11 +185,48 @@ export default function AdminPage() {
 
   const handleSaveArtwork = async () => {
     if (!firestore) return;
+
+    let finalRoomSlug = artworkForm.roomSlug;
+
+    // Als er een nieuwe zaalnaam is ingevoerd, maak deze dan eerst aan
+    if (artworkForm.newRoomTitle.trim()) {
+      const existingRoom = rooms?.find(r => r.title.toLowerCase() === artworkForm.newRoomTitle.trim().toLowerCase());
+      if (existingRoom) {
+        finalRoomSlug = existingRoom.slug;
+      } else {
+        const newSlug = artworkForm.newRoomTitle.trim().toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
+        try {
+          await addDoc(collection(firestore, 'rooms'), {
+            title: artworkForm.newRoomTitle.trim(),
+            slug: newSlug,
+            description: `Collectie van ${artworkForm.newRoomTitle.trim()}`,
+            order: (rooms?.length || 0) + 1,
+            createdAt: serverTimestamp()
+          });
+          finalRoomSlug = newSlug;
+          toast({ title: `Nieuwe zaal '${artworkForm.newRoomTitle}' aangemaakt` });
+        } catch (err) {
+          console.error("Fout bij aanmaken zaal:", err);
+          toast({ variant: "destructive", title: "Zaal fout", description: "Kon nieuwe zaal niet aanmaken." });
+          return;
+        }
+      }
+    }
+
     const finalData = {
-      ...artworkForm,
+      title: artworkForm.title,
+      slug: artworkForm.slug,
+      image: artworkForm.image,
+      roomSlug: finalRoomSlug,
+      year: artworkForm.year,
+      medium: artworkForm.medium,
+      description: artworkForm.description,
+      featured: artworkForm.featured,
+      inShop: artworkForm.inShop,
       tags: artworkForm.tags.split(',').map(t => t.trim()).filter(Boolean),
       createdAt: editingArtwork ? editingArtwork.createdAt : serverTimestamp()
     };
+
     try {
       if (editingArtwork) {
         await updateDoc(doc(firestore, 'artworks', editingArtwork.id), finalData);
@@ -419,19 +459,32 @@ export default function AdminPage() {
                 <Input value={artworkForm.medium} onChange={e => setArtworkForm({...artworkForm, medium: e.target.value})} className="rounded-xl bg-black/5 border-none" />
               </div>
             </div>
-            <div className="space-y-2">
-              <Label className="text-[10px] uppercase font-black tracking-widest ml-2 opacity-40">Zaal</Label>
-              <Select value={artworkForm.roomSlug} onValueChange={v => setArtworkForm({...artworkForm, roomSlug: v})}>
-                <SelectTrigger className="rounded-xl bg-black/5 border-none">
-                  <SelectValue placeholder="Kies een zaal" />
-                </SelectTrigger>
-                <SelectContent>
-                  {rooms?.map((r: any) => (
-                    <SelectItem key={r.id} value={r.slug}>{r.title}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-black/5 rounded-2xl border border-black/5">
+              <div className="space-y-2">
+                <Label className="text-[10px] uppercase font-black tracking-widest ml-2 opacity-40">Bestaande Zaal</Label>
+                <Select value={artworkForm.roomSlug} onValueChange={v => setArtworkForm({...artworkForm, roomSlug: v})}>
+                  <SelectTrigger className="rounded-xl bg-white border-none shadow-sm h-12">
+                    <SelectValue placeholder="Kies een zaal" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {rooms?.map((r: any) => (
+                      <SelectItem key={r.id} value={r.slug}>{r.title}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] uppercase font-black tracking-widest ml-2 opacity-40">Of maak een nieuwe zaal</Label>
+                <Input 
+                  value={artworkForm.newRoomTitle} 
+                  onChange={e => setArtworkForm({...artworkForm, newRoomTitle: e.target.value})} 
+                  className="rounded-xl bg-white border-none shadow-sm h-12" 
+                  placeholder="Naam nieuwe zaal..." 
+                />
+              </div>
             </div>
+
             <div className="space-y-2">
               <Label className="text-[10px] uppercase font-black tracking-widest ml-2 opacity-40">Tags (komma gescheiden)</Label>
               <Input value={artworkForm.tags} onChange={e => setArtworkForm({...artworkForm, tags: e.target.value})} className="rounded-xl bg-black/5 border-none" placeholder="Olieverf, Polder, 1960" />
