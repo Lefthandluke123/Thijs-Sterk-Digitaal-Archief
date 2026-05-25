@@ -49,34 +49,36 @@ export function Hero() {
           )}
         </h1>
         
-        <div className="flex flex-col items-center justify-center gap-8">
-          <Button size="lg" className="rounded-full px-16 bg-accent hover:bg-accent/90 text-accent-foreground font-bold uppercase tracking-[0.25em] text-[13px] h-16 shadow-2xl transition-all" asChild>
+        <div className="flex flex-col items-center justify-center gap-12">
+          <Button size="lg" variant="ghost" className="rounded-full px-16 text-accent/60 hover:text-accent font-bold uppercase tracking-[0.25em] text-[11px] h-12 transition-all" asChild>
             <Link href="#about">
-              <BookOpen className="mr-3 w-6 h-6" />
+              <BookOpen className="mr-3 w-4 h-4" />
               Introductie
             </Link>
           </Button>
 
-          <div className="flex flex-col md:flex-row items-center justify-center gap-6">
-            <Button variant="outline" size="lg" className="rounded-full px-12 border-2 border-foreground/30 text-foreground hover:bg-black/5 font-bold uppercase tracking-[0.25em] text-[12px] h-14 transition-all" asChild>
+          <div className="flex flex-col items-center justify-center gap-6 w-full max-w-md">
+            <Button variant="outline" size="lg" className="w-full rounded-full px-12 border-2 border-accent/30 text-accent hover:bg-accent/5 font-bold uppercase tracking-[0.25em] text-[12px] h-16 transition-all shadow-sm" asChild>
               <Link href="/gallery">
                 <Sparkles className="mr-3 w-5 h-5" />
                 {t('hero_start_walk')}
               </Link>
             </Button>
 
-            <Button variant="outline" size="lg" className="rounded-full px-12 border-2 border-foreground/30 text-foreground hover:bg-black/5 font-bold uppercase tracking-[0.25em] text-[12px] h-14 transition-all" asChild>
-              <Link href="/curator">
-                <Layout className="mr-3 w-5 h-5" />
-                {t('hero_your_room')}
-              </Link>
-            </Button>
-          </div>
-          
-          <div className="animate-in fade-in slide-in-from-top-2 duration-1000 max-w-lg">
-             <p className="text-[11px] font-black uppercase tracking-[0.4em] text-accent opacity-60 leading-relaxed">
-               Kies uw eigen rondleiding langs het werk van Thijs op basis van thema&apos;s
-             </p>
+            <div className="w-full flex flex-col items-center gap-4">
+              <Button size="lg" className="w-full rounded-full px-12 bg-accent hover:bg-accent/90 text-accent-foreground font-bold uppercase tracking-[0.25em] text-[13px] h-20 shadow-2xl transition-all scale-105 active:scale-95" asChild>
+                <Link href="/curator">
+                  <Layout className="mr-3 w-6 h-6" />
+                  {t('hero_your_room')}
+                </Link>
+              </Button>
+              
+              <div className="animate-in fade-in slide-in-from-top-2 duration-1000">
+                 <p className="text-[11px] font-black uppercase tracking-[0.4em] text-accent opacity-60 leading-relaxed max-w-xs mx-auto">
+                   Kies uw eigen rondleiding langs het werk van Thijs op basis van thema&apos;s
+                 </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
