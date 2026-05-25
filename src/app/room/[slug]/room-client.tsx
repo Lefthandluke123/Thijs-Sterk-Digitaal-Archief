@@ -66,11 +66,11 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
   return (
     <main className="fixed inset-0 z-[100] bg-background flex flex-col items-center justify-center overflow-hidden">
       {/* Header Overlay */}
-      <div className="absolute top-0 left-0 right-0 z-[140] p-8 md:p-12 flex items-center justify-between">
-        <div className="flex items-center gap-8">
+      <div className="absolute top-0 left-0 right-0 z-[140] p-8 md:p-12 flex items-center justify-between pointer-events-none">
+        <div className="flex items-center gap-8 pointer-events-auto">
           <Link 
             href="/gallery" 
-            className="p-5 rounded-full bg-white/90 backdrop-blur-xl border border-black/5 hover:bg-accent hover:text-accent-foreground transition-all group shadow-xl pointer-events-auto"
+            className="p-5 rounded-full bg-white/90 backdrop-blur-xl border border-black/5 hover:bg-accent hover:text-accent-foreground transition-all group shadow-xl"
           >
             <ArrowLeft className="w-6 h-6 group-hover:-translate-x-1 transition-transform" />
           </Link>
@@ -96,18 +96,18 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
       {/* Navigation Paddles */}
       <button 
         onClick={handlePrev} 
-        className="absolute left-8 top-1/2 -translate-y-1/2 z-[130] p-8 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 text-foreground hover:bg-accent hover:text-accent-foreground transition-all active:scale-90 shadow-2xl group pointer-events-auto"
+        className="absolute left-8 top-1/2 -translate-y-1/2 z-[130] p-8 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 text-foreground hover:bg-accent hover:text-accent-foreground transition-all active:scale-90 shadow-2xl group"
       >
         <ChevronLeft className="w-12 h-12 opacity-40 group-hover:opacity-100" />
       </button>
       <button 
         onClick={handleNext} 
-        className="absolute right-8 top-1/2 -translate-y-1/2 z-[130] p-8 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 text-foreground hover:bg-accent hover:text-accent-foreground transition-all active:scale-90 shadow-2xl group pointer-events-auto"
+        className="absolute right-8 top-1/2 -translate-y-1/2 z-[130] p-8 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 text-foreground hover:bg-accent hover:text-accent-foreground transition-all active:scale-90 shadow-2xl group"
       >
         <ChevronRight className="w-12 h-12 opacity-40 group-hover:opacity-100" />
       </button>
 
-      {/* Viewer Container - GEEN schaal-animatie hier voor correcte OSD initialisatie */}
+      {/* Viewer Container */}
       <div className="w-[90vw] h-[85vh] flex items-center justify-center z-[110]">
         {displayImage && (
           <DeepZoomViewer 
@@ -120,8 +120,8 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
 
       {/* Info Plaque */}
       <div className={cn(
-        "absolute bottom-0 left-0 right-0 flex flex-col items-center justify-center transition-all duration-1000 ease-in-out z-[150] p-12",
-        showMetadata ? "opacity-100 translate-y-0" : "opacity-0 translate-y-24 pointer-events-none"
+        "absolute bottom-0 left-0 right-0 flex flex-col items-center justify-center transition-all duration-1000 ease-in-out z-[150] p-12 pointer-events-none",
+        showMetadata ? "opacity-100 translate-y-0" : "opacity-0 translate-y-24"
       )}>
         <div className="museum-label max-w-3xl w-full shadow-[0_50px_100px_-20px_rgba(0,0,0,0.3)] border border-black/5 pointer-events-auto">
           <h2 className="text-3xl md:text-5xl font-headline font-light italic text-foreground leading-tight text-center">{item.displayTitle || item.title}</h2>
@@ -154,9 +154,9 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
       </div>
       
       {/* Progress Line */}
-      <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-[140] flex gap-3 items-center">
+      <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-[140] flex gap-3 items-center pointer-events-none">
         <span className="text-[9px] font-black tracking-widest opacity-30">{currentIndex + 1}</span>
-        <div className="flex gap-1.5">
+        <div className="flex gap-1.5 pointer-events-auto">
           {artworks.map((_, i) => (
             <button 
               key={i} 

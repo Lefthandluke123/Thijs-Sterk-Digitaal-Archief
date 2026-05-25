@@ -93,24 +93,23 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
       className="fixed inset-0 z-[9999] bg-background flex flex-col items-center justify-center overflow-hidden animate-in fade-in duration-1000"
     >
       {/* Header Plaque */}
-      <div className="absolute top-0 left-0 right-0 z-[10000] p-8 md:p-12 flex items-center justify-between">
-        <div className="hidden md:flex flex-col border-l-2 border-accent/20 pl-8">
+      <div className="absolute top-0 left-0 right-0 z-[10000] p-8 md:p-12 flex items-center justify-between pointer-events-none">
+        <div className="hidden md:flex flex-col border-l-2 border-accent/20 pl-8 pointer-events-auto">
            <h1 className="font-headline text-3xl italic leading-tight text-foreground">{artwork.displayTitle || artwork.title}</h1>
            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-accent/60 mt-2">{artwork.year} &bull; {artwork.medium}</p>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 pointer-events-auto">
            <ShareButton 
              title={artwork.displayTitle || artwork.title}
              url={artworkUrl}
-             className="pointer-events-auto"
            />
 
            {audio && (
              <button 
               onClick={toggleAudio} 
               className={cn(
-                "p-6 rounded-full backdrop-blur-3xl border border-black/5 transition-all flex items-center gap-4 shadow-xl pointer-events-auto", 
+                "p-6 rounded-full backdrop-blur-3xl border border-black/5 transition-all flex items-center gap-4 shadow-xl", 
                 isPlaying ? "bg-accent text-accent-foreground" : "bg-white/90 text-foreground hover:bg-white"
               )}
              >
@@ -122,7 +121,7 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
            <button 
             onClick={() => setShowMetadata(!showMetadata)} 
             className={cn(
-              "p-6 rounded-full backdrop-blur-3xl border border-black/5 transition-all shadow-xl pointer-events-auto", 
+              "p-6 rounded-full backdrop-blur-3xl border border-black/5 transition-all shadow-xl", 
               showMetadata ? "bg-accent text-accent-foreground" : "bg-white/90 text-foreground hover:bg-white"
             )}
            >
@@ -131,7 +130,7 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
 
            <button 
             onClick={onClose} 
-            className="p-6 bg-white/90 backdrop-blur-3xl rounded-full text-foreground hover:bg-destructive hover:text-white transition-all border border-black/5 shadow-xl pointer-events-auto"
+            className="p-6 bg-white/90 backdrop-blur-3xl rounded-full text-foreground hover:bg-destructive hover:text-white transition-all border border-black/5 shadow-xl"
            >
              <X className="w-6 h-6 opacity-60" />
            </button>
@@ -139,44 +138,40 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
       </div>
 
       {/* Main Viewer Area */}
-      <div className="w-full h-full flex items-center justify-center p-8 md:p-24 z-[9999]">
+      <div className="w-[95vw] h-[85vh] flex items-center justify-center z-[9999]">
         {displayImage && (
-          <div className="w-full h-full max-w-[95vw] max-h-[85vh]">
-            <DeepZoomViewer 
-              key={artwork.id} // Forceert zoom-reset bij wisselen van werk
-              imageUrl={displayImage} 
-              brightness={artwork.brightness || 1}
-            />
-          </div>
+          <DeepZoomViewer 
+            key={artwork.id} // Forceert zoom-reset bij wisselen van werk
+            imageUrl={displayImage} 
+            brightness={artwork.brightness || 1}
+          />
         )}
       </div>
 
       {/* Navigation Arrows */}
-      <div className="absolute inset-x-12 top-1/2 -translate-y-1/2 flex justify-between px-8 z-[10000] pointer-events-none">
-        <button 
-          onClick={(e) => { e.stopPropagation(); if(onPrev) onPrev(); }} 
-          className={cn(
-            "p-10 rounded-full bg-white/20 backdrop-blur-3xl hover:bg-accent hover:text-accent-foreground transition-all border border-white/40 shadow-2xl active:scale-90 group pointer-events-auto",
-            !onPrev && "opacity-0 pointer-events-none"
-          )}
-        >
-          <ChevronLeft className="w-12 h-12 opacity-40 group-hover:opacity-100" />
-        </button>
-        <button 
-          onClick={(e) => { e.stopPropagation(); if(onNext) onNext(); }} 
-          className={cn(
-            "p-10 rounded-full bg-white/20 backdrop-blur-3xl hover:bg-accent hover:text-accent-foreground transition-all border border-white/40 shadow-2xl active:scale-90 group pointer-events-auto",
-            !onNext && "opacity-0 pointer-events-none"
-          )}
-        >
-          <ChevronRight className="w-12 h-12 opacity-40 group-hover:opacity-100" />
-        </button>
-      </div>
+      <button 
+        onClick={(e) => { e.stopPropagation(); if(onPrev) onPrev(); }} 
+        className={cn(
+          "absolute left-12 top-1/2 -translate-y-1/2 z-[10000] p-10 rounded-full bg-white/20 backdrop-blur-3xl hover:bg-accent hover:text-accent-foreground transition-all border border-white/40 shadow-2xl active:scale-90 group",
+          !onPrev && "opacity-0 pointer-events-none"
+        )}
+      >
+        <ChevronLeft className="w-12 h-12 opacity-40 group-hover:opacity-100" />
+      </button>
+      <button 
+        onClick={(e) => { e.stopPropagation(); if(onNext) onNext(); }} 
+        className={cn(
+          "absolute right-12 top-1/2 -translate-y-1/2 z-[10000] p-10 rounded-full bg-white/20 backdrop-blur-3xl hover:bg-accent hover:text-accent-foreground transition-all border border-white/40 shadow-2xl active:scale-90 group",
+          !onNext && "opacity-0 pointer-events-none"
+        )}
+      >
+        <ChevronRight className="w-12 h-12 opacity-40 group-hover:opacity-100" />
+      </button>
 
       {/* Info Overlay */}
       <div className={cn(
-        "absolute bottom-0 left-0 right-0 flex flex-col items-center justify-center transition-all duration-1000 ease-in-out z-[10010] p-16", 
-        showMetadata ? "opacity-100 translate-y-0" : "opacity-0 translate-y-32 pointer-events-none"
+        "absolute bottom-0 left-0 right-0 flex flex-col items-center justify-center transition-all duration-1000 ease-in-out z-[10010] p-16 pointer-events-none", 
+        showMetadata ? "opacity-100 translate-y-0" : "opacity-0 translate-y-32"
       )}>
         <div className="museum-label max-w-4xl w-full text-center pointer-events-auto shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)]">
           <h2 className="text-4xl md:text-6xl font-headline font-light italic text-foreground leading-tight">{artwork.displayTitle || artwork.title}</h2>
