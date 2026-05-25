@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, limit, orderBy } from 'firebase/firestore';
 import { ArtworkViewer } from '@/components/artwork-viewer';
@@ -9,7 +9,7 @@ import Link from 'next/link';
 
 /**
  * @fileOverview De kennismakings-galerij op de homepage.
- * Gebruikt mounted-guard om hydration errors te voorkomen bij Firebase data.
+ * Toont nu een diverse dwarsdoorsnede: Olieverf, Aquarel, Stilleven en Polder.
  */
 export function IntroductionGallery() {
   const [mounted, setMounted] = useState(false);
@@ -20,21 +20,46 @@ export function IntroductionGallery() {
     setMounted(true);
   }, []);
 
+  // Haal een grotere pool op om uit te kunnen selecteren
   const artworksQuery = useMemoFirebase(() => {
     if (!firestore || !mounted) return null;
-    return query(collection(firestore, 'artworks'), limit(20), orderBy('createdAt', 'desc'));
+    return query(collection(firestore, 'artworks'), limit(100), orderBy('createdAt', 'desc'));
   }, [firestore, mounted]);
 
-  const { data: artworks, loading } = useCollection(artworksQuery);
+  const { data: allArtworks, loading } = useCollection(artworksQuery);
+
+  // Filter de collectie op de gevraagde categorieën
+  const curatedArtworks = useMemo(() => {
+    if (!allArtworks) return [];
+    
+    const findByTag = (tagNames: string[]) => 
+      allArtworks.find(a => (a as any).tags?.some((t: string) => tagNames.includes(t)));
+
+    const olieverf = findByTag(["Olieverf"]);
+    const aquarel = findByTag(["Aquarel"]);
+    const stilleven = findByTag(["Stillevens", "Stilleven"]);
+    const polder = findByTag(["Polder", "Hargen", "Groet"]); // Polder tags
+
+    const selection = [olieverf, aquarel, stilleven, polder].filter(Boolean);
+
+    // Voorkom dubbele ID's als een werk meerdere tags heeft
+    const uniqueSelection = Array.from(new Set(selection.map(a => a.id)))
+      .map(id => selection.find(a => a.id === id));
+
+    // Fallback: als de filters niets opleveren, toon dan de laatste 4 werken
+    if (uniqueSelection.length === 0) return allArtworks.slice(0, 4);
+    
+    return uniqueSelection;
+  }, [allArtworks]);
 
   const navigateArtwork = useCallback((direction: 'next' | 'prev') => {
-    if (!selectedArtwork || !artworks) return;
-    const currentIndex = artworks.findIndex((a: any) => a.id === selectedArtwork.id);
+    if (!selectedArtwork || !curatedArtworks) return;
+    const currentIndex = curatedArtworks.findIndex((a: any) => a.id === selectedArtwork.id);
     const nextIndex = direction === 'next' 
-      ? (currentIndex + 1) % artworks.length 
-      : (currentIndex - 1 + artworks.length) % artworks.length;
-    setSelectedArtwork(artworks[nextIndex]);
-  }, [selectedArtwork, artworks]);
+      ? (currentIndex + 1) % curatedArtworks.length 
+      : (currentIndex - 1 + curatedArtworks.length) % curatedArtworks.length;
+    setSelectedArtwork(curatedArtworks[nextIndex]);
+  }, [selectedArtwork, curatedArtworks]);
 
   return (
     <section className="py-24 bg-background px-4 scroll-mt-32" id="kennismaking">
@@ -48,7 +73,7 @@ export function IntroductionGallery() {
             Een Kennismaking
           </h2>
           <p className="text-lg text-muted-foreground font-light max-w-2xl mx-auto leading-relaxed">
-            Ontdek de diversiteit van het oeuvre. Een dwarsdoorsnede van licht, vorm en emotie.
+            Een dwarsdoorsnede van het oeuvre: van monumentale olieverf en transparante aquarellen tot verstilde stillevens en het weidse polderlandschap.
           </p>
         </div>
 
@@ -58,8 +83,8 @@ export function IntroductionGallery() {
             <p className="text-[9px] font-black uppercase tracking-widest opacity-20">Collectie wordt voorbereid...</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-10">
-            {artworks?.map((item: any) => {
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-10">
+            {curatedArtworks?.map((item: any) => {
               const displayImage = item.image || item.imageUrl;
               return (
                 <div key={item.id} className="group flex flex-col space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -86,7 +111,7 @@ export function IntroductionGallery() {
                         {item.displayTitle || item.title}
                       </h3>
                       <p className="text-[9px] font-black uppercase tracking-widest opacity-30">
-                        {item.year || 'Interactief'} &bull; {item.medium || 'Olieverf'}
+                        {item.year || 'Collectie'} &bull; {item.medium || 'Thijs Sterk'}
                       </p>
                     </div>
 
@@ -94,7 +119,7 @@ export function IntroductionGallery() {
                       href={`/gallery?room=${item.roomSlug}`}
                       className="inline-flex items-center gap-2 px-5 py-2 rounded-full border border-accent/20 text-accent text-[9px] font-black uppercase tracking-widest hover:bg-accent hover:text-accent-foreground transition-all duration-300"
                     >
-                      Meer van dit soort werken <ArrowRight className="w-2.5 h-2.5" />
+                      Meer uit deze serie <ArrowRight className="w-2.5 h-2.5" />
                     </Link>
                   </div>
                 </div>
