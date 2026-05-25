@@ -34,14 +34,9 @@ export default function BeatrijsSterkPage() {
     }
   }, [selectedArtwork]);
 
-  // Vaste Lorem Ipsum tekst om 'terugspringen' te voorkomen
-  const bioText = `Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. 
-
-Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-
-Curabitur pretium tincidunt lacus. Nulla gravida orci a odio. Nullam varius, turpis et commodo pharetra, est eros bibendum elit, nec luctus magna felis sollicitudin mauris. Integer in mauris eu nibh euismod gravida. Duis ac tellus et risus vulputate vehicula. Donec lobortis risus a elit. Etiam tempor. Ut ullamcorper, ligula eu tempor congue, eros est euismod turpis, id tincidunt sapien risus a quam. 
-
-Maecenas fermentum consequat mi. Donec fermentum. Pellentesque malesuada nulla a mi. Duis sapien sem, aliquet nec, commodo eget, consequat quis, neque. Aliquam faucibus, elit ut dictum aliquet, felis nisl adipiscing sapien, sed malesuada diam lacus eget erat. Cras mollis scelerisque nunc. Nullam arcu. Aliquam consequat.`;
+  const bioText = (language !== 'nl' && siteSettings?.[`beatrijsBio_${language}`])
+    ? siteSettings[`beatrijsBio_${language}`]
+    : siteSettings?.beatrijsBio || `Beatrijs Sterk, dochter van Thijs Sterk, beheert met zorg het omvangrijke archief van haar vader. Haar herinneringen aan het atelier in Groet vormen een onmisbare bron voor de ontsluiting van dit retrospectief.`;
   
   const images = siteSettings?.beatrijsBioImages || [];
   const hasMultipleImages = images.length > 1;
@@ -130,22 +125,22 @@ Maecenas fermentum consequat mi. Donec fermentum. Pellentesque malesuada nulla a
 
           <div className="lg:col-span-7 space-y-12">
             <div className="space-y-4">
-              <span className="text-accent font-black tracking-[0.3em] uppercase text-[10px] block">Dochter & Nalatenschap</span>
-              <h1 className="font-headline text-4xl md:text-6xl font-light leading-tight">Beatrijs <span className="italic">Sterk</span></h1>
+              <span className="text-accent font-black tracking-[0.3em] uppercase text-[10px] block text-accent/80">Dochter & Nalatenschap</span>
+              <h1 className="font-headline text-4xl md:text-6xl font-light leading-tight text-foreground">Beatrijs <span className="italic">Sterk</span></h1>
             </div>
             
-            <div className="space-y-8 text-xl text-muted-foreground leading-relaxed font-light whitespace-pre-line border-l-2 border-accent/10 pl-8">
+            <div className="space-y-8 text-2xl text-foreground leading-relaxed font-light whitespace-pre-line border-l-2 border-accent/10 pl-8">
               {renderTextWithLinks(bioText)}
             </div>
 
             <div className="pt-12 border-t border-black/5 grid grid-cols-2 gap-8">
               <div>
                 <h4 className="text-[10px] font-black uppercase tracking-widest text-accent mb-2">Missie</h4>
-                <p className="text-sm font-light leading-relaxed">Het verbinden van de persoonlijke geschiedenis met de publieke presentatie van het oeuvre.</p>
+                <p className="text-base font-light leading-relaxed text-foreground/80">Het verbinden van de persoonlijke geschiedenis met de publieke presentatie van het oeuvre.</p>
               </div>
               <div>
                 <h4 className="text-[10px] font-black uppercase tracking-widest text-accent mb-2">Focus</h4>
-                <p className="text-sm font-light leading-relaxed">De context van het landschap van Groet en Schoorl in relatie tot de kunst.</p>
+                <p className="text-base font-light leading-relaxed text-foreground/80">De context van het landschap van Groet en Schoorl in relatie tot de kunst.</p>
               </div>
             </div>
           </div>

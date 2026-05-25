@@ -5,17 +5,17 @@
 @layer base {
   :root {
     --background: 85 45% 82%;
-    --foreground: 201 45% 5%;
+    --foreground: 201 45% 2%;
     --card: 85 45% 84%;
-    --card-foreground: 201 45% 5%;
+    --card-foreground: 201 45% 2%;
     --popover: 85 45% 84%;
-    --popover-foreground: 201 45% 5%;
-    --primary: 201 45% 10%;
+    --popover-foreground: 201 45% 2%;
+    --primary: 201 45% 5%;
     --primary-foreground: 85 46% 95%;
     --secondary: 85 35% 70%;
-    --secondary-foreground: 201 45% 8%;
+    --secondary-foreground: 201 45% 5%;
     --muted: 85 25% 60%;
-    --muted-foreground: 201 35% 20%;
+    --muted-foreground: 201 35% 10%;
     --accent: 35 90% 22%;
     --accent-foreground: 0 0% 100%;
     --border: 85 25% 50%;
@@ -30,7 +30,7 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground font-body antialiased;
+    @apply bg-background text-foreground font-body antialiased text-[17px] leading-relaxed;
   }
   h1, h2, h3, h4, h5, h6 {
     @apply font-headline text-foreground font-medium;

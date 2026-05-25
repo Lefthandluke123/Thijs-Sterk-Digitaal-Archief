@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from 'react';
@@ -37,7 +36,7 @@ export default function LeoDuppenPage() {
 
   const bioText = (language !== 'nl' && siteSettings?.[`leoDuppenBio_${language}`])
     ? siteSettings[`leoDuppenBio_${language}`]
-    : siteSettings?.leoDuppenBio || `Leo Duppen is een vooraanstaand kunsthistoricus die zich diepgaand heeft beziggehouden met Thijs Sterk.`;
+    : siteSettings?.leoDuppenBio || `Leo Duppen is een vooraanstaand kunsthistoricus die zich diepgaand heeft beziggehouden met de positionering van Thijs Sterk binnen de moderne Nederlandse kunstgeschiedenis. Zijn analyses vormen de ruggengraat van de educatieve ontsluiting van dit archief.`;
   
   const images = siteSettings?.leoDuppenBioImages || [];
   const hasMultipleImages = images.length > 1;
@@ -127,22 +126,22 @@ export default function LeoDuppenPage() {
 
           <div className="lg:col-span-7 space-y-12">
             <div className="space-y-4">
-              <span className="text-accent font-black tracking-[0.3em] uppercase text-[10px] block">Kunsthistoricus & Beschouwer</span>
-              <h1 className="font-headline text-4xl md:text-6xl font-light leading-tight">Leo <span className="italic">Duppen</span></h1>
+              <span className="text-accent font-black tracking-[0.3em] uppercase text-[10px] block text-accent/80">Kunsthistoricus & Beschouwer</span>
+              <h1 className="font-headline text-4xl md:text-6xl font-light leading-tight text-foreground">Leo <span className="italic">Duppen</span></h1>
             </div>
             
-            <div className="space-y-8 text-xl text-muted-foreground leading-relaxed font-light whitespace-pre-line border-l-2 border-accent/10 pl-8">
+            <div className="space-y-8 text-2xl text-foreground leading-relaxed font-light whitespace-pre-line border-l-2 border-accent/10 pl-8">
               {renderTextWithLinks(bioText)}
             </div>
 
             <div className="pt-12 border-t border-black/5 grid grid-cols-2 gap-8">
               <div>
                 <h4 className="text-[10px] font-black uppercase tracking-widest text-accent mb-2">Expertise</h4>
-                <p className="text-sm font-light leading-relaxed">De contextuele plaatsing van het werk van Thijs Sterk binnen de Nederlandse kunstgeschiedenis.</p>
+                <p className="text-base font-light leading-relaxed text-foreground/80">De contextuele plaatsing van het werk van Thijs Sterk binnen de Nederlandse kunstgeschiedenis.</p>
               </div>
               <div>
                 <h4 className="text-[10px] font-black uppercase tracking-widest text-accent mb-2">Bijdrage</h4>
-                <p className="text-sm font-light leading-relaxed">Het verzorgen van tekstuele duiding en wetenschappelijke onderbouwing bij exposities.</p>
+                <p className="text-base font-light leading-relaxed text-foreground/80">Het verzorgen van tekstuele duiding en wetenschappelijke onderbouwing bij exposities.</p>
               </div>
             </div>
           </div>

@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from 'react';
@@ -37,7 +36,7 @@ export default function PeterBesPage() {
 
   const bioText = (language !== 'nl' && siteSettings?.[`peterBesBio_${language}`])
     ? siteSettings[`peterBesBio_${language}`]
-    : siteSettings?.peterBesBio || `Peter Bes was een leerling van Thijs Sterk. Onder de vleugels van zijn meester ontwikkelde hij een eigen vormentaal.`;
+    : siteSettings?.peterBesBio || `Peter Bes was een leerling van Thijs Sterk. Onder de vleugels van zijn meester ontwikkelde hij een eigen vormentaal die diep geworteld is in de Noord-Hollandse traditie. Zijn verhalen over het leven in het atelier geven een uniek inkijkje in de werkwijze van Sterk.`;
   
   const images = siteSettings?.peterBesBioImages || [];
   const hasMultipleImages = images.length > 1;
@@ -127,22 +126,22 @@ export default function PeterBesPage() {
 
           <div className="lg:col-span-7 space-y-12">
             <div className="space-y-4">
-              <span className="text-accent font-black tracking-[0.3em] uppercase text-[10px] block">Leerling & Kunstenaar</span>
-              <h1 className="font-headline text-4xl md:text-6xl font-light leading-tight">Peter <span className="italic">Bes</span></h1>
+              <span className="text-accent font-black tracking-[0.3em] uppercase text-[10px] block text-accent/80">Leerling & Kunstenaar</span>
+              <h1 className="font-headline text-4xl md:text-6xl font-light leading-tight text-foreground">Peter <span className="italic">Bes</span></h1>
             </div>
             
-            <div className="space-y-8 text-xl text-muted-foreground leading-relaxed font-light whitespace-pre-line border-l-2 border-accent/10 pl-8">
+            <div className="space-y-8 text-2xl text-foreground leading-relaxed font-light whitespace-pre-line border-l-2 border-accent/10 pl-8">
               {renderTextWithLinks(bioText)}
             </div>
 
             <div className="pt-12 border-t border-black/5 grid grid-cols-2 gap-8">
               <div>
                 <h4 className="text-[10px] font-black uppercase tracking-widest text-accent mb-2">Mentorschap</h4>
-                <p className="text-sm font-light leading-relaxed">De invluence van Thijs Sterk op de ontwikkeling van de Noord-Hollandse schilderkunst.</p>
+                <p className="text-base font-light leading-relaxed text-foreground/80">De invloed van Thijs Sterk op de ontwikkeling van de Noord-Hollandse schilderkunst.</p>
               </div>
               <div>
                 <h4 className="text-[10px] font-black uppercase tracking-widest text-accent mb-2">Herinnering</h4>
-                <p className="text-sm font-light leading-relaxed">Verhalen uit het atelier die de mens achter de schilder Thijs Sterk belichten.</p>
+                <p className="text-base font-light leading-relaxed text-foreground/80">Verhalen uit het atelier die de mens achter de schilder Thijs Sterk belichten.</p>
               </div>
             </div>
           </div>

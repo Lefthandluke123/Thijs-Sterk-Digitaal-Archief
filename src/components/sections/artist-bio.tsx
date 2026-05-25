@@ -104,14 +104,14 @@ export function ArtistBio() {
           <div className="lg:col-span-7 order-1 lg:order-2 space-y-8">
             <div className="space-y-4">
               <span className="text-accent font-black tracking-[0.4em] uppercase text-[11px] block">De Biografie</span>
-              <h2 className="font-headline text-3xl md:text-4xl lg:text-5xl font-medium mb-6 leading-tight">
+              <h2 className="font-headline text-3xl md:text-4xl lg:text-5xl font-medium mb-6 leading-tight text-foreground">
                 {bioTitle.split(' ').map((word, i, arr) => 
                   i === arr.length - 1 ? <span key={i} className="italic text-accent">{word}</span> : word + ' '
                 )}
               </h2>
             </div>
             
-            <div className="space-y-8 text-lg text-foreground/80 leading-relaxed font-light whitespace-pre-line border-l-4 border-accent/10 pl-8">
+            <div className="space-y-8 text-xl text-foreground leading-relaxed font-light whitespace-pre-line border-l-4 border-accent/10 pl-8">
               {renderTextWithLinks(bioText)}
             </div>
             

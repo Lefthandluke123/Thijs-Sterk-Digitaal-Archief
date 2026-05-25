@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from 'react';
@@ -37,7 +36,7 @@ export default function HannekeSterkPage() {
 
   const bioText = (language !== 'nl' && siteSettings?.[`hannekeBio_${language}`])
     ? siteSettings[`hannekeBio_${language}`]
-    : siteSettings?.hannekeBio || `Als dochter van Thijs Sterk groeide Hanneke op te midden van de geur van olieverf en het strijklicht van het atelier.`;
+    : siteSettings?.hannekeBio || `Als dochter van Thijs Sterk groeide Hanneke op te midden van de geur van olieverf en het strijklicht van het atelier. Haar betrokkenheid bij het beheer en de documentatie van de monumentale werken is essentieel voor het behoud van de collectie.`;
   
   const images = siteSettings?.hannekeBioImages || [];
   const hasMultipleImages = images.length > 1;
@@ -127,22 +126,22 @@ export default function HannekeSterkPage() {
 
           <div className="lg:col-span-7 space-y-12">
             <div className="space-y-4">
-              <span className="text-accent font-black tracking-[0.3em] uppercase text-[10px] block">Dochter & Nalatenschap</span>
-              <h1 className="font-headline text-4xl md:text-6xl font-light leading-tight">Hanneke <span className="italic">Sterk</span></h1>
+              <span className="text-accent font-black tracking-[0.3em] uppercase text-[10px] block text-accent/80">Dochter & Nalatenschap</span>
+              <h1 className="font-headline text-4xl md:text-6xl font-light leading-tight text-foreground">Hanneke <span className="italic">Sterk</span></h1>
             </div>
             
-            <div className="space-y-8 text-xl text-muted-foreground leading-relaxed font-light whitespace-pre-line border-l-2 border-accent/10 pl-8">
+            <div className="space-y-8 text-2xl text-foreground leading-relaxed font-light whitespace-pre-line border-l-2 border-accent/10 pl-8">
               {renderTextWithLinks(bioText)}
             </div>
 
             <div className="pt-12 border-t border-black/5 grid grid-cols-2 gap-8">
               <div>
                 <h4 className="text-[10px] font-black uppercase tracking-widest text-accent mb-2">Betrokkenheid</h4>
-                <p className="text-sm font-light leading-relaxed">Verantwoordelijk voor het archiefbeheer en de documentatie van de monumentale werken.</p>
+                <p className="text-base font-light leading-relaxed text-foreground/80">Verantwoordelijk voor het archiefbeheer en de documentatie van de monumentale werken.</p>
               </div>
               <div>
                 <h4 className="text-[10px] font-black uppercase tracking-widest text-accent mb-2">Visie</h4>
-                <p className="text-sm font-light leading-relaxed">Het behouden van de atmosferische essentie in de digitale ontsluiting van de collectie.</p>
+                <p className="text-base font-light leading-relaxed text-foreground/80">Het behouden van de atmosferische essentie in de digitale ontsluiting van de collectie.</p>
               </div>
             </div>
           </div>
