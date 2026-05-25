@@ -139,37 +139,39 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
       </div>
 
       {/* Main Viewer Area */}
-      <div className="w-[95vw] h-[85vh] flex items-center justify-center z-[9999]">
+      <div className="w-[95vw] h-[85vh] flex items-center justify-center z-[9998]">
         {displayImage && (
           <DeepZoomViewer 
-            key={artwork.id} // Forceert zoom-reset bij wisselen van werk
+            key={artwork.id} 
             imageUrl={displayImage} 
             brightness={artwork.brightness || 1}
           />
         )}
       </div>
 
-      {/* Navigation Arrows */}
-      <button 
-        onClick={(e) => { e.stopPropagation(); if(onPrev) onPrev(); }} 
-        className={cn(
-          "absolute left-12 top-1/2 -translate-y-1/2 z-[10000] p-6 rounded-full bg-white/20 backdrop-blur-3xl hover:bg-accent hover:text-accent-foreground transition-all border border-white/40 shadow-2xl active:scale-90 group pointer-events-auto",
-          !onPrev && "opacity-0 pointer-events-none"
-        )}
-        aria-label="Vorig kunstwerk"
-      >
-        <ChevronLeft className="w-8 h-8 opacity-40 group-hover:opacity-100" />
-      </button>
-      <button 
-        onClick={(e) => { e.stopPropagation(); if(onNext) onNext(); }} 
-        className={cn(
-          "absolute right-12 top-1/2 -translate-y-1/2 z-[10000] p-6 rounded-full bg-white/20 backdrop-blur-3xl hover:bg-accent hover:text-accent-foreground transition-all border border-white/40 shadow-2xl active:scale-90 group pointer-events-auto",
-          !onNext && "opacity-0 pointer-events-none"
-        )}
-        aria-label="Volgend kunstwerk"
-      >
-        <ChevronRight className="w-8 h-8 opacity-40 group-hover:opacity-100" />
-      </button>
+      {/* Navigation Arrows - Stabiele UI laag */}
+      <div className="absolute inset-x-12 top-1/2 -translate-y-1/2 z-[10000] flex justify-between pointer-events-none">
+        <button 
+          onClick={(e) => { e.stopPropagation(); if(onPrev) onPrev(); }} 
+          className={cn(
+            "p-6 rounded-full bg-white/20 backdrop-blur-3xl hover:bg-accent hover:text-accent-foreground transition-all border border-white/40 shadow-2xl active:scale-90 group pointer-events-auto",
+            !onPrev && "opacity-0 pointer-events-none"
+          )}
+          aria-label="Vorig kunstwerk"
+        >
+          <ChevronLeft className="w-8 h-8 opacity-40 group-hover:opacity-100" />
+        </button>
+        <button 
+          onClick={(e) => { e.stopPropagation(); if(onNext) onNext(); }} 
+          className={cn(
+            "p-6 rounded-full bg-white/20 backdrop-blur-3xl hover:bg-accent hover:text-accent-foreground transition-all border border-white/40 shadow-2xl active:scale-90 group pointer-events-auto",
+            !onNext && "opacity-0 pointer-events-none"
+          )}
+          aria-label="Volgend kunstwerk"
+        >
+          <ChevronRight className="w-8 h-8 opacity-40 group-hover:opacity-100" />
+        </button>
+      </div>
 
       {/* Info Overlay */}
       <div className={cn(

@@ -95,27 +95,29 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
         </button>
       </div>
 
-      {/* Navigation Paddles */}
-      <button 
-        onClick={handlePrev} 
-        className="absolute left-8 top-1/2 -translate-y-1/2 z-[130] p-5 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 text-foreground hover:bg-accent hover:text-accent-foreground transition-all active:scale-90 shadow-2xl group pointer-events-auto"
-        aria-label="Vorig kunstwerk"
-      >
-        <ChevronLeft className="w-8 h-8 opacity-40 group-hover:opacity-100" />
-      </button>
-      <button 
-        onClick={handleNext} 
-        className="absolute right-8 top-1/2 -translate-y-1/2 z-[130] p-5 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 text-foreground hover:bg-accent hover:text-accent-foreground transition-all active:scale-90 shadow-2xl group pointer-events-auto"
-        aria-label="Volgend kunstwerk"
-      >
-        <ChevronRight className="w-8 h-8 opacity-40 group-hover:opacity-100" />
-      </button>
+      {/* Navigation Paddles - Stabiele UI laag */}
+      <div className="absolute inset-x-8 top-1/2 -translate-y-1/2 z-[130] flex justify-between pointer-events-none">
+        <button 
+          onClick={handlePrev} 
+          className="p-6 rounded-full bg-white/20 backdrop-blur-xl border border-white/40 text-foreground hover:bg-accent hover:text-accent-foreground transition-all active:scale-90 shadow-2xl group pointer-events-auto"
+          aria-label="Vorig kunstwerk"
+        >
+          <ChevronLeft className="w-8 h-8 opacity-40 group-hover:opacity-100" />
+        </button>
+        <button 
+          onClick={handleNext} 
+          className="p-6 rounded-full bg-white/20 backdrop-blur-xl border border-white/40 text-foreground hover:bg-accent hover:text-accent-foreground transition-all active:scale-90 shadow-2xl group pointer-events-auto"
+          aria-label="Volgend kunstwerk"
+        >
+          <ChevronRight className="w-8 h-8 opacity-40 group-hover:opacity-100" />
+        </button>
+      </div>
 
       {/* Viewer Container */}
-      <div className="w-[90vw] h-[85vh] flex items-center justify-center z-[110]">
+      <div className="w-[95vw] h-[85vh] flex items-center justify-center z-[110]">
         {displayImage && (
           <DeepZoomViewer 
-            key={`${item.id}-${currentIndex}`} // Forceert volledige re-mount en zoom-reset
+            key={`${item.id}-${currentIndex}`} 
             imageUrl={displayImage} 
             brightness={item.brightness || 1}
           />

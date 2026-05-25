@@ -11,7 +11,7 @@ interface DeepZoomViewerProps {
 
 /**
  * @fileOverview DeepZoomViewer component met OpenSeadragon.
- * Geoptimaliseerd voor een 'contain' startpositie met een vergrootglas cursor.
+ * Geoptimaliseerd voor een 'contain' startpositie met een geforceerde vergrootglas cursor.
  */
 export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({ 
   imageUrl, 
@@ -29,7 +29,6 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
         const OSDModule = await import('openseadragon');
         const OpenSeadragon = (OSDModule as any).default || OSDModule;
 
-        // Vernietig vorige instantie volledig om state-leakage te voorkomen
         if (viewerRef.current) {
           viewerRef.current.destroy();
           viewerRef.current = null;
@@ -65,7 +64,7 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
           maxZoomLevel: 10,
           autoResize: true,
           preserveViewport: false,
-          homeFillsViewer: false, // Forceert 'contain' mode ipv 'cover'
+          homeFillsViewer: false, // Forceert 'contain' mode
           centerImageOnce: true
         });
 
@@ -104,8 +103,7 @@ export const DeepZoomViewer: React.FC<DeepZoomViewerProps> = ({
         className="w-full h-full outline-none cursor-zoom-in [&_canvas]:!cursor-zoom-in" 
         style={{ 
           filter: `brightness(${brightness})`,
-          display: 'block',
-          transform: 'none'
+          display: 'block'
         }} 
       />
     </div>
