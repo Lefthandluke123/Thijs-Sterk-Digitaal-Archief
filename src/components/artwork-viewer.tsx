@@ -1,12 +1,14 @@
+
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
-import { X, ChevronLeft, ChevronRight, Info, Mic, Pause } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Info, Mic, Pause, ImageIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/components/language-provider';
 import { ShareButton } from './share-button';
 import { usePathname } from 'next/navigation';
+import { cleanString } from '@/lib/museum-utils';
 
 const DeepZoomViewer = dynamic(() => import('./deep-zoom-viewer').then(mod => mod.DeepZoomViewer), { 
   ssr: false,
@@ -24,10 +26,6 @@ interface ArtworkViewerProps {
   onNext?: () => void;
 }
 
-/**
- * @fileOverview ArtworkViewer: De modale full-screen viewer voor details.
- * STABILIZED UI VERSION - Behoudt compacte knoppen en correcte lagen.
- */
 export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewerProps) {
   const [showMetadata, setShowMetadata] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -80,7 +78,7 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
     return null;
   }
 
-  const displayImage = artwork.image || artwork.imageUrl || artwork.url;
+  const displayImage = cleanString(artwork.image || artwork.imageUrl || artwork.url);
 
   return (
     <div 
@@ -88,20 +86,23 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
       aria-modal="true"
       className="fixed inset-0 z-[9999] bg-background flex flex-col items-center justify-center overflow-hidden animate-in fade-in duration-700"
     >
-      {/* 1. Viewer Background Layer */}
       <div className="absolute inset-0 z-[10010] flex items-center justify-center p-12 md:p-24">
-        <div className="w-full h-full max-w-[95vw] max-h-[85vh]">
-          {displayImage && (
+        <div className="w-full h-full max-w-[95vw] max-h-[85vh] flex items-center justify-center">
+          {displayImage ? (
             <DeepZoomViewer 
               key={artwork.id} 
               imageUrl={displayImage} 
               brightness={artwork.brightness || 1}
             />
+          ) : (
+            <div className="flex flex-col items-center gap-4 opacity-20">
+               <ImageIcon className="w-20 h-20" />
+               <p className="text-xs font-black uppercase tracking-widest">Geen afbeelding beschikbaar</p>
+            </div>
           )}
         </div>
       </div>
 
-      {/* 2. UI Nav Layer - Stabiele, compacte navigatie */}
       <div className="absolute inset-0 z-[10030] pointer-events-none flex items-center justify-between px-4 md:px-8">
         <button 
           onClick={(e) => { e.stopPropagation(); onPrev?.(); }}
@@ -109,7 +110,6 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
             "pointer-events-auto p-3 md:p-4 rounded-full bg-white/10 backdrop-blur-md border border-white/20 shadow-lg hover:bg-accent/80 hover:text-white transition-all group active:scale-90",
             !onPrev && "opacity-0 pointer-events-none"
           )}
-          aria-label="Vorig kunstwerk"
         >
           <ChevronLeft className="w-6 h-6 md:w-8 h-8 opacity-40 group-hover:opacity-100" />
         </button>
@@ -119,13 +119,11 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
             "pointer-events-auto p-3 md:p-4 rounded-full bg-white/10 backdrop-blur-md border border-white/20 shadow-lg hover:bg-accent/80 hover:text-white transition-all group active:scale-90",
             !onNext && "opacity-0 pointer-events-none"
           )}
-          aria-label="Volgend kunstwerk"
         >
           <ChevronRight className="w-6 h-6 md:w-8 h-8 opacity-40 group-hover:opacity-100" />
         </button>
       </div>
 
-      {/* 3. Header Controls Layer */}
       <div className="absolute top-0 left-0 right-0 z-[10040] p-6 md:p-10 flex items-center justify-between pointer-events-none">
         <div className="hidden md:flex flex-col border-l-2 border-accent/20 pl-6 pointer-events-auto">
            <h1 className="font-headline text-2xl italic text-foreground">{artwork.displayTitle || artwork.title}</h1>
@@ -136,46 +134,27 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
            <ShareButton title={artwork.displayTitle || artwork.title} url={artworkUrl} />
            
            {audio && (
-             <button 
-              onClick={toggleAudio} 
-              className={cn(
-                "p-4 rounded-full backdrop-blur-3xl border border-black/5 transition-all flex items-center gap-4 shadow-xl", 
-                isPlaying ? "bg-accent text-accent-foreground" : "bg-white/90 text-foreground hover:bg-white"
-              )}
-             >
+             <button onClick={toggleAudio} className={cn("p-4 rounded-full backdrop-blur-3xl border border-black/5 transition-all flex items-center gap-4 shadow-xl", isPlaying ? "bg-accent text-accent-foreground" : "bg-white/90 text-foreground hover:bg-white")}>
                 {isPlaying ? <Pause className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
              </button>
            )}
 
-           <button 
-            onClick={() => setShowMetadata(!showMetadata)} 
-            className={cn(
-              "p-4 rounded-full backdrop-blur-3xl border border-black/5 transition-all shadow-xl", 
-              showMetadata ? "bg-accent text-accent-foreground" : "bg-white/90 text-foreground hover:bg-white"
-            )}
-           >
+           <button onClick={() => setShowMetadata(!showMetadata)} className={cn("p-4 rounded-full backdrop-blur-3xl border border-black/5 transition-all shadow-xl", showMetadata ? "bg-accent text-accent-foreground" : "bg-white/90 text-foreground hover:bg-white")}>
              <Info className="w-5 h-5" />
            </button>
 
-           <button 
-            onClick={onClose} 
-            className="p-4 bg-white/90 backdrop-blur-3xl rounded-full text-foreground hover:bg-destructive hover:text-white transition-all border border-black/5 shadow-xl"
-           >
+           <button onClick={onClose} className="p-4 bg-white/90 backdrop-blur-3xl rounded-full text-foreground hover:bg-destructive hover:text-white transition-all border border-black/5 shadow-xl">
              <X className="w-5 h-5" />
            </button>
         </div>
       </div>
 
-      {/* 4. Metadata Overlay Layer - COMPACT VERSION */}
-      <div className={cn(
-        "absolute bottom-0 left-0 right-0 z-[10050] flex flex-col items-center p-8 md:p-16 pointer-events-none transition-all duration-1000 ease-in-out", 
-        showMetadata ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
-      )}>
+      <div className={cn("absolute bottom-0 left-0 right-0 z-[10050] flex flex-col items-center p-8 md:p-16 pointer-events-none transition-all duration-1000 ease-in-out", showMetadata ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12")}>
         <div className="museum-label max-w-md w-full text-center pointer-events-auto shadow-2xl bg-white/95 p-5 rounded-3xl space-y-4">
           <h2 className="text-lg md:text-xl font-headline font-light italic text-foreground leading-tight">{artwork.displayTitle || artwork.title}</h2>
           <div className="h-px w-12 bg-accent/20 mx-auto" />
           <p className="text-sm md:text-base text-muted-foreground font-light leading-relaxed max-w-2xl mx-auto italic">
-            {artwork.description || 'Ontdek de essentie van licht en ruimte in dit meesterlijke werk van Thijs Sterk.'}
+            {artwork.description || 'Ontdek de essentie van licht en ruimte.'}
           </p>
         </div>
       </div>
