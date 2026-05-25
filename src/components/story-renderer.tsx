@@ -2,68 +2,102 @@
 "use client";
 
 import React from 'react';
-import { StoryBlock } from './story-editor';
+import { StoryNode } from './story-editor';
 import { cn } from '@/lib/utils';
 
 interface StoryRendererProps {
-  blocks: StoryBlock[];
+  nodes?: StoryNode[];
+  blocks?: any[]; // Legacy
 }
 
-export function StoryRenderer({ blocks }: StoryRendererProps) {
-  if (!blocks || blocks.length === 0) return null;
+/**
+ * @fileOverview StoryRenderer: Vertaalt de DTP nodes naar een responsieve website layout.
+ */
+export function StoryRenderer({ nodes = [], blocks }: StoryRendererProps) {
+  // Legacy support fallback
+  if ((!nodes || nodes.length === 0) && blocks && blocks.length > 0) {
+    return (
+      <div className="space-y-12">
+        {blocks.map((block: any, i: number) => (
+          <div key={i} className="prose-text">
+            {block.type === 'heading' && <h2 className="font-headline text-4xl italic mb-6">{block.content}</h2>}
+            {block.type === 'text' && <p className="leading-relaxed">{block.content}</p>}
+            {block.type === 'image' && <img src={block.imageUrl} className="w-full rounded-2xl shadow-xl" />}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (!nodes || nodes.length === 0) return null;
+
+  // Bereken de totale hoogte op basis van de verste node
+  const totalHeight = Math.max(...nodes.map(n => n.y + (n.h || 200))) + 100;
 
   return (
-    <div className="w-full space-y-12">
-      {blocks.map((block) => (
+    <div 
+      className="relative w-full mx-auto" 
+      style={{ height: `${totalHeight}px` }}
+    >
+      {nodes.map((node) => (
         <div 
-          key={block.id} 
+          key={node.id} 
           className={cn(
-            "relative w-full clear-both",
-            block.layout === 'full' ? "w-full" : "w-full md:w-auto"
+            "absolute transition-opacity duration-1000 animate-in fade-in",
+            node.type === 'box' ? "" : ""
           )}
+          style={{ 
+            left: `${node.x}%`,
+            top: `${node.y}px`,
+            width: `${node.w}%`,
+            height: node.h === 0 ? 'auto' : `${node.h}px`,
+            zIndex: node.styles?.zIndex || 10,
+            backgroundColor: node.type === 'box' ? node.styles.backgroundColor : 'transparent',
+            borderRadius: node.styles.borderRadius || '0px',
+            padding: node.styles.padding || '0px',
+            opacity: (node.styles.opacity ?? 100) / 100,
+            overflow: 'hidden'
+          }}
         >
-          {block.type === 'heading' && (
+          {node.type === 'heading' && (
             <h2 
-              className="font-headline italic leading-tight mb-8"
+              className="font-headline italic leading-tight"
               style={{ 
-                fontSize: block.style?.fontSize || '2.5rem',
-                textAlign: block.style?.textAlign as any || 'left'
+                fontSize: node.styles?.fontSize || '2.5rem',
+                textAlign: node.styles?.textAlign as any || 'left',
+                color: node.styles?.color
               }}
             >
-              {block.content}
+              {node.content}
             </h2>
           )}
 
-          {block.type === 'image' && (
-            <div 
-              className={cn(
-                "mb-8",
-                block.layout === 'left' && "md:float-left md:mr-10 md:mb-10 md:max-w-[40%] rounded-2xl overflow-hidden shadow-2xl",
-                block.layout === 'right' && "md:float-right md:ml-10 md:mb-10 md:max-w-[40%] rounded-2xl overflow-hidden shadow-2xl",
-                block.layout === 'full' && "w-full rounded-3xl overflow-hidden shadow-2xl"
-              )}
-            >
-              <img src={block.imageUrl} className="w-full h-auto" alt="Story image" />
-            </div>
+          {node.type === 'image' && node.imageUrl && (
+            <img 
+              src={node.imageUrl} 
+              className="w-full h-full object-cover shadow-2xl" 
+              alt="Story design element" 
+            />
           )}
 
-          {block.type === 'text' && (
+          {node.type === 'text' && (
             <div 
               className={cn(
                 "leading-relaxed font-light whitespace-pre-line",
-                block.style?.fontFamily === 'serif' ? "font-headline italic" : "font-sans"
+                node.styles?.fontFamily === 'serif' ? "font-headline italic" : "font-sans"
               )}
               style={{ 
-                fontSize: block.style?.fontSize || '1.25rem',
-                textAlign: block.style?.textAlign as any || 'left'
+                fontSize: node.styles?.fontSize || '1.25rem',
+                textAlign: node.styles?.textAlign as any || 'left',
+                color: node.styles?.color
               }}
             >
-              {block.content}
+              {node.content}
             </div>
           )}
         </div>
       ))}
-      <div className="clear-both" />
     </div>
   );
 }
+

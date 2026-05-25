@@ -3,8 +3,8 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
-import { doc, updateDoc, collection, setDoc, serverTimestamp } from 'firebase/firestore';
+import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc, updateDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -18,14 +18,13 @@ import {
   Loader2, 
   Save,
   Type,
-  Layout,
   LayoutTemplate,
-  Plus
+  Monitor
 } from 'lucide-react';
 import { translateMuseumText } from '@/ai/flows/translate-flow';
 import { verifyAdminPassword } from '@/lib/admin-actions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { StoryEditor, StoryBlock } from '@/components/story-editor';
+import { StoryEditor, StoryNode } from '@/components/story-editor';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const LANGUAGES = [
@@ -65,9 +64,9 @@ export default function TranslateStationPage() {
   const [translatingField, setTranslatingField] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('translations');
 
-  // Story state
+  // DTP Story state
   const [selectedStoryId, setSelectedStoryId] = useState<string>('beatrijs');
-  const [storyBlocks, setStoryBlocks] = useState<StoryBlock[]>([]);
+  const [storyNodes, setStoryNodes] = useState<StoryNode[]>([]);
 
   const [formData, setFormData] = useState<Record<string, string>>({});
 
@@ -93,10 +92,10 @@ export default function TranslateStationPage() {
   }, [settings]);
 
   useEffect(() => {
-    if (storyData?.blocks) {
-      setStoryBlocks(storyData.blocks);
+    if (storyData?.nodes) {
+      setStoryNodes(storyData.nodes);
     } else {
-      setStoryBlocks([]);
+      setStoryNodes([]);
     }
   }, [storyData]);
 
@@ -144,7 +143,7 @@ export default function TranslateStationPage() {
       if (activeTab === 'translations') {
         await updateDoc(settingsRef, formData);
       } else if (activeTab === 'stories' && storyRef) {
-        await setDoc(storyRef, { blocks: storyBlocks, updatedAt: serverTimestamp() }, { merge: true });
+        await setDoc(storyRef, { nodes: storyNodes, updatedAt: serverTimestamp() }, { merge: true });
       }
       toast({ title: "Wijzigingen opgeslagen" });
     } catch (error) {
@@ -158,7 +157,7 @@ export default function TranslateStationPage() {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
         <Card className="max-w-md w-full p-12 rounded-[2.5rem] shadow-2xl space-y-8">
-           <h1 className="font-headline text-3xl text-center italic">Translation <span className="text-accent">Hub</span></h1>
+           <h1 className="font-headline text-3xl text-center italic">Content <span className="text-accent">Hub</span></h1>
            <form onSubmit={handleLogin} className="space-y-6">
               <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="h-14 rounded-2xl text-center" placeholder="Wachtwoord" />
               <Button type="submit" disabled={isVerifying} className="w-full h-14 rounded-2xl bg-primary">Ontgrendelen</Button>
@@ -179,7 +178,7 @@ export default function TranslateStationPage() {
           </Link>
           <div className="flex flex-col">
             <h1 className="font-headline text-2xl italic leading-none">Content <span className="text-accent">&</span> Layout</h1>
-            <span className="text-[9px] font-black uppercase tracking-[0.3em] opacity-40 mt-1">DTP Architecture Active</span>
+            <span className="text-[9px] font-black uppercase tracking-[0.3em] opacity-40 mt-1">DTP Designer Mode Active</span>
           </div>
         </div>
         <Button onClick={handleSave} disabled={isSaving} className="h-14 px-10 rounded-2xl bg-primary shadow-xl hover:scale-[1.02] transition-all">
@@ -188,14 +187,14 @@ export default function TranslateStationPage() {
         </Button>
       </header>
 
-      <main className="max-w-7xl mx-auto px-8 pb-32">
+      <main className="max-w-[1600px] mx-auto px-8 pb-32">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-12">
           <TabsList className="bg-white p-1.5 rounded-full w-fit mx-auto h-16 shadow-md border">
             <TabsTrigger value="translations" className="rounded-full px-10 h-13 uppercase font-black text-[10px] tracking-widest">
               <Type className="w-4 h-4 mr-2" /> Teksten & Vertalingen
             </TabsTrigger>
             <TabsTrigger value="stories" className="rounded-full px-10 h-13 uppercase font-black text-[10px] tracking-widest">
-              <LayoutTemplate className="w-4 h-4 mr-2" /> Story Designer
+              <LayoutTemplate className="w-4 h-4 mr-2" /> Story Designer (DTP)
             </TabsTrigger>
           </TabsList>
 
@@ -216,13 +215,13 @@ export default function TranslateStationPage() {
                           className="rounded-full px-6 bg-accent/5 hover:bg-accent text-accent hover:text-white transition-all"
                         >
                           {translatingField === field.id ? <Loader2 className="animate-spin mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />}
-                          AI Auto-Vertaal (EU)
+                          AI Auto-Vertaal
                         </Button>
                       </div>
 
                       <div className="grid gap-10">
                         <div className="space-y-2">
-                          <span className="text-[9px] font-black bg-primary text-primary-foreground px-3 py-1 rounded-full">BRON: NEDERLANDS</span>
+                          <span className="text-[9px] font-black bg-primary text-primary-foreground px-3 py-1 rounded-full">BRON</span>
                           {field.type === 'textarea' ? (
                             <Textarea 
                               value={formData[field.id] || ''} 
@@ -269,15 +268,15 @@ export default function TranslateStationPage() {
           </TabsContent>
 
           <TabsContent value="stories" className="space-y-12">
-             <div className="max-w-4xl mx-auto space-y-12">
+             <div className="space-y-12">
                 <Card className="p-8 rounded-[3rem] bg-white border-none shadow-2xl flex flex-col md:flex-row items-center justify-between gap-6">
                    <div className="flex items-center gap-6">
                       <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center text-accent">
                          <LayoutTemplate className="w-8 h-8" />
                       </div>
                       <div>
-                         <h3 className="font-headline text-2xl italic leading-tight">Story Designer</h3>
-                         <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Selecteer de pagina die u wilt ontwerpen</p>
+                         <h3 className="font-headline text-2xl italic leading-tight">Stramien Designer</h3>
+                         <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Positioneer uw elementen vrij op het canvas (Drag & Drop)</p>
                       </div>
                    </div>
                    <div className="min-w-[280px]">
@@ -296,16 +295,19 @@ export default function TranslateStationPage() {
 
                 <div className="space-y-8">
                    <div className="flex items-center justify-between px-6">
-                      <h2 className="font-headline text-3xl italic opacity-30">Layout Designer</h2>
-                      <div className="flex gap-2">
-                         <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                         <span className="text-[9px] font-black uppercase tracking-widest">Live Preview</span>
+                      <div className="flex items-center gap-3">
+                         <Monitor className="w-5 h-5 opacity-30" />
+                         <h2 className="font-headline text-3xl italic opacity-30">WYSIWYG Layout Designer</h2>
+                      </div>
+                      <div className="flex gap-2 items-center">
+                         <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                         <span className="text-[9px] font-black uppercase tracking-widest opacity-60">Canvas Active (Grid: 12 col)</span>
                       </div>
                    </div>
                    
                    <StoryEditor 
-                    blocks={storyBlocks} 
-                    onChange={setStoryBlocks} 
+                    nodes={storyNodes} 
+                    onChange={(data) => setStoryNodes(data.nodes)} 
                   />
                 </div>
              </div>
@@ -315,3 +317,4 @@ export default function TranslateStationPage() {
     </div>
   );
 }
+

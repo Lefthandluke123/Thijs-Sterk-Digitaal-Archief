@@ -40,21 +40,25 @@
     },
     "StoryPage": {
       "title": "StoryPage",
-      "description": "Een dynamische pagina met rijke layout (DTP-stijl).",
+      "description": "Een dynamische pagina met absolute DTP layout.",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
         "title": { "type": "string" },
-        "blocks": { 
+        "nodes": { 
           "type": "array",
           "items": {
             "type": "object",
             "properties": {
-              "type": { "type": "string", "enum": ["text", "image", "heading"] },
+              "id": { "type": "string" },
+              "type": { "type": "string", "enum": ["text", "image", "heading", "box"] },
+              "x": { "type": "number" },
+              "y": { "type": "number" },
+              "w": { "type": "number" },
+              "h": { "type": "number" },
               "content": { "type": "string" },
               "imageUrl": { "type": "string" },
-              "layout": { "type": "string", "enum": ["full", "left", "right"] },
-              "style": { "type": "object" }
+              "styles": { "type": "object" }
             }
           }
         }
