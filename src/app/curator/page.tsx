@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useCallback } from 'react';
@@ -14,14 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-
-const TAG_CATEGORIES = {
-  "Periode": ["Vroeg werk", "45-50", "50-60", "60-70", "70-82"],
-  "Techniek": ["Olieverf", "Aquarel", "Gouache", "Litho", "Pentekening"],
-  "Monumentaal": ["Monumentaal", "Glas in lood"],
-  "Plaats": ["Groet", "Schoorl", "Hargen", "Camperduin", "Holland", "Amsterdam", "Frankrijk", "Bretagne", "Griekenland"],
-  "Onderwerp": ["Havens", "Stillevens", "Bloemen", "Dieren", "Water", "Mensen", "Polder"]
-};
+import { MUSEUM_TAGS } from '@/lib/museum-utils';
 
 export default function CuratorPage() {
   const [activeTags, setActiveTags] = useState<string[]>([]);
@@ -120,7 +114,7 @@ export default function CuratorPage() {
         </div>
 
         <div className="grid gap-8 text-left max-w-3xl mx-auto">
-          {Object.entries(TAG_CATEGORIES).map(([cat, tags]) => (
+          {Object.entries(MUSEUM_TAGS).map(([cat, tags]) => (
             <div key={cat} className="space-y-4">
               <h2 className="text-[9px] font-black uppercase tracking-[0.2em] text-accent/60 border-b border-accent/10 pb-2">{cat}</h2>
               <div className="flex flex-wrap gap-2">

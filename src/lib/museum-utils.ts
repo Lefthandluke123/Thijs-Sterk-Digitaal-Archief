@@ -9,6 +9,17 @@ export const ROMAN_VALUES: Record<string, number> = {
 };
 
 /**
+ * Centraal overzicht van alle tag-categorieën gebruikt in het museum.
+ */
+export const MUSEUM_TAGS = {
+  "Periode": ["Vroeg werk", "45-50", "50-60", "60-70", "70-82"],
+  "Techniek": ["Olieverf", "Aquarel", "Gouache", "Litho", "Pentekening"],
+  "Monumentaal": ["Monumentaal", "Glas in lood"],
+  "Plaats": ["Groet", "Schoorl", "Hargen", "Camperduin", "Holland", "Amsterdam", "Frankrijk", "Bretagne", "Griekenland"],
+  "Onderwerp": ["Havens", "Stillevens", "Bloemen", "Dieren", "Water", "Mensen", "Polder"]
+};
+
+/**
  * Parsed een titel (bijv. "13 XII" of "24a XI") naar sorteerbare waarden.
  * Prioriteert het Romeinse cijfer (meestal de serie/zaal) boven het getal.
  */

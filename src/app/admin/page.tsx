@@ -14,7 +14,9 @@ import {
   serverTimestamp, 
   orderBy, 
   writeBatch,
-  setDoc
+  setDoc,
+  getDocs,
+  where
 } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -39,7 +41,8 @@ import {
   X,
   Star,
   ShoppingBag,
-  Type
+  Type,
+  Tag
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -57,7 +60,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { verifyAdminPassword } from '@/lib/admin-actions';
 import { cn } from '@/lib/utils';
-import { sortArtworksByTitle } from '@/lib/museum-utils';
+import { sortArtworksByTitle, MUSEUM_TAGS } from '@/lib/museum-utils';
 
 export default function AdminPage() {
   const firestore = useFirestore();
@@ -70,7 +73,9 @@ export default function AdminPage() {
   // Bulk State
   const [selectedArtIds, setSelectedArtIds] = useState<string[]>([]);
   const [isBulkRoomDialogOpen, setIsBulkRoomDialogOpen] = useState(false);
+  const [isBulkTagDialogOpen, setIsBulkTagDialogOpen] = useState(false);
   const [bulkRoomForm, setBulkRoomForm] = useState({ roomSlug: '', newRoomTitle: '' });
+  const [bulkTagInput, setBulkTagInput] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Room Dialog State
@@ -177,6 +182,40 @@ export default function AdminPage() {
       setSelectedArtIds([]);
     } catch (e) {
       toast({ variant: "destructive", title: "Fout", description: "Kon status niet bijwerken." });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleBulkTagSave = async (mode: 'add' | 'set') => {
+    if (!firestore || !selectedArtIds.length) return;
+    setIsProcessing(true);
+
+    const newTags = bulkTagInput.split(',').map(t => t.trim()).filter(Boolean);
+    const batch = writeBatch(firestore);
+
+    // Voor 'add' moeten we eerst de huidige tags ophalen, dus we doen dit per document
+    // Maar batch commit kan tot 500 documenten aan.
+    try {
+      for (const id of selectedArtIds) {
+        const artRef = doc(firestore, 'artworks', id);
+        if (mode === 'set') {
+          batch.update(artRef, { tags: newTags });
+        } else {
+          const currentArt = dbArtworks?.find((a: any) => a.id === id) as any;
+          const existingTags = currentArt?.tags || [];
+          const combinedTags = Array.from(new Set([...existingTags, ...newTags]));
+          batch.update(artRef, { tags: combinedTags });
+        }
+      }
+
+      await batch.commit();
+      toast({ title: `Tags bijgewerkt voor ${selectedArtIds.length} items` });
+      setIsBulkTagDialogOpen(false);
+      setBulkTagInput("");
+      setSelectedArtIds([]);
+    } catch (e) {
+      toast({ variant: "destructive", title: "Fout", description: "Kon tags niet bijwerken." });
     } finally {
       setIsProcessing(false);
     }
@@ -372,6 +411,13 @@ export default function AdminPage() {
     }
   };
 
+  const addTagToInput = (tag: string) => {
+    const currentTags = bulkTagInput.split(',').map(t => t.trim()).filter(Boolean);
+    if (!currentTags.includes(tag)) {
+      setBulkTagInput([...currentTags, tag].join(', '));
+    }
+  };
+
   if (!isAuthorized) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-6">
@@ -433,6 +479,9 @@ export default function AdminPage() {
                      <div className="h-6 w-px bg-black/10 mx-2" />
                      <Button size="sm" variant="outline" onClick={() => setIsBulkRoomDialogOpen(true)} className="rounded-full text-[10px] font-black uppercase">
                        <ArrowRightLeft className="w-3 h-3 mr-2" /> Verplaatsen
+                     </Button>
+                     <Button size="sm" variant="outline" onClick={() => setIsBulkTagDialogOpen(true)} className="rounded-full text-[10px] font-black uppercase">
+                       <Tag className="w-3 h-3 mr-2" /> Taggen
                      </Button>
                      <Button size="sm" variant="outline" onClick={() => handleBulkUpdateStatus('featured', true)} className="rounded-full text-[10px] font-black uppercase text-yellow-600">
                        <Star className="w-3 h-3 mr-2 fill-yellow-600" /> Featured
@@ -564,6 +613,68 @@ export default function AdminPage() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Bulk Tag Dialog */}
+      <Dialog open={isBulkTagDialogOpen} onOpenChange={setIsBulkTagDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-[2rem] p-8 border-none shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="font-headline text-2xl italic">Bulk Taggen</DialogTitle>
+            <DialogDescription>Voeg tags toe aan of overschrijf tags voor {selectedArtIds.length} items.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-6 py-4">
+             <div className="space-y-4">
+                <Label className="text-[10px] uppercase font-black tracking-widest ml-2 opacity-40">Huidige Selectie Tags (komma gescheiden)</Label>
+                <Input 
+                  value={bulkTagInput} 
+                  onChange={e => setBulkTagInput(e.target.value)} 
+                  className="h-12 rounded-xl bg-black/5 border-none" 
+                  placeholder="Bijv. Olieverf, Polder..." 
+                />
+             </div>
+
+             <div className="space-y-6">
+                <h4 className="text-[10px] font-black uppercase tracking-widest border-b pb-2 opacity-30">Snel Menu</h4>
+                {Object.entries(MUSEUM_TAGS).map(([cat, tags]) => (
+                  <div key={cat} className="space-y-2">
+                    <p className="text-[9px] font-bold text-accent/60 uppercase tracking-widest">{cat}</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {tags.map(tag => (
+                        <Button 
+                          key={tag} 
+                          variant="secondary" 
+                          size="sm" 
+                          onClick={() => addTagToInput(tag)}
+                          className="h-7 text-[9px] font-bold uppercase rounded-md hover:bg-accent hover:text-white"
+                        >
+                          + {tag}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+             </div>
+          </div>
+          <DialogFooter className="flex flex-col sm:flex-row gap-3">
+            <Button 
+              variant="outline"
+              onClick={() => handleBulkTagSave('add')} 
+              disabled={isProcessing} 
+              className="flex-1 h-14 rounded-2xl border-2"
+            >
+              {isProcessing ? <Loader2 className="animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
+              Toevoegen aan bestaande
+            </Button>
+            <Button 
+              onClick={() => handleBulkTagSave('set')} 
+              disabled={isProcessing} 
+              className="flex-1 h-14 rounded-2xl bg-primary"
+            >
+              {isProcessing ? <Loader2 className="animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+              Overschrijven
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Bulk Room Dialog */}
       <Dialog open={isBulkRoomDialogOpen} onOpenChange={setIsBulkRoomDialogOpen}>
@@ -708,10 +819,34 @@ export default function AdminPage() {
               </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-4">
               <Label className="text-[10px] uppercase font-black tracking-widest ml-2 opacity-40">Tags (komma gescheiden)</Label>
               <Input value={artworkForm.tags} onChange={e => setArtworkForm({...artworkForm, tags: e.target.value})} className="rounded-xl bg-black/5 border-none" placeholder="Olieverf, Polder, 1960" />
+              <div className="space-y-3 pt-2">
+                <p className="text-[9px] font-black uppercase tracking-widest opacity-20">Snel Menu</p>
+                {Object.entries(MUSEUM_TAGS).map(([cat, tags]) => (
+                  <div key={cat} className="flex flex-wrap gap-1.5">
+                    {tags.map(tag => (
+                      <Button 
+                        key={tag} 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => {
+                          const current = artworkForm.tags.split(',').map(t => t.trim()).filter(Boolean);
+                          if (!current.includes(tag)) {
+                            setArtworkForm({...artworkForm, tags: [...current, tag].join(', ')});
+                          }
+                        }}
+                        className="h-6 text-[8px] font-bold uppercase border border-black/5 hover:bg-accent hover:text-white"
+                      >
+                        + {tag}
+                      </Button>
+                    ))}
+                  </div>
+                ))}
+              </div>
             </div>
+
             <div className="flex gap-8 py-2">
               <div className="flex items-center space-x-2">
                 <Checkbox id="featured" checked={artworkForm.featured} onCheckedChange={(v) => setArtworkForm({...artworkForm, featured: !!v})} />
