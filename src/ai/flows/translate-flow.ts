@@ -1,7 +1,8 @@
+
 'use server';
 /**
  * @fileOverview AI Vertaal Flow voor het Thijs Sterk Museum.
- * Vertaalt museumteksten van Nederlands naar Engels met behoud van de artistieke toon.
+ * Vertaalt museumteksten met behoud van de artistieke toon.
  */
 
 import { ai } from '@/ai/genkit';
@@ -9,7 +10,7 @@ import { z } from 'genkit';
 
 const TranslateInputSchema = z.object({
   text: z.string().describe('De te vertalen tekst'),
-  targetLanguage: z.string().default('Engels'),
+  targetLanguage: z.string().describe('De doeltaal (bijv. Engels, Duits, Spaans)'),
   context: z.string().optional().describe('Context over de tekst (bijv. biografie, titel)'),
 });
 export type TranslateInput = z.infer<typeof TranslateInputSchema>;
@@ -32,6 +33,7 @@ const prompt = ai.definePrompt({
   
   Houd rekening met:
   - Behoud de sfeer: Thijs Sterk is een schilder van licht, ruimte en water. De toon moet respectvol, poëtisch maar helder zijn.
+  - Gebruik de u-vorm waar gepast (formeel maar toegankelijk).
   - Context: {{{context}}}
   
   Tekst om te vertalen:
@@ -50,10 +52,7 @@ const translateFlow = ai.defineFlow(
       if (!output) throw new Error('Vertaling mislukt: Geen resultaat van AI');
       return output;
     } catch (error: any) {
-      // Specifieke afhandeling voor quota/billing fouten van Google AI
-      if (error.message?.includes('RESOURCE_EXHAUSTED') || error.status === 429) {
-        throw new Error('AI Quotum overschreden of prepaid tegoed op. Ga naar ai.studio om uw facturering te controleren.');
-      }
+      console.error('Translation error:', error);
       throw error;
     }
   }
