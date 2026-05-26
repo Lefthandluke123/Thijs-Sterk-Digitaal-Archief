@@ -26,10 +26,10 @@ const staticTranslations: Record<Language, Record<string, string>> = {
     nav_museum_title: 'Het Digitale Retrospectief',
     nav_museum_subtitle: 'Licht, Ruimte en Water',
     hero_start_walk: 'Naar de zalen',
-    hero_your_room: 'Stel je eigen wandeling samen',
+    hero_your_room: 'Stel uw eigen wandeling samen',
     gallery_all: 'Alle Zalen',
     gallery_select: 'Kies een zaal om te verkennen',
-    curator_title: 'Stel uw eigen zaal samen! Word de inrichter van uw eigen museum. Kies een van onze inspirerende thema’s en richt uw eigen virtuele tentoonstelling in. Combineer uw favoriete werken, experimenteer met opstellingen en geef uw creativiteit de vrije loop. Klaar? Open de deuren en deel uw unieke collectie met de wereld!',
+    curator_title: 'Word de inrichter van uw eigen museum. Kies thema’s en richt uw eigen virtuele tentoonstelling in. Combineer favoriete werken en deel uw unieke collectie met de wereld.',
     curator_subtitle: 'Stel uw eigen expositie samen',
     curator_open: 'Open uw galerij',
     curator_clear: 'Wissen',
@@ -73,7 +73,7 @@ const staticTranslations: Record<Language, Record<string, string>> = {
     hero_your_room: 'Assemble your own walk',
     gallery_all: 'All Galleries',
     gallery_select: 'Select a gallery to explore',
-    curator_title: 'Create your own room! Become the designer of your own museum. Choose one of our inspiring themes and set up your own virtual exhibition. Combine your favorite works, experiment with arrangements and let your creativity run wild. Ready? Open the doors and share your unique collection with the world!',
+    curator_title: 'Create your own room! Become the designer of your own museum. Choose themes and set up your own virtual exhibition. Combine your favorite works and share your unique collection with the world!',
     curator_subtitle: 'Assemble your own exhibition',
     curator_open: 'Open your gallery',
     curator_clear: 'Clear',
@@ -117,7 +117,7 @@ const staticTranslations: Record<Language, Record<string, string>> = {
     hero_your_room: 'Zusammenstellen',
     gallery_all: 'Alle Galerien',
     gallery_select: 'Wählen Sie eine Galerie',
-    curator_title: 'Erschaffen Sie Ihren eigenen Saal! Werden Sie zum Einrichter Ihres eigenen Museums. Wählen Sie eines unserer inspirierenden Themen und richten Sie Ihre eigene virtuelle Ausstellung ein. Kombinieren Sie Ihre Lieblingswerke, experimentieren Sie mit Anordnungen und lassen Sie Ihrer Kreativität freien Lauf. Fertig? Öffnen Sie die Türen und teilen Sie Ihre einzigartige Sammlung mit der Welt!',
+    curator_title: 'Erschaffen Sie Ihren eigenen Saal! Werden Sie zum Einrichter Ihres eigenen Museums. Wählen Sie Themen und richten Sie Ihre eigene virtuelle Ausstellung ein. Kombinieren Sie Ihre Lieblingswerke und teilen Sie Ihre einzigartige Sammlung mit der Welt!',
     curator_subtitle: 'Eigene Ausstellung zusammenstellen',
     curator_open: 'Galerie öffnen',
     curator_clear: 'Löschen',
@@ -161,7 +161,7 @@ const staticTranslations: Record<Language, Record<string, string>> = {
     hero_your_room: 'Composer promenade',
     gallery_all: 'Toutes les Salles',
     gallery_select: 'Choisir une salle',
-    curator_title: 'Créez votre propre salle ! Devenez l\'inaugurateur de votre propre musée. Choisissez l\'un de nos thèmes inspirants et créez votre propre exposition virtuelle. Combinez vos œuvres préférées, expérimentez les arrangements et laissez libre cours à votre créativité. Prêt ? Ouvrez les portes et partagez votre collection unique avec le monde !',
+    curator_title: 'Créez votre propre salle ! Devenez l\'inaugurateur de votre propre musée. Choisissez des thèmes et créez votre propre exposition virtuelle. Partagez votre collection unique avec le monde !',
     curator_subtitle: 'Composer votre propre exposition',
     curator_open: 'Ouvrir la galerie',
     curator_clear: 'Effacer',
@@ -205,8 +205,8 @@ const staticTranslations: Record<Language, Record<string, string>> = {
     hero_your_room: 'Componga paseo',
     gallery_all: 'Todas las Galerías',
     gallery_select: 'Selecciona una galería',
-    curator_title: '¡Crea tu propia sala! Conviértete en el inrrequitor de tu propio museo. Elige uno de nuestros temas inspiradores y configura tu propia exposición virtual. Combina tus obras favoritas, experimenta con las disposiciones y deja volar tu creatividad. ¿Listo? ¡Abre las puertas y comparte tu colección única con el mundo!',
-    curator_subtitle: 'Componga su propia exposición',
+    curator_title: '¡Crea tu propia sala! Conviértete en el inrrequitor de tu eigen museo. Elige temas y configura tu propia exposición virtual. ¡Comparte tu colección única con el mundo!',
+    curator_subtitle: 'Componga su eigen exposición',
     curator_open: 'Abrir galería',
     curator_clear: 'Borrar',
     curator_link_ready: '¡Sala privada lista!',
@@ -267,6 +267,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const t = (key: string) => {
+    if (!mounted) return key; // Guard tegen hydration mismatch
     const dbKey = language === 'nl' ? key : `${key}_${language}`;
     if (dbSettings && dbSettings[dbKey]) return dbSettings[dbKey];
     if (dbSettings && dbSettings[key]) return dbSettings[key];

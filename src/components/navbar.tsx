@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, Suspense } from 'react';
@@ -29,7 +28,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/s
 import { Button } from '@/components/ui/button';
 
 /**
- * @fileOverview Navbar: Centrale navigatie met stabiele Dropdown Language Switcher.
+ * @fileOverview Navbar: Centrale navigatie met ondersteuning voor zalen en archief.
  */
 
 const NavLink = ({ href, children, active }: { href: string; children: React.ReactNode; active: boolean }) => (
