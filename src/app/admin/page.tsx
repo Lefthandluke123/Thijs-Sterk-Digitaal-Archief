@@ -320,6 +320,10 @@ export default function AdminPage() {
   const handleBulkRoomUpdate = async (roomId: string, action: 'add' | 'remove') => {
     if (!firestore || selectedArtIds.length === 0) return;
     setIsProcessingBulk(true);
+    const count = selectedArtIds.length;
+    const targetRoom = rooms?.find(r => r.id === roomId);
+    const roomTitle = targetRoom?.title || "Geselecteerde Zaal";
+
     try {
       const updates = selectedArtIds.map(async (id) => {
         const art = rawArtworks?.find(a => a.id === id);
@@ -328,10 +332,21 @@ export default function AdminPage() {
         const nextRooms = action === 'add' 
           ? Array.from(new Set([...currentRooms, roomId]))
           : currentRooms.filter((r: string) => r !== roomId);
-        await updateDoc(doc(firestore, 'artworks', id), { roomIds: nextRooms, updatedAt: serverTimestamp() });
+        
+        // Optimistische non-blocking write
+        updateDoc(doc(firestore, 'artworks', id), { 
+          roomIds: nextRooms, 
+          updatedAt: serverTimestamp() 
+        }).catch(err => console.error("Update error for artwork", id, err));
       });
-      await Promise.all(updates);
-      toast({ title: `${selectedArtIds.length} werken ${action === 'add' ? 'toegevoegd aan' : 'verwijderd uit'} zaal` });
+      
+      toast({ 
+        title: "Bulk update verwerkt", 
+        description: `${count} werken ${action === 'add' ? 'toegevoegd aan' : 'verwijderd uit'} ${roomTitle}.` 
+      });
+      
+      // We wachten niet op alle individuele updates om de UI vlot te houden, 
+      // maar we geven wel direct de bevestiging van het aantal.
     } catch (e) {
       toast({ variant: "destructive", title: "Bulk update mislukt" });
     } finally {
@@ -347,7 +362,7 @@ export default function AdminPage() {
       const currentRooms = art.roomIds || [];
       const nextRooms = currentRooms.filter((r: string) => r !== roomId);
       await updateDoc(doc(firestore, 'artworks', artId), { roomIds: nextRooms, updatedAt: serverTimestamp() });
-      toast({ title: "Werk verwijderd uit zaal" });
+      toast({ title: "1 werk verwijderd uit zaal" });
     } catch (e) {
       toast({ variant: "destructive", title: "Verwijderen mislukt" });
     }
@@ -359,18 +374,24 @@ export default function AdminPage() {
     if (tagsToProcess.length === 0) return;
 
     setIsProcessingBulk(true);
+    const count = selectedArtIds.length;
     try {
-      const updates = selectedArtIds.map(async (id) => {
+      selectedArtIds.forEach((id) => {
         const art = rawArtworks?.find(a => a.id === id);
         if (!art) return;
         const currentTags = art.tags || [];
         const nextTags = action === 'add'
           ? Array.from(new Set([...currentTags, ...tagsToProcess]))
           : currentTags.filter((t: string) => !tagsToProcess.includes(t));
-        await updateDoc(doc(firestore, 'artworks', id), { tags: nextTags, updatedAt: serverTimestamp() });
+        
+        updateDoc(doc(firestore, 'artworks', id), { tags: nextTags, updatedAt: serverTimestamp() })
+          .catch(err => console.error(err));
       });
-      await Promise.all(updates);
-      toast({ title: "Tags bijgewerkt" });
+      
+      toast({ 
+        title: "Tags bijgewerkt", 
+        description: `${tagsToProcess.length} tags ${action === 'add' ? 'toegevoegd aan' : 'verwijderd van'} ${count} werken.` 
+      });
       setIsBulkTagDialogOpen(false);
       setBulkTagInput('');
     } catch (e) {
@@ -382,13 +403,15 @@ export default function AdminPage() {
 
   const handleBulkDelete = async () => {
     if (!firestore || selectedArtIds.length === 0) return;
-    if (!confirm(`Weet u zeker dat u ${selectedArtIds.length} werken wilt verwijderen?`)) return;
+    const count = selectedArtIds.length;
+    if (!confirm(`Weet u zeker dat u deze ${count} werken definitief wilt verwijderen uit het archief?`)) return;
 
     setIsProcessingBulk(true);
     try {
-      const deletes = selectedArtIds.map(id => deleteDoc(doc(firestore, 'artworks', id)));
-      await Promise.all(deletes);
-      toast({ title: "Werken verwijderd" });
+      selectedArtIds.forEach(id => {
+        deleteDoc(doc(firestore, 'artworks', id)).catch(err => console.error(err));
+      });
+      toast({ title: "Verwijderen verwerkt", description: `${count} werken zijn uit het archief gewist.` });
       setSelectedArtIds([]);
     } catch (e) {
       toast({ variant: "destructive", title: "Verwijderen mislukt" });
@@ -451,9 +474,9 @@ export default function AdminPage() {
             <h1 className="font-headline text-2xl italic">Museum Beheer</h1>
           </div>
           {selectedArtIds.length > 0 && (
-            <div className="flex items-center gap-2 bg-accent/10 text-accent px-4 py-1.5 rounded-full animate-in fade-in zoom-in duration-300">
-               <span className="text-[10px] font-black uppercase tracking-widest">{selectedArtIds.length} geselecteerd</span>
-               <button onClick={() => setSelectedArtIds([])} className="hover:text-foreground"><X className="w-3.5 h-3.5" /></button>
+            <div className="flex items-center gap-2 bg-accent/10 text-accent px-5 py-2 rounded-full animate-in fade-in zoom-in duration-300 shadow-sm border border-accent/20">
+               <span className="text-[11px] font-black uppercase tracking-widest">{selectedArtIds.length} geselecteerd</span>
+               <button onClick={() => setSelectedArtIds([])} className="ml-1 hover:text-foreground p-1"><X className="w-3.5 h-3.5" /></button>
             </div>
           )}
         </div>
@@ -503,7 +526,11 @@ export default function AdminPage() {
                   </div>
                   
                   {selectedArtIds.length > 0 && (
-                    <div className="flex items-center gap-2 bg-primary text-primary-foreground p-2 px-6 rounded-full shadow-lg animate-in slide-in-from-top-4">
+                    <div className="flex items-center gap-2 bg-primary text-primary-foreground p-2 px-6 rounded-full shadow-lg animate-in slide-in-from-top-4 border-2 border-white/20">
+                       <div className="mr-4 pr-4 border-r border-white/10 flex flex-col justify-center">
+                          <span className="text-[10px] font-black uppercase tracking-widest leading-none">{selectedArtIds.length}</span>
+                          <span className="text-[7px] font-bold uppercase opacity-60">klaar voor actie</span>
+                       </div>
                        <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                              <Button variant="ghost" size="sm" className="hover:bg-white/10 text-[10px] font-black uppercase h-9 rounded-full px-4"><Layers className="w-3.5 h-3.5 mr-2" /> Zaal</Button>
@@ -592,7 +619,6 @@ export default function AdminPage() {
                                    <AccordionTrigger className="p-0 hover:no-underline border-none">
                                       <span className="sr-only">Details</span>
                                    </AccordionTrigger>
-                                   {/* Content is below fixed trigger */}
                                 </AccordionItem>
                              </Accordion>
                           </div>
@@ -602,11 +628,18 @@ export default function AdminPage() {
                           <AccordionItem value={room.id} className="border-none">
                              <AccordionContent className="px-8 pb-10 pt-4 space-y-8 border-t border-black/5 mt-0">
                                 <div className="flex items-center justify-between">
-                                   <h4 className="text-[10px] font-black uppercase tracking-widest opacity-40">Inhoud van de zaal</h4>
+                                   <div className="flex flex-col">
+                                      <h4 className="text-[10px] font-black uppercase tracking-widest opacity-40">Inhoud van de zaal</h4>
+                                      <p className="text-[9px] font-bold opacity-30">{roomArtworks.length} schilderijen momenteel in collectie</p>
+                                   </div>
                                    {selectedArtIds.length > 0 && (
-                                     <div className="flex gap-2">
-                                       <Button size="sm" onClick={() => handleBulkRoomUpdate(room.id, 'add')} className="h-10 px-6 rounded-full bg-accent text-white text-[9px] font-black uppercase tracking-widest"><Plus className="w-3.5 h-3.5 mr-2" /> Voeg {selectedArtIds.length} toe</Button>
-                                       <Button size="sm" variant="outline" onClick={() => handleBulkRoomUpdate(room.id, 'remove')} className="h-10 px-6 rounded-full text-[9px] font-black uppercase tracking-widest border-2"><MinusCircle className="w-3.5 h-3.5 mr-2" /> Verwijder selectie</Button>
+                                     <div className="flex gap-2 animate-in slide-in-from-right-4">
+                                       <Button size="sm" onClick={() => handleBulkRoomUpdate(room.id, 'add')} className="h-10 px-6 rounded-full bg-accent text-white text-[9px] font-black uppercase tracking-widest shadow-md">
+                                          <Plus className="w-3.5 h-3.5 mr-2" /> Plaats {selectedArtIds.length} geselecteerde werken
+                                       </Button>
+                                       <Button size="sm" variant="outline" onClick={() => handleBulkRoomUpdate(room.id, 'remove')} className="h-10 px-6 rounded-full text-[9px] font-black uppercase tracking-widest border-2">
+                                          <MinusCircle className="w-3.5 h-3.5 mr-2" /> Wis selectie uit deze zaal
+                                       </Button>
                                      </div>
                                    )}
                                 </div>
@@ -616,7 +649,7 @@ export default function AdminPage() {
                                      <div className="col-span-full py-12 text-center border-2 border-dashed rounded-3xl opacity-20 italic">Deze zaal is momenteel leeg</div>
                                    ) : (
                                      roomArtworks.map(art => (
-                                       <div key={art.id} className="relative aspect-square rounded-2xl overflow-hidden group/art">
+                                       <div key={art.id} className="relative aspect-square rounded-2xl overflow-hidden group/art border border-black/5">
                                           <img src={art.image} className="w-full h-full object-cover" alt={art.title} />
                                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/art:opacity-100 transition-opacity flex items-center justify-center">
                                              <button onClick={() => handleRemoveFromRoom(art.id, room.id)} title="Verwijderen uit deze zaal" className="p-2 bg-white rounded-full text-destructive shadow-lg hover:scale-110 transition-transform"><X className="w-4 h-4" /></button>
