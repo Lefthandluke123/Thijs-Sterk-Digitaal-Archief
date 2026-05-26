@@ -1,6 +1,7 @@
+
 "use client";
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useRef } from 'react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
@@ -24,6 +25,7 @@ export default function CuratorPage() {
   const [shareDialog, setShareDialog] = useState<string | null>(null);
   const [roomTitle, setRoomTitle] = useState("");
   
+  const resultsRef = useRef<HTMLDivElement>(null);
   const firestore = useFirestore();
   const { t, language } = useLanguage();
   
@@ -49,7 +51,8 @@ export default function CuratorPage() {
   }, [artworks, activeTags]);
 
   const resultCount = filteredArtworks.length;
-  const hasNoResults = activeTags.length > 0 && resultCount === 0;
+  // Alleen 'geen resultaten' tonen als we NIET aan het laden zijn
+  const hasNoResults = !loading && activeTags.length > 0 && resultCount === 0;
 
   const navigateArtwork = useCallback((direction: 'next' | 'prev') => {
     if (!selectedArtwork || filteredArtworks.length === 0) return;
@@ -73,6 +76,14 @@ export default function CuratorPage() {
 
     setActiveTags(p => isActive ? p.filter(t => t !== tag) : [...p, tag]);
     setShowResults(false);
+  };
+
+  const handleOpenGallery = () => {
+    setShowResults(true);
+    // Scroll soepel naar beneden naar de resultaten
+    setTimeout(() => {
+      resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
   };
 
   const handleShare = () => {
@@ -113,26 +124,27 @@ export default function CuratorPage() {
   return (
     <main className="min-h-screen bg-background pt-24 md:pt-32 pb-48 px-6">
       <div className="container mx-auto max-w-4xl space-y-8 md:space-y-12">
-        {/* HEADER SECTION - COMPACTED */}
+        {/* HEADER SECTION */}
         <div className="text-center space-y-6 md:space-y-8 animate-subtle-fade">
           <div className="space-y-2">
             <h1 className="font-headline text-3xl md:text-5xl font-medium tracking-tight text-foreground leading-tight">
               {t('curator_subtitle')}
             </h1>
             <p className="font-headline text-lg md:text-2xl italic text-muted-foreground opacity-60">
-              Maak 1, 2, 3 of 4 keuzes
+              {t('curator_instruction') || 'Maak 1, 2, 3 of 4 keuzes'}
             </p>
           </div>
 
-          {/* PRIMARY ACTION BUTTONS - TOP POSITION */}
+          {/* PRIMARY ACTION BUTTONS */}
           <div className="flex flex-col items-center gap-6">
             <div className="flex flex-wrap justify-center gap-4">
               <Button 
-                onClick={() => setShowResults(true)} 
-                disabled={activeTags.length === 0 || hasNoResults}
+                onClick={handleOpenGallery} 
+                disabled={activeTags.length === 0 || hasNoResults || loading}
                 className="rounded-full h-14 md:h-16 px-8 md:px-12 bg-primary text-primary-foreground uppercase font-black text-[10px] md:text-[11px] tracking-widest shadow-xl hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-20"
               >
-                <Play className="w-4 h-4 mr-3 fill-current" /> {t('curator_open')}
+                {loading ? <Loader2 className="w-4 h-4 mr-3 animate-spin" /> : <Play className="w-4 h-4 mr-3 fill-current" />}
+                {t('curator_open')}
               </Button>
               <Button 
                 onClick={() => { setActiveTags([]); setShowResults(false); }} 
@@ -145,7 +157,12 @@ export default function CuratorPage() {
 
             {/* LIVE FEEDBACK COUNTER */}
             <div className="min-h-[24px]">
-               {activeTags.length > 0 ? (
+               {loading ? (
+                 <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-accent opacity-40">
+                   <Loader2 className="w-3 h-3 animate-spin" />
+                   Archief wordt doorzocht...
+                 </div>
+               ) : activeTags.length > 0 ? (
                  <div className="flex flex-col items-center gap-2 animate-in fade-in duration-500">
                     <div className={cn(
                       "flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-colors",
@@ -176,7 +193,7 @@ export default function CuratorPage() {
           </div>
         </div>
 
-        {/* TAGS SELECTION BLOCK - MUCH COMPACTER */}
+        {/* TAGS SELECTION BLOCK */}
         <div className="bg-white/40 backdrop-blur-xl rounded-[2.5rem] p-8 md:p-12 border border-white/60 shadow-lg space-y-10 md:space-y-12 animate-subtle-fade">
           {Object.entries(MUSEUM_TAGS).map(([cat, tags]) => (
             <div key={cat} className="space-y-4 md:space-y-6">
@@ -212,44 +229,46 @@ export default function CuratorPage() {
           ))}
         </div>
 
-        {/* RESULTS GRID - ONLY SHOW IF COUNT > 0 */}
-        {showResults && !hasNoResults && (
-          <div className="mt-16 md:mt-24 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 md:gap-8 animate-in fade-in slide-in-from-bottom-8 duration-1000">
-            {filteredArtworks.map((item: any) => (
-              <div key={item.id} className="group cursor-pointer space-y-3 md:space-y-4" onClick={() => setSelectedArtwork(item)}>
-                <div className="relative aspect-[4/5] overflow-hidden rounded-2xl md:rounded-[2rem] bg-black/[0.02] shadow-md transition-all duration-[1000ms] group-hover:shadow-xl flex items-center justify-center p-3 border border-black/5">
-                  {item.image ? (
-                    <img 
-                      src={item.image} 
-                      className="max-w-full max-h-full object-contain transition-transform duration-[1000ms] group-hover:scale-110" 
-                      style={{ filter: `brightness(${item.brightness || 1})` }} 
-                      alt={item.title}
-                    />
-                  ) : (
-                    <Filter className="w-10 h-10 opacity-10" />
-                  )}
-                  <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-500">
-                    <div className="p-3 rounded-full bg-white/30 backdrop-blur-xl scale-90 group-hover:scale-100 transition-transform duration-500">
-                      <Maximize2 className="text-white w-5 h-5" />
+        {/* RESULTS GRID */}
+        <div ref={resultsRef} className="scroll-mt-32">
+          {showResults && !hasNoResults && (
+            <div className="mt-16 md:mt-24 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 md:gap-8 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+              {filteredArtworks.map((item: any) => (
+                <div key={item.id} className="group cursor-pointer space-y-3 md:space-y-4" onClick={() => setSelectedArtwork(item)}>
+                  <div className="relative aspect-[4/5] overflow-hidden rounded-2xl md:rounded-[2rem] bg-black/[0.02] shadow-md transition-all duration-[1000ms] group-hover:shadow-xl flex items-center justify-center p-3 border border-black/5">
+                    {item.image ? (
+                      <img 
+                        src={item.image} 
+                        className="max-w-full max-h-full object-contain transition-transform duration-[1000ms] group-hover:scale-110" 
+                        style={{ filter: `brightness(${item.brightness || 1})` }} 
+                        alt={item.title}
+                      />
+                    ) : (
+                      <Filter className="w-10 h-10 opacity-10" />
+                    )}
+                    <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-500">
+                      <div className="p-3 rounded-full bg-white/30 backdrop-blur-xl scale-90 group-hover:scale-100 transition-transform duration-500">
+                        <Maximize2 className="text-white w-5 h-5" />
+                      </div>
                     </div>
                   </div>
+                  <div className="text-center space-y-1">
+                    <h3 className="font-headline text-sm md:text-base italic text-foreground/80 group-hover:text-accent transition-colors truncate px-2">
+                      {item.displayTitle || item.title}
+                    </h3>
+                    <p className="text-[8px] md:text-[9px] font-black uppercase tracking-widest opacity-40">{item.year}</p>
+                  </div>
                 </div>
-                <div className="text-center space-y-1">
-                  <h3 className="font-headline text-sm md:text-base italic text-foreground/80 group-hover:text-accent transition-colors truncate px-2">
-                    {item.displayTitle || item.title}
-                  </h3>
-                  <p className="text-[8px] md:text-[9px] font-black uppercase tracking-widest opacity-40">{item.year}</p>
-                </div>
-              </div>
-            ))}
+              ))}
 
-            <div className="col-span-full pt-8 flex justify-center">
-               <Button onClick={() => setShareDialog("")} className="rounded-full h-14 md:h-16 px-10 md:px-12 bg-accent text-accent-foreground uppercase font-black text-[10px] md:text-[11px] tracking-widest shadow-xl animate-in zoom-in duration-500">
-                  <Share2 className="w-4 h-4 mr-3" /> Deel Selectie
-               </Button>
+              <div className="col-span-full pt-12 flex justify-center">
+                 <Button onClick={() => setShareDialog("")} className="rounded-full h-14 md:h-16 px-10 md:px-12 bg-accent text-accent-foreground uppercase font-black text-[10px] md:text-[11px] tracking-widest shadow-xl animate-in zoom-in duration-500">
+                    <Share2 className="w-4 h-4 mr-3" /> {t('curator_link_ready') || 'Deel Selectie'}
+                 </Button>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       <Dialog open={shareDialog !== null} onOpenChange={(open) => !open && setShareDialog(null)}>
