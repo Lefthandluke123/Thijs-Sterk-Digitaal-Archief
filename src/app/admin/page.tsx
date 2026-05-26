@@ -46,7 +46,8 @@ import {
   CheckCircle2,
   Tags as TagsIcon,
   Archive,
-  MoreVertical
+  MoreVertical,
+  Library
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -60,6 +61,14 @@ import {
   DialogFooter,
   DialogDescription
 } from '@/components/ui/dialog';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel
+} from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { sortArtworksByTitle, sanitizeArtwork, normalizeArtwork, MUSEUM_TAGS } from '@/lib/museum-utils';
@@ -466,6 +475,26 @@ export default function AdminPage() {
                   
                   {selectedArtIds.length > 0 && (
                     <div className="flex items-center gap-2 bg-primary text-primary-foreground p-2 px-6 rounded-full shadow-lg animate-in slide-in-from-top-4">
+                       <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                             <Button variant="ghost" size="sm" className="hover:bg-white/10 text-[10px] font-black uppercase h-9 rounded-full px-4"><Layers className="w-3.5 h-3.5 mr-2" /> Zaal</Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start" className="w-56 rounded-2xl p-2 shadow-2xl">
+                             <DropdownMenuLabel className="text-[9px] uppercase font-black opacity-40 px-3 py-2">Toevoegen aan...</DropdownMenuLabel>
+                             {rooms?.map(room => (
+                               <DropdownMenuItem key={room.id} onClick={() => handleBulkRoomUpdate(room.id, 'add')} className="rounded-xl cursor-pointer p-3 text-xs font-bold uppercase tracking-wider">
+                                  {room.title}
+                               </DropdownMenuItem>
+                             ))}
+                             <DropdownMenuSeparator />
+                             <DropdownMenuLabel className="text-[9px] uppercase font-black opacity-40 px-3 py-2 text-destructive">Verwijderen uit...</DropdownMenuLabel>
+                             {rooms?.map(room => (
+                               <DropdownMenuItem key={room.id} onClick={() => handleBulkRoomUpdate(room.id, 'remove')} className="rounded-xl cursor-pointer p-3 text-xs font-bold uppercase tracking-wider text-destructive">
+                                  {room.title}
+                               </DropdownMenuItem>
+                             ))}
+                          </DropdownMenuContent>
+                       </DropdownMenu>
                        <Button variant="ghost" size="sm" onClick={() => setIsBulkTagDialogOpen(true)} className="hover:bg-white/10 text-[10px] font-black uppercase h-9 rounded-full px-4"><TagsIcon className="w-3.5 h-3.5 mr-2" /> Tags</Button>
                        <Button variant="ghost" size="sm" onClick={handleBulkDelete} className="hover:bg-destructive text-[10px] font-black uppercase h-9 rounded-full px-4"><Trash2 className="w-3.5 h-3.5 mr-2" /> Wis</Button>
                     </div>
@@ -490,7 +519,7 @@ export default function AdminPage() {
                </div>
             </TabsContent>
 
-            {/* 2. ROOMS TAB (RESTRUCTURED) */}
+            {/* 2. ROOMS TAB */}
             <TabsContent value="rooms" className="space-y-10 mt-0">
               <div className="flex justify-between items-center bg-white/50 p-6 rounded-[2.5rem] border">
                 <div className="space-y-1">
