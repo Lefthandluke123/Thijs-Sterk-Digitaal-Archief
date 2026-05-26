@@ -39,11 +39,13 @@ type ViewMode = 'grid' | 'viewer';
 /**
  * @fileOverview RoomClient: Beheert de immersieve zaal-ervaring.
  * Nu met een "Grid Overview" en een "Immersive Viewer" met interactie-uitleg.
+ * De hints verdwijnen na 4 seconden.
  */
 export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showMetadata, setShowMetadata] = useState(false);
+  const [showHints, setShowHints] = useState(true);
   
   const artworks = useMemo(() => {
     if (!dbArtworks) return [];
@@ -51,6 +53,15 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
   }, [dbArtworks]);
 
   const activeItem = artworks[currentIndex];
+
+  // Beheer het automatisch verdwijnen van de hints
+  useEffect(() => {
+    if (viewMode === 'viewer') {
+      setShowHints(true);
+      const timer = setTimeout(() => setShowHints(false), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [viewMode, currentIndex]);
 
   const handleNext = useCallback((e?: React.MouseEvent) => {
     e?.stopPropagation();
@@ -112,7 +123,7 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
               </p>
               <Button 
                 onClick={() => enterViewer(0)}
-                className="h-16 px-12 rounded-full bg-primary text-primary-foreground font-black uppercase tracking-[0.2em] text-[11px] shadow-2xl hover:scale-105 active:scale-95 transition-all"
+                className="h-16 px-12 rounded-full bg-primary text-primary-foreground font-black uppercase tracking-[0.2em] text-[11px] shadow-2xl hover:scale-[1.05] active:scale-95 transition-all"
               >
                 <Play className="w-4 h-4 mr-3 fill-current" /> Start Rondleiding
               </Button>
@@ -240,10 +251,10 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
             </div>
           </div>
 
-          {/* 6. Interaction Hint Overlay (Subtle) - Moved to bottom area */}
+          {/* 6. Interaction Hint Overlay (Subtle) - Verdwijnt na 4s */}
           <div className={cn(
-            "absolute bottom-24 left-1/2 -translate-x-1/2 z-[140] flex flex-col items-center gap-3 pointer-events-none animate-in fade-in slide-in-from-bottom-4 duration-1000",
-            showMetadata && "opacity-0"
+            "absolute bottom-24 left-1/2 -translate-x-1/2 z-[140] flex flex-col items-center gap-3 pointer-events-none transition-opacity duration-[2000ms] ease-in-out",
+            (showMetadata || !showHints) ? "opacity-0" : "opacity-100"
           )}>
              <div className="bg-white/40 backdrop-blur-xl border border-black/5 px-6 py-1.5 rounded-full flex items-center gap-6 shadow-sm">
                 <div className="flex items-center gap-2">

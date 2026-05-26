@@ -30,9 +30,19 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
   const [isPlaying, setIsPlaying] = useState(false);
   const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
   const [artworkUrl, setArtworkUrl] = useState('');
+  const [showHints, setShowHints] = useState(true);
   
   const pathname = usePathname();
   const { language, t } = useLanguage();
+
+  // Beheer het automatisch verdwijnen van de hints (na 4 seconden)
+  useEffect(() => {
+    if (artwork) {
+      setShowHints(true);
+      const timer = setTimeout(() => setShowHints(false), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [artwork?.id, language]);
 
   useEffect(() => {
     if (artwork && typeof window !== 'undefined') {
@@ -158,10 +168,10 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
         </div>
       </div>
 
-      {/* Interaction Hint Overlay (Subtle) - Moved to bottom area */}
+      {/* Interaction Hint Overlay (Subtle) - Verdwijnt na 4s */}
       <div className={cn(
-        "absolute bottom-20 left-1/2 -translate-x-1/2 z-[10040] flex flex-col items-center gap-3 pointer-events-none animate-in fade-in slide-in-from-bottom-4 duration-1000",
-        showMetadata && "opacity-0"
+        "absolute bottom-20 left-1/2 -translate-x-1/2 z-[10040] flex flex-col items-center gap-3 pointer-events-none transition-opacity duration-[2000ms] ease-in-out",
+        (showMetadata || !showHints) ? "opacity-0" : "opacity-100"
       )}>
          <div className="bg-white/40 backdrop-blur-xl border border-black/5 px-6 py-1.5 rounded-full flex items-center gap-6 shadow-sm">
             <div className="flex items-center gap-2">
