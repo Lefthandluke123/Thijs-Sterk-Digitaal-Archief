@@ -1,6 +1,7 @@
+
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { 
@@ -17,7 +18,7 @@ import {
   Move
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { sortArtworksByTitle } from '@/lib/museum-utils';
+import { sortArtworksByTitle, cleanString } from '@/lib/museum-utils';
 import { Button } from '@/components/ui/button';
 
 const DeepZoomViewer = dynamic(() => import('@/components/deep-zoom-viewer').then(mod => mod.DeepZoomViewer), { 
@@ -36,16 +37,16 @@ interface RoomClientProps {
 
 type ViewMode = 'grid' | 'viewer';
 
-/**
- * @fileOverview RoomClient: Beheert de immersieve zaal-ervaring.
- * De hints verschijnen bij mount/navigatie EN bij klik, en verdwijnen na 4s.
- */
 export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showMetadata, setShowMetadata] = useState(false);
   const [showHints, setShowHints] = useState(true);
   const [hintTrigger, setHintTrigger] = useState(0);
+  
+  // Easter Egg State
+  const [clickCount, setClickCount] = useState(0);
+  const lastClickRef = useRef(0);
   
   const artworks = useMemo(() => {
     if (!dbArtworks) return [];
@@ -54,7 +55,6 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
 
   const activeItem = artworks[currentIndex];
 
-  // Beheer het automatisch verdwijnen van de hints
   useEffect(() => {
     if (viewMode === 'viewer') {
       setShowHints(true);
@@ -67,12 +67,14 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
     e?.stopPropagation();
     setCurrentIndex((prev) => (prev + 1) % artworks.length);
     setShowMetadata(false);
+    setClickCount(0);
   }, [artworks.length]);
 
   const handlePrev = useCallback((e?: React.MouseEvent) => {
     e?.stopPropagation();
     setCurrentIndex((prev) => (prev - 1 + artworks.length) % artworks.length);
     setShowMetadata(false);
+    setClickCount(0);
   }, [artworks.length]);
 
   const enterViewer = (index: number) => {
@@ -80,6 +82,52 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
     setViewMode('viewer');
     setShowMetadata(false);
     setHintTrigger(p => p + 1);
+    setClickCount(0);
+  };
+
+  // Easter Egg Logic
+  const handleArtworkClick = async () => {
+    setHintTrigger(p => p + 1);
+    
+    const now = Date.now();
+    if (now - lastClickRef.current > 2000) {
+      setClickCount(1);
+    } else {
+      const newCount = clickCount + 1;
+      setClickCount(newCount);
+      
+      if (newCount >= 4) {
+        setClickCount(0);
+        const colors = await extractColors(cleanString(activeItem.image || activeItem.imageUrl));
+        window.dispatchEvent(new CustomEvent('trigger-simulation', { detail: { colors } }));
+        setViewMode('grid'); // Keer terug naar grid om de matrix te zien
+      }
+    }
+    lastClickRef.current = now;
+  };
+
+  const extractColors = (imgUrl: string | null): Promise<string[]> => {
+    return new Promise((resolve) => {
+      if (!imgUrl) return resolve(["#0F0"]);
+      const img = new Image();
+      img.crossOrigin = "Anonymous";
+      img.src = imgUrl;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return resolve(["#0F0"]);
+        canvas.width = 10;
+        canvas.height = 10;
+        ctx.drawImage(img, 0, 0, 10, 10);
+        const data = ctx.getImageData(0, 0, 10, 10).data;
+        const colors = [];
+        for (let i = 0; i < data.length; i += 16) {
+          colors.push(`rgb(${data[i]}, ${data[i+1]}, ${data[i+2]})`);
+        }
+        resolve(colors.length > 0 ? colors : ["#0F0"]);
+      };
+      img.onerror = () => resolve(["#0F0"]);
+    });
   };
 
   useEffect(() => {
@@ -169,10 +217,9 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
       {/* 2. IMMERSIVE VIEWER MODE */}
       {viewMode === 'viewer' && activeItem && (
         <div className="fixed inset-0 z-[1000] bg-background animate-in fade-in duration-700">
-          {/* 1. Viewer Layer */}
           <div 
             className="absolute inset-0 z-[110] flex items-center justify-center p-8 md:p-20"
-            onClick={() => setHintTrigger(p => p + 1)}
+            onClick={handleArtworkClick}
           >
             <div className="w-full h-full max-w-[95vw] max-h-[85vh]">
               <DeepZoomViewer 
@@ -183,7 +230,6 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
             </div>
           </div>
 
-          {/* 2. UI Nav Layer */}
           <div className="absolute inset-0 z-[140] pointer-events-none flex items-center justify-between px-4 md:px-8">
             <button 
               onClick={handlePrev}
@@ -199,7 +245,6 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
             </button>
           </div>
 
-          {/* 3. Global Header Overlay */}
           <div className="absolute top-0 left-0 right-0 z-[150] p-6 md:p-10 flex items-center justify-between pointer-events-none">
             <div className="flex items-center gap-6 pointer-events-auto">
               <button 
@@ -228,7 +273,6 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
             </button>
           </div>
 
-          {/* 4. Info Plaque Overlay */}
           <div className={cn(
             "absolute bottom-0 left-0 right-0 z-[160] flex flex-col items-center p-8 md:p-12 pointer-events-none transition-all duration-1000 ease-in-out",
             showMetadata ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
@@ -255,7 +299,6 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
             </div>
           </div>
 
-          {/* 6. Interaction Hint Overlay (Subtle) - Verdwijnt na 4s */}
           <div className={cn(
             "absolute bottom-24 left-1/2 -translate-x-1/2 z-[140] flex flex-col items-center gap-3 pointer-events-none transition-opacity duration-[2000ms] ease-in-out",
             (showMetadata || !showHints) ? "opacity-0" : "opacity-100"
@@ -278,7 +321,6 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
              </div>
           </div>
           
-          {/* 5. Progress Line */}
           <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-[140] flex gap-4 items-center pointer-events-none">
             <span className="text-[9px] font-black tracking-widest opacity-30">{currentIndex + 1}</span>
             <div className="flex gap-2 pointer-events-auto">

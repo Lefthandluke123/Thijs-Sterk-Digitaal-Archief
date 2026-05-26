@@ -1,6 +1,7 @@
+
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { X, ChevronLeft, ChevronRight, Info, Mic, Pause, ImageIcon, MousePointer2, Move } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -33,10 +34,14 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
   const [showHints, setShowHints] = useState(true);
   const [hintTrigger, setHintTrigger] = useState(0);
   
+  // Easter Egg State
+  const [clickCount, setClickCount] = useState(0);
+  const lastClickRef = useRef(0);
+
   const pathname = usePathname();
   const { language, t } = useLanguage();
 
-  // Beheer het automatisch verdwijnen van de hints (na 4 seconden)
+  // Beheer het automatisch verdwijnen van de hints
   useEffect(() => {
     if (artwork) {
       setShowHints(true);
@@ -48,6 +53,7 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
   useEffect(() => {
     if (artwork && typeof window !== 'undefined') {
       setArtworkUrl(`${window.location.origin}/art/${artwork.slug || artwork.id}`);
+      setClickCount(0); // Reset bij nieuw schilderij
     }
   }, [artwork]);
 
@@ -84,6 +90,51 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
     setIsPlaying(!isPlaying);
   };
 
+  // Easter Egg Handler: Kleuren extraheren en simulatie triggeren
+  const handleArtworkClick = async () => {
+    setHintTrigger(p => p + 1);
+    
+    const now = Date.now();
+    if (now - lastClickRef.current > 2000) {
+      setClickCount(1);
+    } else {
+      const newCount = clickCount + 1;
+      setClickCount(newCount);
+      
+      if (newCount >= 4) {
+        setClickCount(0);
+        const colors = await extractColors(cleanString(artwork.image || artwork.imageUrl || artwork.url));
+        window.dispatchEvent(new CustomEvent('trigger-simulation', { detail: { colors } }));
+        onClose(); // Sluit de viewer om de matrix te tonen
+      }
+    }
+    lastClickRef.current = now;
+  };
+
+  const extractColors = (imgUrl: string | null): Promise<string[]> => {
+    return new Promise((resolve) => {
+      if (!imgUrl) return resolve(["#0F0"]);
+      const img = new Image();
+      img.crossOrigin = "Anonymous";
+      img.src = imgUrl;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return resolve(["#0F0"]);
+        canvas.width = 10;
+        canvas.height = 10;
+        ctx.drawImage(img, 0, 0, 10, 10);
+        const data = ctx.getImageData(0, 0, 10, 10).data;
+        const colors = [];
+        for (let i = 0; i < data.length; i += 16) { // Neem een sample van pixels
+          colors.push(`rgb(${data[i]}, ${data[i+1]}, ${data[i+2]})`);
+        }
+        resolve(colors.length > 0 ? colors : ["#0F0"]);
+      };
+      img.onerror = () => resolve(["#0F0"]);
+    });
+  };
+
   if (!artwork || pathname.startsWith('/room') || pathname.startsWith('/artwork')) {
     return null;
   }
@@ -98,7 +149,7 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
     >
       <div 
         className="absolute inset-0 z-[10010] flex items-center justify-center p-12 md:p-24"
-        onClick={() => setHintTrigger(p => p + 1)}
+        onClick={handleArtworkClick}
       >
         <div className="w-full h-full max-w-[95vw] max-h-[85vh] flex items-center justify-center">
           {displayImage ? (
@@ -172,7 +223,6 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
         </div>
       </div>
 
-      {/* Interaction Hint Overlay (Subtle) - Verdwijnt na 4s */}
       <div className={cn(
         "absolute bottom-20 left-1/2 -translate-x-1/2 z-[10040] flex flex-col items-center gap-3 pointer-events-none transition-opacity duration-[2000ms] ease-in-out",
         (showMetadata || !showHints) ? "opacity-0" : "opacity-100"
