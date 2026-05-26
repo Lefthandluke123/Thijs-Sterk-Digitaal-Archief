@@ -82,13 +82,20 @@ const CONTENT_FIELDS = [
   { id: 'siteTitle', label: 'Website Titel', type: 'input', category: 'Algemeen' },
   { id: 'siteSubtitle', label: 'Website Ondertitel', type: 'input', category: 'Algemeen' },
   { id: 'homeHeroTitle', label: 'Hero Hoofdtitel', type: 'input', category: 'Homepage' },
+  { id: 'homeHeroSubtitle', label: 'Hero Ondertitel', type: 'textarea', category: 'Homepage' },
+  { id: 'homeIntroTitle', label: 'Introductie Titel', type: 'input', category: 'Homepage' },
+  { id: 'homeIntroSubtitle', label: 'Introductie Ondertitel', type: 'input', category: 'Homepage' },
   { id: 'homeBioTitle', label: 'Biografie Titel', type: 'input', category: 'Homepage' },
   { id: 'homeBio', label: 'Biografie Tekst', type: 'textarea', category: 'Homepage' },
+  { id: 'homePortfolioTitle', label: 'Portfolio Sectie Titel', type: 'input', category: 'Homepage' },
   { id: 'gallery_title', label: 'Zalen Overzicht Titel', type: 'input', category: 'Zalen' },
   { id: 'gallery_select', label: 'Zalen Instructie', type: 'input', category: 'Zalen' },
   { id: 'curator_title', label: 'Curator Titel', type: 'input', category: 'Curator' },
   { id: 'curator_subtitle', label: 'Curator Ondertitel', type: 'input', category: 'Curator' },
   { id: 'shopIntro', label: 'Winkel Introductie', type: 'textarea', category: 'Winkel' },
+  { id: 'contactTitle', label: 'Contact Titel', type: 'input', category: 'Contact' },
+  { id: 'contactIntro', label: 'Contact Introductie', type: 'textarea', category: 'Contact' },
+  { id: 'contactQuote', label: 'Contact Quote', type: 'textarea', category: 'Contact' },
 ];
 
 // AUTONOOM SLIDER COMPONENT - Strikte Controlled State
@@ -250,6 +257,7 @@ export default function AdminPage() {
   useEffect(() => {
     if (settings && !isInitialized.current) {
       setEditorState(settings as Record<string, any>);
+      setFormData(settings as Record<string, any>);
       isInitialized.current = true;
     }
   }, [settings]);

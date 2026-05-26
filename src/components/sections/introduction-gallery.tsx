@@ -1,22 +1,29 @@
-
 "use client";
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, limit, orderBy } from 'firebase/firestore';
+import { useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
+import { collection, query, limit, orderBy, doc } from 'firebase/firestore';
 import { ArtworkViewer } from '@/components/artwork-viewer';
 import { Maximize2, Loader2, ArrowRight, Layers, ImageIcon } from 'lucide-react';
 import Link from 'next/link';
 import { cleanString } from '@/lib/museum-utils';
+import { useLanguage } from '@/components/language-provider';
 
 export function IntroductionGallery() {
   const [mounted, setMounted] = useState(false);
   const [selectedArtwork, setSelectedArtwork] = useState<any | null>(null);
   const firestore = useFirestore();
+  const { language, t } = useLanguage();
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const siteSettingsRef = useMemoFirebase(() => {
+    if (!firestore || !mounted) return null;
+    return doc(firestore, 'settings', 'site');
+  }, [firestore, mounted]);
+  const { data: siteSettings } = useDoc(siteSettingsRef);
 
   const artworksQuery = useMemoFirebase(() => {
     if (!firestore || !mounted) return null;
@@ -68,6 +75,14 @@ export function IntroductionGallery() {
     setSelectedArtwork(curatedArtworks[nextIndex]);
   }, [selectedArtwork, curatedArtworks]);
 
+  const introTitle = (mounted && language !== 'nl' && siteSettings?.[`homeIntroTitle_${language}`])
+    ? siteSettings[`homeIntroTitle_${language}`]
+    : siteSettings?.homeIntroTitle || t('homeIntroTitle');
+
+  const introSubtitle = (mounted && language !== 'nl' && siteSettings?.[`homeIntroSubtitle_${language}`])
+    ? siteSettings[`homeIntroSubtitle_${language}`]
+    : siteSettings?.homeIntroSubtitle || t('homeIntroSubtitle');
+
   return (
     <section className="py-32 bg-background px-4 scroll-mt-32" id="kennismaking">
       <div className="container max-w-7xl mx-auto">
@@ -76,8 +91,8 @@ export function IntroductionGallery() {
             <Layers className="w-3.5 h-3.5 text-accent" />
             <span className="text-[10px] font-black uppercase tracking-[0.3em] text-accent">De Collectie</span>
           </div>
-          <h2 className="font-headline text-4xl md:text-5xl font-light italic text-foreground">Een Kennismaking</h2>
-          <p className="text-lg text-muted-foreground font-light max-w-2xl mx-auto">Een dwarsdoorsnede van het oeuvre.</p>
+          <h2 className="font-headline text-4xl md:text-5xl font-light italic text-foreground">{introTitle}</h2>
+          <p className="text-lg text-muted-foreground font-light max-w-2xl mx-auto">{introSubtitle}</p>
         </div>
 
         {!mounted || artLoading ? (

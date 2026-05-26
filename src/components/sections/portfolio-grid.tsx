@@ -1,20 +1,28 @@
 "use client";
 
 import React, { useState, useCallback, useEffect } from 'react';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where, limit } from 'firebase/firestore';
+import { useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
+import { collection, query, where, limit, doc } from 'firebase/firestore';
 import { ArtworkViewer } from '@/components/artwork-viewer';
 import { Maximize2, Loader2, ArrowRight, Palette } from 'lucide-react';
 import Link from 'next/link';
+import { useLanguage } from '@/components/language-provider';
 
 export function PortfolioGrid() {
   const [mounted, setMounted] = useState(false);
   const [selectedArtwork, setSelectedArtwork] = useState<any | null>(null);
   const firestore = useFirestore();
+  const { language, t } = useLanguage();
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const siteSettingsRef = useMemoFirebase(() => {
+    if (!firestore || !mounted) return null;
+    return doc(firestore, 'settings', 'site');
+  }, [firestore, mounted]);
+  const { data: siteSettings } = useDoc(siteSettingsRef);
 
   const artworksQuery = useMemoFirebase(() => {
     if (!firestore || !mounted) return null;
@@ -43,13 +51,19 @@ export function PortfolioGrid() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedArtwork, navigateDisplay]);
 
+  const portfolioTitle = (mounted && language !== 'nl' && siteSettings?.[`homePortfolioTitle_${language}`])
+    ? siteSettings[`homePortfolioTitle_${language}`]
+    : siteSettings?.homePortfolioTitle || t('homePortfolioTitle');
+
   return (
     <section className="py-20 bg-background px-4" id="portfolio" aria-labelledby="portfolio-heading">
       <div className="container mx-auto max-w-7xl">
         <div className="flex flex-col md:flex-row items-end justify-between mb-12 gap-8">
           <div className="max-w-2xl">
             <h2 id="portfolio-heading" className="font-headline text-[13px] md:text-[15px] font-light mb-2 tracking-tight uppercase">
-              Meester <span className="italic">Selectie</span>
+              {portfolioTitle.split(' ').map((word, i, arr) => 
+                i === arr.length - 1 ? <span key={i} className="italic">{word}</span> : word + ' '
+              )}
             </h2>
             <div className="h-px w-12 bg-accent/30" aria-hidden="true" />
           </div>

@@ -14,7 +14,7 @@ export function Hero() {
   const [mounted, setMounted] = useState(false);
   const [selectedArtwork, setSelectedArtwork] = useState<any | null>(null);
   const firestore = useFirestore();
-  const { language, t } = useLanguage();
+  const { language, t, dynamicContent } = useLanguage();
 
   useEffect(() => {
     setMounted(true);
@@ -38,7 +38,11 @@ export function Hero() {
 
   const heroTitle = (mounted && language !== 'nl' && siteSettings?.[`homeHeroTitle_${language}`]) 
     ? siteSettings[`homeHeroTitle_${language}`] 
-    : siteSettings?.homeHeroTitle || 'Een leven gewijd aan Licht, Ruimte en Water';
+    : siteSettings?.homeHeroTitle || t('homeHeroTitle');
+
+  const heroSubtitle = (mounted && language !== 'nl' && siteSettings?.[`homeHeroSubtitle_${language}`])
+    ? siteSettings[`homeHeroSubtitle_${language}`]
+    : siteSettings?.homeHeroSubtitle || t('homeHeroSubtitle');
 
   return (
     <section className="relative min-h-[90vh] flex flex-col items-center justify-center pt-40 pb-32 px-6 overflow-hidden bg-background" aria-labelledby="hero-heading">
@@ -75,7 +79,7 @@ export function Hero() {
           </div>
           
           <p className="text-lg md:text-xl font-light text-accent/70 leading-relaxed max-w-xl mx-auto italic px-10 border-l-2 border-accent/10">
-            Ontdek de verstilde kracht van het Noord-Hollandse landschap door de ogen van een meester.
+            {heroSubtitle}
           </p>
         </div>
       </div>
