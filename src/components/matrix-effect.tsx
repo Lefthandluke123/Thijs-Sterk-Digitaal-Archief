@@ -33,13 +33,13 @@ export function MatrixEffect() {
       sub: "De artistieke simulatie is instabiel." 
     },
     { 
-      button: "NOU, VOORUIT DAN...", 
+      button: "NOU, vooruit dan...", 
       heading: "RESTAURATIE GESTART", 
       sub: "De werkelijkheid keert terug." 
     },
     {
-      button: "TERUG NAAR NORMAAL",
-      heading: "GEINTJE, MENEER SONNEBERG",
+      button: "GEINTJE, MENEER SONNEBERG",
+      heading: "SIMULATIE VERLATEN",
       sub: "De restauratie is voltooid. Alles is weer bij het oude."
     }
   ];
