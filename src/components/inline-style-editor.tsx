@@ -1,32 +1,32 @@
+
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
 import { 
   Type, 
   Settings2, 
   Lock, 
   Unlock, 
-  Save, 
   X, 
   Plus, 
   Minus,
-  Globe
+  CheckCircle2,
+  Loader2
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
 /**
- * @fileOverview InlineStyleEditor: Eenvoudige visuele typografie editor.
- * Maakt elementen selecteerbaar en past lettergroottes aan via CSS variabelen.
+ * @fileOverview InlineStyleEditor: Visuele typografie editor met Firestore persistentie.
  */
 
 export function InlineStyleEditor() {
   const [active, setActive] = useState(false);
+  const [isSaving, setIsSubmitting] = useState(false);
+  const [lastSaved, setLastSaved] = useState<number | null>(null);
   const [selectedElement, setSelectedElement] = useState<{
     id: string;
     type: 'h1' | 'h2' | 'h3' | 'button' | 'nav';
@@ -42,7 +42,7 @@ export function InlineStyleEditor() {
   }, [firestore]);
   const { data: settings } = useDoc(settingsRef);
 
-  // Toggle Edit Mode via Global Key or Button
+  // Toggle Edit Mode via Global Key (Meta+E)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'e' && (e.metaKey || e.ctrlKey)) {
@@ -79,16 +79,17 @@ export function InlineStyleEditor() {
           ? 'nav' 
           : selectable.tagName.toLowerCase() as any;
 
-      // Get unique ID or create one based on content/index if not exists
+      // Genereer een stabiele ID op basis van positie/inhoud voor persistentie van overrides
       let dtpId = selectable.getAttribute('data-dtp-id');
       if (!dtpId) {
-        dtpId = `dtp-${Math.random().toString(36).substr(2, 9)}`;
+        const index = Array.from(document.querySelectorAll(selectable.tagName)).indexOf(selectable);
+        const textHint = selectable.innerText.substring(0, 10).replace(/\s+/g, '-').toLowerCase();
+        dtpId = `dtp-${type}-${index}-${textHint}`;
         selectable.setAttribute('data-dtp-id', dtpId);
       }
 
       const style = window.getComputedStyle(selectable);
       const fontSize = parseFloat(style.fontSize);
-
       const isLocked = !!settings?.typographyOverrides?.[dtpId];
 
       setSelectedElement({
@@ -108,6 +109,7 @@ export function InlineStyleEditor() {
     if (!selectedElement || !settingsRef) return;
 
     setSelectedElement(prev => prev ? { ...prev, currentSize: newSize } : null);
+    setIsSubmitting(true);
 
     const typography = { ...(settings?.typography || {}) };
     const overrides = { ...(settings?.typographyOverrides || {}) };
@@ -119,9 +121,16 @@ export function InlineStyleEditor() {
     }
 
     try {
-      await updateDoc(settingsRef, { typography, typographyOverrides: overrides });
+      await updateDoc(settingsRef, { 
+        typography, 
+        typographyOverrides: overrides,
+        lastStyleUpdate: new Date().toISOString()
+      });
+      setLastSaved(Date.now());
     } catch (e) {
-      toast({ variant: "destructive", title: "Opslaan mislukt" });
+      toast({ variant: "destructive", title: "Fout bij opslaan", description: "Controleer uw verbinding." });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -134,13 +143,16 @@ export function InlineStyleEditor() {
       const overrides = { ...(settings?.typographyOverrides || {}) };
       delete overrides[selectedElement.id];
       await updateDoc(settingsRef, { typographyOverrides: overrides });
+      toast({ title: "Nu in Global Mode", description: "Dit element volgt weer de algemene instelling." });
+    } else {
+      toast({ title: "Nu in Unique Mode", description: "Aanpassingen gelden alleen voor dit element." });
     }
   };
 
   if (!active) return (
     <Button 
       onClick={() => setActive(true)} 
-      className="fixed bottom-6 right-6 z-[100] rounded-full bg-accent text-white h-14 px-8 shadow-2xl uppercase font-black text-[10px] tracking-widest hover:scale-105 transition-all"
+      className="fixed bottom-6 right-6 z-[100] rounded-full bg-accent text-white h-14 px-8 shadow-2xl uppercase font-black text-[10px] tracking-widest hover:scale-105 transition-all border-2 border-white/20"
     >
       <Settings2 className="w-4 h-4 mr-2" /> Stijlen Bewerken
     </Button>
@@ -153,7 +165,16 @@ export function InlineStyleEditor() {
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[10000] flex items-center gap-4 bg-white/90 backdrop-blur-3xl p-4 rounded-3xl shadow-2xl border border-accent/20 dtp-toolbar animate-in slide-in-from-bottom-10">
         <div className="flex items-center gap-3 pr-4 border-r border-black/10">
           <Type className="w-5 h-5 text-accent" />
-          <span className="text-[10px] font-black uppercase tracking-widest">Typografie Mode</span>
+          <div className="flex flex-col">
+            <span className="text-[10px] font-black uppercase tracking-widest leading-none">Typografie</span>
+            {isSaving ? (
+              <span className="text-[8px] font-bold text-accent animate-pulse mt-1">Opslaan...</span>
+            ) : lastSaved ? (
+              <span className="text-[8px] font-bold text-green-600 flex items-center gap-1 mt-1">
+                <CheckCircle2 className="w-2 h-2" /> Opgeslagen
+              </span>
+            ) : null}
+          </div>
         </div>
         
         {selectedElement ? (
@@ -170,14 +191,17 @@ export function InlineStyleEditor() {
             <Button 
               onClick={toggleLock} 
               variant={selectedElement.isLocked ? "default" : "ghost"}
-              className={cn("h-10 px-4 rounded-xl text-[9px] font-black uppercase tracking-widest", selectedElement.isLocked ? "bg-accent" : "opacity-40")}
+              className={cn(
+                "h-10 px-4 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all", 
+                selectedElement.isLocked ? "bg-accent text-white shadow-md" : "opacity-40 hover:opacity-100"
+              )}
             >
               {selectedElement.isLocked ? <Lock className="w-3.5 h-3.5 mr-2" /> : <Unlock className="w-3.5 h-3.5 mr-2" />}
-              {selectedElement.isLocked ? "Uniek Element" : "Global Mode"}
+              {selectedElement.isLocked ? "Uniek" : "Globaal"}
             </Button>
           </div>
         ) : (
-          <p className="text-[10px] italic opacity-40 px-10">Klik op een tekst om de grootte aan te passen</p>
+          <p className="text-[10px] italic opacity-40 px-10">Klik op een tekst of knop om de grootte aan te passen</p>
         )}
 
         <Button onClick={() => setActive(false)} variant="ghost" className="h-10 w-10 rounded-full hover:bg-destructive hover:text-white transition-colors">
@@ -193,7 +217,8 @@ export function InlineStyleEditor() {
             left: selectedElement.rect.left - 4,
             width: selectedElement.rect.width + 8,
             height: selectedElement.rect.height + 8,
-            borderRadius: '4px'
+            borderRadius: '8px',
+            boxShadow: '0 0 0 9999px rgba(0,0,0,0.1)'
           }}
         />
       )}

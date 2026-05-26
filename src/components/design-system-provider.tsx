@@ -1,9 +1,14 @@
+
 "use client";
 
 import React, { useMemo } from 'react';
 import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 
+/**
+ * @fileOverview DesignSystemProvider: Injecteert dynamische stijlen uit Firestore.
+ * Verwerkt zowel globale typografie-tokens als specifieke overrides.
+ */
 export function DesignSystemProvider({ children }: { children: React.ReactNode }) {
   const firestore = useFirestore();
 
@@ -21,14 +26,12 @@ export function DesignSystemProvider({ children }: { children: React.ReactNode }
     const primary = settings.primaryColor || '201 45% 5%';
     const accent = settings.accentColor || '142 30% 25%';
     const baseFontSize = settings.baseFontSize || '16px';
-    const lineHeight = settings.lineHeight || '1.7';
-    const containerWidth = settings.containerWidth || '1280px';
     const radius = settings.radius || '2rem';
     
     const bodyFont = settings.bodyFont === 'serif' ? '"Playfair Display", serif' : '"Inter", sans-serif';
     const headFont = settings.headFont === 'sans' ? '"Inter", sans-serif' : '"Playfair Display", serif';
 
-    // Typography Tokens
+    // Typography Tokens uit database (met harde fallbacks uit globals.css)
     const t = settings.typography || {};
     const h1Size = t.h1?.fontSize || 64;
     const h2Size = t.h2?.fontSize || 48;
@@ -36,7 +39,10 @@ export function DesignSystemProvider({ children }: { children: React.ReactNode }
     const btnSize = t.button?.fontSize || 14;
     const navSize = t.nav?.fontSize || 10;
 
-    // Build base overrides
+    // Pas de globale schaal toe (indien aanwezig)
+    const scale = settings.headingScale ?? 1;
+    
+    // CSS Variables bouwen
     let css = `
       :root {
         --background: ${background};
@@ -44,22 +50,18 @@ export function DesignSystemProvider({ children }: { children: React.ReactNode }
         --accent: ${accent};
         --radius: ${radius};
         
-        --site-base-font-size: ${baseFontSize};
-        --site-line-height: ${lineHeight};
-        --site-container-max-width: ${containerWidth};
-        
         --font-body: ${bodyFont};
         --font-headline: ${headFont};
 
-        --h1-size: ${h1Size}px;
-        --h2-size: ${h2Size}px;
-        --h3-size: ${h3Size}px;
+        --h1-size: ${h1Size * scale}px;
+        --h2-size: ${h2Size * scale}px;
+        --h3-size: ${h3Size * scale}px;
         --button-size: ${btnSize}px;
         --nav-size: ${navSize}px;
       }
     `;
 
-    // Apply Local Overrides
+    // Pas individuele overrides toe (locked elements)
     const overrides = settings.typographyOverrides || {};
     Object.entries(overrides).forEach(([id, style]: [string, any]) => {
       if (style.fontSize) {
@@ -72,7 +74,7 @@ export function DesignSystemProvider({ children }: { children: React.ReactNode }
 
   return (
     <>
-      <style id="dynamic-stramien-styles" dangerouslySetInnerHTML={{ __html: dynamicStyles }} />
+      <style id="dynamic-design-tokens" dangerouslySetInnerHTML={{ __html: dynamicStyles }} />
       {children}
     </>
   );
