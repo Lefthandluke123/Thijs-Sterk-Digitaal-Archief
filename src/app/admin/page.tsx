@@ -339,6 +339,20 @@ export default function AdminPage() {
     }
   };
 
+  const handleRemoveFromRoom = async (artId: string, roomId: string) => {
+    if (!firestore) return;
+    try {
+      const art = rawArtworks?.find(a => a.id === artId);
+      if (!art) return;
+      const currentRooms = art.roomIds || [];
+      const nextRooms = currentRooms.filter((r: string) => r !== roomId);
+      await updateDoc(doc(firestore, 'artworks', artId), { roomIds: nextRooms, updatedAt: serverTimestamp() });
+      toast({ title: "Werk verwijderd uit zaal" });
+    } catch (e) {
+      toast({ variant: "destructive", title: "Verwijderen mislukt" });
+    }
+  };
+
   const handleBulkTagUpdate = async (action: 'add' | 'remove') => {
     if (!firestore || selectedArtIds.length === 0) return;
     const tagsToProcess = bulkTagInput.split(',').map(t => t.trim()).filter(Boolean);
@@ -380,6 +394,18 @@ export default function AdminPage() {
       toast({ variant: "destructive", title: "Verwijderen mislukt" });
     } finally {
       setIsProcessingBulk(false);
+    }
+  };
+
+  const handleDeleteRoom = async (room: any) => {
+    if (!firestore) return;
+    if (!confirm(`Weet u zeker dat u zaal "${room.title}" wilt verwijderen? De kunstwerken zelf blijven behouden.`)) return;
+    
+    try {
+      await deleteDoc(doc(firestore, 'rooms', room.id));
+      toast({ title: "Zaal succesvol verwijderd" });
+    } catch (e) {
+      toast({ variant: "destructive", title: "Fout bij verwijderen van zaal" });
     }
   };
 
@@ -547,7 +573,7 @@ export default function AdminPage() {
                             </div>
                             <div className="flex items-center gap-4 mr-4 opacity-0 group-hover:opacity-100 transition-opacity">
                                <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); setEditingRoom(room); setRoomForm(room); setIsRoomDialogOpen(true); }} className="h-9 px-4 rounded-xl text-[9px] font-black uppercase tracking-widest">Hernoemen</Button>
-                               <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); if(confirm(`Zaal "${room.title}" verwijderen?`)) deleteDoc(doc(firestore!, 'rooms', room.id)); }} className="h-9 w-9 p-0 rounded-xl text-destructive"><Trash2 className="w-4 h-4" /></Button>
+                               <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); handleDeleteRoom(room); }} className="h-9 w-9 p-0 rounded-xl text-destructive hover:bg-destructive/10"><Trash2 className="w-4 h-4" /></Button>
                             </div>
                          </div>
                       </AccordionTrigger>
@@ -570,7 +596,7 @@ export default function AdminPage() {
                                 <div key={art.id} className="relative aspect-square rounded-2xl overflow-hidden group/art">
                                    <img src={art.image} className="w-full h-full object-cover" alt={art.title} />
                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/art:opacity-100 transition-opacity flex items-center justify-center">
-                                      <button onClick={() => handleBulkRoomUpdate(room.id, 'remove')} className="p-2 bg-white rounded-full text-destructive shadow-lg hover:scale-110 transition-transform"><X className="w-4 h-4" /></button>
+                                      <button onClick={() => handleRemoveFromRoom(art.id, room.id)} title="Verwijderen uit deze zaal" className="p-2 bg-white rounded-full text-destructive shadow-lg hover:scale-110 transition-transform"><X className="w-4 h-4" /></button>
                                    </div>
                                 </div>
                               ))
