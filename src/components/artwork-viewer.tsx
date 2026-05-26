@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
-import { X, ChevronLeft, ChevronRight, Info, Mic, Pause, ImageIcon } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Info, Mic, Pause, ImageIcon, MousePointer2, Move } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/components/language-provider';
 import { ShareButton } from './share-button';
@@ -142,7 +142,7 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
              <Info className="w-5 h-5" />
            </button>
 
-           <button onClick={onClose} className="p-4 bg-white/90 backdrop-blur-3xl rounded-full text-foreground hover:bg-destructive hover:text-white transition-all border border-black/5 shadow-xl">
+           <button onClick={onClose} className="p-4 bg-white/90 backdrop-blur-3xl rounded-full text-foreground hover:bg-destructive hover:text-white transition-all border border-black/5 shadow-xl" title="Sluiten (Rechtsboven)">
              <X className="w-5 h-5" />
            </button>
         </div>
@@ -156,6 +156,26 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
             {artwork.description || 'Beschrijving volgt...'}
           </p>
         </div>
+      </div>
+
+      {/* Interaction Hint Overlay (Subtle) */}
+      <div className="absolute top-32 left-1/2 -translate-x-1/2 z-[10040] flex flex-col items-center gap-3 pointer-events-none animate-in fade-in slide-in-from-top-4 duration-1000">
+         <div className="bg-white/60 backdrop-blur-xl border border-black/5 px-6 py-2 rounded-full flex items-center gap-6 shadow-sm">
+            <div className="flex items-center gap-2">
+               <MousePointer2 className="w-3 h-3 opacity-40" />
+               <span className="text-[9px] font-bold uppercase tracking-widest opacity-40">Klik: Zoom</span>
+            </div>
+            <div className="w-1 h-1 bg-black/10 rounded-full" />
+            <div className="flex items-center gap-2">
+               <span className="text-[9px] font-black px-1.5 py-0.5 bg-black/5 rounded border border-black/10 text-accent">Cmd+Klik</span>
+               <span className="text-[9px] font-bold uppercase tracking-widest opacity-40">Uitzoomen</span>
+            </div>
+            <div className="w-1 h-1 bg-black/10 rounded-full" />
+            <div className="flex items-center gap-2">
+               <Move className="w-3 h-3 opacity-40" />
+               <span className="text-[9px] font-bold uppercase tracking-widest opacity-40">Slepen: Bewegen</span>
+            </div>
+         </div>
       </div>
     </div>
   );

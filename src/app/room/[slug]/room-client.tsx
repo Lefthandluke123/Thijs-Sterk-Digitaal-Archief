@@ -12,7 +12,9 @@ import {
   Maximize2, 
   Play, 
   LayoutGrid,
-  Sparkles
+  Sparkles,
+  MousePointer2,
+  Move
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { sortArtworksByTitle } from '@/lib/museum-utils';
@@ -36,7 +38,7 @@ type ViewMode = 'grid' | 'viewer';
 
 /**
  * @fileOverview RoomClient: Beheert de immersieve zaal-ervaring.
- * Nu met een "Grid Overview" en een "Immersive Viewer".
+ * Nu met een "Grid Overview" en een "Immersive Viewer" met interactie-uitleg.
  */
 export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
@@ -188,6 +190,7 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
               <button 
                 onClick={() => setViewMode('grid')}
                 className="p-4 rounded-full bg-white/90 backdrop-blur-xl border border-black/5 hover:bg-accent hover:text-accent-foreground transition-all group shadow-xl"
+                title="Terug naar overzicht (Rechtsboven)"
               >
                 <LayoutGrid className="w-5 h-5 group-hover:scale-110 transition-transform" />
               </button>
@@ -235,6 +238,26 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
                 {activeItem.description || 'Beschrijving volgt...'}
               </p>
             </div>
+          </div>
+
+          {/* 6. Interaction Hint Overlay (Subtle) */}
+          <div className="absolute top-32 left-1/2 -translate-x-1/2 z-[140] flex flex-col items-center gap-3 pointer-events-none animate-in fade-in slide-in-from-top-4 duration-1000">
+             <div className="bg-white/60 backdrop-blur-xl border border-black/5 px-6 py-2 rounded-full flex items-center gap-6 shadow-sm">
+                <div className="flex items-center gap-2">
+                   <MousePointer2 className="w-3 h-3 opacity-40" />
+                   <span className="text-[9px] font-bold uppercase tracking-widest opacity-40">Klik: Zoom in</span>
+                </div>
+                <div className="w-1 h-1 bg-black/10 rounded-full" />
+                <div className="flex items-center gap-2">
+                   <span className="text-[9px] font-black px-1.5 py-0.5 bg-black/5 rounded border border-black/10 text-accent">Cmd + Klik</span>
+                   <span className="text-[9px] font-bold uppercase tracking-widest opacity-40">Zoom uit</span>
+                </div>
+                <div className="w-1 h-1 bg-black/10 rounded-full" />
+                <div className="flex items-center gap-2">
+                   <Move className="w-3 h-3 opacity-40" />
+                   <span className="text-[9px] font-bold uppercase tracking-widest opacity-40">Slepen: Bewegen</span>
+                </div>
+             </div>
           </div>
           
           {/* 5. Progress Line */}
