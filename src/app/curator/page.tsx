@@ -4,7 +4,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
-import { Loader2, Maximize2, Play, Eraser, Share2, Copy, Filter, CheckCircle2 } from 'lucide-react';
+import { Loader2, Maximize2, Play, Eraser, Share2, Copy, Filter, CheckCircle2, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ArtworkViewer } from '@/components/artwork-viewer';
 import { useLanguage } from '@/components/language-provider';
@@ -47,6 +47,9 @@ export default function CuratorPage() {
       return activeTags.every(tag => artTags.includes(tag.toLowerCase()));
     });
   }, [artworks, activeTags]);
+
+  const resultCount = filteredArtworks.length;
+  const hasNoResults = activeTags.length > 0 && resultCount === 0;
 
   const navigateArtwork = useCallback((direction: 'next' | 'prev') => {
     if (!selectedArtwork || filteredArtworks.length === 0) return;
@@ -108,62 +111,79 @@ export default function CuratorPage() {
   };
 
   return (
-    <main className="min-h-screen bg-background pt-32 pb-48 px-6">
-      <div className="container mx-auto max-w-4xl space-y-12">
-        {/* HEADER SECTION */}
-        <div className="text-center space-y-8 animate-subtle-fade">
-          <div className="space-y-4">
-            <h1 className="font-headline text-4xl md:text-6xl font-medium tracking-tight text-foreground leading-tight">
+    <main className="min-h-screen bg-background pt-24 md:pt-32 pb-48 px-6">
+      <div className="container mx-auto max-w-4xl space-y-8 md:space-y-12">
+        {/* HEADER SECTION - COMPACTED */}
+        <div className="text-center space-y-6 md:space-y-8 animate-subtle-fade">
+          <div className="space-y-2">
+            <h1 className="font-headline text-3xl md:text-5xl font-medium tracking-tight text-foreground leading-tight">
               {t('curator_subtitle')}
             </h1>
-            <p className="text-lg md:text-xl text-muted-foreground font-light max-w-2xl mx-auto italic px-4">
-              {t('curator_title')}
+            <p className="font-headline text-lg md:text-2xl italic text-muted-foreground opacity-60">
+              Maak 1, 2, 3 of 4 keuzes
             </p>
           </div>
 
-          {/* PRIMARY ACTION BUTTONS */}
-          <div className="flex flex-col items-center gap-6 pt-4">
+          {/* PRIMARY ACTION BUTTONS - TOP POSITION */}
+          <div className="flex flex-col items-center gap-6">
             <div className="flex flex-wrap justify-center gap-4">
               <Button 
                 onClick={() => setShowResults(true)} 
-                disabled={activeTags.length === 0}
-                className="rounded-full h-16 px-12 bg-primary text-primary-foreground uppercase font-black text-[11px] tracking-widest shadow-2xl hover:scale-[1.03] active:scale-95 transition-all disabled:opacity-20"
+                disabled={activeTags.length === 0 || hasNoResults}
+                className="rounded-full h-14 md:h-16 px-8 md:px-12 bg-primary text-primary-foreground uppercase font-black text-[10px] md:text-[11px] tracking-widest shadow-xl hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-20"
               >
                 <Play className="w-4 h-4 mr-3 fill-current" /> {t('curator_open')}
               </Button>
               <Button 
                 onClick={() => { setActiveTags([]); setShowResults(false); }} 
                 variant="outline" 
-                className="rounded-full h-16 px-12 uppercase font-black text-[11px] tracking-widest border-2 hover:bg-black/5"
+                className="rounded-full h-14 md:h-16 px-8 md:px-12 uppercase font-black text-[10px] md:text-[11px] tracking-widest border-2 hover:bg-black/5"
               >
                 <Eraser className="w-4 h-4 mr-3" /> {t('curator_clear')}
               </Button>
             </div>
 
-            <div className="space-y-2">
-              <p className="text-[11px] font-black uppercase tracking-[0.3em] text-accent">
-                {t('curator_instruction')}
-              </p>
-              <div className="flex items-center justify-center gap-3">
-                 <span className={cn(
-                   "text-[10px] font-black uppercase px-4 py-1 rounded-full border-2 transition-all",
-                   activeTags.length > 0 ? "bg-accent/10 border-accent text-accent" : "bg-black/5 border-transparent opacity-30"
-                 )}>
-                   {t('curator_counter').replace('{count}', activeTags.length.toString())}
-                 </span>
-              </div>
+            {/* LIVE FEEDBACK COUNTER */}
+            <div className="min-h-[24px]">
+               {activeTags.length > 0 ? (
+                 <div className="flex flex-col items-center gap-2 animate-in fade-in duration-500">
+                    <div className={cn(
+                      "flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-colors",
+                      hasNoResults ? "bg-destructive/10 text-destructive" : "bg-accent/10 text-accent"
+                    )}>
+                      {hasNoResults ? (
+                        <>
+                          <AlertCircle className="w-3 h-3" />
+                          Geen resultaten gevonden
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 className="w-3 h-3" />
+                          {resultCount} {resultCount === 1 ? 'schilderij' : 'schilderijen'} gevonden
+                        </>
+                      )}
+                    </div>
+                    {hasNoResults && (
+                      <p className="text-[10px] font-bold uppercase tracking-widest opacity-40">Probeer een andere combinatie</p>
+                    )}
+                 </div>
+               ) : (
+                 <p className="text-[10px] font-black uppercase tracking-[0.3em] text-accent opacity-40">
+                   {t('curator_counter').replace('{count}', '0')}
+                 </p>
+               )}
             </div>
           </div>
         </div>
 
-        {/* TAGS SELECTION BLOCK */}
-        <div className="bg-white/40 backdrop-blur-xl rounded-[3rem] p-10 md:p-16 border border-white/60 shadow-xl space-y-16 animate-subtle-fade" style={{ animationDelay: '0.2s' }}>
+        {/* TAGS SELECTION BLOCK - MUCH COMPACTER */}
+        <div className="bg-white/40 backdrop-blur-xl rounded-[2.5rem] p-8 md:p-12 border border-white/60 shadow-lg space-y-10 md:space-y-12 animate-subtle-fade">
           {Object.entries(MUSEUM_TAGS).map(([cat, tags]) => (
-            <div key={cat} className="space-y-8">
-              <h2 className="font-headline text-3xl italic text-foreground/80 border-l-4 border-accent/20 pl-6 leading-none">
+            <div key={cat} className="space-y-4 md:space-y-6">
+              <h2 className="font-headline text-2xl md:text-3xl italic text-foreground/70 border-l-4 border-accent/20 pl-5 leading-none">
                 {cat}
               </h2>
-              <div className="flex flex-wrap gap-2.5">
+              <div className="flex flex-wrap gap-2">
                 {tags.map(tag => {
                   const active = activeTags.includes(tag);
                   const atLimit = activeTags.length >= 4 && !active;
@@ -173,15 +193,15 @@ export default function CuratorPage() {
                       onClick={() => toggleTag(tag)} 
                       disabled={atLimit}
                       className={cn(
-                        "px-6 py-3.5 rounded-2xl text-[11px] font-bold uppercase transition-all border-2", 
+                        "px-4 md:px-5 py-2.5 md:py-3 rounded-xl text-[10px] md:text-[11px] font-bold uppercase transition-all border-2", 
                         active 
-                          ? "bg-accent text-accent-foreground border-accent shadow-lg scale-105" 
+                          ? "bg-accent text-accent-foreground border-accent shadow-md scale-105" 
                           : "bg-white border-black/5 text-foreground/50 hover:border-accent/30",
                         atLimit && "opacity-20 cursor-not-allowed grayscale"
                       )}
                     >
                       <div className="flex items-center gap-2">
-                        {active && <CheckCircle2 className="w-3.5 h-3.5" />}
+                        {active && <CheckCircle2 className="w-3 h-3" />}
                         {tag}
                       </div>
                     </button>
@@ -192,93 +212,82 @@ export default function CuratorPage() {
           ))}
         </div>
 
-        {/* RESULTS SUMMARY */}
-        {activeTags.length > 0 && (
-          <div className="text-center pt-8 animate-in fade-in duration-1000">
-             <p className="text-[10px] font-black uppercase tracking-[0.4em] text-accent/40">
-               {filteredArtworks.length} werken gevonden in uw selectie
-             </p>
-          </div>
-        )}
-
-        {/* RESULTS GRID */}
-        {showResults && (
-          <div className="mt-24 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 animate-in fade-in slide-in-from-bottom-12 duration-1000">
+        {/* RESULTS GRID - ONLY SHOW IF COUNT > 0 */}
+        {showResults && !hasNoResults && (
+          <div className="mt-16 md:mt-24 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 md:gap-8 animate-in fade-in slide-in-from-bottom-8 duration-1000">
             {filteredArtworks.map((item: any) => (
-              <div key={item.id} className="group cursor-pointer space-y-4" onClick={() => setSelectedArtwork(item)}>
-                <div className="relative aspect-[4/5] overflow-hidden rounded-[2rem] bg-black/[0.02] shadow-md transition-all duration-[1500ms] group-hover:shadow-2xl flex items-center justify-center p-3 border border-black/5">
+              <div key={item.id} className="group cursor-pointer space-y-3 md:space-y-4" onClick={() => setSelectedArtwork(item)}>
+                <div className="relative aspect-[4/5] overflow-hidden rounded-2xl md:rounded-[2rem] bg-black/[0.02] shadow-md transition-all duration-[1000ms] group-hover:shadow-xl flex items-center justify-center p-3 border border-black/5">
                   {item.image ? (
                     <img 
                       src={item.image} 
-                      className="max-w-full max-h-full object-contain transition-transform duration-[1500ms] group-hover:scale-110" 
+                      className="max-w-full max-h-full object-contain transition-transform duration-[1000ms] group-hover:scale-110" 
                       style={{ filter: `brightness(${item.brightness || 1})` }} 
                       alt={item.title}
                     />
                   ) : (
-                    <Filter className="w-12 h-12 opacity-10" />
+                    <Filter className="w-10 h-10 opacity-10" />
                   )}
                   <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-500">
                     <div className="p-3 rounded-full bg-white/30 backdrop-blur-xl scale-90 group-hover:scale-100 transition-transform duration-500">
-                      <Maximize2 className="text-white w-6 h-6" />
+                      <Maximize2 className="text-white w-5 h-5" />
                     </div>
                   </div>
                 </div>
                 <div className="text-center space-y-1">
-                  <h3 className="font-headline text-base italic text-foreground/80 group-hover:text-accent transition-colors truncate px-2">
+                  <h3 className="font-headline text-sm md:text-base italic text-foreground/80 group-hover:text-accent transition-colors truncate px-2">
                     {item.displayTitle || item.title}
                   </h3>
-                  <p className="text-[9px] font-black uppercase tracking-widest opacity-40">{item.year}</p>
+                  <p className="text-[8px] md:text-[9px] font-black uppercase tracking-widest opacity-40">{item.year}</p>
                 </div>
               </div>
             ))}
 
-            {filteredArtworks.length > 0 && (
-              <div className="col-span-full pt-12 flex justify-center">
-                 <Button onClick={() => setShareDialog("")} className="rounded-full h-16 px-12 bg-accent text-accent-foreground uppercase font-black text-[11px] tracking-widest shadow-2xl animate-in zoom-in duration-500">
-                    <Share2 className="w-4 h-4 mr-3" /> Deel Selectie
-                 </Button>
-              </div>
-            )}
+            <div className="col-span-full pt-8 flex justify-center">
+               <Button onClick={() => setShareDialog("")} className="rounded-full h-14 md:h-16 px-10 md:px-12 bg-accent text-accent-foreground uppercase font-black text-[10px] md:text-[11px] tracking-widest shadow-xl animate-in zoom-in duration-500">
+                  <Share2 className="w-4 h-4 mr-3" /> Deel Selectie
+               </Button>
+            </div>
           </div>
         )}
       </div>
 
       <Dialog open={shareDialog !== null} onOpenChange={(open) => !open && setShareDialog(null)}>
-        <DialogContent className="max-w-md rounded-[3rem] p-12 border-none shadow-2xl glass-panel">
+        <DialogContent className="max-w-md rounded-[2.5rem] p-8 md:p-12 border-none shadow-2xl glass-panel">
           <DialogHeader>
             <DialogTitle className="font-headline text-3xl italic text-accent">Collectie Delen</DialogTitle>
             <DialogDescription className="text-[10px] uppercase tracking-[0.25em] font-black opacity-40 pt-2">
               Uw persoonlijke expositie
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-8 pt-8">
+          <div className="space-y-6 md:space-y-8 pt-6 md:pt-8">
             {shareDialog === "" ? (
               <div className="space-y-6">
-                <div className="space-y-3">
+                <div className="space-y-2">
                   <Label className="text-[10px] uppercase tracking-widest ml-3 opacity-60 font-black">Titel van uw zaal</Label>
                   <Input 
                     value={roomTitle} 
                     onChange={(e) => setRoomTitle(e.target.value)} 
                     placeholder="Bijv. Noord-Hollandse Luchten" 
-                    className="h-16 rounded-2xl bg-black/5 border-none focus:ring-accent text-lg px-6" 
+                    className="h-14 md:h-16 rounded-2xl bg-black/5 border-none focus:ring-accent text-base md:text-lg px-6" 
                   />
                 </div>
                 <Button 
                   onClick={handleShare} 
                   disabled={isSharing} 
-                  className="w-full h-20 rounded-[2rem] bg-accent text-accent-foreground font-black uppercase tracking-widest text-[12px] shadow-2xl hover:scale-[1.02] transition-all"
+                  className="w-full h-16 md:h-20 rounded-[2rem] bg-accent text-accent-foreground font-black uppercase tracking-widest text-[11px] md:text-[12px] shadow-xl hover:scale-[1.02] transition-all"
                 >
                   {isSharing ? <Loader2 className="animate-spin" /> : "Link Genereren"}
                 </Button>
               </div>
             ) : shareDialog ? (
-              <div className="space-y-8 animate-in fade-in duration-700">
-                 <div className="p-8 bg-black/5 rounded-3xl break-all font-mono text-[12px] border border-black/5 leading-relaxed text-accent/80 text-center">
+              <div className="space-y-6 md:space-y-8 animate-in fade-in duration-700">
+                 <div className="p-6 md:p-8 bg-black/5 rounded-3xl break-all font-mono text-[11px] md:text-[12px] border border-black/5 leading-relaxed text-accent/80 text-center">
                    {shareDialog}
                  </div>
                  <Button 
                     onClick={() => copyToClipboard(shareDialog)} 
-                    className="w-full h-20 rounded-[2rem] bg-primary text-primary-foreground font-black uppercase tracking-widest text-[12px] shadow-2xl"
+                    className="w-full h-16 md:h-20 rounded-[2rem] bg-primary text-primary-foreground font-black uppercase tracking-widest text-[11px] md:text-[12px] shadow-xl"
                  >
                    <Copy className="w-5 h-5 mr-3" /> Kopieer Link
                  </Button>
