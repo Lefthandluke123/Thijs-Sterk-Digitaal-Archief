@@ -156,7 +156,7 @@ export default function CuratorPage() {
           </div>
         </div>
 
-        {/* 2. THE GALLERY (Now above buttons and tags) */}
+        {/* 2. THE GALLERY */}
         <div ref={resultsRef} className="scroll-mt-32">
           {showResults && resultCount > 0 && (
             <div className="mb-12 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 md:gap-8 animate-in fade-in slide-in-from-top-8 duration-1000">
@@ -197,43 +197,43 @@ export default function CuratorPage() {
           )}
         </div>
 
-        {/* 3. LIVE COUNTER & ACTION BUTTONS (Now above the tags) */}
+        {/* 3. LIVE COUNTER & ACTION BUTTONS */}
         <div className="flex flex-col items-center gap-8 py-12 border-y border-black/5 animate-subtle-fade">
           
-          <div className="min-h-[40px]">
+          <div className="min-h-[60px] flex items-center justify-center">
              {loading ? (
-               <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-accent opacity-40">
-                 <Loader2 className="w-3 h-3 animate-spin" />
+               <div className="flex items-center gap-3 text-[12px] font-black uppercase tracking-widest text-accent opacity-40">
+                 <Loader2 className="w-4 h-4 animate-spin" />
                  Archief wordt doorzocht...
                </div>
              ) : activeTags.length > 0 ? (
-               <div className="flex flex-col items-center gap-2 animate-in fade-in duration-500">
+               <div className="flex flex-col items-center gap-4 animate-in fade-in duration-500">
                   <div className={cn(
-                    "flex items-center gap-2 px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-500",
+                    "flex items-center gap-3 px-10 py-3.5 rounded-full text-[13px] font-black uppercase tracking-[0.1em] transition-all duration-500 shadow-sm",
                     resultCount === 0 
-                      ? "bg-destructive text-destructive-foreground shadow-[0_0_25px_rgba(220,38,38,0.4)] scale-110" 
-                      : "bg-accent/10 text-accent"
+                      ? "bg-destructive text-destructive-foreground shadow-[0_0_35px_rgba(220,38,38,0.5)] scale-110" 
+                      : "bg-accent/10 text-accent border border-accent/20"
                   )}>
                     {resultCount === 0 ? (
                       <>
-                        <AlertCircle className="w-4 h-4 animate-pulse" />
+                        <AlertCircle className="w-5 h-5 animate-pulse" />
                         Geen resultaten gevonden
                       </>
                     ) : (
                       <>
-                        <CheckCircle2 className="w-3 h-3" />
+                        <CheckCircle2 className="w-5 h-5" />
                         {resultCount} {resultCount === 1 ? 'schilderij' : 'schilderijen'} gevonden
                       </>
                     )}
                   </div>
                   {resultCount === 0 && (
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-destructive/60 animate-bounce mt-3">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-destructive/80 animate-bounce mt-2">
                       Pas uw selectie aan om werken te vinden ↑
                     </p>
                   )}
                </div>
              ) : (
-               <p className="text-[10px] font-black uppercase tracking-[0.3em] text-accent opacity-40">
+               <p className="text-[12px] font-black uppercase tracking-[0.4em] text-accent opacity-40">
                  {t('curator_counter').replace('{count}', activeTags.length.toString())}
                </p>
              )}
@@ -244,26 +244,26 @@ export default function CuratorPage() {
               onClick={handleOpenGallery} 
               disabled={activeTags.length === 0 || resultCount === 0 || loading}
               className={cn(
-                "rounded-full h-14 md:h-16 px-8 md:px-12 uppercase font-black text-[10px] md:text-[11px] tracking-widest shadow-xl transition-all",
+                "rounded-full h-14 md:h-20 px-8 md:px-14 uppercase font-black text-[11px] md:text-[13px] tracking-[0.2em] shadow-xl transition-all",
                 (activeTags.length === 0 || resultCount === 0) 
                   ? "bg-black/5 text-black/20 cursor-not-allowed" 
-                  : "bg-primary text-primary-foreground hover:scale-[1.02] active:scale-95"
+                  : "bg-primary text-primary-foreground hover:scale-[1.03] active:scale-95 shadow-2xl"
               )}
             >
-              {loading ? <Loader2 className="w-4 h-4 mr-3 animate-spin" /> : <Play className="w-4 h-4 mr-3 fill-current" />}
+              {loading ? <Loader2 className="w-5 h-5 mr-3 animate-spin" /> : <Play className="w-5 h-5 mr-3 fill-current" />}
               {t('curator_open')}
             </Button>
             <Button 
               onClick={() => { setActiveTags([]); setShowResults(false); }} 
               variant="outline" 
-              className="rounded-full h-14 md:h-16 px-8 md:px-12 uppercase font-black text-[10px] md:text-[11px] tracking-widest border-2 hover:bg-black/5"
+              className="rounded-full h-14 md:h-20 px-8 md:px-14 uppercase font-black text-[11px] md:text-[13px] tracking-[0.2em] border-2 hover:bg-black/5"
             >
-              <Eraser className="w-4 h-4 mr-3" /> {t('curator_clear')}
+              <Eraser className="w-5 h-5 mr-3" /> {t('curator_clear')}
             </Button>
           </div>
         </div>
 
-        {/* 4. COMPACT TAG BLOCK (Now at the bottom) */}
+        {/* 4. COMPACT TAG BLOCK */}
         <div className="bg-white/40 backdrop-blur-xl rounded-[2.5rem] p-8 md:p-12 border border-white/60 shadow-lg space-y-10 md:space-y-12 animate-subtle-fade">
           {Object.entries(MUSEUM_TAGS).map(([cat, tags]) => (
             <div key={cat} className="space-y-4 md:space-y-6">
