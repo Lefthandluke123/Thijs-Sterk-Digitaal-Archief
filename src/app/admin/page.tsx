@@ -600,7 +600,7 @@ export default function AdminPage() {
                        </div>
                        <h3 className="font-bold text-xs truncate px-1">{art.displayTitle || art.title}</h3>
                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 rounded-2xl">
-                          <Button size="icon" variant="ghost" onClick={() => { setEditingArtwork(art); setArtworkForm({ ...art, tags: (art.tags || []).join(', ') }); setIsArtworkDialogOpen(true); }} className="rounded-full bg-white text-black hover:bg-white/80 w-10 h-10"><Edit3 className="w-4 h-4" /></Button>
+                          <Button size="icon" variant="ghost" onClick={() => { setEditingArtwork(art); setArtworkForm({ ...art, tags: (art.tags || []).join(', ') }); setIsArtworkDialogOpen(true); }} className="rounded-full bg-white text-black hover:bg-white/80 w-10 h-10"><Edit3 className="w-4 h-4" /></button>
                        </div>
                     </Card>
                   ))}
@@ -927,7 +927,7 @@ export default function AdminPage() {
           <DialogHeader><DialogTitle className="font-headline text-2xl italic">{editingRoom ? 'Zaal Aanpassen' : 'Nieuwe Zaal'}</DialogTitle></DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2"><Label className="text-[10px] font-black uppercase opacity-40">Naam</Label><Input value={roomForm.title} onChange={e => setRoomForm({...roomForm, title: e.target.value})} className="rounded-xl h-12" /></div>
-            <div className="space-y-2"><Label className="text-[10px] font-black uppercase opacity-40">Slug (URL-naam)</Label><Input value={roomForm.slug} onChange={e => setRoomForm({...roomForm, slug: e.target.value})} className="rounded-xl h-12" /></div>
+            <div className="space-y-2"><Label className="text-[10px] font-black uppercase opacity-40">Slug (URL-naam)</Label><Input value={roomForm.slug} onChange={e => setRoomForm({...roomForm, slug: e.target.value})} className="rounded-xl h-12" placeholder="bijv: de-polder" /></div>
             <div className="space-y-2"><Label className="text-[10px] font-black uppercase opacity-40">Volgorde (Nummer)</Label><Input type="number" value={roomForm.order} onChange={e => setRoomForm({...roomForm, order: Number(e.target.value)})} className="rounded-xl h-12" /></div>
           </div>
           <DialogFooter>
@@ -951,4 +951,3 @@ export default function AdminPage() {
     </div>
   );
 }
-

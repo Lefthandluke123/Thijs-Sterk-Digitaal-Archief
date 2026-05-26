@@ -4,7 +4,7 @@ import { slugify } from './museum-utils';
 
 /**
  * @fileOverview Server-side Firestore data fetching via REST API.
- * Geoptimaliseerd voor multi-room architecture en betrouwbare data parsing.
+ * Geoptimaliseerd voor multi-room architecture en maximale betrouwbaarheid.
  */
 
 const PROJECT_ID = firebaseConfig.projectId;
@@ -62,50 +62,29 @@ export async function getRoomsServer() {
   } catch (e) { return []; }
 }
 
+/**
+ * Bulletproof lookup voor zalen.
+ * In plaats van runQuery (die indexen vereist), halen we alle zalen op en filteren we in-memory.
+ * Dit is extreem betrouwbaar voor collecties van deze omvang.
+ */
 export async function getRoomBySlugServer(slug: string) {
   if (!slug) return null;
-  
+  const targetSlug = slugify(slug);
+
   try {
-    const url = `${BASE_URL}:runQuery`;
-    // We zoeken op de exacte slug zoals die door de website wordt gegenereerd
-    const searchSlug = slugify(slug);
+    const rooms = await getRoomsServer();
+    // 1. Zoek op slug match
+    let room = rooms.find((r: any) => slugify(r.slug || r.title) === targetSlug);
     
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        structuredQuery: {
-          from: [{ collectionId: 'rooms' }],
-          where: {
-            fieldFilter: {
-              field: { fieldPath: 'slug' },
-              op: 'EQUAL',
-              value: { stringValue: searchSlug }
-            }
-          },
-          limit: 1
-        }
-      }),
-      next: { revalidate: 10 }
-    });
-    
-    const results = await res.json();
-    const doc = results?.[0]?.document;
-    
-    if (doc) {
-      return mapDocument(doc);
-    }
-    
-    // Fallback: Als slug-search faalt, probeer of de 'slug' parameter stiekem een document ID is
-    const fallbackRes = await fetch(`${BASE_URL}/rooms/${slug}`);
-    if (fallbackRes.ok) {
-      return mapDocument(await fallbackRes.json());
+    // 2. Fallback: Zoek op document ID match
+    if (!room) {
+      room = rooms.find((r: any) => r.id === slug);
     }
 
+    return room || null;
+  } catch (e) {
+    console.error("[Firestore Server] Error fetching room by slug:", e);
     return null;
-  } catch (e) { 
-    console.error("[Firestore Server] Error fetching room:", e);
-    return null; 
   }
 }
 
@@ -130,16 +109,23 @@ export async function getArtworksByRoomIdServer(roomId: string) {
       next: { revalidate: 10 }
     });
     const results = await res.json();
-    return results.filter((r: any) => r.document).map((r: any) => mapDocument(r.document));
-  } catch (e) { return []; }
+    if (!Array.isArray(results)) return [];
+    return results
+      .filter((r: any) => r.document)
+      .map((r: any) => mapDocument(r.document));
+  } catch (e) { 
+    console.error("[Firestore Server] Error fetching artworks for room:", e);
+    return []; 
+  }
 }
 
 export async function getArtworkBySlugServer(slug: string) {
   if (!slug) return null;
+  const targetSlug = slugify(slug);
+
   try {
+    // Voor artworks (grotere collectie) gebruiken we wel een query, maar met fallback
     const url = `${BASE_URL}:runQuery`;
-    const searchSlug = slugify(slug);
-    
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -150,7 +136,7 @@ export async function getArtworkBySlugServer(slug: string) {
             fieldFilter: {
               field: { fieldPath: 'slug' },
               op: 'EQUAL',
-              value: { stringValue: searchSlug }
+              value: { stringValue: targetSlug }
             }
           },
           limit: 1
@@ -159,8 +145,15 @@ export async function getArtworkBySlugServer(slug: string) {
       next: { revalidate: 10 }
     });
     const results = await res.json();
-    return results?.[0]?.document ? mapDocument(results[0].document) : null;
-  } catch (e) { return null; }
+    const docResult = results?.[0]?.document;
+    
+    if (docResult) return mapDocument(docResult);
+
+    // Fallback: Check of de slug stiekem een direct ID is
+    return await getArtworkServer(slug);
+  } catch (e) { 
+    return null; 
+  }
 }
 
 export async function getArtworkServer(id: string) {
