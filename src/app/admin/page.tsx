@@ -571,9 +571,9 @@ export default function AdminPage() {
                                <h3 className="font-headline text-2xl italic leading-none">{room.title}</h3>
                                <p className="text-[9px] font-black uppercase tracking-widest opacity-30 mt-2">{roomArtworks.length} werken &bull; /{room.slug}</p>
                             </div>
-                            <div className="flex items-center gap-4 mr-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                               <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); setEditingRoom(room); setRoomForm(room); setIsRoomDialogOpen(true); }} className="h-9 px-4 rounded-xl text-[9px] font-black uppercase tracking-widest">Hernoemen</Button>
-                               <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); handleDeleteRoom(room); }} className="h-9 w-9 p-0 rounded-xl text-destructive hover:bg-destructive/10"><Trash2 className="w-4 h-4" /></Button>
+                            <div className="flex items-center gap-4 mr-4">
+                               <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); setEditingRoom(room); setRoomForm(room); setIsRoomDialogOpen(true); }} className="h-9 px-4 rounded-xl text-[9px] font-black uppercase tracking-widest opacity-60 hover:opacity-100">Hernoemen</Button>
+                               <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); handleDeleteRoom(room); }} className="h-9 w-9 p-0 rounded-xl text-destructive hover:bg-destructive/10 transition-all"><Trash2 className="w-4 h-4" /></Button>
                             </div>
                          </div>
                       </AccordionTrigger>
