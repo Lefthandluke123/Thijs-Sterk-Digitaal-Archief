@@ -40,7 +40,9 @@ import {
   Type,
   Library,
   LayoutTemplate,
-  Languages
+  Languages,
+  RotateCcw,
+  Eye
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -103,9 +105,12 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState('artworks');
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Settings UI State
-  const [bgSettings, setBgSettings] = useState<Record<string, string>>({});
+  // Background Settings State (Controlled)
+  const [bgUrls, setBgUrls] = useState<Record<string, string>>({});
   const [opacities, setOpacities] = useState<Record<string, number>>({});
+  const [blurs, setBlurs] = useState<Record<string, number>>({});
+  const [scales, setScales] = useState<Record<string, number>>({});
+
   const [isImagePickerOpen, setIsImagePickerOpen] = useState(false);
   const [pickerTarget, setPickerTarget] = useState<string | null>(null);
 
@@ -184,20 +189,40 @@ export default function AdminPage() {
   useEffect(() => {
     if (settings) {
       setFormData(settings as Record<string, string>);
-      const initialBgs: Record<string, string> = {
-        backgroundImageUrl: settings.backgroundImageUrl || ''
-      };
-      const initialOpacities: Record<string, number> = {
-        backgroundOpacity: typeof settings.backgroundOpacity === 'number' ? settings.backgroundOpacity : 10
-      };
-      PAGES.forEach(page => {
-        initialBgs[`backgroundImageUrl_${page.id}`] = settings[`backgroundImageUrl_${page.id}`] || '';
-        initialOpacities[`backgroundOpacity_${page.id}`] = typeof settings[`backgroundOpacity_${page.id}`] === 'number' ? settings[`backgroundOpacity_${page.id}`] : 10;
+      
+      const urls: Record<string, string> = { global: settings.backgroundImageUrl || '' };
+      const ops: Record<string, number> = { global: typeof settings.backgroundOpacity === 'number' ? settings.backgroundOpacity : 10 };
+      const blrs: Record<string, number> = { global: typeof settings.backgroundBlur === 'number' ? settings.backgroundBlur : 0 };
+      const scls: Record<string, number> = { global: typeof settings.backgroundScale === 'number' ? settings.backgroundScale : 100 };
+
+      PAGES.forEach(p => {
+        urls[p.id] = settings[`backgroundImageUrl_${p.id}`] || '';
+        ops[p.id] = typeof settings[`backgroundOpacity_${p.id}`] === 'number' ? settings[`backgroundOpacity_${p.id}`] : (settings.backgroundOpacity ?? 10);
+        blrs[p.id] = typeof settings[`backgroundBlur_${p.id}`] === 'number' ? settings[`backgroundBlur_${p.id}`] : (settings.backgroundBlur ?? 0);
+        scls[p.id] = typeof settings[`backgroundScale_${p.id}`] === 'number' ? settings[`backgroundScale_${p.id}`] : (settings.backgroundScale ?? 100);
       });
-      setBgSettings(initialBgs);
-      setOpacities(initialOpacities);
+
+      setBgUrls(urls);
+      setOpacities(ops);
+      setBlurs(blrs);
+      setScales(scls);
     }
   }, [settings]);
+
+  // Realtime CSS Variable Sync for Live Preview
+  useEffect(() => {
+    if (activeTab !== 'settings') return;
+
+    // We kijken naar de momenteel geselecteerde page of global
+    // Voor het beheerpaneel previewen we altijd de 'global' settings OF we kunnen een preview-container tonen.
+    // Omdat de BackgroundLayer al in de layout zit, updaten we de CSS vars op :root.
+    
+    const root = document.documentElement;
+    root.style.setProperty('--bg-image', bgUrls.global ? `url("${bgUrls.global}")` : 'none');
+    root.style.setProperty('--bg-opacity', (opacities.global / 100).toString());
+    root.style.setProperty('--bg-blur', `${blurs.global}px`);
+    root.style.setProperty('--bg-scale', (scales.global / 100).toString());
+  }, [bgUrls, opacities, blurs, scales, activeTab]);
 
   useEffect(() => {
     if (storyData?.nodes) {
@@ -238,26 +263,28 @@ export default function AdminPage() {
     e.preventDefault();
     if (!settingsRef) return;
     setIsSavingSettings(true);
+    
     const formFields = new FormData(e.currentTarget);
     const updates: any = { updatedAt: serverTimestamp() };
-    const fields = ['bgColor', 'primaryColor', 'accentColor', 'baseFontSize', 'lineHeight', 'headingScale', 'containerWidth', 'radius', 'bodyFont', 'headFont'];
     
-    // Verwerk standaard velden
+    // Algemene velden
+    const fields = ['bgColor', 'primaryColor', 'accentColor', 'baseFontSize', 'lineHeight', 'headingScale', 'containerWidth', 'radius', 'bodyFont', 'headFont'];
     fields.forEach(f => {
       const val = formFields.get(f);
       if (val !== null) updates[f] = String(val);
     });
 
-    // Verwerk achtergrond instellingen direct vanuit de STATE om te voorkomen dat 
-    // gesloten accordion secties hun waarden verliezen
-    updates['backgroundImageUrl'] = cleanString(bgSettings.backgroundImageUrl);
-    updates['backgroundOpacity'] = Number(opacities.backgroundOpacity ?? 10);
+    // Achtergrondvelden vanuit Controlled State (source of truth)
+    updates['backgroundImageUrl'] = bgUrls.global || "";
+    updates['backgroundOpacity'] = Number(opacities.global);
+    updates['backgroundBlur'] = Number(blurs.global);
+    updates['backgroundScale'] = Number(scales.global);
 
-    PAGES.forEach(page => {
-      const bgUrl = bgSettings[`backgroundImageUrl_${page.id}`];
-      const opacity = opacities[`backgroundOpacity_${page.id}`];
-      if (bgUrl !== undefined) updates[`backgroundImageUrl_${page.id}`] = cleanString(bgUrl);
-      if (opacity !== undefined) updates[`backgroundOpacity_${page.id}`] = Number(opacity);
+    PAGES.forEach(p => {
+      updates[`backgroundImageUrl_${p.id}`] = bgUrls[p.id] || "";
+      updates[`backgroundOpacity_${p.id}`] = Number(opacities[p.id]);
+      updates[`backgroundBlur_${p.id}`] = Number(blurs[p.id]);
+      updates[`backgroundScale_${p.id}`] = Number(scales[p.id]);
     });
 
     try {
@@ -268,6 +295,21 @@ export default function AdminPage() {
     } finally {
       setIsSavingSettings(false);
     }
+  };
+
+  const resetBg = (pageId: string) => {
+    if (pageId === 'global') {
+      setBgUrls(prev => ({ ...prev, global: '' }));
+      setOpacities(prev => ({ ...prev, global: 10 }));
+      setBlurs(prev => ({ ...prev, global: 0 }));
+      setScales(prev => ({ ...prev, global: 100 }));
+    } else {
+      setBgUrls(prev => ({ ...prev, [pageId]: '' }));
+      setOpacities(prev => ({ ...prev, [pageId]: opacities.global }));
+      setBlurs(prev => ({ ...prev, [pageId]: blurs.global }));
+      setScales(prev => ({ ...prev, [pageId]: scales.global }));
+    }
+    toast({ title: "Preview gereset" });
   };
 
   const handleTranslateField = async (fieldId: string) => {
@@ -308,7 +350,11 @@ export default function AdminPage() {
   };
 
   const selectImageFromArchive = (imageUrl: string | null) => {
-    if (pickerTarget && imageUrl) setBgSettings(prev => ({ ...prev, [pickerTarget]: imageUrl }));
+    if (pickerTarget && imageUrl) {
+      const pageId = pickerTarget.replace('backgroundImageUrl_', '');
+      const key = pageId === 'backgroundImageUrl' ? 'global' : pageId;
+      setBgUrls(prev => ({ ...prev, [key]: imageUrl }));
+    }
     setIsImagePickerOpen(false);
     setPickerTarget(null);
   };
@@ -393,6 +439,110 @@ export default function AdminPage() {
 
   const categories = Array.from(new Set(CONTENT_FIELDS.map(f => f.category)));
 
+  const BackgroundEditorSection = ({ pageId, label }: { pageId: string, label: string }) => (
+    <AccordionItem value={pageId} className="border-b border-black/5">
+      <AccordionTrigger className="font-bold text-sm uppercase">
+        <div className="flex items-center gap-3">
+          <Monitor className="w-4 h-4 opacity-30" />
+          {label}
+        </div>
+      </AccordionTrigger>
+      <AccordionContent className="space-y-8 pt-6 pb-10">
+        <div className="grid md:grid-cols-2 gap-10">
+          <div className="space-y-6">
+            <div className="space-y-3">
+              <Label className="text-[10px] uppercase font-black opacity-40">Afbeelding URL</Label>
+              <div className="flex gap-2">
+                <Input 
+                  value={bgUrls[pageId] || ''} 
+                  onChange={e => setBgUrls(p => ({...p, [pageId]: e.target.value}))} 
+                  className="h-12 rounded-xl bg-black/5 border-none text-xs" 
+                  placeholder="https://..."
+                />
+                <Button type="button" onClick={() => openImagePicker(pageId === 'global' ? 'backgroundImageUrl' : `backgroundImageUrl_${pageId}`)} size="icon" variant="outline" className="h-12 w-12 rounded-xl shrink-0"><Library className="w-5 h-5" /></Button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <Label className="text-[10px] uppercase font-black opacity-40">Opacity</Label>
+                  <span className="text-[10px] font-bold bg-accent/10 text-accent px-2 py-0.5 rounded-full">{opacities[pageId] ?? 10}%</span>
+                </div>
+                <Slider 
+                  value={[opacities[pageId] ?? 10]} 
+                  onValueChange={(v) => setOpacities(p => ({...p, [pageId]: v[0]}))} 
+                  max={100} 
+                  step={1} 
+                />
+              </div>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <Label className="text-[10px] uppercase font-black opacity-40">Blur</Label>
+                  <span className="text-[10px] font-bold bg-accent/10 text-accent px-2 py-0.5 rounded-full">{blurs[pageId] ?? 0}px</span>
+                </div>
+                <Slider 
+                  value={[blurs[pageId] ?? 0]} 
+                  onValueChange={(v) => setBlurs(p => ({...p, [pageId]: v[0]}))} 
+                  max={40} 
+                  step={1} 
+                />
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <Label className="text-[10px] uppercase font-black opacity-40">Zoom / Schaal</Label>
+                <span className="text-[10px] font-bold bg-accent/10 text-accent px-2 py-0.5 rounded-full">{scales[pageId] ?? 100}%</span>
+              </div>
+              <Slider 
+                value={[scales[pageId] ?? 100]} 
+                onValueChange={(v) => setScales(p => ({...p, [pageId]: v[0]}))} 
+                min={100} 
+                max={150} 
+                step={1} 
+              />
+            </div>
+
+            <Button 
+              type="button" 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => resetBg(pageId)}
+              className="text-[9px] font-black uppercase tracking-widest opacity-40 hover:opacity-100 p-0 h-auto"
+            >
+              <RotateCcw className="w-3 h-3 mr-2" /> Reset deze pagina
+            </Button>
+          </div>
+
+          <div className="space-y-4">
+            <Label className="text-[10px] uppercase font-black opacity-40">Live Preview</Label>
+            <div className="relative aspect-video rounded-2xl overflow-hidden border-4 border-white shadow-xl bg-black/5 group">
+              {bgUrls[pageId] ? (
+                <div 
+                  className="absolute inset-0 bg-cover bg-center transition-all duration-300"
+                  style={{ 
+                    backgroundImage: `url(${bgUrls[pageId]})`,
+                    opacity: (opacities[pageId] ?? 10) / 100,
+                    filter: `blur(${blurs[pageId] ?? 0}px)`,
+                    transform: `scale(${(scales[pageId] ?? 100) / 100})`
+                  }}
+                />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center opacity-10">
+                  <ImageIcon className="w-12 h-12" />
+                </div>
+              )}
+              <div className="absolute bottom-3 left-3 bg-white/80 backdrop-blur-md px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border border-black/5">
+                Stramien Preview
+              </div>
+            </div>
+          </div>
+        </div>
+      </AccordionContent>
+    </AccordionItem>
+  );
+
   return (
     <div className="min-h-screen bg-[#f8f9fa] pt-32 px-8">
       <header className="fixed top-0 left-0 right-0 h-24 bg-white/80 backdrop-blur-md border-b z-40 px-8 flex items-center justify-between">
@@ -408,9 +558,18 @@ export default function AdminPage() {
              <LayoutTemplate className="w-4 h-4 mr-2" /> Story Designer (DTP)
           </Button>
         </div>
-        <Link href="/" className="text-[11px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 hover:text-accent transition-colors">
-           <ArrowLeft className="w-3 h-3" /> Naar Website
-        </Link>
+        <div className="flex items-center gap-6">
+           <div className="flex flex-col items-end">
+              <span className="text-[9px] font-black uppercase tracking-widest opacity-30">Status</span>
+              <div className="flex items-center gap-2">
+                 <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                 <span className="text-[10px] font-bold text-accent">Realtime Sync Actief</span>
+              </div>
+           </div>
+           <Link href="/" className="text-[11px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 hover:text-accent transition-colors">
+              <ArrowLeft className="w-3 h-3" /> Naar Website
+           </Link>
+        </div>
       </header>
 
       <div className="max-w-[1600px] mx-auto space-y-12 pb-32">
@@ -530,50 +689,34 @@ export default function AdminPage() {
                          </div>
                       </div>
                    </div>
+
                    <div className="space-y-8 pt-12 border-t border-black/5">
-                      <div className="flex items-center gap-3 opacity-40"><Monitor className="w-5 h-5" /><h3 className="text-xs font-black uppercase">Achtergronden</h3></div>
-                      <Accordion type="single" collapsible className="w-full">
-                         <AccordionItem value="global-bg" className="border-b border-black/5">
-                            <AccordionTrigger className="font-bold text-sm uppercase">Globale Achtergrond</AccordionTrigger>
-                            <AccordionContent className="space-y-8 pt-4 pb-8">
-                               <div className="grid md:grid-cols-2 gap-8">
-                                  <div className="space-y-4">
-                                     <Label className="text-[10px] uppercase font-black opacity-40">URL</Label>
-                                     <div className="flex gap-2">
-                                        <Input name="backgroundImageUrl" value={bgSettings.backgroundImageUrl || ''} onChange={e => setBgSettings(p => ({...p, backgroundImageUrl: e.target.value}))} className="h-12 rounded-xl bg-black/5 border-none" />
-                                        <Button type="button" onClick={() => openImagePicker('backgroundImageUrl')} size="icon" variant="outline" className="h-12 w-12 rounded-xl"><Library className="w-5 h-5" /></Button>
-                                     </div>
-                                  </div>
-                                  <div className="space-y-4">
-                                     <div className="flex justify-between items-center"><Label className="text-[10px] uppercase font-black opacity-40">Opacity (%)</Label><span className="text-xs font-bold">{opacities.backgroundOpacity ?? 10}%</span></div>
-                                     <Slider value={[opacities.backgroundOpacity ?? 10]} onValueChange={(v) => setOpacities(p => ({...p, backgroundOpacity: v[0]}))} max={100} step={1} />
-                                  </div>
-                               </div>
-                            </AccordionContent>
-                         </AccordionItem>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3 opacity-40">
+                          <Monitor className="w-5 h-5" />
+                          <h3 className="text-xs font-black uppercase">Achtergrond & Realtime Stramien</h3>
+                        </div>
+                        <div className="flex items-center gap-2 px-4 py-2 bg-accent/5 rounded-full border border-accent/10">
+                           <Sparkles className="w-3 h-3 text-accent" />
+                           <span className="text-[9px] font-black uppercase tracking-widest text-accent">WYSIWYG Editor Actief</span>
+                        </div>
+                      </div>
+
+                      <Accordion type="single" collapsible className="w-full space-y-4">
+                         <BackgroundEditorSection pageId="global" label="Globale Achtergrond (Basis)" />
+                         <div className="pt-4 pb-2 border-b border-black/5 px-4">
+                            <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-30">Pagina Overrides</p>
+                         </div>
                          {PAGES.map(page => (
-                            <AccordionItem key={page.id} value={page.id} className="border-b border-black/5">
-                               <AccordionTrigger className="font-bold text-sm uppercase">{page.label} Override</AccordionTrigger>
-                               <AccordionContent className="space-y-8 pt-4 pb-8">
-                                  <div className="grid md:grid-cols-2 gap-8">
-                                     <div className="space-y-4">
-                                        <Label className="text-[10px] uppercase font-black opacity-40">URL</Label>
-                                        <div className="flex gap-2">
-                                           <Input name={`backgroundImageUrl_${page.id}`} value={bgSettings[`backgroundImageUrl_${page.id}`] || ''} onChange={e => setBgSettings(p => ({...p, [`backgroundImageUrl_${page.id}`]: e.target.value}))} className="h-12 rounded-xl bg-black/5 border-none" />
-                                           <Button type="button" onClick={() => openImagePicker(`backgroundImageUrl_${page.id}`)} size="icon" variant="outline" className="h-12 w-12 rounded-xl"><Library className="w-5 h-5" /></Button>
-                                        </div>
-                                     </div>
-                                     <div className="space-y-4">
-                                        <div className="flex justify-between items-center"><Label className="text-[10px] uppercase font-black opacity-40">Opacity (%)</Label><span className="text-xs font-bold">{opacities[`backgroundOpacity_${page.id}`] ?? 10}%</span></div>
-                                        <Slider value={[opacities[`backgroundOpacity_${page.id}`] ?? 10]} onValueChange={(v) => setOpacities(p => ({...p, [`backgroundOpacity_${page.id}`]: v[0]}))} max={100} step={1} />
-                                     </div>
-                                  </div>
-                               </AccordionContent>
-                            </AccordionItem>
+                           <BackgroundEditorSection key={page.id} pageId={page.id} label={`${page.label} Override`} />
                          ))}
                       </Accordion>
                    </div>
-                   <Button type="submit" disabled={isSavingSettings} className="w-full h-20 rounded-[2.5rem] bg-primary text-xl font-black uppercase shadow-2xl">{isSavingSettings ? <Loader2 className="animate-spin" /> : <Save className="w-5 h-5 mr-3" />} Stramien Opslaan</Button>
+
+                   <Button type="submit" disabled={isSavingSettings} className="w-full h-20 rounded-[2.5rem] bg-primary text-xl font-black uppercase shadow-2xl group">
+                      {isSavingSettings ? <Loader2 className="animate-spin mr-3" /> : <Save className="w-5 h-5 mr-3 group-hover:scale-110 transition-transform" />} 
+                      Alle Instellingen Definitief Opslaan
+                   </Button>
                 </form>
              </Card>
           </TabsContent>

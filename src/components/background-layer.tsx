@@ -1,17 +1,18 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { usePathname } from 'next/navigation';
 
 /**
  * @fileOverview BackgroundLayer: Beheert de achtergrondafbeelding.
- * Ondersteunt pagina-specifieke overrides en vloeiende transities.
+ * STABILIZED VERSION - Gebruikt CSS variabelen voor realtime feedback zonder lag.
  */
 export function BackgroundLayer() {
   const firestore = useFirestore();
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
 
   const settingsRef = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -19,6 +20,10 @@ export function BackgroundLayer() {
   }, [firestore]);
 
   const { data: settings } = useDoc(settingsRef);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Bepaal de huidige page-key op basis van het pad
   const getPageKey = () => {
@@ -34,34 +39,37 @@ export function BackgroundLayer() {
     return 'global';
   };
 
-  const pageKey = getPageKey();
-  
-  // Zoek naar pagina-specifieke instellingen, anders fallback naar global
-  const bgUrl = settings?.[`backgroundImageUrl_${pageKey}`] || settings?.backgroundImageUrl;
-  
-  // Opacity: gebruik page-specifiek, anders global, anders fallback naar 10% als er een URL is
-  let rawOpacity = settings?.[`backgroundOpacity_${pageKey}`] ?? settings?.backgroundOpacity;
-  
-  // Als er een afbeelding is maar geen opacity ingesteld, gebruik 10%
-  if (bgUrl && (rawOpacity === undefined || rawOpacity === null)) {
-    rawOpacity = 10;
-  }
-  
-  const opacity = typeof rawOpacity === 'number' ? rawOpacity / 100 : 0;
+  useEffect(() => {
+    if (!mounted || !settings) return;
 
-  if (!bgUrl) return null;
+    const pageKey = getPageKey();
+    
+    // 1. URL bepalen
+    const bgUrl = settings[`backgroundImageUrl_${pageKey}`] || settings.backgroundImageUrl || '';
+    
+    // 2. Opacity bepalen
+    let opacity = settings[`backgroundOpacity_${pageKey}`] ?? settings.backgroundOpacity ?? (bgUrl ? 10 : 0);
+    
+    // 3. Blur bepalen
+    let blur = settings[`backgroundBlur_${pageKey}`] ?? settings.backgroundBlur ?? 0;
+    
+    // 4. Scale bepalen
+    let scale = settings[`backgroundScale_${pageKey}`] ?? settings.backgroundScale ?? 100;
+
+    // Injecteer in :root voor de .bg-fade-layer class
+    const root = document.documentElement;
+    root.style.setProperty('--bg-image', bgUrl ? `url("${bgUrl}")` : 'none');
+    root.style.setProperty('--bg-opacity', (opacity / 100).toString());
+    root.style.setProperty('--bg-blur', `${blur}px`);
+    root.style.setProperty('--bg-scale', (scale / 100).toString());
+
+  }, [settings, pathname, mounted]);
+
+  if (!mounted) return null;
 
   return (
     <div 
       className="bg-fade-layer"
-      style={{ 
-        opacity: opacity,
-        backgroundImage: `url(${bgUrl})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundAttachment: 'fixed',
-        zIndex: -1, // Zorg dat het achter de content staat
-      }}
       aria-hidden="true"
     />
   );

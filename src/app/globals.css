@@ -25,7 +25,13 @@
     --border: 201 15% 92%;
     --input: 201 15% 92%;
     --ring: 142 30% 25%;
-    --radius: 2rem; /* Grotere afronding voor een zachtere look */
+    --radius: 2rem; 
+
+    /* Realtime Background Variables */
+    --bg-opacity: 0.1;
+    --bg-blur: 0px;
+    --bg-scale: 1;
+    --bg-image: none;
   }
 }
 
@@ -40,12 +46,10 @@
     @apply font-headline text-foreground font-medium tracking-tight;
   }
   
-  /* Universele Focus Indicator voor toegankelijkheid */
   :focus-visible {
     @apply outline-none ring-2 ring-accent ring-offset-2 ring-offset-background;
   }
   
-  /* Beveiliging & Polish voor afbeeldingen */
   img {
     @apply select-none pointer-events-auto;
     -webkit-user-drag: none;
@@ -68,35 +72,18 @@
 
   .bg-fade-layer {
     @apply fixed inset-0 z-[-1] pointer-events-none;
-    transition: all 2000ms ease-in-out;
+    transition: opacity 0.4s ease, filter 0.4s ease, transform 0.4s ease, background-image 1s ease;
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
+    opacity: var(--bg-opacity);
+    filter: blur(var(--bg-blur));
+    transform: scale(var(--bg-scale));
+    background-image: var(--bg-image);
   }
 }
 
-/* Subtiele animaties die prefers-reduced-motion respecteren */
-@media (prefers-reduced-motion: no-preference) {
-  .animate-subtle-fade {
-    animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  }
-  
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .animate-slow-zoom {
-    animation: slowZoom 20s ease-in-out infinite alternate;
-  }
-
-  @keyframes slowZoom {
-    from { transform: scale(1); }
-    to { transform: scale(1.05); }
-  }
-}
-
-/* Custom Scrollbar voor een cleaner look */
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
 }
