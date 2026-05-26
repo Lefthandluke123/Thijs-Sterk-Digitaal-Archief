@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo } from 'react';
@@ -138,7 +137,7 @@ export default function ProductDetailPage() {
     <main className="min-h-screen bg-background pt-32 pb-32 px-6">
       <div className="container mx-auto max-w-7xl">
         <button onClick={() => router.back()} className="flex items-center gap-3 text-[11px] font-black uppercase tracking-widest text-muted-foreground hover:text-accent mb-12 transition-colors">
-          <ArrowLeft className="w-4 h-4" /> {t('nav_shop')}
+          <ArrowLeft className="w-4 h-4" /> {t('shop')}
         </button>
 
         <div className="grid lg:grid-cols-2 gap-20 items-start">

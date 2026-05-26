@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -24,11 +23,11 @@ export function Footer() {
 
   const siteTitle = (language !== 'nl' && siteSettings?.[`siteTitle_${language}`])
     ? siteSettings[`siteTitle_${language}`]
-    : (siteSettings?.siteTitle || t('nav_museum_title'));
+    : (siteSettings?.siteTitle || t('museum_title'));
 
   const siteSubtitle = (language !== 'nl' && siteSettings?.[`siteSubtitle_${language}`])
     ? siteSettings[`siteSubtitle_${language}`]
-    : (siteSettings?.siteSubtitle || t('nav_museum_subtitle'));
+    : (siteSettings?.siteSubtitle || t('museum_subtitle'));
   
   if (!mounted) return null;
 
@@ -54,9 +53,9 @@ export function Footer() {
         </p>
         
         <div className="flex gap-8 text-[11px] font-black uppercase tracking-widest">
-          <Link href="/#contact" className="text-muted-foreground hover:text-accent transition-colors">{t('nav_contact')}</Link>
-          <Link href="/admin" className="text-muted-foreground hover:text-accent transition-colors">{t('nav_admin')}</Link>
-          <a href="#" className="text-muted-foreground hover:text-accent transition-colors">{t('nav_privacy')}</a>
+          <Link href="/#contact" className="text-muted-foreground hover:text-accent transition-colors">{t('contact')}</Link>
+          <Link href="/admin" className="text-muted-foreground hover:text-accent transition-colors">{t('admin')}</Link>
+          <a href="#" className="text-muted-foreground hover:text-accent transition-colors">{t('privacy')}</a>
         </div>
       </div>
     </footer>

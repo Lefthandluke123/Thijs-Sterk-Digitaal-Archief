@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useMemo } from 'react';
@@ -45,7 +44,7 @@ export default function ShopPage() {
         <header className="mb-20 text-center space-y-4 max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent/10 border border-accent/20 mb-4">
             <ShoppingBag className="w-3.5 h-3.5 text-accent" />
-            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-accent">{t('nav_shop')}</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-accent">{t('shop')}</span>
           </div>
           <h1 className="font-headline text-4xl md:text-6xl font-light leading-tight">
             {t('shop_title').split(' ').map((word, i, arr) => 

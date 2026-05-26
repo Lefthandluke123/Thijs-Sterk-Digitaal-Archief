@@ -75,8 +75,8 @@ function NavbarContent() {
     const dbTitle = siteSettings?.[`siteTitle_${language}`] || siteSettings?.siteTitle;
     const dbSubtitle = siteSettings?.[`siteSubtitle_${language}`] || siteSettings?.siteSubtitle;
     return {
-      title: dbTitle || t('nav_museum_title'),
-      subtitle: dbSubtitle || t('nav_museum_subtitle')
+      title: dbTitle || t('museum_title'),
+      subtitle: dbSubtitle || t('museum_subtitle')
     };
   };
 
@@ -114,7 +114,7 @@ function NavbarContent() {
           {mounted && (
             <div className="hidden lg:flex items-center gap-2 flex-shrink-0">
               <div className="flex items-center gap-1">
-                <NavLink href="/" active={pathname === "/"}>{t('nav_home')}</NavLink>
+                <NavLink href="/" active={pathname === "/"}>{t('home')}</NavLink>
                 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -124,7 +124,7 @@ function NavbarContent() {
                         ? "bg-accent text-accent-foreground shadow-lg scale-105" 
                         : "text-foreground/60 hover:bg-accent/5"
                     )}>
-                      {t('nav_galleries')} <ChevronDown className="w-3 h-3 opacity-30" />
+                      {t('galleries')} <ChevronDown className="w-3 h-3 opacity-30" />
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="center" className="bg-white/95 backdrop-blur-2xl border-black/5 rounded-3xl min-w-[240px] p-2 shadow-2xl mt-4">
@@ -141,8 +141,8 @@ function NavbarContent() {
                   </DropdownMenuContent>
                 </DropdownMenu>
 
-                <NavLink href="/curator" active={pathname === "/curator"}>{t('nav_your_room')}</NavLink>
-                <NavLink href="/shop" active={pathname === "/shop"}><ShoppingBag className="w-4 h-4" /> {t('nav_shop')}</NavLink>
+                <NavLink href="/curator" active={pathname === "/curator"}>{t('your_room')}</NavLink>
+                <NavLink href="/shop" active={pathname === "/shop"}><ShoppingBag className="w-4 h-4" /> {t('shop')}</NavLink>
               </div>
 
               <div className="h-8 w-px bg-black/5 mx-3" />
@@ -178,8 +178,8 @@ function NavbarContent() {
                   </div>
                   <div className="flex-1 overflow-y-auto p-8 space-y-8">
                      <div className="space-y-3">
-                       <Link href="/" className="flex items-center gap-4 p-6 rounded-3xl bg-black/5 text-[13px] font-black uppercase tracking-widest">{t('nav_home')}</Link>
-                       <Link href="/shop" className="flex items-center gap-4 p-6 rounded-3xl bg-black/5 text-[13px] font-black uppercase tracking-widest">{t('nav_shop')}</Link>
+                       <Link href="/" className="flex items-center gap-4 p-6 rounded-3xl bg-black/5 text-[13px] font-black uppercase tracking-widest">{t('home')}</Link>
+                       <Link href="/shop" className="flex items-center gap-4 p-6 rounded-3xl bg-black/5 text-[13px] font-black uppercase tracking-widest">{t('shop')}</Link>
                        <button onClick={() => { setMobileMenuOpen(false); setGuideOpen(true); }} className="flex w-full items-center gap-4 p-6 rounded-3xl bg-accent/5 text-[13px] font-black uppercase tracking-widest text-accent border border-accent/10">
                          <BookOpen className="w-6 h-6" /> Museum Gids
                        </button>
@@ -191,7 +191,7 @@ function NavbarContent() {
                          <LayoutGrid className="w-6 h-6 opacity-30" /> Alle Zalen
                        </Link>
                        <Link href="/curator" className="flex items-center gap-4 p-6 rounded-3xl bg-black/5 text-[13px] font-black tracking-widest uppercase">
-                         <Filter className="w-6 h-6 opacity-30" /> {t('nav_your_room')}
+                         <Filter className="w-6 h-6 opacity-30" /> {t('your_room')}
                        </Link>
                        <div className="grid grid-cols-1 gap-2.5 pt-4">
                          {rooms?.map((r: any) => (

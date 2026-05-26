@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from 'react';
@@ -141,7 +140,7 @@ export function MuseumGuide({ open, onOpenChange }: MuseumGuideProps) {
               />
               <Item 
                 icon={ShoppingBag} 
-                label={t('nav_shop')} 
+                label={t('shop')} 
                 desc={t('guide_nav_shop_desc')} 
               />
             </Section>
