@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useState } from 'react';
@@ -42,8 +43,8 @@ export function BackgroundLayer() {
   useEffect(() => {
     if (!mounted || !settings) return;
 
-    // Als we in de admin zijn, laten we de AdminPage de CSS variabelen bepalen 
-    // voor de live-preview van de sliders. We doen hier dus niets om 'snapping back' te voorkomen.
+    // Als we in de admin zijn, laten we de AdminPage de visuele rendering doen 
+    // om conflicten tussen de editor-state en de database-state te voorkomen.
     if (pathname.startsWith('/admin')) return;
 
     const pageKey = getPageKey();
@@ -73,7 +74,7 @@ export function BackgroundLayer() {
 
   }, [settings, pathname, mounted]);
 
-  if (!mounted) return null;
+  if (!mounted || pathname.startsWith('/admin')) return null;
 
   return (
     <div 

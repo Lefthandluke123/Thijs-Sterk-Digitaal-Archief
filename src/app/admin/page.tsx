@@ -32,8 +32,7 @@ import {
   Save,
   CheckSquare,
   Search,
-  Settings2,
-  Image as ImageIcon,
+  ImageIcon,
   Settings,
   Monitor,
   Type,
@@ -93,7 +92,6 @@ const CONTENT_FIELDS = [
   { id: 'shopIntro', label: 'Winkel Introductie', type: 'textarea', category: 'Winkel' },
 ];
 
-// STAP 1: DEFINIEER COMPONENTEN BUITEN DE PAGINA OM FREEZING TE VOORKOMEN
 const AutonomousSlider = ({ label, field, value, onChange, min = 0, max = 100, step = 1, unit = "%" }: any) => {
   return (
     <div className="space-y-4">
@@ -149,7 +147,7 @@ const BackgroundEditorSection = ({ pageId, label, state, onChange, onPick }: any
                   className="h-12 rounded-xl bg-black/5 border-none text-xs" 
                   placeholder="https://..."
                 />
-                <Button type="button" onClick={() => onPick(urlField)} size="icon" variant="outline" className="h-12 w-12 rounded-xl shrink-0"><Library className="w-5 h-5" /></Button>
+                <button type="button" onClick={() => onPick(urlField)} className="h-12 w-12 rounded-xl border border-black/10 flex items-center justify-center bg-white hover:bg-black/5 transition-colors"><Library className="w-5 h-5" /></button>
               </div>
             </div>
 
@@ -181,12 +179,15 @@ const BackgroundEditorSection = ({ pageId, label, state, onChange, onPick }: any
           </div>
 
           <div className="space-y-4">
-            <Label className="text-[10px] uppercase font-black opacity-40">Live Kaart Preview</Label>
+            <Label className="text-[10px] uppercase font-black opacity-40">Lokaal Preview Paneel</Label>
             <div className="relative aspect-video rounded-2xl overflow-hidden border-4 border-white shadow-xl bg-black/5 group">
               <div 
-                className="absolute inset-0 bg-cover bg-center transition-all duration-300 pointer-events-none"
+                className="absolute inset-0 transition-all duration-200 pointer-events-none"
                 style={{ 
                   backgroundImage: state[urlField] ? `url(${state[urlField]})` : 'none',
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  backgroundRepeat: 'no-repeat',
                   opacity: (state[opacityField] ?? 10) / 100,
                   filter: `blur(${state[blurField] ?? 0}px) brightness(${state[brightnessField] ?? 100}%)`,
                   transform: `scale(${(state[scaleField] ?? 100) / 100})`
@@ -198,7 +199,7 @@ const BackgroundEditorSection = ({ pageId, label, state, onChange, onPick }: any
                 </div>
               )}
               <div className="absolute bottom-3 left-3 bg-white/80 backdrop-blur-md px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border border-black/5">
-                Lokaal Stramien
+                Stramien Preview
               </div>
             </div>
           </div>
@@ -216,10 +217,8 @@ export default function AdminPage() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [activeTab, setActiveTab] = useState('artworks');
   const [searchTerm, setSearchTerm] = useState('');
+  const [activeAccordionItem, setActiveAccordionItem] = useState('global');
 
-  // ---------------------------------------------------------------------------
-  // AUTONOMOUS REALTIME STATE LAYERS
-  // ---------------------------------------------------------------------------
   const [editorState, setEditorState] = useState<Record<string, any>>({});
   const isInitialized = useRef(false);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
@@ -228,9 +227,7 @@ export default function AdminPage() {
   const [isImagePickerOpen, setIsImagePickerOpen] = useState(false);
   const [pickerTarget, setPickerTarget] = useState<string | null>(null);
 
-  // ---------------------------------------------------------------------------
-  // DATA FETCHING
-  // ---------------------------------------------------------------------------
+  // Data Fetching
   const artworksQuery = useMemoFirebase(() => {
     if (!firestore || !isAuthorized) return null;
     return collection(firestore, 'artworks');
@@ -249,10 +246,8 @@ export default function AdminPage() {
   }, [firestore, isAuthorized]);
   const { data: settings } = useDoc(settingsRef);
 
-  // STAP 2: INITIALISEER ZONDER LOOPS
   useEffect(() => {
     if (settings && !isInitialized.current) {
-      console.log("Loading settings into editor state...");
       setEditorState(settings as Record<string, any>);
       isInitialized.current = true;
     }
@@ -262,9 +257,28 @@ export default function AdminPage() {
     if (sessionStorage.getItem('admin_auth') === 'true') setIsAuthorized(true);
   }, []);
 
-  // ---------------------------------------------------------------------------
-  // HANDLERS
-  // ---------------------------------------------------------------------------
+  // REALTIME RENDERING LOGIC & DEBUGGING
+  const computedPreview = useMemo(() => {
+    const pageKey = activeAccordionItem === 'global' ? '' : `_${activeAccordionItem}`;
+    
+    const computed = {
+      image: editorState[`backgroundImageUrl${pageKey}`] || editorState.backgroundImageUrl || '',
+      opacity: editorState[`backgroundOpacity${pageKey}`] ?? editorState.backgroundOpacity ?? 10,
+      blur: editorState[`backgroundBlur${pageKey}`] ?? editorState.backgroundBlur ?? 0,
+      scale: editorState[`backgroundScale${pageKey}`] ?? editorState.backgroundScale ?? 100,
+      brightness: editorState[`backgroundBrightness${pageKey}`] ?? editorState.backgroundBrightness ?? 100,
+    };
+
+    console.log("previewState", activeAccordionItem, computed);
+    console.log("computed styles", {
+      opacity: computed.opacity / 100,
+      blur: computed.blur,
+      brightness: computed.brightness
+    });
+
+    return computed;
+  }, [editorState, activeAccordionItem]);
+
   const updateEditorField = (field: string, value: any) => {
     setEditorState(prev => ({ ...prev, [field]: value }));
   };
@@ -286,10 +300,8 @@ export default function AdminPage() {
     e.preventDefault();
     if (!settingsRef) return;
     setIsSavingSettings(true);
-    
-    const cleanedState = { ...editorState, updatedAt: serverTimestamp() };
     try {
-      await updateDoc(settingsRef, cleanedState);
+      await updateDoc(settingsRef, { ...editorState, updatedAt: serverTimestamp() });
       toast({ title: "Instellingen opgeslagen" });
     } catch (e) {
       toast({ variant: "destructive", title: "Fout bij opslaan" });
@@ -299,9 +311,7 @@ export default function AdminPage() {
   };
 
   const selectImageFromArchive = (imageUrl: string | null) => {
-    if (pickerTarget && imageUrl) {
-      updateEditorField(pickerTarget, imageUrl);
-    }
+    if (pickerTarget && imageUrl) updateEditorField(pickerTarget, imageUrl);
     setIsImagePickerOpen(false);
     setPickerTarget(null);
   };
@@ -360,32 +370,23 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-[#f8f9fa] pt-32 px-8">
-      {/* REALTIME SITE-WIDE STYLE INJECTION */}
-      <style>{`
-        :root {
-          --bg-image: ${editorState.backgroundImageUrl ? `url("${editorState.backgroundImageUrl}")` : 'none'};
-          --bg-opacity: ${(editorState.backgroundOpacity ?? 10) / 100};
-          --bg-blur: ${editorState.backgroundBlur ?? 0}px;
-          --bg-scale: ${(editorState.backgroundScale ?? 100) / 100};
-          --bg-brightness: ${(editorState.backgroundBrightness ?? 100) / 100};
-        }
-        ${PAGES.map(p => {
-          const url = editorState[`backgroundImageUrl_${p.id}`] || editorState.backgroundImageUrl;
-          const op = editorState[`backgroundOpacity_${p.id}`] ?? editorState.backgroundOpacity ?? 10;
-          const bl = editorState[`backgroundBlur_${p.id}`] ?? editorState.backgroundBlur ?? 0;
-          const sc = editorState[`backgroundScale_${p.id}`] ?? editorState.backgroundScale ?? 100;
-          const br = editorState[`backgroundBrightness_${p.id}`] ?? editorState.backgroundBrightness ?? 100;
-          return `
-            .bg-preview-${p.id} {
-              --bg-image: ${url ? `url("${url}")` : 'none'};
-              --bg-opacity: ${op / 100};
-              --bg-blur: ${bl}px;
-              --bg-scale: ${sc / 100};
-              --bg-brightness: ${br / 100};
-            }
-          `;
-        }).join('\n')}
-      `}</style>
+      {/* 
+          STRICT REALTIME FULL-SITE PREVIEW LAYER 
+          Dit element simuleert de website achtergrond en reageert DIRECT op de previewState.
+      */}
+      <div 
+        key={JSON.stringify(computedPreview)} // Forceer rerender bij state wijziging voor maximale betrouwbaarheid
+        className="fixed inset-0 z-[-1] pointer-events-none transition-all duration-200"
+        style={{
+          opacity: computedPreview.opacity / 100,
+          filter: `blur(${computedPreview.blur}px) brightness(${computedPreview.brightness}%)`,
+          backgroundImage: computedPreview.image ? `url(${computedPreview.image})` : 'none',
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+          transform: `scale(${computedPreview.scale / 100})`
+        }}
+      />
 
       <header className="fixed top-0 left-0 right-0 h-24 bg-white/80 backdrop-blur-md border-b z-40 px-8 flex items-center justify-between">
         <div className="flex items-center gap-6">
@@ -515,7 +516,7 @@ export default function AdminPage() {
           </TabsContent>
 
           <TabsContent value="settings">
-             <Card className="p-12 rounded-[3rem] bg-white border-none shadow-xl">
+             <Card className="p-12 rounded-[3rem] bg-white/90 backdrop-blur-xl border-none shadow-xl">
                 <form onSubmit={handleSaveSettings} className="space-y-12">
                    <div className="grid md:grid-cols-2 gap-12">
                       <div className="space-y-8">
@@ -548,11 +549,17 @@ export default function AdminPage() {
                         </div>
                         <div className="flex items-center gap-2 px-4 py-2 bg-accent/5 rounded-full border border-accent/10">
                            <Sparkles className="w-3 h-3 text-accent" />
-                           <span className="text-[9px] font-black uppercase tracking-widest text-accent">Realtime Preview Actief</span>
+                           <span className="text-[9px] font-black uppercase tracking-widest text-accent">Realtime WYSIWYG Actief</span>
                         </div>
                       </div>
 
-                      <Accordion type="single" collapsible className="w-full space-y-4">
+                      <Accordion 
+                        type="single" 
+                        collapsible 
+                        value={activeAccordionItem}
+                        onValueChange={(val) => val && setActiveAccordionItem(val)}
+                        className="w-full space-y-4"
+                      >
                          <BackgroundEditorSection 
                           pageId="global" 
                           label="Globale Achtergrond (Basis)" 
@@ -595,6 +602,7 @@ export default function AdminPage() {
             {filteredAndSortedArtworks.map((art: any) => (
               <button 
                 key={art.id} 
+                type="button"
                 onClick={() => selectImageFromArchive(art.image)} 
                 className="group relative aspect-square rounded-2xl overflow-hidden bg-black/5 border hover:ring-2 ring-accent transition-all"
               >
@@ -603,7 +611,7 @@ export default function AdminPage() {
                 ) : (
                   <ImageIcon className="w-6 h-6 mx-auto opacity-10" />
                 )}
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-end p-2">
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-end p-2 transition-opacity">
                   <p className="text-[8px] text-white font-bold truncate w-full">{art.displayTitle || art.title}</p>
                 </div>
               </button>
