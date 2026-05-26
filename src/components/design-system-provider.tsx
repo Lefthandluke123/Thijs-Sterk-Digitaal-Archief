@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -58,6 +59,17 @@ export function DesignSystemProvider({ children }: { children: React.ReactNode }
 
     h1, h2, h3, .font-headline {
       font-family: var(--font-headline);
+    }
+
+    /* Dynamische Heading Scaling */
+    h1 { font-size: calc(3.5rem * var(--site-heading-scale)); }
+    h2 { font-size: calc(2.75rem * var(--site-heading-scale)); }
+    h3 { font-size: calc(2rem * var(--site-heading-scale)); }
+
+    @media (max-width: 768px) {
+      h1 { font-size: calc(2.5rem * var(--site-heading-scale)); }
+      h2 { font-size: calc(2rem * var(--site-heading-scale)); }
+      h3 { font-size: calc(1.5rem * var(--site-heading-scale)); }
     }
 
     .container {

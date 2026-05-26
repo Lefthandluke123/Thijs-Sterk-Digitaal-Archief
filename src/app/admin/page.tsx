@@ -39,7 +39,8 @@ import {
   Library,
   LayoutTemplate,
   Languages,
-  RotateCcw
+  RotateCcw,
+  Scaling
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -279,6 +280,7 @@ export default function AdminPage() {
 
   const updateEditorField = (field: string, value: any) => {
     setEditorState(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -299,7 +301,7 @@ export default function AdminPage() {
     if (!settingsRef) return;
     setIsSavingSettings(true);
     try {
-      await updateDoc(settingsRef, { ...editorState, updatedAt: serverTimestamp() });
+      await updateDoc(settingsRef, { ...editorState, ...formData, updatedAt: serverTimestamp() });
       toast({ title: "Stramien instellingen opgeslagen" });
     } catch (e) {
       toast({ variant: "destructive", title: "Fout bij opslaan" });
@@ -318,7 +320,7 @@ export default function AdminPage() {
   const [storyNodes, setStoryNodes] = useState<StoryNode[]>([]);
   const [isSavingStory, setIsSavingStory] = useState(false);
   const [translatingField, setTranslatingField] = useState<string | null>(null);
-  const [formData, setFormData] = useState<Record<string, string>>({});
+  const [formData, setFormData] = useState<Record<string, any>>({});
   const [selectedArtIds, setSelectedArtIds] = useState<string[]>([]);
   const [isRoomDialogOpen, setIsRoomDialogOpen] = useState(false);
   const [editingRoom, setEditingRoom] = useState<any>(null);
@@ -520,7 +522,23 @@ export default function AdminPage() {
                                  <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Hoofd Font</Label><Select name="bodyFont" value={formData.bodyFont} onValueChange={v => setFormData(p => ({...p, bodyFont: v}))}><SelectTrigger className="h-12 rounded-xl bg-black/5 border-none"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="sans">Modern (Sans)</SelectItem><SelectItem value="serif">Klassiek (Serif)</SelectItem></SelectContent></Select></div>
                                  <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Kop Font</Label><Select name="headFont" value={formData.headFont} onValueChange={v => setFormData(p => ({...p, headFont: v}))}><SelectTrigger className="h-12 rounded-xl bg-black/5 border-none"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="sans">Modern (Sans)</SelectItem><SelectItem value="serif">Klassiek (Serif)</SelectItem></SelectContent></Select></div>
                               </div>
-                              <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Basis Tekstgrootte</Label><Input value={formData.baseFontSize || ''} onChange={e => setFormData(p => ({...p, baseFontSize: e.target.value}))} className="h-12 rounded-xl bg-black/5 border-none" /></div>
+                              <div className="space-y-2">
+                                <Label className="text-[10px] uppercase font-black opacity-40">Basis Tekstgrootte</Label>
+                                <Input value={formData.baseFontSize || ''} onChange={e => setFormData(p => ({...p, baseFontSize: e.target.value}))} className="h-12 rounded-xl bg-black/5 border-none" />
+                              </div>
+                              <div className="pt-4 border-t border-black/5">
+                                 <AutonomousSlider 
+                                  label="Koptekst Schaal (Heading Size)" 
+                                  field="headingScale" 
+                                  value={formData.headingScale ?? 1.25} 
+                                  onChange={updateEditorField}
+                                  min={0.5}
+                                  max={2.0}
+                                  step={0.05}
+                                  unit="x"
+                                 />
+                                 <p className="text-[8px] font-bold uppercase opacity-30 mt-2">Past de grootte van alle titels (H1, H2, H3) proportioneel aan.</p>
+                              </div>
                            </div>
                         </div>
                         <div className="space-y-8">
@@ -663,3 +681,4 @@ export default function AdminPage() {
     </div>
   );
 }
+
