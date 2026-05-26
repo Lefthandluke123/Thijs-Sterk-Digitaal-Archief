@@ -41,8 +41,7 @@ import {
   Library,
   LayoutTemplate,
   Languages,
-  RotateCcw,
-  Eye
+  RotateCcw
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -91,8 +90,8 @@ const CONTENT_FIELDS = [
   { id: 'homeBio', label: 'Biografie Tekst', type: 'textarea', category: 'Homepage' },
   { id: 'gallery_title', label: 'Zalen Overzicht Titel', type: 'input', category: 'Zalen' },
   { id: 'gallery_select', label: 'Zalen Selectie Instructie', type: 'input', category: 'Zalen' },
-  { id: 'curator_title', label: 'Curator Titel', type: 'input', category: 'Uw Zaal' },
-  { id: 'curator_subtitle', label: 'Curator Ondertitel', type: 'input', category: 'Uw Zaal' },
+  { id: 'curator_title', label: 'Zelf iets moois maken Titel', type: 'input', category: 'Uw Zaal' },
+  { id: 'curator_subtitle', label: 'Zelf iets moois maken Ondertitel', type: 'input', category: 'Uw Zaal' },
   { id: 'shopIntro', label: 'Winkel Introductie', type: 'textarea', category: 'Winkel' },
 ];
 
@@ -125,7 +124,7 @@ export default function AdminPage() {
 
   // Bulk State
   const [selectedArtIds, setSelectedArtIds] = useState<string[]>([]);
-  const [isBulkDialogOpen, setIsBulkEditConfirmOpen] = useState(false);
+  const [isBulkEditConfirmOpen, setIsBulkEditConfirmOpen] = useState(false);
   const [bulkForm, setBulkForm] = useState({
     addRoomIds: [] as string[],
     addTags: '',
@@ -211,18 +210,15 @@ export default function AdminPage() {
 
   // Realtime CSS Variable Sync for Live Preview
   useEffect(() => {
-    if (activeTab !== 'settings') return;
-
-    // We kijken naar de momenteel geselecteerde page of global
-    // Voor het beheerpaneel previewen we altijd de 'global' settings OF we kunnen een preview-container tonen.
-    // Omdat de BackgroundLayer al in de layout zit, updaten we de CSS vars op :root.
-    
     const root = document.documentElement;
+    // We tonen in de admin preview standaard de 'global' settings op de echte achtergrond
+    // of we laten het over aan de preview-container. 
+    // Om de hele site live te laten reageren terwijl we editen:
     root.style.setProperty('--bg-image', bgUrls.global ? `url("${bgUrls.global}")` : 'none');
-    root.style.setProperty('--bg-opacity', (opacities.global / 100).toString());
-    root.style.setProperty('--bg-blur', `${blurs.global}px`);
-    root.style.setProperty('--bg-scale', (scales.global / 100).toString());
-  }, [bgUrls, opacities, blurs, scales, activeTab]);
+    root.style.setProperty('--bg-opacity', ((opacities.global ?? 10) / 100).toString());
+    root.style.setProperty('--bg-blur', `${blurs.global ?? 0}px`);
+    root.style.setProperty('--bg-scale', ((scales.global ?? 100) / 100).toString());
+  }, [bgUrls.global, opacities.global, blurs.global, scales.global]);
 
   useEffect(() => {
     if (storyData?.nodes) {
@@ -267,24 +263,23 @@ export default function AdminPage() {
     const formFields = new FormData(e.currentTarget);
     const updates: any = { updatedAt: serverTimestamp() };
     
-    // Algemene velden
     const fields = ['bgColor', 'primaryColor', 'accentColor', 'baseFontSize', 'lineHeight', 'headingScale', 'containerWidth', 'radius', 'bodyFont', 'headFont'];
     fields.forEach(f => {
       const val = formFields.get(f);
       if (val !== null) updates[f] = String(val);
     });
 
-    // Achtergrondvelden vanuit Controlled State (source of truth)
+    // Sla waarden op uit de controlled state
     updates['backgroundImageUrl'] = bgUrls.global || "";
-    updates['backgroundOpacity'] = Number(opacities.global);
-    updates['backgroundBlur'] = Number(blurs.global);
-    updates['backgroundScale'] = Number(scales.global);
+    updates['backgroundOpacity'] = Number(opacities.global ?? 10);
+    updates['backgroundBlur'] = Number(blurs.global ?? 0);
+    updates['backgroundScale'] = Number(scales.global ?? 100);
 
     PAGES.forEach(p => {
       updates[`backgroundImageUrl_${p.id}`] = bgUrls[p.id] || "";
-      updates[`backgroundOpacity_${p.id}`] = Number(opacities[p.id]);
-      updates[`backgroundBlur_${p.id}`] = Number(blurs[p.id]);
-      updates[`backgroundScale_${p.id}`] = Number(scales[p.id]);
+      updates[`backgroundOpacity_${p.id}`] = Number(opacities[p.id] ?? 10);
+      updates[`backgroundBlur_${p.id}`] = Number(blurs[p.id] ?? 0);
+      updates[`backgroundScale_${p.id}`] = Number(scales[p.id] ?? 100);
     });
 
     try {
@@ -478,7 +473,7 @@ export default function AdminPage() {
               </div>
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <Label className="text-[10px] uppercase font-black opacity-40">Blur</Label>
+                  <Label className="text-[10px] uppercase font-black opacity-40">Vervaging (Blur)</Label>
                   <span className="text-[10px] font-bold bg-accent/10 text-accent px-2 py-0.5 rounded-full">{blurs[pageId] ?? 0}px</span>
                 </div>
                 <Slider 
@@ -550,12 +545,12 @@ export default function AdminPage() {
           <div className="flex items-center gap-4">
             <LayoutDashboard className="w-6 h-6 text-accent" />
             <div>
-              <h1 className="font-headline text-2xl italic">Het Digitale Archief</h1>
+              <h1 className="font-headline text-2xl italic">Museum Beheer</h1>
             </div>
           </div>
           <div className="h-8 w-px bg-black/5 mx-2" />
           <Button onClick={() => setActiveTab('story')} variant="outline" className="rounded-full bg-accent text-white hover:bg-accent/90 border-none shadow-lg px-6">
-             <LayoutTemplate className="w-4 h-4 mr-2" /> Story Designer (DTP)
+             <LayoutTemplate className="w-4 h-4 mr-2" /> Story Designer
           </Button>
         </div>
         <div className="flex items-center gap-6">
@@ -563,7 +558,7 @@ export default function AdminPage() {
               <span className="text-[9px] font-black uppercase tracking-widest opacity-30">Status</span>
               <div className="flex items-center gap-2">
                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                 <span className="text-[10px] font-bold text-accent">Realtime Sync Actief</span>
+                 <span className="text-[10px] font-bold text-accent">Realtime Preview Actief</span>
               </div>
            </div>
            <Link href="/" className="text-[11px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 hover:text-accent transition-colors">
@@ -630,7 +625,7 @@ export default function AdminPage() {
                 <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-white p-8 rounded-[3rem] shadow-xl border">
                    <div className="flex items-center gap-6">
                       <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center text-accent"><LayoutTemplate className="w-8 h-8" /></div>
-                      <div><h3 className="font-headline text-2xl italic leading-tight">Story Designer</h3><p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Samenstellen van biografie-pagina's (Drag & Drop)</p></div>
+                      <div><h3 className="font-headline text-2xl italic leading-tight">Story Designer</h3><p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Samenstellen van biografie-pagina's</p></div>
                    </div>
                    <div className="flex items-center gap-4">
                       <Select value={selectedStoryId} onValueChange={setSelectedStoryId}>
@@ -694,7 +689,7 @@ export default function AdminPage() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3 opacity-40">
                           <Monitor className="w-5 h-5" />
-                          <h3 className="text-xs font-black uppercase">Achtergrond & Realtime Stramien</h3>
+                          <h3 className="text-xs font-black uppercase">Achtergrond & Realtime Preview</h3>
                         </div>
                         <div className="flex items-center gap-2 px-4 py-2 bg-accent/5 rounded-full border border-accent/10">
                            <Sparkles className="w-3 h-3 text-accent" />

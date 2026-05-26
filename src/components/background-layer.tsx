@@ -6,8 +6,7 @@ import { doc } from 'firebase/firestore';
 import { usePathname } from 'next/navigation';
 
 /**
- * @fileOverview BackgroundLayer: Beheert de achtergrondafbeelding.
- * STABILIZED VERSION - Gebruikt CSS variabelen voor realtime feedback zonder lag.
+ * @fileOverview BackgroundLayer: Beheert de achtergrondafbeelding op de hele site.
  */
 export function BackgroundLayer() {
   const firestore = useFirestore();
@@ -42,6 +41,10 @@ export function BackgroundLayer() {
   useEffect(() => {
     if (!mounted || !settings) return;
 
+    // Als we in de admin zijn, laten we de AdminPage de CSS variabelen bepalen 
+    // voor de live-preview van de sliders. We doen hier dus niets.
+    if (pathname.startsWith('/admin')) return;
+
     const pageKey = getPageKey();
     
     // 1. URL bepalen
@@ -69,7 +72,7 @@ export function BackgroundLayer() {
 
   return (
     <div 
-      className="bg-fade-layer"
+      className="bg-fade-layer fixed inset-0 z-[-1] pointer-events-none"
       aria-hidden="true"
     />
   );
