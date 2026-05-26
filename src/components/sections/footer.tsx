@@ -39,7 +39,7 @@ export function Footer() {
             <img 
               src={siteSettings?.logoUrl || "/logo.png"} 
               alt="Logo" 
-              className="h-full w-auto object-contain transition-transform group-hover:scale-105" 
+              className="h-full w-auto object-contain transition-all duration-1000 group-hover:scale-110 animate-logo-float" 
             />
           </div>
           <div className="flex flex-col leading-none border-l border-border/40 pl-4">

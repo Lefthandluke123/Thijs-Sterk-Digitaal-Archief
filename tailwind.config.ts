@@ -1,4 +1,3 @@
-
 import type {Config} from 'tailwindcss';
 
 export default {
@@ -76,6 +75,10 @@ export default {
           '0%, 100%': { transform: 'translateX(0)', backgroundColor: 'transparent' },
           '20%, 60%': { transform: 'translateX(-4px)', backgroundColor: 'rgba(239, 68, 68, 0.2)', borderColor: 'rgb(239, 68, 68)' },
           '40%, 80%': { transform: 'translateX(4px)', backgroundColor: 'rgba(239, 68, 68, 0.2)', borderColor: 'rgb(239, 68, 68)' },
+        },
+        'logo-float': {
+          '0%, 100%': { transform: 'translateY(0) scale(1)' },
+          '50%': { transform: 'translateY(-3px) scale(1.02)' },
         }
       },
       animation: {
@@ -84,6 +87,7 @@ export default {
         'fade-in-up': 'fade-in-up 0.8s ease-out forwards',
         'fade-in-left': 'fade-in-left 1s ease-out forwards',
         'flash-error': 'flash-error 0.5s ease-in-out',
+        'logo-float': 'logo-float 5s ease-in-out infinite',
       },
     },
   },
