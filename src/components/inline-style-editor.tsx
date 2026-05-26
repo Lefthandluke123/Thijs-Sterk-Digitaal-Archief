@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils';
 
 /**
  * @fileOverview InlineStyleEditor: Visuele typografie editor met Firestore persistentie.
+ * De activatieknop is nu verborgen; gebruik Cmd+E of Ctrl+E om de modus te activeren.
  */
 
 export function InlineStyleEditor() {
@@ -47,12 +48,19 @@ export function InlineStyleEditor() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'e' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
-        setActive(prev => !prev);
+        const newState = !active;
+        setActive(newState);
+        if (newState) {
+          toast({ 
+            title: "Style Editor Actief", 
+            description: "Klik op een element om de lettergrootte aan te passen." 
+          });
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [active]);
 
   // Selection Logic
   useEffect(() => {
@@ -149,14 +157,7 @@ export function InlineStyleEditor() {
     }
   };
 
-  if (!active) return (
-    <Button 
-      onClick={() => setActive(true)} 
-      className="fixed bottom-6 right-6 z-[100] rounded-full bg-accent text-white h-14 px-8 shadow-2xl uppercase font-black text-[10px] tracking-widest hover:scale-105 transition-all border-2 border-white/20"
-    >
-      <Settings2 className="w-4 h-4 mr-2" /> Stijlen Bewerken
-    </Button>
-  );
+  if (!active) return null;
 
   return (
     <>
