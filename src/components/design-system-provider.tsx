@@ -1,15 +1,9 @@
-
 "use client";
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 
-/**
- * @fileOverview DesignSystemProvider: Vertaalt Firestore instellingen naar dynamische CSS variabelen.
- * Dit vormt het 'stramien' van de website (fonts, kleuren, spatiëring, regelafstand).
- * Fix: Krachtigere heading scaling toegevoegd.
- */
 export function DesignSystemProvider({ children }: { children: React.ReactNode }) {
   const firestore = useFirestore();
 
@@ -20,62 +14,61 @@ export function DesignSystemProvider({ children }: { children: React.ReactNode }
 
   const { data: settings } = useDoc(settingsRef);
 
-  if (!settings) return <>{children}</>;
+  const dynamicStyles = useMemo(() => {
+    if (!settings) return "";
 
-  // Extract HSL or Hex values (fallback to defaults if empty)
-  const background = settings.bgColor || '40 15% 97%';
-  const primary = settings.primaryColor || '201 45% 5%';
-  const accent = settings.accentColor || '142 30% 25%';
-  const baseFontSize = settings.baseFontSize || '16px';
-  const lineHeight = settings.lineHeight || '1.7';
-  const headingScale = settings.headingScale || 1.25; 
-  const containerWidth = settings.containerWidth || '1280px';
-  const radius = settings.radius || '2rem';
-  
-  // Custom Fonts selection
-  const bodyFont = settings.bodyFont === 'serif' ? '"Playfair Display", serif' : '"Inter", sans-serif';
-  const headFont = settings.headFont === 'sans' ? '"Inter", sans-serif' : '"Playfair Display", serif';
-
-  const dynamicStyles = `
-    :root {
-      --background: ${background};
-      --primary: ${primary};
-      --accent: ${accent};
-      --radius: ${radius};
-      
-      --site-base-font-size: ${baseFontSize};
-      --site-line-height: ${lineHeight};
-      --site-heading-scale: ${headingScale};
-      --site-container-max-width: ${containerWidth};
-      
-      --font-body: ${bodyFont};
-      --font-headline: ${headFont};
-    }
-
-    body {
-      font-size: var(--site-base-font-size);
-      line-height: var(--site-line-height);
-      font-family: var(--font-body);
-    }
-
-    h1, h2, h3, .font-headline {
-      font-family: var(--font-headline);
-    }
-
-    /* Krachtige Heading Scaling die Tailwind utility classes overleeft */
-    h1, .text-h1 { font-size: calc(clamp(2.5rem, 8vw, 5rem) * var(--site-heading-scale)) !important; line-height: 1.1 !important; }
-    h2, .text-h2 { font-size: calc(clamp(2rem, 5vw, 3.5rem) * var(--site-heading-scale)) !important; line-height: 1.2 !important; }
-    h3, .text-h3 { font-size: calc(clamp(1.5rem, 3vw, 2.5rem) * var(--site-heading-scale)) !important; line-height: 1.3 !important; }
-
-    .container {
-      max-width: var(--site-container-max-width) !important;
-    }
+    const background = settings.bgColor || '40 15% 97%';
+    const primary = settings.primaryColor || '201 45% 5%';
+    const accent = settings.accentColor || '142 30% 25%';
+    const baseFontSize = settings.baseFontSize || '16px';
+    const lineHeight = settings.lineHeight || '1.7';
+    const containerWidth = settings.containerWidth || '1280px';
+    const radius = settings.radius || '2rem';
     
-    .prose-text {
-      line-height: var(--site-line-height);
-      font-size: var(--site-base-font-size);
-    }
-  `;
+    const bodyFont = settings.bodyFont === 'serif' ? '"Playfair Display", serif' : '"Inter", sans-serif';
+    const headFont = settings.headFont === 'sans' ? '"Inter", sans-serif' : '"Playfair Display", serif';
+
+    // Typography Tokens
+    const t = settings.typography || {};
+    const h1Size = t.h1?.fontSize || 64;
+    const h2Size = t.h2?.fontSize || 48;
+    const h3Size = t.h3?.fontSize || 32;
+    const btnSize = t.button?.fontSize || 14;
+    const navSize = t.nav?.fontSize || 10;
+
+    // Build base overrides
+    let css = `
+      :root {
+        --background: ${background};
+        --primary: ${primary};
+        --accent: ${accent};
+        --radius: ${radius};
+        
+        --site-base-font-size: ${baseFontSize};
+        --site-line-height: ${lineHeight};
+        --site-container-max-width: ${containerWidth};
+        
+        --font-body: ${bodyFont};
+        --font-headline: ${headFont};
+
+        --h1-size: ${h1Size}px;
+        --h2-size: ${h2Size}px;
+        --h3-size: ${h3Size}px;
+        --button-size: ${btnSize}px;
+        --nav-size: ${navSize}px;
+      }
+    `;
+
+    // Apply Local Overrides
+    const overrides = settings.typographyOverrides || {};
+    Object.entries(overrides).forEach(([id, style]: [string, any]) => {
+      if (style.fontSize) {
+        css += `[data-dtp-id="${id}"] { font-size: ${style.fontSize}px !important; } `;
+      }
+    });
+
+    return css;
+  }, [settings]);
 
   return (
     <>

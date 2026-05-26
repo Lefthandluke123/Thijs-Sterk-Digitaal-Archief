@@ -7,6 +7,7 @@ import { CookieConsent } from '@/components/cookie-consent';
 import { LanguageProvider } from '@/components/language-provider';
 import { BackgroundLayer } from '@/components/background-layer';
 import { DesignSystemProvider } from '@/components/design-system-provider';
+import { InlineStyleEditor } from '@/components/inline-style-editor';
 import { Suspense } from 'react';
 import { Loader2 } from 'lucide-react';
 
@@ -68,6 +69,7 @@ export default function RootLayout({
               <Navbar />
               <BackgroundLayer />
               {children}
+              <InlineStyleEditor />
               <CookieConsent />
               <Footer />
             </LanguageProvider>

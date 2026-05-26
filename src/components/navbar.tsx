@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, Suspense } from 'react';
@@ -37,7 +36,7 @@ const NavLink = ({ href, children, active }: { href: string; children: React.Rea
   <Link 
     href={href}
     className={cn(
-      "px-5 py-2.5 rounded-full text-[10px] font-black tracking-[0.2em] uppercase transition-all flex items-center gap-2",
+      "px-5 py-2.5 rounded-full text-[10px] font-black tracking-[0.2em] uppercase transition-all flex items-center gap-2 nav-item-style",
       active 
         ? "bg-accent text-accent-foreground shadow-lg scale-105" 
         : "text-foreground/60 hover:text-accent hover:bg-accent/5"
@@ -121,7 +120,7 @@ function NavbarContent() {
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button className={cn(
-                      "px-5 py-2.5 rounded-full text-[10px] font-black tracking-[0.2em] uppercase transition-all flex items-center gap-1 outline-none",
+                      "px-5 py-2.5 rounded-full text-[10px] font-black tracking-[0.2em] uppercase transition-all flex items-center gap-1 outline-none nav-item-style",
                       pathname.includes('/room') || pathname === '/gallery' 
                         ? "bg-accent text-accent-foreground shadow-lg scale-105" 
                         : "text-foreground/60 hover:bg-accent/5"
@@ -152,7 +151,7 @@ function NavbarContent() {
               <div className="flex items-center gap-2">
                 <button 
                   onClick={() => setGuideOpen(true)} 
-                  className="px-5 py-2.5 rounded-full text-[10px] font-black tracking-[0.2em] uppercase transition-all flex items-center gap-2 hover:bg-accent/5 text-accent border border-accent/10"
+                  className="px-5 py-2.5 rounded-full text-[10px] font-black tracking-[0.2em] uppercase transition-all flex items-center gap-2 hover:bg-accent/5 text-accent border border-accent/10 nav-item-style"
                 >
                   <BookOpen className="w-4 h-4" /> Gids
                 </button>
@@ -160,7 +159,7 @@ function NavbarContent() {
                 <Link 
                   href="/admin" 
                   className={cn(
-                    "px-5 py-2.5 rounded-full text-[10px] font-black tracking-[0.2em] uppercase transition-all flex items-center gap-2 border border-black/10 mr-4",
+                    "px-5 py-2.5 rounded-full text-[10px] font-black tracking-[0.2em] uppercase transition-all flex items-center gap-2 border border-black/10 mr-4 nav-item-style",
                     pathname.startsWith('/admin') ? "bg-primary text-primary-foreground" : "text-foreground/40 hover:bg-black/5"
                   )}
                 >
@@ -192,27 +191,27 @@ function NavbarContent() {
                   </div>
                   <div className="flex-1 overflow-y-auto p-8 space-y-8">
                      <div className="space-y-3">
-                       <Link href="/" className="flex items-center gap-4 p-6 rounded-3xl bg-black/5 text-[13px] font-black uppercase tracking-widest">{t('home')}</Link>
-                       <Link href="/shop" className="flex items-center gap-4 p-6 rounded-3xl bg-black/5 text-[13px] font-black uppercase tracking-widest">{t('shop')}</Link>
-                       <button onClick={() => { setMobileMenuOpen(false); setGuideOpen(true); }} className="flex w-full items-center gap-4 p-6 rounded-3xl bg-accent/5 text-[13px] font-black uppercase tracking-widest text-accent border border-accent/10">
+                       <Link href="/" className="flex items-center gap-4 p-6 rounded-3xl bg-black/5 text-[13px] font-black uppercase tracking-widest nav-item-style">{t('home')}</Link>
+                       <Link href="/shop" className="flex items-center gap-4 p-6 rounded-3xl bg-black/5 text-[13px] font-black uppercase tracking-widest nav-item-style">{t('shop')}</Link>
+                       <button onClick={() => { setMobileMenuOpen(false); setGuideOpen(true); }} className="flex w-full items-center gap-4 p-6 rounded-3xl bg-accent/5 text-[13px] font-black uppercase tracking-widest text-accent border border-accent/10 nav-item-style">
                          <BookOpen className="w-6 h-6" /> Museum Gids
                        </button>
-                       <Link href="/admin" className="flex items-center gap-4 p-6 rounded-3xl bg-primary text-primary-foreground text-[13px] font-black uppercase tracking-widest">
+                       <Link href="/admin" className="flex items-center gap-4 p-6 rounded-3xl bg-primary text-primary-foreground text-[13px] font-black uppercase tracking-widest nav-item-style">
                          <LayoutDashboard className="w-6 h-6" /> Beheer Paneel
                        </Link>
                      </div>
                      
                      <div className="space-y-4 pt-8 border-t border-black/5">
                        <p className="text-[11px] font-black uppercase tracking-[0.3em] px-3 opacity-30">Collectie</p>
-                       <Link href="/gallery" className="flex items-center gap-4 p-6 rounded-3xl bg-black/5 text-[13px] font-black tracking-widest uppercase">
+                       <Link href="/gallery" className="flex items-center gap-4 p-6 rounded-3xl bg-black/5 text-[13px] font-black tracking-widest uppercase nav-item-style">
                          <LayoutGrid className="w-6 h-6 opacity-30" /> Alle Zalen
                        </Link>
-                       <Link href="/curator" className="flex items-center gap-4 p-6 rounded-3xl bg-black/5 text-[13px] font-black tracking-widest uppercase">
+                       <Link href="/curator" className="flex items-center gap-4 p-6 rounded-3xl bg-black/5 text-[13px] font-black tracking-widest uppercase nav-item-style">
                          <Filter className="w-6 h-6 opacity-30" /> {t('your_room')}
                        </Link>
                        <div className="grid grid-cols-1 gap-2.5 pt-4">
                          {rooms?.map((r: any) => (
-                           <Link key={r.id} href={`/room/${r.slug}`} className="p-5 rounded-2xl bg-black/[0.02] text-[12px] font-bold uppercase tracking-wider opacity-70">{r.title}</Link>
+                           <Link key={r.id} href={`/room/${r.slug}`} className="p-5 rounded-2xl bg-black/[0.02] text-[12px] font-bold uppercase tracking-wider opacity-70 nav-item-style">{r.title}</Link>
                          ))}
                        </div>
                      </div>
