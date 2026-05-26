@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
@@ -485,27 +484,31 @@ export default function AdminPage() {
                   <Button onClick={() => { setEditingArtwork(null); setArtworkForm({ title: '', displayTitle: '', slug: '', image: '', roomIds: [], year: '', medium: '', description: '', featured: false, inShop: false, tags: '' }); setIsArtworkDialogOpen(true); }} className="rounded-full px-8 h-12 bg-primary"><Plus className="w-4 h-4 mr-2" /> Nieuw Werk</Button>
                </div>
 
-               {/* Bulk Actions Toolbar */}
+               {/* Bulk Actions Toolbar (Bovenaan) */}
                {selectedArtIds.length > 0 && (
-                 <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-4 bg-primary text-primary-foreground p-4 px-8 rounded-full shadow-2xl animate-in slide-in-from-bottom-10 border border-white/10 backdrop-blur-xl">
-                    <span className="text-[10px] font-black uppercase tracking-widest">{selectedArtIds.length} geselecteerd</span>
-                    <div className="w-px h-6 bg-white/20 mx-2" />
+                 <div className="flex items-center gap-4 bg-primary text-primary-foreground p-4 px-8 rounded-[2rem] shadow-xl animate-in fade-in slide-in-from-top-4 border border-white/10 backdrop-blur-xl mb-8 sticky top-[184px] z-20">
+                    <span className="text-[10px] font-black uppercase tracking-widest shrink-0">{selectedArtIds.length} geselecteerd</span>
+                    <div className="w-px h-6 bg-white/20 mx-2 shrink-0" />
                     
-                    <Button variant="ghost" size="sm" onClick={() => setIsBulkRoomDialogOpen(true)} className="hover:bg-white/10 text-[10px] font-black uppercase h-10 rounded-full px-6">
-                       <Layers className="w-4 h-4 mr-2" /> Zaal
-                    </Button>
+                    <div className="flex flex-wrap gap-2">
+                      <Button variant="ghost" size="sm" onClick={() => setIsBulkRoomDialogOpen(true)} className="hover:bg-white/10 text-[10px] font-black uppercase h-10 rounded-full px-6">
+                         <Layers className="w-4 h-4 mr-2" /> Zaal
+                      </Button>
+                      
+                      <Button variant="ghost" size="sm" onClick={() => setIsBulkTagDialogOpen(true)} className="hover:bg-white/10 text-[10px] font-black uppercase h-10 rounded-full px-6">
+                         <Sparkles className="w-4 h-4 mr-2" /> Tags
+                      </Button>
+                      
+                      <Button variant="ghost" size="sm" onClick={handleBulkDelete} className="hover:bg-destructive text-[10px] font-black uppercase h-10 rounded-full px-6">
+                         <Trash2 className="w-4 h-4 mr-2" /> Wis
+                      </Button>
+                    </div>
                     
-                    <Button variant="ghost" size="sm" onClick={() => setIsBulkTagDialogOpen(true)} className="hover:bg-white/10 text-[10px] font-black uppercase h-10 rounded-full px-6">
-                       <Sparkles className="w-4 h-4 mr-2" /> Tags
-                    </Button>
-                    
-                    <Button variant="ghost" size="sm" onClick={handleBulkDelete} className="hover:bg-destructive text-[10px] font-black uppercase h-10 rounded-full px-6">
-                       <Trash2 className="w-4 h-4 mr-2" /> Wis
-                    </Button>
-                    
-                    <Button variant="ghost" size="sm" onClick={() => setSelectedArtIds([])} className="opacity-50 hover:opacity-100 p-2">
-                       <X className="w-4 h-4" />
-                    </Button>
+                    <div className="ml-auto flex items-center gap-2">
+                      <Button variant="ghost" size="sm" onClick={() => setSelectedArtIds([])} className="opacity-50 hover:opacity-100 p-2 rounded-full hover:bg-white/10">
+                         <X className="w-4 h-4" />
+                      </Button>
+                    </div>
                  </div>
                )}
 
