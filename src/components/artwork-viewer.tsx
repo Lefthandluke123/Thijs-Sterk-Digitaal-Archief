@@ -31,6 +31,7 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
   const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
   const [artworkUrl, setArtworkUrl] = useState('');
   const [showHints, setShowHints] = useState(true);
+  const [hintTrigger, setHintTrigger] = useState(0);
   
   const pathname = usePathname();
   const { language, t } = useLanguage();
@@ -42,7 +43,7 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
       const timer = setTimeout(() => setShowHints(false), 4000);
       return () => clearTimeout(timer);
     }
-  }, [artwork?.id, language]);
+  }, [artwork?.id, language, hintTrigger]);
 
   useEffect(() => {
     if (artwork && typeof window !== 'undefined') {
@@ -95,7 +96,10 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
       aria-modal="true"
       className="fixed inset-0 z-[9999] bg-background flex flex-col items-center justify-center overflow-hidden animate-in fade-in duration-700"
     >
-      <div className="absolute inset-0 z-[10010] flex items-center justify-center p-12 md:p-24">
+      <div 
+        className="absolute inset-0 z-[10010] flex items-center justify-center p-12 md:p-24"
+        onClick={() => setHintTrigger(p => p + 1)}
+      >
         <div className="w-full h-full max-w-[95vw] max-h-[85vh] flex items-center justify-center">
           {displayImage ? (
             <DeepZoomViewer 

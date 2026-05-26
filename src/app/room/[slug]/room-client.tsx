@@ -38,14 +38,14 @@ type ViewMode = 'grid' | 'viewer';
 
 /**
  * @fileOverview RoomClient: Beheert de immersieve zaal-ervaring.
- * Nu met een "Grid Overview" en een "Immersive Viewer" met interactie-uitleg.
- * De hints verdwijnen na 4 seconden.
+ * De hints verschijnen bij mount/navigatie EN bij klik, en verdwijnen na 4s.
  */
 export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showMetadata, setShowMetadata] = useState(false);
   const [showHints, setShowHints] = useState(true);
+  const [hintTrigger, setHintTrigger] = useState(0);
   
   const artworks = useMemo(() => {
     if (!dbArtworks) return [];
@@ -61,7 +61,7 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
       const timer = setTimeout(() => setShowHints(false), 4000);
       return () => clearTimeout(timer);
     }
-  }, [viewMode, currentIndex]);
+  }, [viewMode, currentIndex, hintTrigger]);
 
   const handleNext = useCallback((e?: React.MouseEvent) => {
     e?.stopPropagation();
@@ -79,6 +79,7 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
     setCurrentIndex(index);
     setViewMode('viewer');
     setShowMetadata(false);
+    setHintTrigger(p => p + 1);
   };
 
   useEffect(() => {
@@ -169,7 +170,10 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
       {viewMode === 'viewer' && activeItem && (
         <div className="fixed inset-0 z-[1000] bg-background animate-in fade-in duration-700">
           {/* 1. Viewer Layer */}
-          <div className="absolute inset-0 z-[110] flex items-center justify-center p-8 md:p-20">
+          <div 
+            className="absolute inset-0 z-[110] flex items-center justify-center p-8 md:p-20"
+            onClick={() => setHintTrigger(p => p + 1)}
+          >
             <div className="w-full h-full max-w-[95vw] max-h-[85vh]">
               <DeepZoomViewer 
                 key={`${activeItem.id}-${currentIndex}`} 
