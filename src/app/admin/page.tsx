@@ -157,18 +157,6 @@ export default function AdminPage() {
     if (sessionStorage.getItem('admin_auth') === 'true') setIsAuthorized(true);
   }, []);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsVerifying(true);
-    if (await verifyAdminPassword(password)) {
-      setIsAuthorized(true);
-      sessionStorage.setItem('admin_auth', 'true');
-    } else {
-      toast({ variant: "destructive", title: "Fout", description: "Wachtwoord onjuist." });
-    }
-    setIsVerifying(false);
-  };
-
   const artworksQuery = useMemoFirebase(() => {
     if (!firestore || !isAuthorized) return null;
     return collection(firestore, 'artworks');
@@ -240,23 +228,30 @@ export default function AdminPage() {
     const formData = new FormData(e.currentTarget);
     const updates: any = { updatedAt: serverTimestamp() };
     const fields = ['bgColor', 'primaryColor', 'accentColor', 'baseFontSize', 'lineHeight', 'headingScale', 'containerWidth', 'radius', 'bodyFont', 'headFont'];
+    
+    // Verwerk standaard velden
     fields.forEach(f => {
       const val = formData.get(f);
       if (val !== null) updates[f] = String(val);
     });
-    updates['backgroundImageUrl'] = cleanString(formData.get('backgroundImageUrl'));
-    updates['backgroundOpacity'] = parseInt(String(formData.get('backgroundOpacity')), 10);
+
+    // Verwerk achtergrond instellingen direct vanuit de STATE om te voorkomen dat 
+    // gesloten accordion secties hun waarden verliezen
+    updates['backgroundImageUrl'] = cleanString(bgSettings.backgroundImageUrl);
+    updates['backgroundOpacity'] = Number(opacities.backgroundOpacity ?? 10);
+
     PAGES.forEach(page => {
-      const bgUrl = formData.get(`backgroundImageUrl_${page.id}`);
-      const opacity = formData.get(`backgroundOpacity_${page.id}`);
-      if (bgUrl !== null) updates[`backgroundImageUrl_${page.id}`] = cleanString(bgUrl);
-      if (opacity !== null) updates[`backgroundOpacity_${page.id}`] = parseInt(String(opacity), 10);
+      const bgUrl = bgSettings[`backgroundImageUrl_${page.id}`];
+      const opacity = opacities[`backgroundOpacity_${page.id}`];
+      if (bgUrl !== undefined) updates[`backgroundImageUrl_${page.id}`] = cleanString(bgUrl);
+      if (opacity !== undefined) updates[`backgroundOpacity_${page.id}`] = Number(opacity);
     });
+
     try {
       await updateDoc(settingsRef, updates);
       toast({ title: "Instellingen opgeslagen" });
     } catch (e) {
-      toast({ variant: "destructive", title: "Fout" });
+      toast({ variant: "destructive", title: "Fout bij opslaan" });
     } finally {
       setIsSavingSettings(false);
     }
@@ -538,7 +533,7 @@ export default function AdminPage() {
                                   </div>
                                   <div className="space-y-4">
                                      <div className="flex justify-between items-center"><Label className="text-[10px] uppercase font-black opacity-40">Opacity (%)</Label><span className="text-xs font-bold">{opacities.backgroundOpacity ?? 10}%</span></div>
-                                     <Slider value={[opacities.backgroundOpacity ?? 10]} onValueChange={(v) => setOpacities(p => ({...p, backgroundOpacity: v[0]}))} max={100} step={1} /><input type="hidden" name="backgroundOpacity" value={opacities.backgroundOpacity ?? 10} />
+                                     <Slider value={[opacities.backgroundOpacity ?? 10]} onValueChange={(v) => setOpacities(p => ({...p, backgroundOpacity: v[0]}))} max={100} step={1} />
                                   </div>
                                </div>
                             </AccordionContent>
@@ -557,7 +552,7 @@ export default function AdminPage() {
                                      </div>
                                      <div className="space-y-4">
                                         <div className="flex justify-between items-center"><Label className="text-[10px] uppercase font-black opacity-40">Opacity (%)</Label><span className="text-xs font-bold">{opacities[`backgroundOpacity_${page.id}`] ?? 10}%</span></div>
-                                        <Slider value={[opacities[`backgroundOpacity_${page.id}`] ?? 10]} onValueChange={(v) => setOpacities(p => ({...p, [`backgroundOpacity_${page.id}`]: v[0]}))} max={100} step={1} /><input type="hidden" name={`backgroundOpacity_${page.id}`} value={opacities[`backgroundOpacity_${page.id}`] ?? 10} />
+                                        <Slider value={[opacities[`backgroundOpacity_${page.id}`] ?? 10]} onValueChange={(v) => setOpacities(p => ({...p, [`backgroundOpacity_${page.id}`]: v[0]}))} max={100} step={1} />
                                      </div>
                                   </div>
                                </AccordionContent>

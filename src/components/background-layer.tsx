@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 
 /**
  * @fileOverview BackgroundLayer: Beheert de achtergrondafbeelding.
- * Ondersteunt nu pagina-specifieke overrides en vloeiende transities.
+ * Ondersteunt pagina-specifieke overrides en vloeiende transities.
  */
 export function BackgroundLayer() {
   const firestore = useFirestore();
@@ -27,8 +27,11 @@ export function BackgroundLayer() {
     if (pathname.startsWith('/shop')) return 'shop';
     if (pathname.startsWith('/curator')) return 'curator';
     if (pathname.startsWith('/exhibition')) return 'exhibition';
-    const parts = pathname.split('/').filter(Boolean);
-    return parts[parts.length - 1] || 'global';
+    if (pathname.startsWith('/beatrijs')) return 'beatrijs';
+    if (pathname.startsWith('/hanneke')) return 'hanneke';
+    if (pathname.startsWith('/peter-bes')) return 'peter-bes';
+    if (pathname.startsWith('/leo-duppen')) return 'leo-duppen';
+    return 'global';
   };
 
   const pageKey = getPageKey();
@@ -38,8 +41,10 @@ export function BackgroundLayer() {
   
   // Opacity: gebruik page-specifiek, anders global, anders fallback naar 10% als er een URL is
   let rawOpacity = settings?.[`backgroundOpacity_${pageKey}`] ?? settings?.backgroundOpacity;
-  if (typeof rawOpacity !== 'number' && bgUrl) {
-    rawOpacity = 10; // Fallback naar 10% als er een URL is maar geen opacity ingesteld
+  
+  // Als er een afbeelding is maar geen opacity ingesteld, gebruik 10%
+  if (bgUrl && (rawOpacity === undefined || rawOpacity === null)) {
+    rawOpacity = 10;
   }
   
   const opacity = typeof rawOpacity === 'number' ? rawOpacity / 100 : 0;
@@ -55,7 +60,7 @@ export function BackgroundLayer() {
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundAttachment: 'fixed',
-        zIndex: 0, // Zorg dat het zichtbaar is maar achter de content (content moet relative z-10 zijn indien nodig)
+        zIndex: -1, // Zorg dat het achter de content staat
       }}
       aria-hidden="true"
     />
