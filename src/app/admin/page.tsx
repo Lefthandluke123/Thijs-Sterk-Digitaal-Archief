@@ -207,6 +207,19 @@ export default function AdminPage() {
     }
   }, [storyData]);
 
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsVerifying(true);
+    const isValid = await verifyAdminPassword(password);
+    if (isValid) {
+      setIsAuthorized(true);
+      sessionStorage.setItem('admin_auth', 'true');
+    } else {
+      toast({ variant: "destructive", title: "Fout", description: "Wachtwoord onjuist." });
+    }
+    setIsVerifying(false);
+  };
+
   const filteredAndSortedArtworks = useMemo(() => {
     if (!rawArtworks) return [];
     let list = rawArtworks.map(a => normalizeArtwork(a.id, a));
@@ -225,13 +238,13 @@ export default function AdminPage() {
     e.preventDefault();
     if (!settingsRef) return;
     setIsSavingSettings(true);
-    const formData = new FormData(e.currentTarget);
+    const formFields = new FormData(e.currentTarget);
     const updates: any = { updatedAt: serverTimestamp() };
     const fields = ['bgColor', 'primaryColor', 'accentColor', 'baseFontSize', 'lineHeight', 'headingScale', 'containerWidth', 'radius', 'bodyFont', 'headFont'];
     
     // Verwerk standaard velden
     fields.forEach(f => {
-      const val = formData.get(f);
+      const val = formFields.get(f);
       if (val !== null) updates[f] = String(val);
     });
 
