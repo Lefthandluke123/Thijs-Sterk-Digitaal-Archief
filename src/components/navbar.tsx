@@ -16,7 +16,6 @@ import {
   ShoppingBag, 
   BookOpen,
   Menu,
-  LayoutGrid,
   Filter,
   LayoutDashboard
 } from 'lucide-react';
@@ -98,7 +97,7 @@ function NavbarContent() {
               <img 
                 src={siteSettings?.logoUrl || "/logo.png"} 
                 alt="Logo" 
-                className="h-10 md:h-16 w-auto object-contain transition-transform duration-700 group-hover:scale-105 flex-shrink-0" 
+                className="h-10 md:h-20 w-auto object-contain transition-transform duration-700 group-hover:scale-105 flex-shrink-0" 
               />
               <div className="hidden sm:flex flex-col leading-tight border-l-2 border-accent/10 pl-4 md:pl-6 min-w-0">
                  <span className="font-headline font-medium text-lg md:text-2xl tracking-tight text-foreground group-hover:text-accent transition-colors truncate">
@@ -121,7 +120,7 @@ function NavbarContent() {
                   <DropdownMenuTrigger asChild>
                     <button className={cn(
                       "px-5 py-2.5 rounded-full text-[10px] font-black tracking-[0.2em] uppercase transition-all flex items-center gap-1 outline-none nav-item-style",
-                      pathname.includes('/room') || pathname === '/gallery' 
+                      pathname.includes('/room') 
                         ? "bg-accent text-accent-foreground shadow-lg scale-105" 
                         : "text-foreground/60 hover:bg-accent/5"
                     )}>
@@ -129,11 +128,6 @@ function NavbarContent() {
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="center" className="bg-white/95 backdrop-blur-2xl border-black/5 rounded-3xl min-w-[240px] p-2 shadow-2xl mt-4">
-                    <DropdownMenuItem asChild className="text-[10px] uppercase font-black tracking-widest focus:bg-accent focus:text-accent-foreground rounded-2xl cursor-pointer p-4 mb-1 border-b border-black/5">
-                      <Link href="/gallery" className="flex w-full items-center gap-3">
-                        <LayoutGrid className="w-4 h-4 opacity-40" /> {t('gallery_all')}
-                      </Link>
-                    </DropdownMenuItem>
                     {rooms?.map((r: any) => (
                       <DropdownMenuItem key={r.id} asChild className="text-[10px] uppercase font-bold tracking-wider focus:bg-accent focus:text-accent-foreground rounded-2xl cursor-pointer p-4">
                         <Link href={`/room/${r.slug || r.id}`} className="flex w-full items-center">{r.title}</Link>
@@ -203,9 +197,6 @@ function NavbarContent() {
                      
                      <div className="space-y-4 pt-8 border-t border-black/5">
                        <p className="text-[11px] font-black uppercase tracking-[0.3em] px-3 opacity-30">Collectie</p>
-                       <Link href="/gallery" className="flex items-center gap-4 p-6 rounded-3xl bg-black/5 text-[13px] font-black tracking-widest uppercase nav-item-style">
-                         <LayoutGrid className="w-6 h-6 opacity-30" /> Alle Zalen
-                       </Link>
                        <Link href="/curator" className="flex items-center gap-4 p-6 rounded-3xl bg-black/5 text-[13px] font-black tracking-widest uppercase nav-item-style">
                          <Filter className="w-6 h-6 opacity-30" /> {t('your_room')}
                        </Link>
