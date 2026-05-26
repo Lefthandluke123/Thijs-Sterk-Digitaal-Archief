@@ -41,7 +41,8 @@ import {
   RotateCcw,
   X,
   CheckCircle,
-  MinusCircle
+  MinusCircle,
+  AlertTriangle
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -384,6 +385,18 @@ export default function AdminPage() {
     }
   };
 
+  const handleDeleteRoom = async (room: any) => {
+    if (!firestore) return;
+    if (!confirm(`Zaal "${room.title}" definitief verwijderen? Dit kan niet ongedaan worden gemaakt.`)) return;
+
+    try {
+      await deleteDoc(doc(firestore, 'rooms', room.id));
+      toast({ title: "Zaal verwijderd", description: room.title });
+    } catch (e) {
+      toast({ variant: "destructive", title: "Fout bij verwijderen zaal" });
+    }
+  };
+
   const [selectedStoryId, setSelectedStoryId] = useState<string>('beatrijs');
   const [storyNodes, setStoryNodes] = useState<StoryNode[]>([]);
   const [isSavingStory, setIsSavingStory] = useState(false);
@@ -530,8 +543,67 @@ export default function AdminPage() {
             </TabsContent>
 
             <TabsContent value="rooms" className="space-y-8 mt-0">
-              <div className="flex justify-between items-center"><h2 className="font-headline text-3xl italic opacity-40">Museumzalen</h2><Button onClick={() => { setEditingRoom(null); setRoomForm({ title: '', slug: '', description: '', order: (rooms?.length || 0) + 1, isPublic: true }); setIsRoomDialogOpen(true); }} className="rounded-full bg-accent text-white"><Plus className="w-4 h-4 mr-2" /> Nieuwe Zaal</Button></div>
-              <div className="grid md:grid-cols-3 gap-6">{rooms?.map((room: any) => (<Card key={room.id} className="p-8 rounded-[2rem] border-none shadow-md bg-white/90 space-y-4"><div><h3 className="font-headline text-2xl italic">{room.title}</h3><p className="text-[10px] font-black uppercase opacity-30">Slug: {room.slug}</p></div><div className="flex gap-2"><Button onClick={() => { setEditingRoom(room); setRoomForm(room); setIsRoomDialogOpen(true); }} variant="outline" className="flex-1 rounded-xl text-[10px] font-black">Naam Wijzigen</Button><Button onClick={() => { if(confirm("Zaal verwijderen?")) deleteDoc(doc(firestore!, 'rooms', room.id)); }} variant="ghost" className="text-destructive"><Trash2 className="w-4 h-4" /></Button></div></Card>))}</div>
+              <div className="flex justify-between items-center">
+                <div className="space-y-1">
+                  <h2 className="font-headline text-3xl italic opacity-40">Museumzalen</h2>
+                  <p className="text-[10px] font-black uppercase tracking-widest opacity-20">Beheer de thematische kamers van het museum</p>
+                </div>
+                <Button onClick={() => { setEditingRoom(null); setRoomForm({ title: '', slug: '', description: '', order: (rooms?.length || 0) + 1, isPublic: true }); setIsRoomDialogOpen(true); }} className="rounded-full bg-accent text-white h-12 px-6">
+                  <Plus className="w-4 h-4 mr-2" /> Nieuwe Zaal
+                </Button>
+              </div>
+
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {rooms?.map((room: any) => (
+                  <Card key={room.id} className="p-8 rounded-[2rem] border-none shadow-xl bg-white/90 group hover:shadow-2xl transition-all duration-500">
+                    <div className="flex justify-between items-start mb-6">
+                      <div className="w-12 h-12 bg-accent/5 rounded-2xl flex items-center justify-center text-accent">
+                        <Layers className="w-6 h-6" />
+                      </div>
+                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button 
+                          size="icon" 
+                          variant="ghost" 
+                          onClick={() => { setEditingRoom(room); setRoomForm(room); setIsRoomDialogOpen(true); }}
+                          className="w-10 h-10 rounded-full hover:bg-black/5"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </Button>
+                        <Button 
+                          size="icon" 
+                          variant="ghost" 
+                          onClick={() => handleDeleteRoom(room)}
+                          className="w-10 h-10 rounded-full hover:bg-destructive/10 text-destructive"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <h3 className="font-headline text-2xl italic leading-tight">{room.title}</h3>
+                      <p className="text-[10px] font-black uppercase tracking-widest opacity-30">Slug: {room.slug}</p>
+                    </div>
+
+                    <div className="mt-8 flex gap-3 pt-6 border-t border-black/5">
+                      <Button 
+                        onClick={() => { setEditingRoom(room); setRoomForm(room); setIsRoomDialogOpen(true); }} 
+                        variant="outline" 
+                        className="flex-1 rounded-xl text-[10px] font-black uppercase tracking-widest h-10"
+                      >
+                        Aanpassen
+                      </Button>
+                      <Button 
+                        variant="ghost"
+                        onClick={() => handleDeleteRoom(room)}
+                        className="rounded-xl h-10 w-10 p-0 text-destructive/40 hover:text-destructive hover:bg-destructive/5"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
+              </div>
             </TabsContent>
 
             <TabsContent value="story" className="space-y-12 mt-0">
