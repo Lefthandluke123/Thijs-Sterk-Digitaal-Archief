@@ -36,6 +36,11 @@ export function MatrixEffect() {
       button: "NOU, VOORUIT DAN...", 
       heading: "RESTAURATIE GESTART", 
       sub: "De werkelijkheid keert terug." 
+    },
+    {
+      button: "TERUG NAAR NORMAAL",
+      heading: "GEINTJE, MENEER SONNEBERG",
+      sub: "De restauratie is voltooid. Alles is weer bij het oude."
     }
   ];
 
@@ -161,9 +166,11 @@ export function MatrixEffect() {
           <button 
             onClick={handleExitClick}
             className={`border-2 px-8 py-3 rounded-full font-mono text-[10px] font-black uppercase tracking-[0.3em] transition-all shadow-[0_0_30px_rgba(255,255,255,0.2)] ${
-              exitStep > 0 
+              exitStep > 0 && exitStep < steps.length - 1
               ? "bg-red-600 border-red-600 text-white animate-bounce" 
-              : "border-white text-white hover:bg-white hover:text-black"
+              : exitStep === steps.length - 1
+                ? "bg-accent border-accent text-white"
+                : "border-white text-white hover:bg-white hover:text-black"
             }`}
           >
             {current.button}
