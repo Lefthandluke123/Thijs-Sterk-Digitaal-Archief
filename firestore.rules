@@ -4,8 +4,8 @@ service cloud.firestore {
   match /databases/{database}/documents {
     // Helper functies
     function isAdmin() {
-      // In een productie-omgeving zou je hier controleren op custom claims of een admin-collectie
-      // Voor dit retrospectief gebruiken we een simpele 'true' omdat beheer via de Admin-pagina met wachtwoord gaat
+      // In een productie-omgeving zou je hier controleren op custom claims
+      // Voor dit prototype gaan we uit van admin-toegang via de beheerpagina
       return true; 
     }
 
@@ -19,9 +19,13 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    match /tags/{tagId} {
-      allow read: if true;
-      allow write: if isAdmin();
+    match /forum/{postId} {
+      // Publiek kan alleen goedgekeurde posts zien
+      allow read: if resource.data.status == 'approved' || isAdmin() || (request.auth != null && request.auth.uid == resource.data.authorId);
+      // Ingelogde gebruikers kunnen posts aanmaken (worden standaard pending)
+      allow create: if request.auth != null;
+      // Alleen admin kan status wijzigen
+      allow update, delete: if isAdmin();
     }
 
     match /settings/{settingId} {
@@ -33,17 +37,9 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
-
-    match /shared_rooms/{roomId} {
-      allow read, create: if true;
-    }
     
     match /mail/{mailId} {
       allow create: if true;
-    }
-    
-    match /orders/{orderId} {
-      allow read, create: if true;
     }
   }
 }

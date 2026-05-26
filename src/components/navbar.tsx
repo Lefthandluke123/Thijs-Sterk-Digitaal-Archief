@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, Suspense } from 'react';
@@ -17,7 +18,8 @@ import {
   BookOpen,
   Menu,
   Filter,
-  LayoutDashboard
+  LayoutDashboard,
+  Users
 } from 'lucide-react';
 import { useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, doc, orderBy } from 'firebase/firestore';
@@ -28,7 +30,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/s
 import { Button } from '@/components/ui/button';
 
 /**
- * @fileOverview Navbar: Centrale navigatie met ondersteuning voor zalen en archief.
+ * @fileOverview Navbar: Centrale navigatie met ondersteuning voor zalen en community.
  */
 
 const NavLink = ({ href, children, active }: { href: string; children: React.ReactNode; active: boolean }) => (
@@ -137,6 +139,7 @@ function NavbarContent() {
                 </DropdownMenu>
 
                 <NavLink href="/curator" active={pathname === "/curator"}>{t('your_room')}</NavLink>
+                <NavLink href="/forum" active={pathname === "/forum"}><Users className="w-4 h-4" /> Vrienden</NavLink>
                 <NavLink href="/shop" active={pathname === "/shop"}><ShoppingBag className="w-4 h-4" /> {t('shop')}</NavLink>
               </div>
 
@@ -186,25 +189,16 @@ function NavbarContent() {
                   <div className="flex-1 overflow-y-auto p-8 space-y-8">
                      <div className="space-y-3">
                        <Link href="/" className="flex items-center gap-4 p-6 rounded-3xl bg-black/5 text-[13px] font-black uppercase tracking-widest nav-item-style">{t('home')}</Link>
+                       <Link href="/forum" className="flex items-center gap-4 p-6 rounded-3xl bg-accent/5 text-[13px] font-black uppercase tracking-widest text-accent border border-accent/10 nav-item-style">
+                         <Users className="w-6 h-6" /> Forum
+                       </Link>
                        <Link href="/shop" className="flex items-center gap-4 p-6 rounded-3xl bg-black/5 text-[13px] font-black uppercase tracking-widest nav-item-style">{t('shop')}</Link>
-                       <button onClick={() => { setMobileMenuOpen(false); setGuideOpen(true); }} className="flex w-full items-center gap-4 p-6 rounded-3xl bg-accent/5 text-[13px] font-black uppercase tracking-widest text-accent border border-accent/10 nav-item-style">
+                       <button onClick={() => { setMobileMenuOpen(false); setGuideOpen(true); }} className="flex w-full items-center gap-4 p-6 rounded-3xl bg-black/5 text-[13px] font-black uppercase tracking-widest nav-item-style">
                          <BookOpen className="w-6 h-6" /> Museum Gids
                        </button>
                        <Link href="/admin" className="flex items-center gap-4 p-6 rounded-3xl bg-primary text-primary-foreground text-[13px] font-black uppercase tracking-widest nav-item-style">
                          <LayoutDashboard className="w-6 h-6" /> Beheer Paneel
                        </Link>
-                     </div>
-                     
-                     <div className="space-y-4 pt-8 border-t border-black/5">
-                       <p className="text-[11px] font-black uppercase tracking-[0.3em] px-3 opacity-30">Collectie</p>
-                       <Link href="/curator" className="flex items-center gap-4 p-6 rounded-3xl bg-black/5 text-[13px] font-black tracking-widest uppercase nav-item-style">
-                         <Filter className="w-6 h-6 opacity-30" /> {t('your_room')}
-                       </Link>
-                       <div className="grid grid-cols-1 gap-2.5 pt-4">
-                         {rooms?.map((r: any) => (
-                           <Link key={r.id} href={`/room/${r.slug || r.id}`} className="p-5 rounded-2xl bg-black/[0.02] text-[12px] font-bold uppercase tracking-wider opacity-70 nav-item-style">{r.title}</Link>
-                         ))}
-                       </div>
                      </div>
                   </div>
                 </div>

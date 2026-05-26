@@ -38,49 +38,28 @@
       },
       "required": ["title", "slug", "image"]
     },
-    "StoryPage": {
-      "title": "StoryPage",
-      "description": "Een dynamische pagina met absolute DTP layout.",
+    "ForumPost": {
+      "title": "ForumPost",
+      "description": "Een bericht in de community sectie.",
       "type": "object",
       "properties": {
-        "id": { "type": "string" },
         "title": { "type": "string" },
-        "nodes": { 
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "id": { "type": "string" },
-              "type": { "type": "string", "enum": ["text", "image", "heading", "box"] },
-              "x": { "type": "number" },
-              "y": { "type": "number" },
-              "w": { "type": "number" },
-              "h": { "type": "number" },
-              "content": { "type": "string" },
-              "imageUrl": { "type": "string" },
-              "styles": { "type": "object" }
-            }
-          }
-        }
-      }
-    },
-    "Tag": {
-      "title": "Tag",
-      "description": "Geregistreerde metadata tag.",
-      "type": "object",
-      "properties": {
-        "name": { "type": "string" },
-        "slug": { "type": "string" },
-        "usageCount": { "type": "number" }
-      }
+        "content": { "type": "string" },
+        "authorId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "category": { "type": "string", "enum": ["Verhaal", "Vraag", "Ruil/Koop"] },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "content", "authorId", "category"]
     }
   },
   "auth": { "providers": ["google"] },
   "firestore": {
     "/rooms/{roomId}": { "schema": "Room", "description": "Museumzalen" },
     "/artworks/{artworkId}": { "schema": "Artwork", "description": "Kunstwerken met multi-room support" },
-    "/tags/{tagId}": { "schema": "Tag", "description": "Geregistreerde tags" },
-    "/stories/{storyId}": { "schema": "StoryPage", "description": "Rijke content pagina's" },
+    "/forum/{postId}": { "schema": "ForumPost", "description": "Community berichten" },
     "/settings/site": { "schema": "Settings", "description": "Website configuratie" }
   }
 }
