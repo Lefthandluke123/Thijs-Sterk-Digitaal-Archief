@@ -27,7 +27,8 @@ import {
   ShieldCheck,
   MessageSquare,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Users
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
@@ -94,10 +95,14 @@ export default function ForumModerationPage() {
           </Link>
           <div className="flex flex-col">
             <h1 className="font-headline text-2xl italic leading-none">Forum <span className="text-accent">Moderatie</span></h1>
-            <span className="text-[9px] font-black uppercase tracking-[0.3em] opacity-40 mt-1">Community Controle</span>
+            <span className="text-[9px] font-black uppercase tracking-[0.3em] opacity-40 mt-1">Community Lead: Soof</span>
           </div>
         </div>
         <div className="flex items-center gap-4">
+           <div className="flex items-center gap-2 bg-yellow-500/10 text-yellow-700 px-4 py-2 rounded-full border border-yellow-500/20">
+              <Users className="w-4 h-4" />
+              <span className="text-[10px] font-black uppercase tracking-widest">Soof is online</span>
+           </div>
            <Badge className="bg-accent/10 text-accent border-accent/20 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest">
               {pendingPosts.length} berichten te beoordelen
            </Badge>

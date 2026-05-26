@@ -20,7 +20,8 @@ import {
   Zap,
   MessageSquare,
   Sparkles,
-  Waves
+  Waves,
+  Users
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/hooks/use-toast';
@@ -86,13 +87,13 @@ const TEAM_MEMBERS = [
   {
     id: 'soof',
     name: 'Soof',
-    role: 'PR & Relatiebeheer',
-    focus: 'Glans & Vernissages',
-    icon: Sparkles,
+    role: 'PR & Community Manager',
+    focus: 'Forum & Vernissages',
+    icon: Users,
     color: 'bg-yellow-500',
     avatar: 'https://picsum.photos/seed/soof/200',
-    status: "Bereidt de 'Global Vernissage' voor",
-    tasks: ['Persbericht internationaal', 'VIP preview beheer', 'Influencer outreach kunstsector']
+    status: "Beheert de 'Vrienden' community en het Forum",
+    tasks: ['Moderatie van forum-verhalen', 'VIP relatiebeheer', 'Influencer outreach kunstsector']
   }
 ];
 
