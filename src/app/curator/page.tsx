@@ -4,7 +4,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
-import { Loader2, Maximize2, Play, Eraser, Share2, Copy, Filter } from 'lucide-react';
+import { Loader2, Maximize2, Play, Eraser, Share2, Copy, Filter, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ArtworkViewer } from '@/components/artwork-viewer';
 import { useLanguage } from '@/components/language-provider';
@@ -40,7 +40,7 @@ export default function CuratorPage() {
   }, [dbArtworks]);
 
   const filteredArtworks = useMemo(() => {
-    if (activeTags.length === 0) return artworks; // Toon alles als er geen tags zijn gekozen
+    if (activeTags.length === 0) return artworks;
     
     return artworks.filter((art: any) => {
       const artTags = (art.tags || []).map((t: string) => t.toLowerCase());
@@ -56,6 +56,21 @@ export default function CuratorPage() {
       : (currentIndex - 1 + filteredArtworks.length) % filteredArtworks.length;
     setSelectedArtwork(filteredArtworks[nextIndex]);
   }, [selectedArtwork, filteredArtworks]);
+
+  const toggleTag = (tag: string) => {
+    const isActive = activeTags.includes(tag);
+    if (!isActive && activeTags.length >= 4) {
+      toast({ 
+        variant: "destructive", 
+        title: t('curator_limit_reached'),
+        description: "U kunt maximaal 4 filters tegelijk combineren."
+      });
+      return;
+    }
+
+    setActiveTags(p => isActive ? p.filter(t => t !== tag) : [...p, tag]);
+    setShowResults(false);
+  };
 
   const handleShare = () => {
     if (!firestore || filteredArtworks.length === 0) return;
@@ -94,42 +109,81 @@ export default function CuratorPage() {
 
   return (
     <main className="min-h-screen bg-background pt-32 pb-48 px-6">
-      <div className="container mx-auto max-w-5xl text-center space-y-16">
-        <div className="space-y-6 animate-subtle-fade">
-          <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-accent/5 border border-accent/10 mx-auto">
-            <Filter className="w-3.5 h-3.5 text-accent" />
-            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-accent">Expositie Samenstellen</span>
+      <div className="container mx-auto max-w-4xl space-y-12">
+        {/* HEADER SECTION */}
+        <div className="text-center space-y-8 animate-subtle-fade">
+          <div className="space-y-4">
+            <h1 className="font-headline text-4xl md:text-6xl font-medium tracking-tight text-foreground leading-tight">
+              {t('curator_subtitle')}
+            </h1>
+            <p className="text-lg md:text-xl text-muted-foreground font-light max-w-2xl mx-auto italic px-4">
+              {t('curator_title')}
+            </p>
           </div>
-          <h1 className="font-headline text-4xl md:text-6xl font-medium tracking-tight text-foreground leading-tight">
-            {t('curator_subtitle')}
-          </h1>
-          <p className="text-xl md:text-2xl text-muted-foreground font-light leading-relaxed max-w-4xl mx-auto italic px-4">
-            {t('curator_title')}
-          </p>
+
+          {/* PRIMARY ACTION BUTTONS */}
+          <div className="flex flex-col items-center gap-6 pt-4">
+            <div className="flex flex-wrap justify-center gap-4">
+              <Button 
+                onClick={() => setShowResults(true)} 
+                disabled={activeTags.length === 0}
+                className="rounded-full h-16 px-12 bg-primary text-primary-foreground uppercase font-black text-[11px] tracking-widest shadow-2xl hover:scale-[1.03] active:scale-95 transition-all disabled:opacity-20"
+              >
+                <Play className="w-4 h-4 mr-3 fill-current" /> {t('curator_open')}
+              </Button>
+              <Button 
+                onClick={() => { setActiveTags([]); setShowResults(false); }} 
+                variant="outline" 
+                className="rounded-full h-16 px-12 uppercase font-black text-[11px] tracking-widest border-2 hover:bg-black/5"
+              >
+                <Eraser className="w-4 h-4 mr-3" /> {t('curator_clear')}
+              </Button>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-[11px] font-black uppercase tracking-[0.3em] text-accent">
+                {t('curator_instruction')}
+              </p>
+              <div className="flex items-center justify-center gap-3">
+                 <span className={cn(
+                   "text-[10px] font-black uppercase px-4 py-1 rounded-full border-2 transition-all",
+                   activeTags.length > 0 ? "bg-accent/10 border-accent text-accent" : "bg-black/5 border-transparent opacity-30"
+                 )}>
+                   {t('curator_counter').replace('{count}', activeTags.length.toString())}
+                 </span>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="grid gap-16 text-left max-w-4xl mx-auto pt-12 border-t border-black/5 animate-subtle-fade" style={{ animationDelay: '0.2s' }}>
+        {/* TAGS SELECTION BLOCK */}
+        <div className="bg-white/40 backdrop-blur-xl rounded-[3rem] p-10 md:p-16 border border-white/60 shadow-xl space-y-16 animate-subtle-fade" style={{ animationDelay: '0.2s' }}>
           {Object.entries(MUSEUM_TAGS).map(([cat, tags]) => (
-            <div key={cat} className="space-y-6">
-              <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-accent/60 border-b border-accent/10 pb-3">{cat}</h2>
-              <div className="flex flex-wrap gap-3">
+            <div key={cat} className="space-y-8">
+              <h2 className="font-headline text-3xl italic text-foreground/80 border-l-4 border-accent/20 pl-6 leading-none">
+                {cat}
+              </h2>
+              <div className="flex flex-wrap gap-2.5">
                 {tags.map(tag => {
                   const active = activeTags.includes(tag);
+                  const atLimit = activeTags.length >= 4 && !active;
                   return (
                     <button 
                       key={tag} 
-                      onClick={() => { 
-                        setActiveTags(p => p.includes(tag) ? p.filter(t => t !== tag) : [...p, tag]); 
-                        setShowResults(false); 
-                      }} 
+                      onClick={() => toggleTag(tag)} 
+                      disabled={atLimit}
                       className={cn(
-                        "px-6 py-3 rounded-2xl text-[12px] font-bold uppercase transition-all border-2", 
+                        "px-6 py-3.5 rounded-2xl text-[11px] font-bold uppercase transition-all border-2", 
                         active 
-                          ? "bg-accent text-accent-foreground border-accent scale-105 shadow-xl" 
-                          : "bg-white hover:border-accent/40 text-foreground/70"
+                          ? "bg-accent text-accent-foreground border-accent shadow-lg scale-105" 
+                          : "bg-white border-black/5 text-foreground/50 hover:border-accent/30",
+                        atLimit && "opacity-20 cursor-not-allowed grayscale"
                       )}
                     >
-                      {tag}
+                      <div className="flex items-center gap-2">
+                        {active && <CheckCircle2 className="w-3.5 h-3.5" />}
+                        {tag}
+                      </div>
                     </button>
                   );
                 })}
@@ -138,34 +192,21 @@ export default function CuratorPage() {
           ))}
         </div>
 
-        <div className="flex flex-col items-center gap-10 pt-16 animate-subtle-fade" style={{ animationDelay: '0.4s' }}>
-          <div className="flex flex-wrap justify-center gap-6">
-            <Button onClick={() => { setActiveTags([]); setShowResults(false); }} variant="outline" className="rounded-full h-16 px-12 uppercase font-black text-[11px] tracking-widest border-2">
-              <Eraser className="w-4 h-4 mr-3" /> {t('curator_clear')}
-            </Button>
-            <Button 
-              onClick={() => setShowResults(true)} 
-              className="rounded-full h-16 px-16 bg-primary text-primary-foreground uppercase font-black text-[11px] tracking-widest shadow-2xl hover:scale-[1.03] active:scale-95 transition-all"
-            >
-              <Play className="w-4 h-4 mr-3 fill-current" /> {t('curator_open')}
-            </Button>
-            {showResults && filteredArtworks.length > 0 && (
-              <Button onClick={() => setShareDialog("")} className="rounded-full h-16 px-12 bg-accent text-accent-foreground uppercase font-black text-[11px] tracking-widest shadow-2xl animate-in zoom-in duration-500">
-                <Share2 className="w-4 h-4 mr-3" /> Deel Selectie
-              </Button>
-            )}
+        {/* RESULTS SUMMARY */}
+        {activeTags.length > 0 && (
+          <div className="text-center pt-8 animate-in fade-in duration-1000">
+             <p className="text-[10px] font-black uppercase tracking-[0.4em] text-accent/40">
+               {filteredArtworks.length} werken gevonden in uw selectie
+             </p>
           </div>
-          
-          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-accent/40">
-            {filteredArtworks.length} werken gevonden in uw selectie
-          </p>
-        </div>
+        )}
 
+        {/* RESULTS GRID */}
         {showResults && (
-          <div className="mt-32 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-10 animate-in fade-in slide-in-from-bottom-12 duration-1000">
+          <div className="mt-24 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 animate-in fade-in slide-in-from-bottom-12 duration-1000">
             {filteredArtworks.map((item: any) => (
               <div key={item.id} className="group cursor-pointer space-y-4" onClick={() => setSelectedArtwork(item)}>
-                <div className="relative aspect-[4/5] overflow-hidden rounded-[2.5rem] bg-black/[0.02] shadow-md transition-all duration-[1500ms] group-hover:shadow-2xl flex items-center justify-center p-4 border border-black/5">
+                <div className="relative aspect-[4/5] overflow-hidden rounded-[2rem] bg-black/[0.02] shadow-md transition-all duration-[1500ms] group-hover:shadow-2xl flex items-center justify-center p-3 border border-black/5">
                   {item.image ? (
                     <img 
                       src={item.image} 
@@ -174,7 +215,7 @@ export default function CuratorPage() {
                       alt={item.title}
                     />
                   ) : (
-                    <ImageIcon className="w-12 h-12 opacity-10" />
+                    <Filter className="w-12 h-12 opacity-10" />
                   )}
                   <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-500">
                     <div className="p-3 rounded-full bg-white/30 backdrop-blur-xl scale-90 group-hover:scale-100 transition-transform duration-500">
@@ -183,13 +224,21 @@ export default function CuratorPage() {
                   </div>
                 </div>
                 <div className="text-center space-y-1">
-                  <h3 className="font-headline text-lg italic text-foreground/80 group-hover:text-accent transition-colors truncate px-2">
+                  <h3 className="font-headline text-base italic text-foreground/80 group-hover:text-accent transition-colors truncate px-2">
                     {item.displayTitle || item.title}
                   </h3>
                   <p className="text-[9px] font-black uppercase tracking-widest opacity-40">{item.year}</p>
                 </div>
               </div>
             ))}
+
+            {filteredArtworks.length > 0 && (
+              <div className="col-span-full pt-12 flex justify-center">
+                 <Button onClick={() => setShareDialog("")} className="rounded-full h-16 px-12 bg-accent text-accent-foreground uppercase font-black text-[11px] tracking-widest shadow-2xl animate-in zoom-in duration-500">
+                    <Share2 className="w-4 h-4 mr-3" /> Deel Selectie
+                 </Button>
+              </div>
+            )}
           </div>
         )}
       </div>
