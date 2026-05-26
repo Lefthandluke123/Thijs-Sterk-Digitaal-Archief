@@ -44,6 +44,8 @@ export function Hero() {
     ? siteSettings[`homeHeroSubtitle_${language}`]
     : siteSettings?.homeHeroSubtitle || t('homeHeroSubtitle');
 
+  const heroBadge = t('homeHeroBadge');
+
   return (
     <section className="relative min-h-[90vh] flex flex-col items-center justify-center pt-40 pb-32 px-6 overflow-hidden bg-background" aria-labelledby="hero-heading">
       <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')]" />
@@ -52,7 +54,7 @@ export function Hero() {
         <div className="space-y-8 animate-subtle-fade">
           <div className="inline-flex items-center gap-3 px-6 py-2.5 rounded-full bg-accent/5 border border-accent/10 mx-auto shadow-sm">
             <BookOpen className="w-4 h-4 text-accent" />
-            <span className="text-[11px] font-black uppercase tracking-[0.4em] text-accent">Mondiaal Retrospectief</span>
+            <span className="text-[11px] font-black uppercase tracking-[0.4em] text-accent">{heroBadge}</span>
           </div>
           <h1 id="hero-heading" className="font-headline text-5xl md:text-8xl font-medium tracking-tight text-foreground leading-[1.05]">
             {heroTitle.split(' ').map((word, i, arr) => 

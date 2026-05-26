@@ -13,7 +13,7 @@ export function ArtistBio() {
   const [activeArtwork, setActiveArtwork] = useState<any | null>(null);
   const [selectedArtworkId, setSelectedArtworkId] = useState<string | null>(null);
   const firestore = useFirestore();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
 
   const siteSettingsRef = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -43,6 +43,8 @@ export function ArtistBio() {
     : siteSettings?.homeBio || `Thijs Sterk (1913-1982) wijdde zijn leven aan het doorgronden van de atmosferische kwaliteiten van de wereld om hem heen.`;
   
   const bioImageUrl = siteSettings?.homeBioImageUrl || 'https://firebasestorage.googleapis.com/v0/b/studio-7311695883-2090f.firebasestorage.app/o/artworks%2F1778851761925_vh0ad_2_I.jpg?alt=media';
+
+  const bioBadge = t('homeBioBadge');
 
   const handleMainPortraitClick = () => {
     setActiveArtwork({
@@ -103,7 +105,7 @@ export function ArtistBio() {
           
           <div className="lg:col-span-7 order-1 lg:order-2 space-y-8">
             <div className="space-y-4">
-              <span className="text-accent font-black tracking-[0.4em] uppercase text-[11px] block">De Biografie</span>
+              <span className="text-accent font-black tracking-[0.4em] uppercase text-[11px] block">{bioBadge}</span>
               <h2 id="bio-heading" className="font-headline text-3xl md:text-4xl lg:text-5xl font-medium mb-6 leading-tight text-foreground">
                 {bioTitle.split(' ').map((word, i, arr) => 
                   i === arr.length - 1 ? <span key={i} className="italic text-accent">{word}</span> : word + ' '

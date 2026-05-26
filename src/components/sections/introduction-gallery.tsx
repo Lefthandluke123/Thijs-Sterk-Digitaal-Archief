@@ -83,13 +83,15 @@ export function IntroductionGallery() {
     ? siteSettings[`homeIntroSubtitle_${language}`]
     : siteSettings?.homeIntroSubtitle || t('homeIntroSubtitle');
 
+  const introBadge = t('homeIntroBadge');
+
   return (
     <section className="py-32 bg-background px-4 scroll-mt-32" id="kennismaking">
       <div className="container max-w-7xl mx-auto">
         <div className="text-center mb-24 space-y-6">
           <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-accent/5 border border-accent/10 mx-auto">
             <Layers className="w-3.5 h-3.5 text-accent" />
-            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-accent">De Collectie</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-accent">{introBadge}</span>
           </div>
           <h2 className="font-headline text-4xl md:text-5xl font-light italic text-foreground">{introTitle}</h2>
           <p className="text-lg text-muted-foreground font-light max-w-2xl mx-auto">{introSubtitle}</p>

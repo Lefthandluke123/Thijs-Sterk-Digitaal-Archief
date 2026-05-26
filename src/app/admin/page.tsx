@@ -81,10 +81,13 @@ const LANGUAGES = [
 const CONTENT_FIELDS = [
   { id: 'siteTitle', label: 'Website Titel', type: 'input', category: 'Algemeen' },
   { id: 'siteSubtitle', label: 'Website Ondertitel', type: 'input', category: 'Algemeen' },
+  { id: 'homeHeroBadge', label: 'Hero Badge (boven titel)', type: 'input', category: 'Homepage' },
   { id: 'homeHeroTitle', label: 'Hero Hoofdtitel', type: 'input', category: 'Homepage' },
   { id: 'homeHeroSubtitle', label: 'Hero Ondertitel', type: 'textarea', category: 'Homepage' },
+  { id: 'homeIntroBadge', label: 'Introductie Badge (boven sectie)', type: 'input', category: 'Homepage' },
   { id: 'homeIntroTitle', label: 'Introductie Titel', type: 'input', category: 'Homepage' },
   { id: 'homeIntroSubtitle', label: 'Introductie Ondertitel', type: 'input', category: 'Homepage' },
+  { id: 'homeBioBadge', label: 'Biografie Badge (boven sectie)', type: 'input', category: 'Homepage' },
   { id: 'homeBioTitle', label: 'Biografie Titel', type: 'input', category: 'Homepage' },
   { id: 'homeBio', label: 'Biografie Tekst', type: 'textarea', category: 'Homepage' },
   { id: 'homePortfolioTitle', label: 'Portfolio Sectie Titel', type: 'input', category: 'Homepage' },
