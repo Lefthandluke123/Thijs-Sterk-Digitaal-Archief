@@ -23,7 +23,6 @@ import {
   Loader2, 
   ArrowLeft,
   Palette,
-  Lock,
   Plus,
   LayoutDashboard,
   Layers,
@@ -39,8 +38,7 @@ import {
   Library,
   LayoutTemplate,
   Languages,
-  RotateCcw,
-  Scaling
+  RotateCcw
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -54,7 +52,6 @@ import {
   DialogFooter
 } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { verifyAdminPassword } from '@/lib/admin-actions';
 import { cn } from '@/lib/utils';
 import { sortArtworksByTitle, sanitizeArtwork, normalizeArtwork } from '@/lib/museum-utils';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -226,9 +223,6 @@ const BackgroundEditorSection = ({ pageId, label, state, onChange, onPick }: any
 export default function AdminPage() {
   const firestore = useFirestore();
   
-  const [isAuthorized, setIsAuthorized] = useState(true);
-  const [password, setPassword] = useState('');
-  const [isVerifying, setIsVerifying] = useState(false);
   const [activeTab, setActiveTab] = useState('artworks');
   const [searchTerm, setSearchTerm] = useState('');
   const [activeAccordionItem, setActiveAccordionItem] = useState('global');
@@ -283,19 +277,6 @@ export default function AdminPage() {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsVerifying(true);
-    const isValid = await verifyAdminPassword(password);
-    if (isValid) {
-      setIsAuthorized(true);
-      sessionStorage.setItem('admin_auth', 'true');
-    } else {
-      toast({ variant: "destructive", title: "Fout", description: "Wachtwoord onjuist." });
-    }
-    setIsVerifying(false);
-  };
-
   const handleSaveSettings = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!settingsRef) return;
@@ -345,25 +326,6 @@ export default function AdminPage() {
     }
     return list.sort(sortArtworksByTitle);
   }, [rawArtworks, searchTerm]);
-
-  if (!isAuthorized) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-6">
-        <Card className="max-w-md w-full p-12 rounded-[2.5rem] shadow-2xl space-y-8">
-           <div className="text-center space-y-4">
-              <Lock className="w-10 h-10 text-accent mx-auto" />
-              <h1 className="font-headline text-3xl italic">Museum Beheer</h1>
-           </div>
-           <form onSubmit={handleLogin} className="space-y-6">
-              <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="h-14 rounded-2xl text-center" placeholder="Wachtwoord" />
-              <Button type="submit" disabled={isVerifying} className="w-full h-14 rounded-2xl">
-                 {isVerifying ? <Loader2 className="animate-spin" /> : "Ontgrendel"}
-              </Button>
-           </form>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen pt-32 px-8 bg-transparent">
@@ -681,4 +643,3 @@ export default function AdminPage() {
     </div>
   );
 }
-

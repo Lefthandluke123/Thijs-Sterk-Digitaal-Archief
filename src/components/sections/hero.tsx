@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -14,7 +15,7 @@ export function Hero() {
   const [mounted, setMounted] = useState(false);
   const [selectedArtwork, setSelectedArtwork] = useState<any | null>(null);
   const firestore = useFirestore();
-  const { language, t, dynamicContent } = useLanguage();
+  const { language, t } = useLanguage();
 
   useEffect(() => {
     setMounted(true);
@@ -56,8 +57,8 @@ export function Hero() {
             <BookOpen className="w-4 h-4 text-accent" />
             <span className="text-[11px] font-black uppercase tracking-[0.4em] text-accent">{heroBadge}</span>
           </div>
-          <h1 id="hero-heading" className="font-headline text-5xl md:text-8xl font-medium tracking-tight text-foreground leading-[1.05]">
-            {heroTitle.split(' ').map((word, i, arr) => 
+          <h1 id="hero-heading" className="font-headline text-h1 font-medium tracking-tight text-foreground leading-[1.05]">
+            {heroTitle.split(' ').map((word: string, i: number, arr: string[]) => 
               i >= arr.length - 3 ? <span key={i} className="italic text-accent font-light"> {word}</span> : word + ' '
             )}
           </h1>

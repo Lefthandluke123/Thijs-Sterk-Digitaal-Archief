@@ -8,6 +8,7 @@ import { doc } from 'firebase/firestore';
 /**
  * @fileOverview DesignSystemProvider: Vertaalt Firestore instellingen naar dynamische CSS variabelen.
  * Dit vormt het 'stramien' van de website (fonts, kleuren, spatiëring, regelafstand).
+ * Fix: Krachtigere heading scaling toegevoegd.
  */
 export function DesignSystemProvider({ children }: { children: React.ReactNode }) {
   const firestore = useFirestore();
@@ -27,7 +28,7 @@ export function DesignSystemProvider({ children }: { children: React.ReactNode }
   const accent = settings.accentColor || '142 30% 25%';
   const baseFontSize = settings.baseFontSize || '16px';
   const lineHeight = settings.lineHeight || '1.7';
-  const headingScale = settings.headingScale || '1.25'; // Multiplier for titles
+  const headingScale = settings.headingScale || 1.25; 
   const containerWidth = settings.containerWidth || '1280px';
   const radius = settings.radius || '2rem';
   
@@ -61,22 +62,15 @@ export function DesignSystemProvider({ children }: { children: React.ReactNode }
       font-family: var(--font-headline);
     }
 
-    /* Dynamische Heading Scaling */
-    h1 { font-size: calc(3.5rem * var(--site-heading-scale)); }
-    h2 { font-size: calc(2.75rem * var(--site-heading-scale)); }
-    h3 { font-size: calc(2rem * var(--site-heading-scale)); }
-
-    @media (max-width: 768px) {
-      h1 { font-size: calc(2.5rem * var(--site-heading-scale)); }
-      h2 { font-size: calc(2rem * var(--site-heading-scale)); }
-      h3 { font-size: calc(1.5rem * var(--site-heading-scale)); }
-    }
+    /* Krachtige Heading Scaling die Tailwind utility classes overleeft */
+    h1, .text-h1 { font-size: calc(clamp(2.5rem, 8vw, 5rem) * var(--site-heading-scale)) !important; line-height: 1.1 !important; }
+    h2, .text-h2 { font-size: calc(clamp(2rem, 5vw, 3.5rem) * var(--site-heading-scale)) !important; line-height: 1.2 !important; }
+    h3, .text-h3 { font-size: calc(clamp(1.5rem, 3vw, 2.5rem) * var(--site-heading-scale)) !important; line-height: 1.3 !important; }
 
     .container {
       max-width: var(--site-container-max-width) !important;
     }
     
-    /* DTP Spacing helpers */
     .prose-text {
       line-height: var(--site-line-height);
       font-size: var(--site-base-font-size);
