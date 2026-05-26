@@ -1,6 +1,7 @@
+
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -24,18 +25,23 @@ const formSchema = z.object({
 });
 
 export function ContactForm() {
+  const [mounted, setMounted] = useState(false);
   const { language, t } = useLanguage();
   const firestore = useFirestore();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const siteSettingsRef = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !mounted) return null;
     return doc(firestore, 'settings', 'site');
-  }, [firestore]);
+  }, [firestore, mounted]);
   const { data: siteSettings } = useDoc(siteSettingsRef);
 
   const getTranslatedValue = (field: string, defaultVal: string) => {
-    if (!siteSettings) return defaultVal;
+    if (!siteSettings || !mounted) return defaultVal;
     if (language === 'nl') return siteSettings[field] || defaultVal;
     return siteSettings[`${field}_${language}`] || siteSettings[field] || defaultVal;
   };

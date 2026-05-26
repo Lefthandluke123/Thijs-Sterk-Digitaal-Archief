@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useCallback, useEffect } from 'react';
@@ -70,7 +71,9 @@ export function PortfolioGrid() {
         </div>
 
         {!mounted || loading ? (
-          <div className="flex justify-center py-24"><Loader2 className="animate-spin opacity-30" /></div>
+          <div className="flex justify-center py-24">
+            <Loader2 className="animate-spin opacity-20 w-8 h-8" />
+          </div>
         ) : displayArtworks && displayArtworks.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
             {displayArtworks.map(art => {
@@ -118,7 +121,11 @@ export function PortfolioGrid() {
               );
             })}
           </div>
-        ) : null}
+        ) : (
+           <div className="py-24 text-center opacity-20 italic">
+              Nog geen hoogtepunten geselecteerd.
+           </div>
+        )}
       </div>
 
       <ArtworkViewer 
