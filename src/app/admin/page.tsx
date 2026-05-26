@@ -93,6 +93,121 @@ const CONTENT_FIELDS = [
   { id: 'shopIntro', label: 'Winkel Introductie', type: 'textarea', category: 'Winkel' },
 ];
 
+// STAP 1: DEFINIEER COMPONENTEN BUITEN DE PAGINA OM FREEZING TE VOORKOMEN
+const AutonomousSlider = ({ label, field, value, onChange, min = 0, max = 100, step = 1, unit = "%" }: any) => {
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <Label className="text-[10px] uppercase font-black opacity-40">{label}</Label>
+        <span className="text-[10px] font-bold bg-accent/10 text-accent px-2 py-0.5 rounded-full">
+          {value}{unit}
+        </span>
+      </div>
+      <input 
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value ?? 0}
+        onChange={(e) => {
+          const val = Number(e.target.value);
+          console.log("slider change", field, val);
+          onChange(field, val);
+        }}
+        className="w-full h-1.5 bg-black/5 rounded-full appearance-none cursor-pointer accent-accent"
+      />
+    </div>
+  );
+};
+
+const BackgroundEditorSection = ({ pageId, label, state, onChange, onPick }: any) => {
+  const isGlobal = pageId === 'global';
+  const prefix = isGlobal ? '' : `_${pageId}`;
+  const urlField = `backgroundImageUrl${prefix}`;
+  const opacityField = `backgroundOpacity${prefix}`;
+  const blurField = `backgroundBlur${prefix}`;
+  const scaleField = `backgroundScale${prefix}`;
+  const brightnessField = `backgroundBrightness${prefix}`;
+
+  return (
+    <AccordionItem value={pageId} className="border-b border-black/5">
+      <AccordionTrigger className="font-bold text-sm uppercase">
+        <div className="flex items-center gap-3">
+          <Monitor className="w-4 h-4 opacity-30" />
+          {label}
+        </div>
+      </AccordionTrigger>
+      <AccordionContent className="space-y-8 pt-6 pb-10">
+        <div className="grid md:grid-cols-2 gap-10">
+          <div className="space-y-6">
+            <div className="space-y-3">
+              <Label className="text-[10px] uppercase font-black opacity-40">Afbeelding URL</Label>
+              <div className="flex gap-2">
+                <Input 
+                  value={state[urlField] || ''} 
+                  onChange={e => onChange(urlField, e.target.value)} 
+                  className="h-12 rounded-xl bg-black/5 border-none text-xs" 
+                  placeholder="https://..."
+                />
+                <Button type="button" onClick={() => onPick(urlField)} size="icon" variant="outline" className="h-12 w-12 rounded-xl shrink-0"><Library className="w-5 h-5" /></Button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-6">
+              <AutonomousSlider label="Opacity" field={opacityField} value={state[opacityField] ?? 10} onChange={onChange} />
+              <AutonomousSlider label="Vervaging" field={blurField} value={state[blurField] ?? 0} max={40} unit="px" onChange={onChange} />
+            </div>
+
+            <div className="grid grid-cols-2 gap-6">
+              <AutonomousSlider label="Zoom / Schaal" field={scaleField} value={state[scaleField] ?? 100} min={100} max={150} unit="%" onChange={onChange} />
+              <AutonomousSlider label="Helderheid" field={brightnessField} value={state[brightnessField] ?? 100} min={0} max={200} unit="%" onChange={onChange} />
+            </div>
+
+            <Button 
+              type="button" 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => {
+                onChange(urlField, '');
+                onChange(opacityField, 10);
+                onChange(blurField, 0);
+                onChange(scaleField, 100);
+                onChange(brightnessField, 100);
+              }}
+              className="text-[9px] font-black uppercase tracking-widest opacity-40 hover:opacity-100 p-0 h-auto"
+            >
+              <RotateCcw className="w-3 h-3 mr-2" /> Reset deze pagina
+            </Button>
+          </div>
+
+          <div className="space-y-4">
+            <Label className="text-[10px] uppercase font-black opacity-40">Live Kaart Preview</Label>
+            <div className="relative aspect-video rounded-2xl overflow-hidden border-4 border-white shadow-xl bg-black/5 group">
+              <div 
+                className="absolute inset-0 bg-cover bg-center transition-all duration-300 pointer-events-none"
+                style={{ 
+                  backgroundImage: state[urlField] ? `url(${state[urlField]})` : 'none',
+                  opacity: (state[opacityField] ?? 10) / 100,
+                  filter: `blur(${state[blurField] ?? 0}px) brightness(${state[brightnessField] ?? 100}%)`,
+                  transform: `scale(${(state[scaleField] ?? 100) / 100})`
+                }}
+              />
+              {!state[urlField] && (
+                <div className="absolute inset-0 flex items-center justify-center opacity-10">
+                  <ImageIcon className="w-12 h-12" />
+                </div>
+              )}
+              <div className="absolute bottom-3 left-3 bg-white/80 backdrop-blur-md px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border border-black/5">
+                Lokaal Stramien
+              </div>
+            </div>
+          </div>
+        </div>
+      </AccordionContent>
+    </AccordionItem>
+  );
+};
+
 export default function AdminPage() {
   const firestore = useFirestore();
   
@@ -103,7 +218,7 @@ export default function AdminPage() {
   const [searchTerm, setSearchTerm] = useState('');
 
   // ---------------------------------------------------------------------------
-  // AUTONOMOUS REALTIME BACKGROUND STATE
+  // AUTONOMOUS REALTIME STATE LAYERS
   // ---------------------------------------------------------------------------
   const [editorState, setEditorState] = useState<Record<string, any>>({});
   const isInitialized = useRef(false);
@@ -113,37 +228,9 @@ export default function AdminPage() {
   const [isImagePickerOpen, setIsImagePickerOpen] = useState(false);
   const [pickerTarget, setPickerTarget] = useState<string | null>(null);
 
-  const selectImageFromArchive = (imageUrl: string | null) => {
-    if (pickerTarget && imageUrl) {
-      setEditorState(prev => ({ ...prev, [pickerTarget]: imageUrl }));
-    }
-    setIsImagePickerOpen(false);
-    setPickerTarget(null);
-  };
-
   // ---------------------------------------------------------------------------
-  // REST OF THE ADMIN LOGIC
+  // DATA FETCHING
   // ---------------------------------------------------------------------------
-  const [selectedStoryId, setSelectedStoryId] = useState<string>('beatrijs');
-  const [storyNodes, setStoryNodes] = useState<StoryNode[]>([]);
-  const [isSavingStory, setIsSavingStory] = useState(false);
-  const [translatingField, setTranslatingField] = useState<string | null>(null);
-  const [formData, setFormData] = useState<Record<string, string>>({});
-  const [selectedArtIds, setSelectedArtIds] = useState<string[]>([]);
-  const [isRoomDialogOpen, setIsRoomDialogOpen] = useState(false);
-  const [editingRoom, setEditingRoom] = useState<any>(null);
-  const [roomForm, setRoomForm] = useState({ title: '', slug: '', description: '', order: 0, isPublic: true });
-  const [isArtworkDialogOpen, setIsArtworkDialogOpen] = useState(false);
-  const [editingArtwork, setEditingArtwork] = useState<any>(null);
-  const [artworkForm, setArtworkForm] = useState({ 
-    title: '', displayTitle: '', slug: '', image: '', roomIds: [] as string[],
-    year: '', medium: '', description: '', featured: false, inShop: false, tags: ''
-  });
-
-  useEffect(() => {
-    if (sessionStorage.getItem('admin_auth') === 'true') setIsAuthorized(true);
-  }, []);
-
   const artworksQuery = useMemoFirebase(() => {
     if (!firestore || !isAuthorized) return null;
     return collection(firestore, 'artworks');
@@ -162,29 +249,25 @@ export default function AdminPage() {
   }, [firestore, isAuthorized]);
   const { data: settings } = useDoc(settingsRef);
 
+  // STAP 2: INITIALISEER ZONDER LOOPS
   useEffect(() => {
     if (settings && !isInitialized.current) {
-      setFormData(settings as Record<string, string>);
-      
-      // Initialize editor state from database ONCE
-      const initialState: Record<string, any> = {};
-      const fields = ['backgroundImageUrl', 'backgroundOpacity', 'backgroundBlur', 'backgroundScale', 'backgroundBrightness'];
-      
-      fields.forEach(f => { 
-        initialState[f] = settings[f] ?? (f === 'backgroundOpacity' ? 10 : f === 'backgroundScale' ? 100 : f === 'backgroundBrightness' ? 100 : 0); 
-      });
-
-      PAGES.forEach(p => {
-        fields.forEach(f => {
-          const key = `${f}_${p.id}`;
-          initialState[key] = settings[key] ?? initialState[f];
-        });
-      });
-
-      setEditorState(initialState);
+      console.log("Loading settings into editor state...");
+      setEditorState(settings as Record<string, any>);
       isInitialized.current = true;
     }
   }, [settings]);
+
+  useEffect(() => {
+    if (sessionStorage.getItem('admin_auth') === 'true') setIsAuthorized(true);
+  }, []);
+
+  // ---------------------------------------------------------------------------
+  // HANDLERS
+  // ---------------------------------------------------------------------------
+  const updateEditorField = (field: string, value: any) => {
+    setEditorState(prev => ({ ...prev, [field]: value }));
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -204,17 +287,9 @@ export default function AdminPage() {
     if (!settingsRef) return;
     setIsSavingSettings(true);
     
-    // Ensure all numeric values are numbers, not strings
-    const cleanedEditorState = { ...editorState };
-    Object.keys(cleanedEditorState).forEach(key => {
-      if (typeof cleanedEditorState[key] === 'string' && !isNaN(Number(cleanedEditorState[key])) && key !== 'backgroundImageUrl') {
-        cleanedEditorState[key] = Number(cleanedEditorState[key]);
-      }
-    });
-
-    const updates = { ...formData, ...cleanedEditorState, updatedAt: serverTimestamp() };
+    const cleanedState = { ...editorState, updatedAt: serverTimestamp() };
     try {
-      await updateDoc(settingsRef, updates);
+      await updateDoc(settingsRef, cleanedState);
       toast({ title: "Instellingen opgeslagen" });
     } catch (e) {
       toast({ variant: "destructive", title: "Fout bij opslaan" });
@@ -222,6 +297,33 @@ export default function AdminPage() {
       setIsSavingSettings(false);
     }
   };
+
+  const selectImageFromArchive = (imageUrl: string | null) => {
+    if (pickerTarget && imageUrl) {
+      updateEditorField(pickerTarget, imageUrl);
+    }
+    setIsImagePickerOpen(false);
+    setPickerTarget(null);
+  };
+
+  // ---------------------------------------------------------------------------
+  // STORIES LOGIC
+  // ---------------------------------------------------------------------------
+  const [selectedStoryId, setSelectedStoryId] = useState<string>('beatrijs');
+  const [storyNodes, setStoryNodes] = useState<StoryNode[]>([]);
+  const [isSavingStory, setIsSavingStory] = useState(false);
+  const [translatingField, setTranslatingField] = useState<string | null>(null);
+  const [formData, setFormData] = useState<Record<string, string>>({});
+  const [selectedArtIds, setSelectedArtIds] = useState<string[]>([]);
+  const [isRoomDialogOpen, setIsRoomDialogOpen] = useState(false);
+  const [editingRoom, setEditingRoom] = useState<any>(null);
+  const [roomForm, setRoomForm] = useState({ title: '', slug: '', description: '', order: 0, isPublic: true });
+  const [isArtworkDialogOpen, setIsArtworkDialogOpen] = useState(false);
+  const [editingArtwork, setEditingArtwork] = useState<any>(null);
+  const [artworkForm, setArtworkForm] = useState({ 
+    title: '', displayTitle: '', slug: '', image: '', roomIds: [] as string[],
+    year: '', medium: '', description: '', featured: false, inShop: false, tags: ''
+  });
 
   const filteredAndSortedArtworks = useMemo(() => {
     if (!rawArtworks) return [];
@@ -256,136 +358,9 @@ export default function AdminPage() {
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // RENDERER COMPONENTS
-  // ---------------------------------------------------------------------------
-
-  const AutonomousSlider = ({ label, field, min = 0, max = 100, step = 1, unit = "%" }: { label: string, field: string, min?: number, max?: number, step?: number, unit?: string }) => {
-    const value = editorState[field] ?? (field.includes('Scale') || field.includes('Brightness') ? 100 : 0);
-    
-    return (
-      <div className="space-y-4">
-        <div className="flex justify-between items-center">
-          <Label className="text-[10px] uppercase font-black opacity-40">{label}</Label>
-          <span className="text-[10px] font-bold bg-accent/10 text-accent px-2 py-0.5 rounded-full">
-            {value}{unit}
-          </span>
-        </div>
-        <input 
-          type="range"
-          min={min}
-          max={max}
-          step={step}
-          value={value}
-          onChange={(e) => {
-            const val = Number(e.target.value);
-            console.log("slider change", field, val);
-            setEditorState(prev => ({ ...prev, [field]: val }));
-          }}
-          className="w-full h-1.5 bg-black/5 rounded-full appearance-none cursor-pointer accent-accent"
-        />
-      </div>
-    );
-  };
-
-  const BackgroundEditorSection = ({ pageId, label }: { pageId: string, label: string }) => {
-    const isGlobal = pageId === 'global';
-    const prefix = isGlobal ? '' : `_${pageId}`;
-    const urlField = `backgroundImageUrl${prefix}`;
-    const opacityField = `backgroundOpacity${prefix}`;
-    const blurField = `backgroundBlur${prefix}`;
-    const scaleField = `backgroundScale${prefix}`;
-    const brightnessField = `backgroundBrightness${prefix}`;
-
-    return (
-      <AccordionItem value={pageId} className="border-b border-black/5">
-        <AccordionTrigger className="font-bold text-sm uppercase">
-          <div className="flex items-center gap-3">
-            <Monitor className="w-4 h-4 opacity-30" />
-            {label}
-          </div>
-        </AccordionTrigger>
-        <AccordionContent className="space-y-8 pt-6 pb-10">
-          <div className="grid md:grid-cols-2 gap-10">
-            <div className="space-y-6">
-              <div className="space-y-3">
-                <Label className="text-[10px] uppercase font-black opacity-40">Afbeelding URL</Label>
-                <div className="flex gap-2">
-                  <Input 
-                    value={editorState[urlField] || ''} 
-                    onChange={e => setEditorState(p => ({...p, [urlField]: e.target.value}))} 
-                    className="h-12 rounded-xl bg-black/5 border-none text-xs" 
-                    placeholder="https://..."
-                  />
-                  <Button type="button" onClick={() => { setPickerTarget(urlField); setIsImagePickerOpen(true); }} size="icon" variant="outline" className="h-12 w-12 rounded-xl shrink-0"><Library className="w-5 h-5" /></Button>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-6">
-                <AutonomousSlider label="Opacity" field={opacityField} />
-                <AutonomousSlider label="Vervaging" field={blurField} max={40} unit="px" />
-              </div>
-
-              <div className="grid grid-cols-2 gap-6">
-                <AutonomousSlider label="Zoom / Schaal" field={scaleField} min={100} max={150} unit="%" />
-                <AutonomousSlider label="Helderheid" field={brightnessField} min={0} max={200} unit="%" />
-              </div>
-
-              <Button 
-                type="button" 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => {
-                  const defaults: any = { 
-                    [urlField]: '', 
-                    [opacityField]: 10, 
-                    [blurField]: 0, 
-                    [scaleField]: 100, 
-                    [brightnessField]: 100 
-                  };
-                  setEditorState(prev => ({ ...prev, ...defaults }));
-                }}
-                className="text-[9px] font-black uppercase tracking-widest opacity-40 hover:opacity-100 p-0 h-auto"
-              >
-                <RotateCcw className="w-3 h-3 mr-2" /> Reset deze pagina
-              </Button>
-            </div>
-
-            <div className="space-y-4">
-              <Label className="text-[10px] uppercase font-black opacity-40">Live Kaart Preview</Label>
-              <div className="relative aspect-video rounded-2xl overflow-hidden border-4 border-white shadow-xl bg-black/5 group">
-                <div 
-                  className="absolute inset-0 bg-cover bg-center transition-all duration-300"
-                  style={{ 
-                    backgroundImage: editorState[urlField] ? `url(${editorState[urlField]})` : 'none',
-                    opacity: (editorState[opacityField] ?? 10) / 100,
-                    filter: `blur(${editorState[blurField] ?? 0}px) brightness(${editorState[brightnessField] ?? 100}%)`,
-                    transform: `scale(${(editorState[scaleField] ?? 100) / 100})`
-                  }}
-                />
-                {!editorState[urlField] && (
-                  <div className="absolute inset-0 flex items-center justify-center opacity-10">
-                    <ImageIcon className="w-12 h-12" />
-                  </div>
-                )}
-                <div className="absolute bottom-3 left-3 bg-white/80 backdrop-blur-md px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border border-black/5">
-                  Lokaal Stramien
-                </div>
-              </div>
-            </div>
-          </div>
-        </AccordionContent>
-      </AccordionItem>
-    );
-  };
-
   return (
     <div className="min-h-screen bg-[#f8f9fa] pt-32 px-8">
-      {/* 
-          REALTIME SITE-WIDE STYLE INJECTION 
-          This ensures that as you slide, the ACTUAL site background updates.
-          We use percentages directly from editorState for instant feedback.
-      */}
+      {/* REALTIME SITE-WIDE STYLE INJECTION */}
       <style>{`
         :root {
           --bg-image: ${editorState.backgroundImageUrl ? `url("${editorState.backgroundImageUrl}")` : 'none'};
@@ -578,12 +553,25 @@ export default function AdminPage() {
                       </div>
 
                       <Accordion type="single" collapsible className="w-full space-y-4">
-                         <BackgroundEditorSection pageId="global" label="Globale Achtergrond (Basis)" />
+                         <BackgroundEditorSection 
+                          pageId="global" 
+                          label="Globale Achtergrond (Basis)" 
+                          state={editorState}
+                          onChange={updateEditorField}
+                          onPick={(f: string) => { setPickerTarget(f); setIsImagePickerOpen(true); }}
+                         />
                          <div className="pt-4 pb-2 border-b border-black/5 px-4">
                             <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-30">Pagina Overrides</p>
                          </div>
                          {PAGES.map(page => (
-                           <BackgroundEditorSection key={page.id} pageId={page.id} label={`${page.label} Override`} />
+                           <BackgroundEditorSection 
+                            key={page.id} 
+                            pageId={page.id} 
+                            label={`${page.label} Override`}
+                            state={editorState}
+                            onChange={updateEditorField}
+                            onPick={(f: string) => { setPickerTarget(f); setIsImagePickerOpen(true); }}
+                           />
                          ))}
                       </Accordion>
                    </div>
