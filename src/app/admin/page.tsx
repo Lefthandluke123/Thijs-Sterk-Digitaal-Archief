@@ -13,7 +13,6 @@ import {
   setDoc,
   serverTimestamp, 
   orderBy,
-  writeBatch
 } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -35,14 +34,19 @@ import {
   Settings,
   Monitor,
   Type,
-  Library,
   LayoutTemplate,
   Languages,
   RotateCcw,
   X,
   CheckCircle,
   MinusCircle,
-  AlertTriangle
+  ChevronDown,
+  ChevronUp,
+  Filter,
+  CheckCircle2,
+  Tags as TagsIcon,
+  Archive,
+  MoreVertical
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -58,10 +62,11 @@ import {
 } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { sortArtworksByTitle, sanitizeArtwork, normalizeArtwork } from '@/lib/museum-utils';
+import { sortArtworksByTitle, sanitizeArtwork, normalizeArtwork, MUSEUM_TAGS } from '@/lib/museum-utils';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { StoryEditor, StoryNode } from '@/components/story-editor';
 import { translateMuseumText } from '@/ai/flows/translate-flow';
+import { Badge } from '@/components/ui/badge';
 
 const PAGES = [
   { id: 'home', label: 'Homepage' },
@@ -230,8 +235,10 @@ export default function AdminPage() {
   
   const [activeTab, setActiveTab] = useState('artworks');
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeAccordionItem, setActiveAccordionItem] = useState('global');
-
+  
+  // Persistent selection across tabs
+  const [selectedArtIds, setSelectedArtIds] = useState<string[]>([]);
+  
   const [editorState, setEditorState] = useState<Record<string, any>>({});
   const isInitialized = useRef(false);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
@@ -240,13 +247,10 @@ export default function AdminPage() {
   const [pickerTarget, setPickerTarget] = useState<string | null>(null);
 
   // Bulk State
-  const [selectedArtIds, setSelectedArtIds] = useState<string[]>([]);
-  const [isBulkRoomDialogOpen, setIsBulkRoomDialogOpen] = useState(false);
   const [isBulkTagDialogOpen, setIsBulkTagDialogOpen] = useState(false);
   const [bulkTagInput, setBulkTagInput] = useState('');
   const [isProcessingBulk, setIsProcessingBulk] = useState(false);
 
-  // Activeer beheerder status voor de Inline Editor bij het bezoeken van deze pagina
   useEffect(() => {
     if (typeof window !== 'undefined') {
       sessionStorage.setItem('admin_auth', 'true');
@@ -279,18 +283,6 @@ export default function AdminPage() {
     }
   }, [settings]);
 
-  const computedPreview = useMemo(() => {
-    const pageKey = activeAccordionItem === 'global' ? '' : `_${activeAccordionItem}`;
-    
-    return {
-      image: editorState[`backgroundImageUrl${pageKey}`] || editorState.backgroundImageUrl || '',
-      opacity: editorState[`backgroundOpacity${pageKey}`] ?? editorState.backgroundOpacity ?? 10,
-      blur: editorState[`backgroundBlur${pageKey}`] ?? editorState.backgroundBlur ?? 0,
-      scale: editorState[`backgroundScale${pageKey}`] ?? editorState.backgroundScale ?? 100,
-      brightness: editorState[`backgroundBrightness${pageKey}`] ?? editorState.backgroundBrightness ?? 100,
-    };
-  }, [editorState, activeAccordionItem]);
-
   const updateEditorField = (field: string, value: any) => {
     setEditorState(prev => ({ ...prev, [field]: value }));
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -302,7 +294,7 @@ export default function AdminPage() {
     setIsSavingSettings(true);
     try {
       await updateDoc(settingsRef, { ...editorState, ...formData, updatedAt: serverTimestamp() });
-      toast({ title: "Stramien instellingen opgeslagen" });
+      toast({ title: "Instellingen opgeslagen" });
     } catch (e) {
       toast({ variant: "destructive", title: "Fout bij opslaan" });
     } finally {
@@ -330,9 +322,7 @@ export default function AdminPage() {
         await updateDoc(doc(firestore, 'artworks', id), { roomIds: nextRooms, updatedAt: serverTimestamp() });
       });
       await Promise.all(updates);
-      toast({ title: `${selectedArtIds.length} werken bijgewerkt` });
-      setSelectedArtIds([]);
-      setIsBulkRoomDialogOpen(false);
+      toast({ title: `${selectedArtIds.length} werken ${action === 'add' ? 'toegevoegd aan' : 'verwijderd uit'} zaal` });
     } catch (e) {
       toast({ variant: "destructive", title: "Bulk update mislukt" });
     } finally {
@@ -358,7 +348,6 @@ export default function AdminPage() {
       });
       await Promise.all(updates);
       toast({ title: "Tags bijgewerkt" });
-      setSelectedArtIds([]);
       setIsBulkTagDialogOpen(false);
       setBulkTagInput('');
     } catch (e) {
@@ -370,7 +359,7 @@ export default function AdminPage() {
 
   const handleBulkDelete = async () => {
     if (!firestore || selectedArtIds.length === 0) return;
-    if (!confirm(`Weet u zeker dat u ${selectedArtIds.length} werken wilt verwijderen uit het archief?`)) return;
+    if (!confirm(`Weet u zeker dat u ${selectedArtIds.length} werken wilt verwijderen?`)) return;
 
     setIsProcessingBulk(true);
     try {
@@ -382,18 +371,6 @@ export default function AdminPage() {
       toast({ variant: "destructive", title: "Verwijderen mislukt" });
     } finally {
       setIsProcessingBulk(false);
-    }
-  };
-
-  const handleDeleteRoom = async (room: any) => {
-    if (!firestore) return;
-    if (!confirm(`Zaal "${room.title}" definitief verwijderen? Dit kan niet ongedaan worden gemaakt.`)) return;
-
-    try {
-      await deleteDoc(doc(firestore, 'rooms', room.id));
-      toast({ title: "Zaal verwijderd", description: room.title });
-    } catch (e) {
-      toast({ variant: "destructive", title: "Fout bij verwijderen zaal" });
     }
   };
 
@@ -428,28 +405,19 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen pt-32 px-8 bg-transparent">
-      <div 
-        key={JSON.stringify(computedPreview)}
-        className="fixed inset-0 pointer-events-none transition-all duration-200"
-        style={{
-          zIndex: -1,
-          opacity: computedPreview.opacity / 100,
-          filter: `blur(${computedPreview.blur}px) brightness(${computedPreview.brightness}%)`,
-          backgroundImage: computedPreview.image ? `url("${computedPreview.image}")` : 'none',
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-          transform: `scale(${computedPreview.scale / 100})`,
-          backgroundColor: "transparent"
-        }}
-      />
-
-      <header className="fixed top-0 left-0 right-0 h-24 bg-white/90 backdrop-blur-md border-b z-40 px-8 flex items-center justify-between">
+      {/* Background Sync for Admin */}
+      <header className="fixed top-0 left-0 right-0 h-24 bg-white/90 backdrop-blur-md border-b z-40 px-8 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-4">
             <LayoutDashboard className="w-6 h-6 text-accent" />
             <h1 className="font-headline text-2xl italic">Museum Beheer</h1>
           </div>
+          {selectedArtIds.length > 0 && (
+            <div className="flex items-center gap-2 bg-accent/10 text-accent px-4 py-1.5 rounded-full animate-in fade-in zoom-in duration-300">
+               <span className="text-[10px] font-black uppercase tracking-widest">{selectedArtIds.length} geselecteerd</span>
+               <button onClick={() => setSelectedArtIds([])} className="hover:text-foreground"><X className="w-3.5 h-3.5" /></button>
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-6">
            <Link href="/" className="text-[11px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 hover:text-accent transition-colors">
@@ -462,10 +430,10 @@ export default function AdminPage() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
           <TabsList className="bg-white/80 backdrop-blur-xl p-1.5 rounded-full w-fit mx-auto h-16 border shadow-xl flex flex-nowrap overflow-x-auto no-scrollbar">
             <TabsTrigger value="artworks" className="rounded-full px-8 h-13 uppercase font-black text-[10px] tracking-widest shrink-0">
-              <Palette className="w-4 h-4 mr-2" /> Archief
+              <Archive className="w-4 h-4 mr-2" /> Archief
             </TabsTrigger>
             <TabsTrigger value="rooms" className="rounded-full px-8 h-13 uppercase font-black text-[10px] tracking-widest shrink-0">
-              <Layers className="w-4 h-4 mr-2" /> Zalen
+              <Layers className="w-4 h-4 mr-2" /> Zalen & Collecties
             </TabsTrigger>
             <TabsTrigger value="story" className="rounded-full px-8 h-13 uppercase font-black text-[10px] tracking-widest shrink-0">
               <LayoutTemplate className="w-4 h-4 mr-2" /> Story Designer
@@ -479,8 +447,9 @@ export default function AdminPage() {
           </TabsList>
 
           <div className="bg-white/40 backdrop-blur-3xl rounded-[3rem] p-10 border border-white/60 shadow-2xl">
+            {/* 1. ARTWORKS TAB */}
             <TabsContent value="artworks" className="space-y-8 mt-0 relative">
-               <div className="flex flex-col md:flex-row gap-6 justify-between items-start md:items-center bg-white/50 backdrop-blur-md p-6 rounded-[2.5rem] border sticky top-24 z-30 shadow-sm">
+               <div className="flex flex-col md:flex-row gap-6 justify-between items-start md:items-center bg-white/70 backdrop-blur-md p-6 rounded-[2.5rem] border sticky top-24 z-30 shadow-sm">
                   <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
                      <div className="relative w-full md:w-64">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-30" />
@@ -494,118 +463,98 @@ export default function AdminPage() {
                         {selectedArtIds.length === filteredAndSortedArtworks.length ? 'Deselecteer Alles' : 'Selecteer Alles'}
                      </Button>
                   </div>
-                  <Button onClick={() => { setEditingArtwork(null); setArtworkForm({ title: '', displayTitle: '', slug: '', image: '', roomIds: [], year: '', medium: '', description: '', featured: false, inShop: false, tags: '' }); setIsArtworkDialogOpen(true); }} className="rounded-full px-8 h-12 bg-primary"><Plus className="w-4 h-4 mr-2" /> Nieuw Werk</Button>
-               </div>
+                  
+                  {selectedArtIds.length > 0 && (
+                    <div className="flex items-center gap-2 bg-primary text-primary-foreground p-2 px-6 rounded-full shadow-lg animate-in slide-in-from-top-4">
+                       <Button variant="ghost" size="sm" onClick={() => setIsBulkTagDialogOpen(true)} className="hover:bg-white/10 text-[10px] font-black uppercase h-9 rounded-full px-4"><TagsIcon className="w-3.5 h-3.5 mr-2" /> Tags</Button>
+                       <Button variant="ghost" size="sm" onClick={handleBulkDelete} className="hover:bg-destructive text-[10px] font-black uppercase h-9 rounded-full px-4"><Trash2 className="w-3.5 h-3.5 mr-2" /> Wis</Button>
+                    </div>
+                  )}
 
-               {/* Bulk Actions Toolbar (Bovenaan) */}
-               {selectedArtIds.length > 0 && (
-                 <div className="flex items-center gap-4 bg-primary text-primary-foreground p-4 px-8 rounded-[2rem] shadow-xl animate-in fade-in slide-in-from-top-4 border border-white/10 backdrop-blur-xl mb-8 sticky top-[184px] z-20">
-                    <span className="text-[10px] font-black uppercase tracking-widest shrink-0">{selectedArtIds.length} geselecteerd</span>
-                    <div className="w-px h-6 bg-white/20 mx-2 shrink-0" />
-                    
-                    <div className="flex flex-wrap gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => setIsBulkRoomDialogOpen(true)} className="hover:bg-white/10 text-[10px] font-black uppercase h-10 rounded-full px-6">
-                         <Layers className="w-4 h-4 mr-2" /> Zaal
-                      </Button>
-                      
-                      <Button variant="ghost" size="sm" onClick={() => setIsBulkTagDialogOpen(true)} className="hover:bg-white/10 text-[10px] font-black uppercase h-10 rounded-full px-6">
-                         <Sparkles className="w-4 h-4 mr-2" /> Tags
-                      </Button>
-                      
-                      <Button variant="ghost" size="sm" onClick={handleBulkDelete} className="hover:bg-destructive text-[10px] font-black uppercase h-10 rounded-full px-6">
-                         <Trash2 className="w-4 h-4 mr-2" /> Wis
-                      </Button>
-                    </div>
-                    
-                    <div className="ml-auto flex items-center gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => setSelectedArtIds([])} className="opacity-50 hover:opacity-100 p-2 rounded-full hover:bg-white/10">
-                         <X className="w-4 h-4" />
-                      </Button>
-                    </div>
-                 </div>
-               )}
+                  <Button onClick={() => { setEditingArtwork(null); setArtworkForm({ title: '', displayTitle: '', slug: '', image: '', roomIds: [], year: '', medium: '', description: '', featured: false, inShop: false, tags: '' }); setIsArtworkDialogOpen(true); }} className="rounded-full px-8 h-12 bg-accent text-white"><Plus className="w-4 h-4 mr-2" /> Nieuw Werk</Button>
+               </div>
 
                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
                   {filteredAndSortedArtworks.map((art: any) => (
-                    <Card key={art.id} className={cn("p-4 rounded-2xl border-none shadow-md group relative bg-white/80 backdrop-blur-sm transition-all", selectedArtIds.includes(art.id) && "ring-2 ring-accent scale-[0.98]")}>
-                       <button onClick={() => setSelectedArtIds(p => p.includes(art.id) ? p.filter(i => i !== art.id) : [...p, art.id])} className={cn("absolute top-4 left-4 z-20 w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all", selectedArtIds.includes(art.id) ? "bg-accent border-accent text-white" : "bg-white/80 border-black/10 opacity-0 group-hover:opacity-100 shadow-md")}><CheckSquare className="w-4 h-4" /></button>
+                    <Card key={art.id} className={cn("p-4 rounded-2xl border-none shadow-md group relative bg-white/80 backdrop-blur-sm transition-all hover:scale-[1.02]", selectedArtIds.includes(art.id) && "ring-2 ring-accent bg-accent/5")}>
+                       <button onClick={() => setSelectedArtIds(p => p.includes(art.id) ? p.filter(i => i !== art.id) : [...p, art.id])} className={cn("absolute top-3 left-3 z-20 w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all", selectedArtIds.includes(art.id) ? "bg-accent border-accent text-white" : "bg-white border-black/10 opacity-0 group-hover:opacity-100 shadow-md")}><CheckSquare className="w-4 h-4" /></button>
                        <div className="aspect-square rounded-xl overflow-hidden bg-black/5 mb-4 flex items-center justify-center">
                          {art.image ? <img src={art.image} className="w-full h-full object-cover" alt={art.title} /> : <ImageIcon className="w-8 h-8 opacity-10" />}
                        </div>
-                       <h3 className="font-bold text-sm truncate">{art.displayTitle || art.title}</h3>
+                       <h3 className="font-bold text-xs truncate px-1">{art.displayTitle || art.title}</h3>
                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 rounded-2xl">
-                          <Button size="sm" onClick={() => { setEditingArtwork(art); setArtworkForm({ ...art, tags: (art.tags || []).join(', ') }); setIsArtworkDialogOpen(true); }} className="rounded-full bg-white text-black"><Edit3 className="w-4 h-4" /></Button>
-                          <Button size="sm" variant="destructive" onClick={() => { if(confirm("Wissen uit archief?")) deleteDoc(doc(firestore!, 'artworks', art.id)); }} className="rounded-full"><Trash2 className="w-4 h-4" /></Button>
+                          <Button size="icon" variant="ghost" onClick={() => { setEditingArtwork(art); setArtworkForm({ ...art, tags: (art.tags || []).join(', ') }); setIsArtworkDialogOpen(true); }} className="rounded-full bg-white text-black hover:bg-white/80 w-10 h-10"><Edit3 className="w-4 h-4" /></Button>
                        </div>
                     </Card>
                   ))}
                </div>
             </TabsContent>
 
-            <TabsContent value="rooms" className="space-y-8 mt-0">
-              <div className="flex justify-between items-center">
+            {/* 2. ROOMS TAB (RESTRUCTURED) */}
+            <TabsContent value="rooms" className="space-y-10 mt-0">
+              <div className="flex justify-between items-center bg-white/50 p-6 rounded-[2.5rem] border">
                 <div className="space-y-1">
-                  <h2 className="font-headline text-3xl italic opacity-40">Museumzalen</h2>
-                  <p className="text-[10px] font-black uppercase tracking-widest opacity-20">Beheer de thematische kamers van het museum</p>
+                  <h2 className="font-headline text-3xl italic opacity-60">Zalen & Collecties</h2>
+                  <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Beheer schilderijen per thematische kamer</p>
                 </div>
-                <Button onClick={() => { setEditingRoom(null); setRoomForm({ title: '', slug: '', description: '', order: (rooms?.length || 0) + 1, isPublic: true }); setIsRoomDialogOpen(true); }} className="rounded-full bg-accent text-white h-12 px-6">
+                <Button onClick={() => { setEditingRoom(null); setRoomForm({ title: '', slug: '', description: '', order: (rooms?.length || 0) + 1, isPublic: true }); setIsRoomDialogOpen(true); }} className="rounded-full bg-accent text-white h-12 px-8">
                   <Plus className="w-4 h-4 mr-2" /> Nieuwe Zaal
                 </Button>
               </div>
 
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {rooms?.map((room: any) => (
-                  <Card key={room.id} className="p-8 rounded-[2rem] border-none shadow-xl bg-white/90 group hover:shadow-2xl transition-all duration-500">
-                    <div className="flex justify-between items-start mb-6">
-                      <div className="w-12 h-12 bg-accent/5 rounded-2xl flex items-center justify-center text-accent">
-                        <Layers className="w-6 h-6" />
-                      </div>
-                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button 
-                          size="icon" 
-                          variant="ghost" 
-                          onClick={() => { setEditingRoom(room); setRoomForm(room); setIsRoomDialogOpen(true); }}
-                          className="w-10 h-10 rounded-full hover:bg-black/5"
-                        >
-                          <Edit3 className="w-4 h-4" />
-                        </Button>
-                        <Button 
-                          size="icon" 
-                          variant="ghost" 
-                          onClick={() => handleDeleteRoom(room)}
-                          className="w-10 h-10 rounded-full hover:bg-destructive/10 text-destructive"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <h3 className="font-headline text-2xl italic leading-tight">{room.title}</h3>
-                      <p className="text-[10px] font-black uppercase tracking-widest opacity-30">Slug: {room.slug}</p>
-                    </div>
+              <Accordion type="single" collapsible className="space-y-4">
+                {rooms?.map((room: any) => {
+                  const roomArtworks = filteredAndSortedArtworks.filter(art => art.roomIds?.includes(room.id));
+                  return (
+                    <AccordionItem key={room.id} value={room.id} className="border bg-white/60 backdrop-blur-md rounded-[2.5rem] px-8 overflow-hidden">
+                      <AccordionTrigger className="hover:no-underline py-8 group">
+                         <div className="flex items-center gap-6 w-full text-left">
+                            <div className="w-12 h-12 bg-accent/5 rounded-2xl flex items-center justify-center text-accent group-data-[state=open]:bg-accent group-data-[state=open]:text-white transition-all">
+                               <Layers className="w-5 h-5" />
+                            </div>
+                            <div className="flex-1">
+                               <h3 className="font-headline text-2xl italic leading-none">{room.title}</h3>
+                               <p className="text-[9px] font-black uppercase tracking-widest opacity-30 mt-2">{roomArtworks.length} werken &bull; /{room.slug}</p>
+                            </div>
+                            <div className="flex items-center gap-4 mr-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                               <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); setEditingRoom(room); setRoomForm(room); setIsRoomDialogOpen(true); }} className="h-9 px-4 rounded-xl text-[9px] font-black uppercase tracking-widest">Hernoemen</Button>
+                               <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); if(confirm(`Zaal "${room.title}" verwijderen?`)) deleteDoc(doc(firestore!, 'rooms', room.id)); }} className="h-9 w-9 p-0 rounded-xl text-destructive"><Trash2 className="w-4 h-4" /></Button>
+                            </div>
+                         </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="pb-10 pt-4 space-y-8 border-t border-black/5 mt-4">
+                         <div className="flex items-center justify-between">
+                            <h4 className="text-[10px] font-black uppercase tracking-widest opacity-40">Inhoud van de zaal</h4>
+                            {selectedArtIds.length > 0 && (
+                              <div className="flex gap-2">
+                                <Button size="sm" onClick={() => handleBulkRoomUpdate(room.id, 'add')} className="h-10 px-6 rounded-full bg-accent text-white text-[9px] font-black uppercase tracking-widest"><Plus className="w-3.5 h-3.5 mr-2" /> Voeg {selectedArtIds.length} toe</Button>
+                                <Button size="sm" variant="outline" onClick={() => handleBulkRoomUpdate(room.id, 'remove')} className="h-10 px-6 rounded-full text-[9px] font-black uppercase tracking-widest border-2"><MinusCircle className="w-3.5 h-3.5 mr-2" /> Verwijder selectie</Button>
+                              </div>
+                            )}
+                         </div>
 
-                    <div className="mt-8 flex gap-3 pt-6 border-t border-black/5">
-                      <Button 
-                        onClick={() => { setEditingRoom(room); setRoomForm(room); setIsRoomDialogOpen(true); }} 
-                        variant="outline" 
-                        className="flex-1 rounded-xl text-[10px] font-black uppercase tracking-widest h-10"
-                      >
-                        Aanpassen
-                      </Button>
-                      <Button 
-                        variant="ghost"
-                        onClick={() => handleDeleteRoom(room)}
-                        className="rounded-xl h-10 w-10 p-0 text-destructive/40 hover:text-destructive hover:bg-destructive/5"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </Card>
-                ))}
-              </div>
+                         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
+                            {roomArtworks.length === 0 ? (
+                              <div className="col-span-full py-12 text-center border-2 border-dashed rounded-3xl opacity-20 italic">Deze zaal is momenteel leeg</div>
+                            ) : (
+                              roomArtworks.map(art => (
+                                <div key={art.id} className="relative aspect-square rounded-2xl overflow-hidden group/art">
+                                   <img src={art.image} className="w-full h-full object-cover" alt={art.title} />
+                                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/art:opacity-100 transition-opacity flex items-center justify-center">
+                                      <button onClick={() => handleBulkRoomUpdate(room.id, 'remove')} className="p-2 bg-white rounded-full text-destructive shadow-lg hover:scale-110 transition-transform"><X className="w-4 h-4" /></button>
+                                   </div>
+                                </div>
+                              ))
+                            )}
+                         </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  );
+                })}
+              </Accordion>
             </TabsContent>
 
+            {/* 3. STORY TAB */}
             <TabsContent value="story" className="space-y-12 mt-0">
                <div className="space-y-12">
                   <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-white/90 p-8 rounded-[3rem] shadow-xl border">
@@ -625,6 +574,7 @@ export default function AdminPage() {
                </div>
             </TabsContent>
 
+            {/* 4. TRANSLATIONS TAB */}
             <TabsContent value="translations" className="space-y-12 mt-0">
                {Array.from(new Set(CONTENT_FIELDS.map(f => f.category))).map(cat => (
                  <section key={cat} className="space-y-8">
@@ -656,6 +606,7 @@ export default function AdminPage() {
                <Button onClick={async () => { setIsSavingSettings(true); await updateDoc(settingsRef!, formData); setIsSavingSettings(false); toast({title:"Teksten opgeslagen"}); }} className="w-full h-20 rounded-[2.5rem] bg-primary text-xl font-black uppercase tracking-widest shadow-2xl">Teksten Opslaan</Button>
             </TabsContent>
 
+            {/* 5. SETTINGS TAB */}
             <TabsContent value="settings" className="mt-0">
                <Card className="p-12 rounded-[3rem] bg-white/95 backdrop-blur-xl border-none shadow-xl">
                   <form onSubmit={(e) => handleSaveSettings(e)} className="space-y-12">
@@ -709,8 +660,6 @@ export default function AdminPage() {
                         <Accordion 
                           type="single" 
                           collapsible 
-                          value={activeAccordionItem}
-                          onValueChange={(val) => val && setActiveAccordionItem(val)}
                           className="w-full space-y-4"
                         >
                            <BackgroundEditorSection 
@@ -801,45 +750,6 @@ export default function AdminPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Bulk Room Dialog */}
-      <Dialog open={isBulkRoomDialogOpen} onOpenChange={setIsBulkRoomDialogOpen}>
-        <DialogContent className="rounded-[2rem] max-w-lg p-8">
-           <DialogHeader>
-              <DialogTitle className="font-headline text-2xl italic">Bulk Zaal Beheer</DialogTitle>
-              <DialogDescription className="text-xs uppercase font-black tracking-widest opacity-40">Toewijzen voor {selectedArtIds.length} geselecteerde werken</DialogDescription>
-           </DialogHeader>
-           <div className="py-8 space-y-6">
-              <p className="text-sm font-light text-muted-foreground leading-relaxed">Kies een zaal om de selectie aan toe te voegen of juist uit te verwijderen.</p>
-              <div className="grid grid-cols-1 gap-4">
-                 {rooms?.map((room: any) => (
-                    <div key={room.id} className="p-5 rounded-2xl bg-black/5 border flex items-center justify-between group">
-                       <span className="font-headline text-lg italic">{room.title}</span>
-                       <div className="flex gap-2">
-                          <Button 
-                            size="sm" 
-                            disabled={isProcessingBulk}
-                            onClick={() => handleBulkRoomUpdate(room.id, 'add')}
-                            className="bg-accent text-white rounded-xl text-[9px] font-black uppercase tracking-widest px-4"
-                          >
-                             <CheckCircle className="w-3.5 h-3.5 mr-2" /> Voeg Toe
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            disabled={isProcessingBulk}
-                            variant="outline"
-                            onClick={() => handleBulkRoomUpdate(room.id, 'remove')}
-                            className="rounded-xl text-[9px] font-black uppercase tracking-widest px-4"
-                          >
-                             <MinusCircle className="w-3.5 h-3.5 mr-2" /> Verwijder
-                          </Button>
-                       </div>
-                    </div>
-                 ))}
-              </div>
-           </div>
-        </DialogContent>
-      </Dialog>
-
       {/* Bulk Tag Dialog */}
       <Dialog open={isBulkTagDialogOpen} onOpenChange={setIsBulkTagDialogOpen}>
         <DialogContent className="rounded-[2rem] max-w-lg p-8">
@@ -875,6 +785,26 @@ export default function AdminPage() {
                  </Button>
               </div>
            </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create/Edit Room Dialog */}
+      <Dialog open={isRoomDialogOpen} onOpenChange={setIsRoomDialogOpen}>
+        <DialogContent className="rounded-[2rem] max-w-md p-8">
+          <DialogHeader><DialogTitle className="font-headline text-2xl italic">{editingRoom ? 'Zaal Aanpassen' : 'Nieuwe Zaal'}</DialogTitle></DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2"><Label className="text-[10px] font-black uppercase opacity-40">Naam</Label><Input value={roomForm.title} onChange={e => setRoomForm({...roomForm, title: e.target.value})} className="rounded-xl h-12" /></div>
+            <div className="space-y-2"><Label className="text-[10px] font-black uppercase opacity-40">Slug (URL-naam)</Label><Input value={roomForm.slug} onChange={e => setRoomForm({...roomForm, slug: e.target.value})} className="rounded-xl h-12" /></div>
+            <div className="space-y-2"><Label className="text-[10px] font-black uppercase opacity-40">Volgorde (Nummer)</Label><Input type="number" value={roomForm.order} onChange={e => setRoomForm({...roomForm, order: Number(e.target.value)})} className="rounded-xl h-12" /></div>
+          </div>
+          <DialogFooter>
+            <Button onClick={async () => {
+               const clean = { ...roomForm, updatedAt: serverTimestamp() };
+               if(editingRoom) await updateDoc(doc(firestore!, 'rooms', editingRoom.id), clean);
+               else await addDoc(collection(firestore!, 'rooms'), { ...clean, createdAt: serverTimestamp() });
+               setIsRoomDialogOpen(false); toast({title:"Zaal bewaard"});
+            }} className="w-full h-14 rounded-2xl bg-primary">Zaal Opslaan</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
