@@ -156,52 +156,13 @@ export default function CuratorPage() {
           </div>
         </div>
 
-        {/* 2. COMPACT TAG BLOCK */}
-        <div className="bg-white/40 backdrop-blur-xl rounded-[2.5rem] p-8 md:p-12 border border-white/60 shadow-lg space-y-10 md:space-y-12 animate-subtle-fade">
-          {Object.entries(MUSEUM_TAGS).map(([cat, tags]) => (
-            <div key={cat} className="space-y-4 md:space-y-6">
-              <h2 className="font-headline text-2xl md:text-3xl italic text-foreground/70 border-l-4 border-accent/20 pl-5 leading-none">
-                {cat}
-              </h2>
-              <div className="flex flex-wrap gap-2">
-                {tags.map(tag => {
-                  const active = activeTags.includes(tag);
-                  const isFlashing = flashingTag === tag;
-                  const atLimit = activeTags.length >= 4 && !active;
-                  
-                  return (
-                    <button 
-                      key={tag} 
-                      onClick={() => toggleTag(tag)} 
-                      disabled={atLimit || isFlashing}
-                      className={cn(
-                        "px-4 md:px-5 py-2.5 md:py-3 rounded-xl text-[10px] md:text-[11px] font-bold uppercase transition-all border-2", 
-                        active 
-                          ? "bg-accent text-accent-foreground border-accent shadow-md scale-105" 
-                          : "bg-white border-black/5 text-foreground/50 hover:border-accent/30",
-                        atLimit && "opacity-20 cursor-not-allowed grayscale",
-                        isFlashing && "animate-flash-error border-destructive text-destructive"
-                      )}
-                    >
-                      <div className="flex items-center gap-2">
-                        {active && <CheckCircle2 className="w-3 h-3" />}
-                        {tag}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* 3. THE GALLERY (Opened ABOVE the buttons) */}
+        {/* 2. THE GALLERY (Now above buttons and tags) */}
         <div ref={resultsRef} className="scroll-mt-32">
           {showResults && resultCount > 0 && (
-            <div className="mt-8 md:mt-12 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 md:gap-8 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+            <div className="mb-12 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 md:gap-8 animate-in fade-in slide-in-from-top-8 duration-1000">
               {filteredArtworks.map((item: any) => (
                 <div key={item.id} className="group cursor-pointer space-y-3 md:space-y-4" onClick={() => setSelectedArtwork(item)}>
-                  <div className="relative aspect-[4/5] overflow-hidden rounded-2xl md:rounded-[2rem] bg-black/[0.02] shadow-md transition-all duration-[1000ms] group-hover:shadow-xl flex items-center justify-center p-3 border border-black/5">
+                  <div className="relative aspect-[4/5] overflow-hidden rounded-2xl md:rounded-[2rem] bg-black/[0.02] shadow-md transition-all duration-[1500ms] group-hover:shadow-xl flex items-center justify-center p-3 border border-black/5">
                     {item.image ? (
                       <img 
                         src={item.image} 
@@ -227,7 +188,7 @@ export default function CuratorPage() {
                 </div>
               ))}
 
-              <div className="col-span-full pt-12 flex justify-center">
+              <div className="col-span-full pt-6 flex justify-center">
                  <Button onClick={() => setShareDialog("")} className="rounded-full h-14 md:h-16 px-10 md:px-12 bg-accent text-accent-foreground uppercase font-black text-[10px] md:text-[11px] tracking-widest shadow-xl animate-in zoom-in duration-500">
                     <Share2 className="w-4 h-4 mr-3" /> {t('curator_link_ready') || 'Deel Selectie'}
                  </Button>
@@ -236,8 +197,8 @@ export default function CuratorPage() {
           )}
         </div>
 
-        {/* 4. LIVE COUNTER & ACTION BUTTONS (At the bottom) */}
-        <div className="flex flex-col items-center gap-8 pt-12 border-t border-black/5 animate-subtle-fade">
+        {/* 3. LIVE COUNTER & ACTION BUTTONS (Now above the tags) */}
+        <div className="flex flex-col items-center gap-8 py-12 border-y border-black/5 animate-subtle-fade">
           
           <div className="min-h-[40px]">
              {loading ? (
@@ -300,6 +261,45 @@ export default function CuratorPage() {
               <Eraser className="w-4 h-4 mr-3" /> {t('curator_clear')}
             </Button>
           </div>
+        </div>
+
+        {/* 4. COMPACT TAG BLOCK (Now at the bottom) */}
+        <div className="bg-white/40 backdrop-blur-xl rounded-[2.5rem] p-8 md:p-12 border border-white/60 shadow-lg space-y-10 md:space-y-12 animate-subtle-fade">
+          {Object.entries(MUSEUM_TAGS).map(([cat, tags]) => (
+            <div key={cat} className="space-y-4 md:space-y-6">
+              <h2 className="font-headline text-2xl md:text-3xl italic text-foreground/70 border-l-4 border-accent/20 pl-5 leading-none">
+                {cat}
+              </h2>
+              <div className="flex flex-wrap gap-2">
+                {tags.map(tag => {
+                  const active = activeTags.includes(tag);
+                  const isFlashing = flashingTag === tag;
+                  const atLimit = activeTags.length >= 4 && !active;
+                  
+                  return (
+                    <button 
+                      key={tag} 
+                      onClick={() => toggleTag(tag)} 
+                      disabled={atLimit || isFlashing}
+                      className={cn(
+                        "px-4 md:px-5 py-2.5 md:py-3 rounded-xl text-[10px] md:text-[11px] font-bold uppercase transition-all border-2", 
+                        active 
+                          ? "bg-accent text-accent-foreground border-accent shadow-md scale-105" 
+                          : "bg-white border-black/5 text-foreground/50 hover:border-accent/30",
+                        atLimit && "opacity-20 cursor-not-allowed grayscale",
+                        isFlashing && "animate-flash-error border-destructive text-destructive"
+                      )}
+                    >
+                      <div className="flex items-center gap-2">
+                        {active && <CheckCircle2 className="w-3 h-3" />}
+                        {tag}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </div>
 
       </div>
