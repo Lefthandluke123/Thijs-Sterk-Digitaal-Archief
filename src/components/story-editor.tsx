@@ -30,7 +30,8 @@ import {
   Copy,
   ArrowUp,
   ArrowDown,
-  Grid3X3
+  Grid3X3,
+  ChevronDown
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -101,7 +102,7 @@ export function StoryEditor({ nodes = [], onChange }: StoryEditorProps) {
   const pushToHistory = useCallback((newNodes: StoryNode[]) => {
     const newHistory = history.slice(0, historyIndex + 1);
     newHistory.push(newNodes);
-    if (newHistory.length > 50) newHistory.shift(); // Limit history
+    if (newHistory.length > 50) newHistory.shift(); 
     setHistory(newHistory);
     setHistoryIndex(newHistory.length - 1);
   }, [history, historyIndex]);
@@ -150,7 +151,6 @@ export function StoryEditor({ nodes = [], onChange }: StoryEditorProps) {
   const updateNode = (id: string, updates: Partial<StoryNode>) => {
     const newNodes = nodes.map(n => n.id === id ? { ...n, ...updates } : n);
     onChange({ nodes: newNodes });
-    // Note: Don't push to history on every mouse move, handled onPointerUp
   };
 
   const updateNodeStyles = (id: string, styles: Partial<StoryNode['styles']>) => {
@@ -203,7 +203,7 @@ export function StoryEditor({ nodes = [], onChange }: StoryEditorProps) {
     // Snapping Logic
     const colWidth = 100 / 12;
     newX = Math.round(newX / colWidth) * colWidth;
-    newY = Math.round(newY / 10) * 10; // Vertical snap
+    newY = Math.round(newY / 10) * 10; 
 
     const node = nodes.find(n => n.id === dragRef.current?.id);
     if (node) {
@@ -223,7 +223,6 @@ export function StoryEditor({ nodes = [], onChange }: StoryEditorProps) {
 
   return (
     <div className="flex flex-col gap-6 h-[85vh] min-h-[700px] animate-in fade-in duration-1000">
-      {/* 1. Editor Header / Toolbar */}
       <header className="flex items-center justify-between p-4 bg-white/80 backdrop-blur-2xl rounded-full shadow-lg border border-accent/10">
         <div className="flex items-center gap-2">
           <div className="flex bg-black/5 p-1 rounded-full mr-4">
@@ -247,7 +246,6 @@ export function StoryEditor({ nodes = [], onChange }: StoryEditorProps) {
       </header>
 
       <div className="flex-1 flex gap-8 min-h-0">
-        {/* 2. DTP Canvas */}
         <div className="flex-1 relative bg-black/[0.02] rounded-[3rem] border-2 border-black/5 overflow-hidden shadow-inner flex justify-center">
           <div 
             className={cn(
@@ -259,7 +257,6 @@ export function StoryEditor({ nodes = [], onChange }: StoryEditorProps) {
             onClick={() => setSelectedId(null)}
             ref={canvasRef}
           >
-            {/* Grid Overlay */}
             {showGrid && (
               <div className="absolute inset-0 pointer-events-none grid grid-cols-12 gap-4 px-10 md:px-20 z-0">
                 {Array.from({length: 12}).map((_, i) => (
@@ -343,7 +340,6 @@ export function StoryEditor({ nodes = [], onChange }: StoryEditorProps) {
           </div>
         </div>
 
-        {/* 3. DTP Properties Panel */}
         <aside className="w-85 shrink-0 overflow-y-auto scrollbar-hide flex flex-col gap-6">
           {!selectedNode ? (
             <Card className="h-full p-10 rounded-[3rem] shadow-xl border-none flex flex-col items-center justify-center text-center opacity-30">
@@ -399,8 +395,8 @@ export function StoryEditor({ nodes = [], onChange }: StoryEditorProps) {
                       </div>
 
                       <div className="grid grid-cols-2 gap-4">
-                        <Input placeholder="Line Height" value={selectedNode.styles.lineHeight} onChange={e => updateNodeStyles(selectedNode.id, { lineHeight: e.target.value })} className="h-10 rounded-xl bg-black/5 border-none text-xs" />
-                        <Input placeholder="Letter Spacing" value={selectedNode.styles.letterSpacing} onChange={e => updateNodeStyles(selectedNode.id, { letterSpacing: e.target.value })} className="h-10 rounded-xl bg-black/5 border-none text-xs" />
+                        <Input placeholder="Regelhoogte" value={selectedNode.styles.lineHeight} onChange={e => updateNodeStyles(selectedNode.id, { lineHeight: e.target.value })} className="h-10 rounded-xl bg-black/5 border-none text-xs" />
+                        <Input placeholder="Spatiëring" value={selectedNode.styles.letterSpacing} onChange={e => updateNodeStyles(selectedNode.id, { letterSpacing: e.target.value })} className="h-10 rounded-xl bg-black/5 border-none text-xs" />
                       </div>
                     </div>
                   </section>
