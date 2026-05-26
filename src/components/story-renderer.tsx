@@ -7,44 +7,29 @@ import { cn } from '@/lib/utils';
 
 interface StoryRendererProps {
   nodes?: StoryNode[];
-  blocks?: any[]; // Legacy
 }
 
 /**
- * @fileOverview StoryRenderer: Vertaalt de DTP nodes naar een responsieve website layout.
+ * @fileOverview StoryRenderer: Vertaalt de DTP nodes naar een vloeiende website layout.
+ * Ondersteunt alle geavanceerde CSS eigenschappen van het design system.
  */
-export function StoryRenderer({ nodes = [], blocks }: StoryRendererProps) {
-  // Legacy support fallback
-  if ((!nodes || nodes.length === 0) && blocks && blocks.length > 0) {
-    return (
-      <div className="space-y-12">
-        {blocks.map((block: any, i: number) => (
-          <div key={i} className="prose-text">
-            {block.type === 'heading' && <h2 className="font-headline text-4xl italic mb-6">{block.content}</h2>}
-            {block.type === 'text' && <p className="leading-relaxed">{block.content}</p>}
-            {block.type === 'image' && <img src={block.imageUrl} className="w-full rounded-2xl shadow-xl" />}
-          </div>
-        ))}
-      </div>
-    );
-  }
-
+export function StoryRenderer({ nodes = [] }: StoryRendererProps) {
   if (!nodes || nodes.length === 0) return null;
 
   // Bereken de totale hoogte op basis van de verste node
-  const totalHeight = Math.max(...nodes.map(n => n.y + (n.h || 200))) + 100;
+  const totalHeight = Math.max(...nodes.map(n => n.y + (n.h || 200))) + 150;
 
   return (
     <div 
-      className="relative w-full mx-auto" 
+      className="relative w-full mx-auto animate-in fade-in duration-1000" 
       style={{ height: `${totalHeight}px` }}
     >
       {nodes.map((node) => (
         <div 
           key={node.id} 
           className={cn(
-            "absolute transition-opacity duration-1000 animate-in fade-in",
-            node.type === 'box' ? "" : ""
+            "absolute transition-all duration-700",
+            node.type === 'image' && "shadow-2xl hover:scale-[1.01]"
           )}
           style={{ 
             left: `${node.x}%`,
@@ -56,16 +41,23 @@ export function StoryRenderer({ nodes = [], blocks }: StoryRendererProps) {
             borderRadius: node.styles.borderRadius || '0px',
             padding: node.styles.padding || '0px',
             opacity: (node.styles.opacity ?? 100) / 100,
-            overflow: 'hidden'
+            borderWidth: node.styles.borderWidth,
+            borderColor: node.styles.borderColor,
+            borderStyle: node.styles.borderWidth ? 'solid' : 'none',
+            boxShadow: node.styles.boxShadow,
+            overflow: node.type === 'image' || node.type === 'box' ? 'hidden' : 'visible'
           }}
         >
           {node.type === 'heading' && (
             <h2 
               className="font-headline italic leading-tight"
               style={{ 
-                fontSize: node.styles?.fontSize || '2.5rem',
+                fontSize: node.styles?.fontSize || '3rem',
                 textAlign: node.styles?.textAlign as any || 'left',
-                color: node.styles?.color
+                color: node.styles?.color || 'inherit',
+                fontWeight: node.styles?.fontWeight,
+                letterSpacing: node.styles?.letterSpacing,
+                textTransform: node.styles?.textTransform as any,
               }}
             >
               {node.content}
@@ -75,8 +67,8 @@ export function StoryRenderer({ nodes = [], blocks }: StoryRendererProps) {
           {node.type === 'image' && node.imageUrl && (
             <img 
               src={node.imageUrl} 
-              className="w-full h-full object-cover shadow-2xl" 
-              alt="Story design element" 
+              className="w-full h-full object-cover transition-transform duration-1000" 
+              alt="Story element" 
             />
           )}
 
@@ -87,9 +79,11 @@ export function StoryRenderer({ nodes = [], blocks }: StoryRendererProps) {
                 node.styles?.fontFamily === 'serif' ? "font-headline italic" : "font-sans"
               )}
               style={{ 
-                fontSize: node.styles?.fontSize || '1.25rem',
+                fontSize: node.styles?.fontSize || '1.2rem',
                 textAlign: node.styles?.textAlign as any || 'left',
-                color: node.styles?.color
+                color: node.styles?.color || 'inherit',
+                lineHeight: node.styles?.lineHeight || '1.6',
+                fontWeight: node.styles?.fontWeight,
               }}
             >
               {node.content}
@@ -100,4 +94,3 @@ export function StoryRenderer({ nodes = [], blocks }: StoryRendererProps) {
     </div>
   );
 }
-
