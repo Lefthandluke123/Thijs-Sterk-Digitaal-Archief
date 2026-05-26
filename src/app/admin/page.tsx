@@ -434,7 +434,13 @@ export default function AdminPage() {
         }).catch(err => console.error(err));
       });
 
-      await deleteDoc(doc(firestore, 'rooms', room.id));
+      deleteDoc(doc(firestore, 'rooms', room.id))
+        .catch(async () => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: `rooms/${room.id}`,
+            operation: 'delete'
+          }));
+        });
       
       toast({ 
         title: "Zaal succesvol verwijderd", 
@@ -621,72 +627,60 @@ export default function AdminPage() {
                 </Button>
               </div>
 
-              <div className="space-y-4">
+              <Accordion type="multiple" className="space-y-4">
                 {rooms?.map((room: any) => {
                   const roomArtworks = filteredAndSortedArtworks.filter(art => art.roomIds?.includes(room.id));
                   return (
-                    <div key={room.id} className="border bg-white/60 backdrop-blur-md rounded-[2.5rem] overflow-hidden group">
-                       <div className="flex items-center justify-between px-8 py-8">
-                          <div className="flex items-center gap-6 flex-1">
-                             <div className="w-12 h-12 bg-accent/5 rounded-2xl flex items-center justify-center text-accent">
+                    <AccordionItem key={room.id} value={room.id} className="border bg-white/60 backdrop-blur-md rounded-[2.5rem] overflow-hidden group border-none">
+                       <div className="flex items-center justify-between px-8 py-8 relative">
+                          <AccordionTrigger className="hover:no-underline p-0 flex-1 flex items-center gap-6 justify-start text-left group">
+                             <div className="w-12 h-12 bg-accent/5 rounded-2xl flex items-center justify-center text-accent shrink-0">
                                 <Layers className="w-5 h-5" />
                              </div>
                              <div className="flex-1">
                                 <h3 className="font-headline text-2xl italic leading-none">{room.title}</h3>
                                 <p className="text-[9px] font-black uppercase tracking-widest opacity-30 mt-2">{roomArtworks.length} werken &bull; /{room.slug}</p>
                              </div>
-                          </div>
+                          </AccordionTrigger>
                           
-                          <div className="flex items-center gap-4">
+                          <div className="flex items-center gap-4 z-20">
                              {selectedArtIds.length > 0 && (
-                               <Button size="sm" onClick={() => handleBulkRoomUpdate(room.id, 'add')} className="h-10 px-6 rounded-full bg-accent text-white text-[10px] font-black uppercase tracking-widest shadow-md hover:scale-105 transition-all">
+                               <Button size="sm" onClick={(e) => { e.stopPropagation(); handleBulkRoomUpdate(room.id, 'add'); }} className="h-10 px-6 rounded-full bg-accent text-white text-[10px] font-black uppercase tracking-widest shadow-md hover:scale-105 transition-all">
                                   Voeg {selectedArtIds.length} toe
                                </Button>
                              )}
-                             <Button size="sm" variant="ghost" onClick={() => { setEditingRoom(room); setRoomForm(room); setIsRoomDialogOpen(true); }} className="h-9 px-4 rounded-xl text-[9px] font-black uppercase tracking-widest opacity-60 hover:opacity-100">Hernoemen</Button>
+                             <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); setEditingRoom(room); setRoomForm(room); setIsRoomDialogOpen(true); }} className="h-9 px-4 rounded-xl text-[9px] font-black uppercase tracking-widest opacity-60 hover:opacity-100">Hernoemen</Button>
                              <Button 
                                size="sm" 
                                variant="ghost" 
-                               onClick={() => handleDeleteRoom(room)} 
-                               className="h-9 w-9 p-0 rounded-xl text-destructive hover:bg-destructive/10 transition-all z-20"
+                               onClick={(e) => { e.stopPropagation(); handleDeleteRoom(room); }} 
+                               className="h-9 w-9 p-0 rounded-xl text-destructive hover:bg-destructive/10 transition-all"
                              >
                                <Trash2 className="w-4 h-4" />
                              </Button>
-                             <div className="w-px h-6 bg-black/5 mx-2" />
-                             <Accordion type="single" collapsible className="border-none">
-                                <AccordionItem value={room.id} className="border-none">
-                                   <AccordionTrigger className="p-0 hover:no-underline border-none">
-                                      <span className="sr-only">Details</span>
-                                   </AccordionTrigger>
-                                </AccordionItem>
-                             </Accordion>
                           </div>
                        </div>
 
-                       <Accordion type="single" collapsible>
-                          <AccordionItem value={room.id} className="border-none">
-                             <AccordionContent className="px-8 pb-10 pt-4 space-y-8 border-t border-black/5 mt-0">
-                                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
-                                   {roomArtworks.length === 0 ? (
-                                     <div className="col-span-full py-12 text-center border-2 border-dashed rounded-3xl opacity-20 italic">Deze zaal is momenteel leeg</div>
-                                   ) : (
-                                     roomArtworks.map(art => (
-                                       <div key={art.id} className="relative aspect-square rounded-2xl overflow-hidden group/art border border-black/5">
-                                          <img src={art.image} className="w-full h-full object-cover" alt={art.title} />
-                                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/art:opacity-100 transition-opacity flex items-center justify-center">
-                                             <button onClick={() => handleBulkRoomUpdate(room.id, 'remove')} title="Verwijderen uit deze zaal" className="p-2 bg-white rounded-full text-destructive shadow-lg hover:scale-110 transition-transform"><X className="w-4 h-4" /></button>
-                                          </div>
-                                       </div>
-                                     ))
-                                   )}
-                                </div>
-                             </AccordionContent>
-                          </AccordionItem>
-                       </Accordion>
-                    </div>
+                       <AccordionContent className="px-8 pb-10 pt-4 space-y-8 border-t border-black/5 mt-0">
+                          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
+                             {roomArtworks.length === 0 ? (
+                               <div className="col-span-full py-12 text-center border-2 border-dashed rounded-3xl opacity-20 italic">Deze zaal is momenteel leeg</div>
+                             ) : (
+                               roomArtworks.map(art => (
+                                 <div key={art.id} className="relative aspect-square rounded-2xl overflow-hidden group/art border border-black/5">
+                                    <img src={art.image} className="w-full h-full object-cover" alt={art.title} />
+                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/art:opacity-100 transition-opacity flex items-center justify-center">
+                                       <button onClick={() => { setSelectedArtIds([art.id]); handleBulkRoomUpdate(room.id, 'remove'); }} title="Verwijderen uit deze zaal" className="p-2 bg-white rounded-full text-destructive shadow-lg hover:scale-110 transition-transform"><X className="w-4 h-4" /></button>
+                                    </div>
+                                 </div>
+                               ))
+                             )}
+                          </div>
+                       </AccordionContent>
+                    </AccordionItem>
                   );
                 })}
-              </div>
+              </Accordion>
             </TabsContent>
 
             {/* 3. STORY TAB */}
