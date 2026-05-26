@@ -21,7 +21,7 @@ import { cn } from '@/lib/utils';
 
 /**
  * @fileOverview InlineStyleEditor: Visuele typografie editor met Firestore persistentie.
- * De activatieknop is nu verborgen; gebruik Cmd+E of Ctrl+E om de modus te activeren.
+ * Activatie via Cmd+E of Ctrl+E - ALLEEN VOOR BEHEERDERS.
  */
 
 export function InlineStyleEditor() {
@@ -43,13 +43,19 @@ export function InlineStyleEditor() {
   }, [firestore]);
   const { data: settings } = useDoc(settingsRef);
 
-  // Toggle Edit Mode via Global Key (Meta+E)
+  // Toggle Edit Mode via Global Key (Meta+E) - Alleen voor Admins
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'e' && (e.metaKey || e.ctrlKey)) {
+        // Check of de gebruiker geautoriseerd is (via sessie ingesteld in Admin)
+        const isAdmin = typeof window !== 'undefined' && sessionStorage.getItem('admin_auth') === 'true';
+        
+        if (!isAdmin) return; // Doe niets voor gewone bezoekers
+
         e.preventDefault();
         const newState = !active;
         setActive(newState);
+        
         if (newState) {
           toast({ 
             title: "Style Editor Actief", 
@@ -136,7 +142,7 @@ export function InlineStyleEditor() {
       });
       setLastSaved(Date.now());
     } catch (e) {
-      toast({ variant: "destructive", title: "Fout bij opslaan", description: "Controleer uw verbinding." });
+      console.error(e);
     } finally {
       setIsSubmitting(false);
     }

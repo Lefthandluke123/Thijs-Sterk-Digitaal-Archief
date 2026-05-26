@@ -234,6 +234,13 @@ export default function AdminPage() {
   const [isImagePickerOpen, setIsImagePickerOpen] = useState(false);
   const [pickerTarget, setPickerTarget] = useState<string | null>(null);
 
+  // Activeer beheerder status voor de Inline Editor bij het bezoeken van deze pagina
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('admin_auth', 'true');
+    }
+  }, []);
+
   const artworksQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return collection(firestore, 'artworks');
