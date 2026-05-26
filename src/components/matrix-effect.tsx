@@ -5,7 +5,7 @@ import React, { useEffect, useRef, useState } from 'react';
 
 /**
  * @fileOverview MatrixEffect: Een digitale regen-animatie die de hele pagina overneemt.
- * Bevat een 'tweetraps' exit-knop om de simulatie te verlaten.
+ * Bevat een 'tweetraps' exit-knop om de simulatie te verlaten met een artistieke waarschuwing.
  */
 export function MatrixEffect() {
   const [active, setActive] = useState(false);
@@ -97,16 +97,23 @@ export function MatrixEffect() {
          <h2 className="text-white font-mono text-4xl md:text-6xl tracking-[0.5em] animate-pulse text-center px-6 mix-blend-difference">
             {exitStep === 1 ? "INSTABILITEIT BEVESTIGD" : "SYSTEM CRASHED"}
          </h2>
-         <p className="text-white/40 font-mono text-xs md:text-sm uppercase tracking-widest text-center max-w-md px-10">
-            {exitStep === 1 
-              ? "Wilt u de artistieke werkelijkheid herstellen?" 
-              : "De artistieke simulatie is instabiel. De kleuren van Sterk vloeien weg in de code."}
-         </p>
+         <div className="space-y-4 text-center max-w-md px-10">
+            <p className="text-white/60 font-mono text-xs md:text-sm uppercase tracking-widest leading-relaxed">
+               {exitStep === 1 
+                 ? "Zou u dat nou wel doen?" 
+                 : "De kleuren van Thijs Sterk vloeien weg in de code."}
+            </p>
+            <p className="text-white/20 font-mono text-[10px] uppercase tracking-[0.4em]">
+               {exitStep === 1 
+                 ? "Wilt u de artistieke werkelijkheid echt herstellen?" 
+                 : "De artistieke simulatie is instabiel."}
+            </p>
+         </div>
       </div>
 
       <button 
         onClick={handleExitClick}
-        className={`absolute top-10 right-10 z-[1000000] border-2 px-8 py-3 rounded-full font-mono text-[10px] font-black uppercase tracking-[0.3em] transition-all shadow-[0_0_20px_rgba(255,255,255,0.3)] ${
+        className={`absolute top-10 right-10 z-[1000000] border-2 px-8 py-3 rounded-full font-mono text-[10px] font-black uppercase tracking-[0.3em] transition-all shadow-[0_0_30px_rgba(255,255,255,0.2)] ${
           exitStep === 1 
           ? "bg-red-600 border-red-600 text-white animate-bounce" 
           : "border-white text-white hover:bg-white hover:text-black"
@@ -114,6 +121,10 @@ export function MatrixEffect() {
       >
         {exitStep === 1 ? "BEVESTIG REDDING" : "RED VAN ONDERGANG"}
       </button>
+
+      <div className="absolute bottom-10 left-10 text-white/10 font-mono text-[8px] uppercase tracking-[0.5em] pointer-events-none">
+         Archief Error 1913-1982 // Protocol: Sterk_Atmosphere_Sync
+      </div>
     </div>
   );
 }
