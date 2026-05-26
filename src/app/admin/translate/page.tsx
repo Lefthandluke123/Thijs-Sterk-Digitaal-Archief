@@ -57,34 +57,28 @@ const PRESET_PAGES = [
 
 export default function TranslateStationPage() {
   const firestore = useFirestore();
-  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState(true);
   const [password, setPassword] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [translatingField, setTranslatingField] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('translations');
 
-  // DTP Story state
   const [selectedStoryId, setSelectedStoryId] = useState<string>('beatrijs');
   const [storyNodes, setStoryNodes] = useState<StoryNode[]>([]);
-
   const [formData, setFormData] = useState<Record<string, string>>({});
 
-  useEffect(() => {
-    if (sessionStorage.getItem('admin_auth') === 'true') setIsAuthorized(true);
-  }, []);
-
   const settingsRef = useMemoFirebase(() => {
-    if (!firestore || !isAuthorized) return null;
+    if (!firestore) return null;
     return doc(firestore, 'settings', 'site');
-  }, [firestore, isAuthorized]);
+  }, [firestore]);
   
   const { data: settings } = useDoc(settingsRef);
 
   const storyRef = useMemoFirebase(() => {
-    if (!firestore || !isAuthorized || !selectedStoryId) return null;
+    if (!firestore || !selectedStoryId) return null;
     return doc(firestore, 'stories', selectedStoryId);
-  }, [firestore, isAuthorized, selectedStoryId]);
+  }, [firestore, selectedStoryId]);
   const { data: storyData } = useDoc(storyRef);
 
   useEffect(() => {
@@ -170,8 +164,8 @@ export default function TranslateStationPage() {
   const categories = Array.from(new Set(CONTENT_FIELDS.map(f => f.category)));
 
   return (
-    <div className="min-h-screen bg-[#f8f9fa] pt-32">
-      <header className="h-24 bg-white/80 backdrop-blur-md border-b fixed top-0 left-0 right-0 z-50 px-8 flex items-center justify-between shadow-sm">
+    <div className="min-h-screen bg-transparent pt-32">
+      <header className="h-24 bg-white/90 backdrop-blur-md border-b fixed top-0 left-0 right-0 z-50 px-8 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-6">
           <Link href="/admin" className="p-3 hover:bg-black/5 rounded-full transition-colors">
             <ArrowLeft className="w-6 h-6" />
@@ -189,7 +183,7 @@ export default function TranslateStationPage() {
 
       <main className="max-w-[1600px] mx-auto px-8 pb-32">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-12">
-          <TabsList className="bg-white p-1.5 rounded-full w-fit mx-auto h-16 shadow-md border">
+          <TabsList className="bg-white/80 backdrop-blur-xl p-1.5 rounded-full w-fit mx-auto h-16 shadow-md border">
             <TabsTrigger value="translations" className="rounded-full px-10 h-13 uppercase font-black text-[10px] tracking-widest">
               <Type className="w-4 h-4 mr-2" /> Teksten & Vertalingen
             </TabsTrigger>
@@ -198,123 +192,124 @@ export default function TranslateStationPage() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="translations" className="space-y-16">
-            {categories.map(cat => (
-              <section key={cat} className="space-y-8">
-                <h2 className="font-headline text-3xl italic opacity-40 border-l-4 border-accent pl-6">{cat}</h2>
-                <div className="grid gap-8">
-                  {CONTENT_FIELDS.filter(f => f.category === cat).map(field => (
-                    <Card key={field.id} className="p-8 rounded-[2.5rem] border-none shadow-xl bg-white space-y-6">
-                      <div className="flex justify-between items-start">
-                        <Label className="text-[11px] font-black uppercase tracking-widest text-accent/40">{field.label}</Label>
-                        <Button 
-                          size="sm" 
-                          variant="secondary"
-                          onClick={() => handleTranslateField(field.id)}
-                          disabled={translatingField === field.id}
-                          className="rounded-full px-6 bg-accent/5 hover:bg-accent text-accent hover:text-white transition-all"
-                        >
-                          {translatingField === field.id ? <Loader2 className="animate-spin mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />}
-                          AI Auto-Vertaal
-                        </Button>
-                      </div>
-
-                      <div className="grid gap-10">
-                        <div className="space-y-2">
-                          <span className="text-[9px] font-black bg-primary text-primary-foreground px-3 py-1 rounded-full">BRON</span>
-                          {field.type === 'textarea' ? (
-                            <Textarea 
-                              value={formData[field.id] || ''} 
-                              onChange={e => setFormData({ ...formData, [field.id]: e.target.value })}
-                              className="bg-black/5 border-none min-h-[140px] rounded-2xl text-lg p-6 focus:ring-accent"
-                            />
-                          ) : (
-                            <Input 
-                              value={formData[field.id] || ''} 
-                              onChange={e => setFormData({ ...formData, [field.id]: e.target.value })}
-                              className="bg-black/5 border-none h-14 rounded-xl text-lg px-6"
-                            />
-                          )}
+          <div className="bg-white/40 backdrop-blur-3xl rounded-[3rem] p-10 border border-white/60 shadow-2xl">
+            <TabsContent value="translations" className="space-y-16 mt-0">
+              {categories.map(cat => (
+                <section key={cat} className="space-y-8">
+                  <h2 className="font-headline text-3xl italic opacity-40 border-l-4 border-accent pl-6">{cat}</h2>
+                  <div className="grid gap-8">
+                    {CONTENT_FIELDS.filter(f => f.category === cat).map(field => (
+                      <Card key={field.id} className="p-8 rounded-[2.5rem] border-none shadow-xl bg-white/90 space-y-6">
+                        <div className="flex justify-between items-start">
+                          <Label className="text-[11px] font-black uppercase tracking-widest text-accent/40">{field.label}</Label>
+                          <Button 
+                            size="sm" 
+                            variant="secondary"
+                            onClick={() => handleTranslateField(field.id)}
+                            disabled={translatingField === field.id}
+                            className="rounded-full px-6 bg-accent/5 hover:bg-accent text-accent hover:text-white transition-all"
+                          >
+                            {translatingField === field.id ? <Loader2 className="animate-spin mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />}
+                            AI Auto-Vertaal
+                          </Button>
                         </div>
 
-                        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 pt-6 border-t border-black/5">
-                          {LANGUAGES.filter(l => !l.isSource).map(lang => (
-                            <div key={lang.code} className="space-y-2">
-                              <span className="text-[9px] font-black bg-accent/10 text-accent px-3 py-1 rounded-full uppercase">{lang.code}</span>
-                              {field.type === 'textarea' ? (
-                                <Textarea 
-                                  value={formData[`${field.id}_${lang.code}`] || ''} 
-                                  onChange={e => setFormData({ ...formData, [`${field.id}_${lang.code}`]: e.target.value })}
-                                  className="border-2 border-black/5 min-h-[100px] rounded-2xl text-sm"
-                                  placeholder={`${lang.label}...`}
-                                />
-                              ) : (
-                                <Input 
-                                  value={formData[`${field.id}_${lang.code}`] || ''} 
-                                  onChange={e => setFormData({ ...formData, [`${field.id}_${lang.code}`]: e.target.value })}
-                                  className="border-2 border-black/5 h-12 rounded-xl text-sm"
-                                  placeholder={`${lang.label}...`}
-                                />
-                              )}
-                            </div>
-                          ))}
+                        <div className="grid gap-10">
+                          <div className="space-y-2">
+                            <span className="text-[9px] font-black bg-primary text-primary-foreground px-3 py-1 rounded-full">BRON</span>
+                            {field.type === 'textarea' ? (
+                              <Textarea 
+                                value={formData[field.id] || ''} 
+                                onChange={e => setFormData({ ...formData, [field.id]: e.target.value })}
+                                className="bg-black/5 border-none min-h-[140px] rounded-2xl text-lg p-6 focus:ring-accent"
+                              />
+                            ) : (
+                              <Input 
+                                value={formData[field.id] || ''} 
+                                onChange={e => setFormData({ ...formData, [field.id]: e.target.value })}
+                                className="bg-black/5 border-none h-14 rounded-xl text-lg px-6"
+                              />
+                            )}
+                          </div>
+
+                          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 pt-6 border-t border-black/5">
+                            {LANGUAGES.filter(l => !l.isSource).map(lang => (
+                              <div key={lang.code} className="space-y-2">
+                                <span className="text-[9px] font-black bg-accent/10 text-accent px-3 py-1 rounded-full uppercase">{lang.code}</span>
+                                {field.type === 'textarea' ? (
+                                  <Textarea 
+                                    value={formData[`${field.id}_${lang.code}`] || ''} 
+                                    onChange={e => setFormData({ ...formData, [`${field.id}_${lang.code}`]: e.target.value })}
+                                    className="border-2 border-black/5 min-h-[100px] rounded-2xl text-sm"
+                                    placeholder={`${lang.label}...`}
+                                  />
+                                ) : (
+                                  <Input 
+                                    value={formData[`${field.id}_${lang.code}`] || ''} 
+                                    onChange={e => setFormData({ ...formData, [`${field.id}_${lang.code}`]: e.target.value })}
+                                    className="border-2 border-black/5 h-12 rounded-xl text-sm"
+                                    placeholder={`${lang.label}...`}
+                                  />
+                                )}
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              </section>
-            ))}
-          </TabsContent>
+                      </Card>
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </TabsContent>
 
-          <TabsContent value="stories" className="space-y-12">
-             <div className="space-y-12">
-                <Card className="p-8 rounded-[3rem] bg-white border-none shadow-2xl flex flex-col md:flex-row items-center justify-between gap-6">
-                   <div className="flex items-center gap-6">
-                      <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center text-accent">
-                         <LayoutTemplate className="w-8 h-8" />
-                      </div>
-                      <div>
-                         <h3 className="font-headline text-2xl italic leading-tight">Stramien Designer</h3>
-                         <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Positioneer uw elementen vrij op het canvas (Drag & Drop)</p>
-                      </div>
-                   </div>
-                   <div className="min-w-[280px]">
-                      <Select value={selectedStoryId} onValueChange={setSelectedStoryId}>
-                        <SelectTrigger className="h-14 rounded-2xl bg-black/5 border-none text-sm font-bold uppercase tracking-widest px-6">
-                          <SelectValue placeholder="Pagina kiezen..." />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-2xl shadow-2xl border-none p-2">
-                           {PRESET_PAGES.map(p => (
-                             <SelectItem key={p.id} value={p.id} className="rounded-xl p-4 text-xs font-bold uppercase">{p.label}</SelectItem>
-                           ))}
-                        </SelectContent>
-                      </Select>
-                   </div>
-                </Card>
+            <TabsContent value="stories" className="space-y-12 mt-0">
+               <div className="space-y-12">
+                  <Card className="p-8 rounded-[3rem] bg-white/90 border-none shadow-2xl flex flex-col md:flex-row items-center justify-between gap-6">
+                     <div className="flex items-center gap-6">
+                        <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center text-accent">
+                           <LayoutTemplate className="w-8 h-8" />
+                        </div>
+                        <div>
+                           <h3 className="font-headline text-2xl italic leading-tight">Stramien Designer</h3>
+                           <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Positioneer uw elementen vrij op het canvas (Drag & Drop)</p>
+                        </div>
+                     </div>
+                     <div className="min-w-[280px]">
+                        <Select value={selectedStoryId} onValueChange={setSelectedStoryId}>
+                          <SelectTrigger className="h-14 rounded-2xl bg-black/5 border-none text-sm font-bold uppercase tracking-widest px-6">
+                            <SelectValue placeholder="Pagina kiezen..." />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-2xl shadow-2xl border-none p-2">
+                             {PRESET_PAGES.map(p => (
+                               <SelectItem key={p.id} value={p.id} className="rounded-xl p-4 text-xs font-bold uppercase">{p.label}</SelectItem>
+                             ))}
+                          </SelectContent>
+                        </Select>
+                     </div>
+                  </Card>
 
-                <div className="space-y-8">
-                   <div className="flex items-center justify-between px-6">
-                      <div className="flex items-center gap-3">
-                         <Monitor className="w-5 h-5 opacity-30" />
-                         <h2 className="font-headline text-3xl italic opacity-30">WYSIWYG Layout Designer</h2>
-                      </div>
-                      <div className="flex gap-2 items-center">
-                         <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                         <span className="text-[9px] font-black uppercase tracking-widest opacity-60">Canvas Active (Grid: 12 col)</span>
-                      </div>
-                   </div>
-                   
-                   <StoryEditor 
-                    nodes={storyNodes} 
-                    onChange={(data) => setStoryNodes(data.nodes)} 
-                  />
-                </div>
-             </div>
-          </TabsContent>
+                  <div className="space-y-8">
+                     <div className="flex items-center justify-between px-6">
+                        <div className="flex items-center gap-3">
+                           <Monitor className="w-5 h-5 opacity-30" />
+                           <h2 className="font-headline text-3xl italic opacity-30">WYSIWYG Layout Designer</h2>
+                        </div>
+                        <div className="flex gap-2 items-center">
+                           <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                           <span className="text-[9px] font-black uppercase tracking-widest opacity-60">Canvas Active (Grid: 12 col)</span>
+                        </div>
+                     </div>
+                     
+                     <StoryEditor 
+                      nodes={storyNodes} 
+                      onChange={(data) => setStoryNodes(data.nodes)} 
+                    />
+                  </div>
+               </div>
+            </TabsContent>
+          </div>
         </Tabs>
       </main>
     </div>
   );
 }
-

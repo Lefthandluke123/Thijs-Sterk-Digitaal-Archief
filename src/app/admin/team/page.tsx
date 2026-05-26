@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -95,15 +96,9 @@ const TEAM_MEMBERS = [
 ];
 
 export default function TeamDashboardPage() {
-  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState(true);
   const [password, setPassword] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
-
-  useEffect(() => {
-    if (sessionStorage.getItem('admin_auth') === 'true') {
-      setIsAuthorized(true);
-    }
-  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -138,7 +133,7 @@ export default function TeamDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8f9fa] pt-32 pb-48">
+    <div className="min-h-screen bg-transparent pt-32 pb-48">
       <header className="fixed top-0 left-0 right-0 h-24 bg-white/80 backdrop-blur-md border-b border-black/5 z-50 px-8 flex items-center justify-between">
         <div className="flex items-center gap-6">
           <Link href="/admin" className="p-3 hover:bg-black/5 rounded-full transition-colors">
@@ -160,7 +155,7 @@ export default function TeamDashboardPage() {
       <main className="container mx-auto px-6 max-w-7xl">
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {TEAM_MEMBERS.map((member) => (
-            <Card key={member.id} className="border-none shadow-xl rounded-[2rem] overflow-hidden group hover:scale-[1.02] transition-all duration-500 bg-white">
+            <Card key={member.id} className="border-none shadow-xl rounded-[2rem] overflow-hidden group hover:scale-[1.02] transition-all duration-500 bg-white/90 backdrop-blur-xl">
               <div className={cn("h-32 relative", member.color)}>
                  <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
                  <div className="absolute -bottom-12 left-8">
@@ -215,7 +210,7 @@ export default function TeamDashboardPage() {
             </Card>
           ))}
 
-          <Card className="md:col-span-1 lg:col-span-1 border-2 border-dashed border-black/10 bg-transparent flex flex-col items-center justify-center p-12 text-center space-y-6 rounded-[2rem]">
+          <Card className="md:col-span-1 lg:col-span-1 border-2 border-dashed border-black/10 bg-white/30 backdrop-blur-md flex flex-col items-center justify-center p-12 text-center space-y-6 rounded-[2rem]">
              <div className="w-20 h-20 rounded-full bg-white shadow-lg flex items-center justify-center">
                 <Heart className="w-10 h-10 text-rose-500" />
              </div>
@@ -223,7 +218,7 @@ export default function TeamDashboardPage() {
                 <h3 className="font-headline text-xl">Retrospective Status</h3>
                 <p className="text-xs opacity-40 uppercase font-black tracking-widest">Licht & Ruimte geborgd</p>
              </div>
-             <div className="w-full bg-white/50 p-6 rounded-2xl space-y-4 text-left">
+             <div className="w-full bg-white/80 p-6 rounded-2xl space-y-4 text-left shadow-inner">
                 <div className="flex justify-between items-center">
                    <span className="text-[10px] font-black uppercase tracking-widest opacity-40">Horizon-check</span>
                    <span className="text-[10px] font-bold text-green-600">Optimaal</span>

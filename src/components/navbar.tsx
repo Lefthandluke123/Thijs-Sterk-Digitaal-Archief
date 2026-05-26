@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, Suspense } from 'react';
@@ -17,7 +18,8 @@ import {
   BookOpen,
   Menu,
   LayoutGrid,
-  Filter
+  Filter,
+  LayoutDashboard
 } from 'lucide-react';
 import { useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, doc, orderBy } from 'firebase/firestore';
@@ -147,12 +149,24 @@ function NavbarContent() {
 
               <div className="h-8 w-px bg-black/5 mx-3" />
 
-              <button 
-                onClick={() => setGuideOpen(true)} 
-                className="px-5 py-2.5 rounded-full text-[10px] font-black tracking-[0.2em] uppercase transition-all flex items-center gap-2 hover:bg-accent/5 text-accent border border-accent/10 mr-4"
-              >
-                <BookOpen className="w-4 h-4" /> Gids
-              </button>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => setGuideOpen(true)} 
+                  className="px-5 py-2.5 rounded-full text-[10px] font-black tracking-[0.2em] uppercase transition-all flex items-center gap-2 hover:bg-accent/5 text-accent border border-accent/10"
+                >
+                  <BookOpen className="w-4 h-4" /> Gids
+                </button>
+
+                <Link 
+                  href="/admin" 
+                  className={cn(
+                    "px-5 py-2.5 rounded-full text-[10px] font-black tracking-[0.2em] uppercase transition-all flex items-center gap-2 border border-black/10 mr-4",
+                    pathname.startsWith('/admin') ? "bg-primary text-primary-foreground" : "text-foreground/40 hover:bg-black/5"
+                  )}
+                >
+                  <LayoutDashboard className="w-4 h-4" /> Beheer
+                </Link>
+              </div>
 
               <LanguageSwitcher />
             </div>
@@ -183,6 +197,9 @@ function NavbarContent() {
                        <button onClick={() => { setMobileMenuOpen(false); setGuideOpen(true); }} className="flex w-full items-center gap-4 p-6 rounded-3xl bg-accent/5 text-[13px] font-black uppercase tracking-widest text-accent border border-accent/10">
                          <BookOpen className="w-6 h-6" /> Museum Gids
                        </button>
+                       <Link href="/admin" className="flex items-center gap-4 p-6 rounded-3xl bg-primary text-primary-foreground text-[13px] font-black uppercase tracking-widest">
+                         <LayoutDashboard className="w-6 h-6" /> Beheer Paneel
+                       </Link>
                      </div>
                      
                      <div className="space-y-4 pt-8 border-t border-black/5">

@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
@@ -104,7 +105,6 @@ const CONTENT_FIELDS = [
   { id: 'contactQuote', label: 'Contact Quote', type: 'textarea', category: 'Contact' },
 ];
 
-// AUTONOOM SLIDER COMPONENT - Strikte Controlled State
 const AutonomousSlider = ({ label, field, value, onChange, min = 0, max = 100, step = 1, unit = "%" }: any) => {
   return (
     <div className="space-y-4">
@@ -130,7 +130,6 @@ const AutonomousSlider = ({ label, field, value, onChange, min = 0, max = 100, s
   );
 };
 
-// BACKGROUND EDITOR SECTIE - Strikte Controlled State
 const BackgroundEditorSection = ({ pageId, label, state, onChange, onPick }: any) => {
   const isGlobal = pageId === 'global';
   const prefix = isGlobal ? '' : `_${pageId}`;
@@ -226,7 +225,7 @@ const BackgroundEditorSection = ({ pageId, label, state, onChange, onPick }: any
 export default function AdminPage() {
   const firestore = useFirestore();
   
-  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState(true);
   const [password, setPassword] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [activeTab, setActiveTab] = useState('artworks');
@@ -237,27 +236,25 @@ export default function AdminPage() {
   const isInitialized = useRef(false);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
 
-  // Image Picker Logic
   const [isImagePickerOpen, setIsImagePickerOpen] = useState(false);
   const [pickerTarget, setPickerTarget] = useState<string | null>(null);
 
-  // Data Fetching
   const artworksQuery = useMemoFirebase(() => {
-    if (!firestore || !isAuthorized) return null;
+    if (!firestore) return null;
     return collection(firestore, 'artworks');
-  }, [firestore, isAuthorized]);
+  }, [firestore]);
   const { data: rawArtworks } = useCollection(artworksQuery);
 
   const roomsQuery = useMemoFirebase(() => {
-    if (!firestore || !isAuthorized) return null;
+    if (!firestore) return null;
     return query(collection(firestore, 'rooms'), orderBy('order', 'asc'));
-  }, [firestore, isAuthorized]);
+  }, [firestore]);
   const { data: rooms } = useCollection(roomsQuery);
 
   const settingsRef = useMemoFirebase(() => {
-    if (!firestore || !isAuthorized) return null;
+    if (!firestore) return null;
     return doc(firestore, 'settings', 'site');
-  }, [firestore, isAuthorized]);
+  }, [firestore]);
   const { data: settings } = useDoc(settingsRef);
 
   useEffect(() => {
@@ -268,11 +265,6 @@ export default function AdminPage() {
     }
   }, [settings]);
 
-  useEffect(() => {
-    if (sessionStorage.getItem('admin_auth') === 'true') setIsAuthorized(true);
-  }, []);
-
-  // REALTIME RENDERING LOGIC
   const computedPreview = useMemo(() => {
     const pageKey = activeAccordionItem === 'global' ? '' : `_${activeAccordionItem}`;
     
@@ -322,7 +314,6 @@ export default function AdminPage() {
     setPickerTarget(null);
   };
 
-  // STORIES LOGIC
   const [selectedStoryId, setSelectedStoryId] = useState<string>('beatrijs');
   const [storyNodes, setStoryNodes] = useState<StoryNode[]>([]);
   const [isSavingStory, setIsSavingStory] = useState(false);
@@ -374,7 +365,6 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen pt-32 px-8 bg-transparent">
-      {/* REALTIME FULL-SITE PREVIEW LAYER */}
       <div 
         key={JSON.stringify(computedPreview)}
         className="fixed inset-0 pointer-events-none transition-all duration-200"
@@ -391,7 +381,7 @@ export default function AdminPage() {
         }}
       />
 
-      <header className="fixed top-0 left-0 right-0 h-24 bg-white/80 backdrop-blur-md border-b z-40 px-8 flex items-center justify-between">
+      <header className="fixed top-0 left-0 right-0 h-24 bg-white/90 backdrop-blur-md border-b z-40 px-8 flex items-center justify-between">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-4">
             <LayoutDashboard className="w-6 h-6 text-accent" />
@@ -418,181 +408,183 @@ export default function AdminPage() {
 
       <div className="max-w-[1600px] mx-auto space-y-12 pb-32">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-          <TabsList className="bg-muted p-1 rounded-full w-fit mx-auto h-14 border shadow-sm flex flex-nowrap overflow-x-auto no-scrollbar">
-            <TabsTrigger value="artworks" className="rounded-full px-8 h-12 uppercase font-black text-[10px] tracking-widest shrink-0">
+          <TabsList className="bg-white/80 backdrop-blur-xl p-1.5 rounded-full w-fit mx-auto h-16 border shadow-xl flex flex-nowrap overflow-x-auto no-scrollbar">
+            <TabsTrigger value="artworks" className="rounded-full px-8 h-13 uppercase font-black text-[10px] tracking-widest shrink-0">
               <Palette className="w-4 h-4 mr-2" /> Archief
             </TabsTrigger>
-            <TabsTrigger value="rooms" className="rounded-full px-8 h-12 uppercase font-black text-[10px] tracking-widest shrink-0">
+            <TabsTrigger value="rooms" className="rounded-full px-8 h-13 uppercase font-black text-[10px] tracking-widest shrink-0">
               <Layers className="w-4 h-4 mr-2" /> Zalen
             </TabsTrigger>
-            <TabsTrigger value="story" className="rounded-full px-8 h-12 uppercase font-black text-[10px] tracking-widest shrink-0">
+            <TabsTrigger value="story" className="rounded-full px-8 h-13 uppercase font-black text-[10px] tracking-widest shrink-0">
               <LayoutTemplate className="w-4 h-4 mr-2" /> Story Designer
             </TabsTrigger>
-            <TabsTrigger value="translations" className="rounded-full px-8 h-12 uppercase font-black text-[10px] tracking-widest shrink-0">
+            <TabsTrigger value="translations" className="rounded-full px-8 h-13 uppercase font-black text-[10px] tracking-widest shrink-0">
               <Languages className="w-4 h-4 mr-2" /> Teksten
             </TabsTrigger>
-            <TabsTrigger value="settings" className="rounded-full px-8 h-12 uppercase font-black text-[10px] tracking-widest shrink-0">
+            <TabsTrigger value="settings" className="rounded-full px-8 h-13 uppercase font-black text-[10px] tracking-widest shrink-0">
               <Settings className="w-4 h-4 mr-2" /> Stramien & Kleuren
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="artworks" className="space-y-8">
-             <div className="flex flex-col md:flex-row gap-6 justify-between items-start md:items-center bg-white/50 backdrop-blur-md p-6 rounded-[2.5rem] border sticky top-24 z-30 shadow-sm">
-                <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
-                   <div className="relative w-full md:w-64">
-                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-30" />
-                      <Input placeholder="Schilderij zoeken..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-12 h-12 rounded-full bg-white border-none shadow-inner" />
-                   </div>
-                </div>
-                <Button onClick={() => { setEditingArtwork(null); setArtworkForm({ title: '', displayTitle: '', slug: '', image: '', roomIds: [], year: '', medium: '', description: '', featured: false, inShop: false, tags: '' }); setIsArtworkDialogOpen(true); }} className="rounded-full px-8 h-12 bg-primary"><Plus className="w-4 h-4 mr-2" /> Nieuw Werk</Button>
-             </div>
-             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
-                {filteredAndSortedArtworks.map((art: any) => (
-                  <Card key={art.id} className={cn("p-4 rounded-2xl border-none shadow-md group relative", selectedArtIds.includes(art.id) && "ring-2 ring-accent")}>
-                     <button onClick={() => setSelectedArtIds(p => p.includes(art.id) ? p.filter(i => i !== art.id) : [...p, art.id])} className={cn("absolute top-4 left-4 z-20 w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all", selectedArtIds.includes(art.id) ? "bg-accent border-accent text-white" : "bg-white/80 border-black/10 opacity-0 group-hover:opacity-100")}><CheckSquare className="w-4 h-4" /></button>
-                     <div className="aspect-square rounded-xl overflow-hidden bg-black/5 mb-4 flex items-center justify-center">
-                       {art.image ? <img src={art.image} className="w-full h-full object-cover" alt={art.title} /> : <ImageIcon className="w-8 h-8 opacity-10" />}
+          <div className="bg-white/40 backdrop-blur-3xl rounded-[3rem] p-10 border border-white/60 shadow-2xl">
+            <TabsContent value="artworks" className="space-y-8 mt-0">
+               <div className="flex flex-col md:flex-row gap-6 justify-between items-start md:items-center bg-white/50 backdrop-blur-md p-6 rounded-[2.5rem] border sticky top-24 z-30 shadow-sm">
+                  <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
+                     <div className="relative w-full md:w-64">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-30" />
+                        <Input placeholder="Schilderij zoeken..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-12 h-12 rounded-full bg-white border-none shadow-inner" />
                      </div>
-                     <h3 className="font-bold text-sm truncate">{art.displayTitle || art.title}</h3>
-                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                        <Button size="sm" onClick={() => { setEditingArtwork(art); setArtworkForm({ ...art, tags: (art.tags || []).join(', ') }); setIsArtworkDialogOpen(true); }} className="rounded-full bg-white text-black"><Edit3 className="w-4 h-4" /></Button>
-                        <Button size="sm" variant="destructive" onClick={() => { if(confirm("Wissen uit archief?")) deleteDoc(doc(firestore!, 'artworks', art.id)); }} className="rounded-full"><Trash2 className="w-4 h-4" /></Button>
-                     </div>
-                  </Card>
-                ))}
-             </div>
-          </TabsContent>
-
-          <TabsContent value="rooms" className="space-y-8">
-            <div className="flex justify-between items-center"><h2 className="font-headline text-3xl italic opacity-40">Museumzalen</h2><Button onClick={() => { setEditingRoom(null); setRoomForm({ title: '', slug: '', description: '', order: (rooms?.length || 0) + 1, isPublic: true }); setIsRoomDialogOpen(true); }} className="rounded-full bg-accent text-white"><Plus className="w-4 h-4 mr-2" /> Nieuwe Zaal</Button></div>
-            <div className="grid md:grid-cols-3 gap-6">{rooms?.map((room: any) => (<Card key={room.id} className="p-8 rounded-[2rem] border-none shadow-md bg-white space-y-4"><div><h3 className="font-headline text-2xl italic">{room.title}</h3><p className="text-[10px] font-black uppercase opacity-30">Slug: {room.slug}</p></div><div className="flex gap-2"><Button onClick={() => { setEditingRoom(room); setRoomForm(room); setIsRoomDialogOpen(true); }} variant="outline" className="flex-1 rounded-xl text-[10px] font-black">Naam Wijzigen</Button><Button onClick={() => { if(confirm("Zaal verwijderen?")) deleteDoc(doc(firestore!, 'rooms', room.id)); }} variant="ghost" className="text-destructive"><Trash2 className="w-4 h-4" /></Button></div></Card>))}</div>
-          </TabsContent>
-
-          <TabsContent value="story" className="space-y-12">
-             <div className="space-y-12">
-                <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-white p-8 rounded-[3rem] shadow-xl border">
-                   <div className="flex items-center gap-6">
-                      <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center text-accent"><LayoutTemplate className="w-8 h-8" /></div>
-                      <div><h3 className="font-headline text-2xl italic leading-tight">Story Designer</h3><p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Visuele compositie van biografie-pagina's</p></div>
-                   </div>
-                   <div className="flex items-center gap-4">
-                      <Select value={selectedStoryId} onValueChange={setSelectedStoryId}>
-                        <SelectTrigger className="w-[240px] h-14 rounded-2xl bg-black/5 border-none text-sm font-bold uppercase"><SelectValue placeholder="Pagina..." /></SelectTrigger>
-                        <SelectContent>{PAGES.filter(p => p.id.includes('beatrijs') || p.id.includes('hanneke') || p.id.includes('peter') || p.id.includes('leo')).map(p => (<SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>))}</SelectContent>
-                      </Select>
-                      <Button onClick={async () => { setIsSavingStory(true); await setDoc(doc(firestore!, 'stories', selectedStoryId), { nodes: storyNodes, updatedAt: serverTimestamp() }, { merge: true }); setIsSavingStory(false); toast({title:"Layout opgeslagen"}); }} disabled={isSavingStory} className="h-14 px-8 rounded-2xl bg-primary shadow-lg">{isSavingStory ? <Loader2 className="animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />} Opslaan</Button>
-                   </div>
-                </div>
-                <StoryEditor nodes={storyNodes} onChange={(data) => setStoryNodes(data.nodes)} />
-             </div>
-          </TabsContent>
-
-          <TabsContent value="translations" className="space-y-12">
-             {Array.from(new Set(CONTENT_FIELDS.map(f => f.category))).map(cat => (
-               <section key={cat} className="space-y-8">
-                 <h2 className="font-headline text-3xl italic opacity-40 border-l-4 border-accent pl-6">{cat}</h2>
-                 <div className="grid gap-8">
-                   {CONTENT_FIELDS.filter(f => f.category === cat).map(field => (
-                     <Card key={field.id} className="p-8 rounded-[2.5rem] border-none shadow-xl bg-white space-y-6">
-                       <div className="flex justify-between items-start"><Label className="text-[11px] font-black uppercase text-accent/40">{field.label}</Label><Button size="sm" variant="secondary" onClick={async () => {
-                         setTranslatingField(field.id);
-                         const sourceText = formData[field.id];
-                         if(!sourceText) return;
-                         const newTrans = { ...formData };
-                         for(const l of LANGUAGES.filter(l => !l.isSource)) {
-                           const res = await translateMuseumText({ text: sourceText, targetLanguage: l.label });
-                           newTrans[`${field.id}_${l.code}`] = res.translatedText;
-                         }
-                         setFormData(newTrans);
-                         setTranslatingField(null);
-                       }} disabled={translatingField === field.id} className="rounded-full px-6">{translatingField === field.id ? <Loader2 className="animate-spin mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />} AI Vertaal</Button></div>
-                       <div className="space-y-4">
-                         <div className="space-y-2"><span className="text-[9px] font-black bg-primary text-primary-foreground px-3 py-1 rounded-full uppercase">Bron (NL)</span>{field.type === 'textarea' ? <Textarea value={formData[field.id] || ''} onChange={e => setFormData({ ...formData, [field.id]: e.target.value })} className="bg-black/5 min-h-[140px] rounded-2xl" /> : <Input value={formData[field.id] || ''} onChange={e => setFormData({ ...formData, [field.id]: e.target.value })} className="bg-black/5 h-14 rounded-xl" />}</div>
-                         <div className="grid md:grid-cols-4 gap-6">{LANGUAGES.filter(l => !l.isSource).map(lang => (<div key={lang.code} className="space-y-2"><span className="text-[9px] font-black bg-accent/10 text-accent px-3 py-1 rounded-full uppercase">{lang.code}</span>{field.type === 'textarea' ? <Textarea value={formData[`${field.id}_${lang.code}`] || ''} onChange={e => setFormData({ ...formData, [`${field.id}_${lang.code}`]: e.target.value })} className="border-2 border-black/5 min-h-[100px] rounded-2xl text-xs" /> : <Input value={formData[`${field.id}_${lang.code}`] || ''} onChange={e => setFormData({ ...formData, [`${field.id}_${lang.code}`]: e.target.value })} className="border-2 border-black/5 h-12 rounded-xl text-xs" />}</div>))}</div>
+                  </div>
+                  <Button onClick={() => { setEditingArtwork(null); setArtworkForm({ title: '', displayTitle: '', slug: '', image: '', roomIds: [], year: '', medium: '', description: '', featured: false, inShop: false, tags: '' }); setIsArtworkDialogOpen(true); }} className="rounded-full px-8 h-12 bg-primary"><Plus className="w-4 h-4 mr-2" /> Nieuw Werk</Button>
+               </div>
+               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+                  {filteredAndSortedArtworks.map((art: any) => (
+                    <Card key={art.id} className={cn("p-4 rounded-2xl border-none shadow-md group relative bg-white/80 backdrop-blur-sm", selectedArtIds.includes(art.id) && "ring-2 ring-accent")}>
+                       <button onClick={() => setSelectedArtIds(p => p.includes(art.id) ? p.filter(i => i !== art.id) : [...p, art.id])} className={cn("absolute top-4 left-4 z-20 w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all", selectedArtIds.includes(art.id) ? "bg-accent border-accent text-white" : "bg-white/80 border-black/10 opacity-0 group-hover:opacity-100")}><CheckSquare className="w-4 h-4" /></button>
+                       <div className="aspect-square rounded-xl overflow-hidden bg-black/5 mb-4 flex items-center justify-center">
+                         {art.image ? <img src={art.image} className="w-full h-full object-cover" alt={art.title} /> : <ImageIcon className="w-8 h-8 opacity-10" />}
                        </div>
-                     </Card>
-                   ))}
-                 </div>
-               </section>
-             ))}
-             <Button onClick={async () => { setIsSavingSettings(true); await updateDoc(settingsRef!, formData); setIsSavingSettings(false); toast({title:"Teksten opgeslagen"}); }} className="w-full h-20 rounded-[2.5rem] bg-primary text-xl font-black uppercase tracking-widest shadow-2xl">Teksten Opslaan</Button>
-          </TabsContent>
+                       <h3 className="font-bold text-sm truncate">{art.displayTitle || art.title}</h3>
+                       <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 rounded-2xl">
+                          <Button size="sm" onClick={() => { setEditingArtwork(art); setArtworkForm({ ...art, tags: (art.tags || []).join(', ') }); setIsArtworkDialogOpen(true); }} className="rounded-full bg-white text-black"><Edit3 className="w-4 h-4" /></Button>
+                          <Button size="sm" variant="destructive" onClick={() => { if(confirm("Wissen uit archief?")) deleteDoc(doc(firestore!, 'artworks', art.id)); }} className="rounded-full"><Trash2 className="w-4 h-4" /></Button>
+                       </div>
+                    </Card>
+                  ))}
+               </div>
+            </TabsContent>
 
-          <TabsContent value="settings">
-             <Card className="p-12 rounded-[3rem] bg-white/90 backdrop-blur-xl border-none shadow-xl">
-                <form onSubmit={(e) => handleSaveSettings(e)} className="space-y-12">
-                   <div className="grid md:grid-cols-2 gap-12">
-                      <div className="space-y-8">
-                         <div className="flex items-center gap-3 opacity-40"><Type className="w-5 h-5" /><h3 className="text-xs font-black uppercase">Typografie</h3></div>
-                         <div className="grid gap-6">
-                            <div className="grid grid-cols-2 gap-4">
-                               <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Hoofd Font</Label><Select name="bodyFont" value={formData.bodyFont} onValueChange={v => setFormData(p => ({...p, bodyFont: v}))}><SelectTrigger className="h-12 rounded-xl bg-black/5 border-none"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="sans">Modern (Sans)</SelectItem><SelectItem value="serif">Klassiek (Serif)</SelectItem></SelectContent></Select></div>
-                               <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Kop Font</Label><Select name="headFont" value={formData.headFont} onValueChange={v => setFormData(p => ({...p, headFont: v}))}><SelectTrigger className="h-12 rounded-xl bg-black/5 border-none"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="sans">Modern (Sans)</SelectItem><SelectItem value="serif">Klassiek (Serif)</SelectItem></SelectContent></Select></div>
-                            </div>
-                            <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Basis Tekstgrootte</Label><Input value={formData.baseFontSize || ''} onChange={e => setFormData(p => ({...p, baseFontSize: e.target.value}))} className="h-12 rounded-xl bg-black/5 border-none" /></div>
+            <TabsContent value="rooms" className="space-y-8 mt-0">
+              <div className="flex justify-between items-center"><h2 className="font-headline text-3xl italic opacity-40">Museumzalen</h2><Button onClick={() => { setEditingRoom(null); setRoomForm({ title: '', slug: '', description: '', order: (rooms?.length || 0) + 1, isPublic: true }); setIsRoomDialogOpen(true); }} className="rounded-full bg-accent text-white"><Plus className="w-4 h-4 mr-2" /> Nieuwe Zaal</Button></div>
+              <div className="grid md:grid-cols-3 gap-6">{rooms?.map((room: any) => (<Card key={room.id} className="p-8 rounded-[2rem] border-none shadow-md bg-white/90 space-y-4"><div><h3 className="font-headline text-2xl italic">{room.title}</h3><p className="text-[10px] font-black uppercase opacity-30">Slug: {room.slug}</p></div><div className="flex gap-2"><Button onClick={() => { setEditingRoom(room); setRoomForm(room); setIsRoomDialogOpen(true); }} variant="outline" className="flex-1 rounded-xl text-[10px] font-black">Naam Wijzigen</Button><Button onClick={() => { if(confirm("Zaal verwijderen?")) deleteDoc(doc(firestore!, 'rooms', room.id)); }} variant="ghost" className="text-destructive"><Trash2 className="w-4 h-4" /></Button></div></Card>))}</div>
+            </TabsContent>
+
+            <TabsContent value="story" className="space-y-12 mt-0">
+               <div className="space-y-12">
+                  <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-white/90 p-8 rounded-[3rem] shadow-xl border">
+                     <div className="flex items-center gap-6">
+                        <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center text-accent"><LayoutTemplate className="w-8 h-8" /></div>
+                        <div><h3 className="font-headline text-2xl italic leading-tight">Story Designer</h3><p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Visuele compositie van biografie-pagina's</p></div>
+                     </div>
+                     <div className="flex items-center gap-4">
+                        <Select value={selectedStoryId} onValueChange={setSelectedStoryId}>
+                          <SelectTrigger className="w-[240px] h-14 rounded-2xl bg-black/5 border-none text-sm font-bold uppercase"><SelectValue placeholder="Pagina..." /></SelectTrigger>
+                          <SelectContent>{PAGES.filter(p => p.id.includes('beatrijs') || p.id.includes('hanneke') || p.id.includes('peter') || p.id.includes('leo')).map(p => (<SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>))}</SelectContent>
+                        </Select>
+                        <Button onClick={async () => { setIsSavingStory(true); await setDoc(doc(firestore!, 'stories', selectedStoryId), { nodes: storyNodes, updatedAt: serverTimestamp() }, { merge: true }); setIsSavingStory(false); toast({title:"Layout opgeslagen"}); }} disabled={isSavingStory} className="h-14 px-8 rounded-2xl bg-primary shadow-lg">{isSavingStory ? <Loader2 className="animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />} Opslaan</Button>
+                     </div>
+                  </div>
+                  <StoryEditor nodes={storyNodes} onChange={(data) => setStoryNodes(data.nodes)} />
+               </div>
+            </TabsContent>
+
+            <TabsContent value="translations" className="space-y-12 mt-0">
+               {Array.from(new Set(CONTENT_FIELDS.map(f => f.category))).map(cat => (
+                 <section key={cat} className="space-y-8">
+                   <h2 className="font-headline text-3xl italic opacity-40 border-l-4 border-accent pl-6">{cat}</h2>
+                   <div className="grid gap-8">
+                     {CONTENT_FIELDS.filter(f => f.category === cat).map(field => (
+                       <Card key={field.id} className="p-8 rounded-[2.5rem] border-none shadow-xl bg-white/90 space-y-6">
+                         <div className="flex justify-between items-start"><Label className="text-[11px] font-black uppercase text-accent/40">{field.label}</Label><Button size="sm" variant="secondary" onClick={async () => {
+                           setTranslatingField(field.id);
+                           const sourceText = formData[field.id];
+                           if(!sourceText) return;
+                           const newTrans = { ...formData };
+                           for(const l of LANGUAGES.filter(l => !l.isSource)) {
+                             const res = await translateMuseumText({ text: sourceText, targetLanguage: l.label });
+                             newTrans[`${field.id}_${l.code}`] = res.translatedText;
+                           }
+                           setFormData(newTrans);
+                           setTranslatingField(null);
+                         }} disabled={translatingField === field.id} className="rounded-full px-6">{translatingField === field.id ? <Loader2 className="animate-spin mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />} AI Vertaal</Button></div>
+                         <div className="space-y-4">
+                           <div className="space-y-2"><span className="text-[9px] font-black bg-primary text-primary-foreground px-3 py-1 rounded-full uppercase">Bron (NL)</span>{field.type === 'textarea' ? <Textarea value={formData[field.id] || ''} onChange={e => setFormData({ ...formData, [field.id]: e.target.value })} className="bg-black/5 min-h-[140px] rounded-2xl" /> : <Input value={formData[field.id] || ''} onChange={e => setFormData({ ...formData, [field.id]: e.target.value })} className="bg-black/5 h-14 rounded-xl" />}</div>
+                           <div className="grid md:grid-cols-4 gap-6">{LANGUAGES.filter(l => !l.isSource).map(lang => (<div key={lang.code} className="space-y-2"><span className="text-[9px] font-black bg-accent/10 text-accent px-3 py-1 rounded-full uppercase">{lang.code}</span>{field.type === 'textarea' ? <Textarea value={formData[`${field.id}_${lang.code}`] || ''} onChange={e => setFormData({ ...formData, [`${field.id}_${lang.code}`]: e.target.value })} className="border-2 border-black/5 min-h-[100px] rounded-2xl text-xs" /> : <Input value={formData[`${field.id}_${lang.code}`] || ''} onChange={e => setFormData({ ...formData, [`${field.id}_${lang.code}`]: e.target.value })} className="border-2 border-black/5 h-12 rounded-xl text-xs" />}</div>))}</div>
                          </div>
-                      </div>
-                      <div className="space-y-8">
-                         <div className="flex items-center gap-3 opacity-40"><Palette className="w-5 h-5" /><h3 className="text-xs font-black uppercase">Visuele Identiteit</h3></div>
-                         <div className="grid gap-6">
-                            <div className="grid grid-cols-2 gap-4">
-                               <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Accent Kleur</Label><Input value={formData.accentColor || ''} onChange={e => setFormData(p => ({...p, accentColor: e.target.value}))} className="h-12 rounded-xl bg-black/5 border-none" /></div>
-                               <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Achtergrond Kleur</Label><Input value={formData.bgColor || ''} onChange={e => setFormData(p => ({...p, bgColor: e.target.value}))} className="h-12 rounded-xl bg-black/5 border-none" /></div>
-                            </div>
-                            <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Radius (Rondingen)</Label><Input value={formData.radius || ''} onChange={e => setFormData(p => ({...p, radius: e.target.value}))} className="h-12 rounded-xl bg-black/5 border-none" /></div>
-                         </div>
-                      </div>
+                       </Card>
+                     ))}
                    </div>
+                 </section>
+               ))}
+               <Button onClick={async () => { setIsSavingSettings(true); await updateDoc(settingsRef!, formData); setIsSavingSettings(false); toast({title:"Teksten opgeslagen"}); }} className="w-full h-20 rounded-[2.5rem] bg-primary text-xl font-black uppercase tracking-widest shadow-2xl">Teksten Opslaan</Button>
+            </TabsContent>
 
-                   <div className="space-y-8 pt-12 border-t border-black/5">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3 opacity-40">
-                          <Monitor className="w-5 h-5" />
-                          <h3 className="text-xs font-black uppercase">Achtergrond & Stramien</h3>
+            <TabsContent value="settings" className="mt-0">
+               <Card className="p-12 rounded-[3rem] bg-white/95 backdrop-blur-xl border-none shadow-xl">
+                  <form onSubmit={(e) => handleSaveSettings(e)} className="space-y-12">
+                     <div className="grid md:grid-cols-2 gap-12">
+                        <div className="space-y-8">
+                           <div className="flex items-center gap-3 opacity-40"><Type className="w-5 h-5" /><h3 className="text-xs font-black uppercase">Typografie</h3></div>
+                           <div className="grid gap-6">
+                              <div className="grid grid-cols-2 gap-4">
+                                 <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Hoofd Font</Label><Select name="bodyFont" value={formData.bodyFont} onValueChange={v => setFormData(p => ({...p, bodyFont: v}))}><SelectTrigger className="h-12 rounded-xl bg-black/5 border-none"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="sans">Modern (Sans)</SelectItem><SelectItem value="serif">Klassiek (Serif)</SelectItem></SelectContent></Select></div>
+                                 <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Kop Font</Label><Select name="headFont" value={formData.headFont} onValueChange={v => setFormData(p => ({...p, headFont: v}))}><SelectTrigger className="h-12 rounded-xl bg-black/5 border-none"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="sans">Modern (Sans)</SelectItem><SelectItem value="serif">Klassiek (Serif)</SelectItem></SelectContent></Select></div>
+                              </div>
+                              <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Basis Tekstgrootte</Label><Input value={formData.baseFontSize || ''} onChange={e => setFormData(p => ({...p, baseFontSize: e.target.value}))} className="h-12 rounded-xl bg-black/5 border-none" /></div>
+                           </div>
                         </div>
-                        <div className="flex items-center gap-2 px-4 py-2 bg-accent/5 rounded-full border border-accent/10">
-                           <Sparkles className="w-3 h-3 text-accent" />
-                           <span className="text-[9px] font-black uppercase tracking-widest text-accent">Realtime Stramien Actief</span>
+                        <div className="space-y-8">
+                           <div className="flex items-center gap-3 opacity-40"><Palette className="w-5 h-5" /><h3 className="text-xs font-black uppercase">Visuele Identiteit</h3></div>
+                           <div className="grid gap-6">
+                              <div className="grid grid-cols-2 gap-4">
+                                 <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Accent Kleur</Label><Input value={formData.accentColor || ''} onChange={e => setFormData(p => ({...p, accentColor: e.target.value}))} className="h-12 rounded-xl bg-black/5 border-none" /></div>
+                                 <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Achtergrond Kleur</Label><Input value={formData.bgColor || ''} onChange={e => setFormData(p => ({...p, bgColor: e.target.value}))} className="h-12 rounded-xl bg-black/5 border-none" /></div>
+                              </div>
+                              <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Radius (Rondingen)</Label><Input value={formData.radius || ''} onChange={e => setFormData(p => ({...p, radius: e.target.value}))} className="h-12 rounded-xl bg-black/5 border-none" /></div>
+                           </div>
                         </div>
-                      </div>
+                     </div>
 
-                      <Accordion 
-                        type="single" 
-                        collapsible 
-                        value={activeAccordionItem}
-                        onValueChange={(val) => val && setActiveAccordionItem(val)}
-                        className="w-full space-y-4"
-                      >
-                         <BackgroundEditorSection 
-                          pageId="global" 
-                          label="Globaal Stramien (Basis)" 
-                          state={editorState}
-                          onChange={updateEditorField}
-                          onPick={(f: string) => { setPickerTarget(f); setIsImagePickerOpen(true); }}
-                         />
-                         <div className="pt-4 pb-2 border-b border-black/5 px-4">
-                            <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-30">Pagina-specifieke Overrides</p>
-                         </div>
-                         {PAGES.map(page => (
+                     <div className="space-y-8 pt-12 border-t border-black/5">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3 opacity-40">
+                            <Monitor className="w-5 h-5" />
+                            <h3 className="text-xs font-black uppercase">Achtergrond & Stramien</h3>
+                          </div>
+                          <div className="flex items-center gap-2 px-4 py-2 bg-accent/5 rounded-full border border-accent/10">
+                             <Sparkles className="w-3 h-3 text-accent" />
+                             <span className="text-[9px] font-black uppercase tracking-widest text-accent">Realtime Stramien Actief</span>
+                          </div>
+                        </div>
+
+                        <Accordion 
+                          type="single" 
+                          collapsible 
+                          value={activeAccordionItem}
+                          onValueChange={(val) => val && setActiveAccordionItem(val)}
+                          className="w-full space-y-4"
+                        >
                            <BackgroundEditorSection 
-                            key={page.id} 
-                            pageId={page.id} 
-                            label={`${page.label} Sfeer`}
+                            pageId="global" 
+                            label="Globaal Stramien (Basis)" 
                             state={editorState}
                             onChange={updateEditorField}
                             onPick={(f: string) => { setPickerTarget(f); setIsImagePickerOpen(true); }}
                            />
-                         ))}
-                      </Accordion>
-                   </div>
+                           <div className="pt-4 pb-2 border-b border-black/5 px-4">
+                              <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-30">Pagina-specifieke Overrides</p>
+                           </div>
+                           {PAGES.map(page => (
+                             <BackgroundEditorSection 
+                              key={page.id} 
+                              pageId={page.id} 
+                              label={`${page.label} Sfeer`}
+                              state={editorState}
+                              onChange={updateEditorField}
+                              onPick={(f: string) => { setPickerTarget(f); setIsImagePickerOpen(true); }}
+                             />
+                           ))}
+                        </Accordion>
+                     </div>
 
-                   <Button type="submit" disabled={isSavingSettings} className="w-full h-20 rounded-[2.5rem] bg-primary text-xl font-black uppercase shadow-2xl group">
-                      {isSavingSettings ? <Loader2 className="animate-spin mr-3" /> : <Save className="w-5 h-5 mr-3 group-hover:scale-110 transition-transform" />} 
-                      Alle Instellingen Opslaan
-                   </Button>
-                </form>
-             </Card>
-          </TabsContent>
+                     <Button type="submit" disabled={isSavingSettings} className="w-full h-20 rounded-[2.5rem] bg-primary text-xl font-black uppercase shadow-2xl group">
+                        {isSavingSettings ? <Loader2 className="animate-spin mr-3" /> : <Save className="w-5 h-5 mr-3 group-hover:scale-110 transition-transform" />} 
+                        Alle Instellingen Opslaan
+                     </Button>
+                  </form>
+               </Card>
+            </TabsContent>
+          </div>
         </Tabs>
       </div>
 
