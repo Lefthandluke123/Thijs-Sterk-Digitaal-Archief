@@ -1,6 +1,7 @@
+
 "use client";
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -32,6 +33,7 @@ import { Button } from '@/components/ui/button';
 
 /**
  * @fileOverview Navbar: Centrale navigatie met ondersteuning voor zalen, community en nalatenschap.
+ * Bevat een Matrix Easter Egg (4x klikken op het logo).
  */
 
 const NavLink = ({ href, children, active }: { href: string; children: React.ReactNode; active: boolean }) => (
@@ -55,6 +57,10 @@ function NavbarContent() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const firestore = useFirestore();
   const { language, t } = useLanguage();
+
+  // Easter Egg State
+  const [logoClicks, setLogoClicks] = useState(0);
+  const clickTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -96,6 +102,23 @@ function NavbarContent() {
     { id: 'peter-bes', label: 'Peter Bes (Leerling)', href: '/peter-bes' },
   ];
 
+  // Easter Egg Handler
+  const handleLogoClick = (e: React.MouseEvent) => {
+    const newCount = logoClicks + 1;
+    setLogoClicks(newCount);
+
+    // Reset timer
+    if (clickTimerRef.current) clearTimeout(clickTimerRef.current);
+    clickTimerRef.current = setTimeout(() => {
+      setLogoClicks(0);
+    }, 2000);
+
+    if (newCount >= 4) {
+      setLogoClicks(0);
+      window.dispatchEvent(new CustomEvent('trigger-simulation'));
+    }
+  };
+
   return (
     <>
       <nav className="fixed top-0 left-0 right-0 z-50 h-24 md:h-32 px-4 md:px-6 flex items-center justify-center pointer-events-none">
@@ -103,12 +126,14 @@ function NavbarContent() {
           
           {/* 1. Identity Section */}
           <div className="flex-shrink-0 min-w-0">
-            <Link href="/" className="flex items-center gap-3 md:gap-6 group cursor-pointer">
-              <img 
-                src={siteSettings?.logoUrl || "/logo.png"} 
-                alt="Logo" 
-                className="h-10 md:h-20 w-auto object-contain transition-all duration-1000 group-hover:scale-110 flex-shrink-0 animate-logo-float" 
-              />
+            <div className="flex items-center gap-3 md:gap-6 group cursor-pointer" onClick={handleLogoClick}>
+              <Link href="/" className="contents">
+                <img 
+                  src={siteSettings?.logoUrl || "/logo.png"} 
+                  alt="Logo" 
+                  className="h-10 md:h-20 w-auto object-contain transition-all duration-1000 group-hover:scale-110 flex-shrink-0 animate-logo-float" 
+                />
+              </Link>
               <div className="hidden sm:flex flex-col leading-tight border-l-2 border-accent/10 pl-4 md:pl-6 min-w-0">
                  <span className="font-headline font-medium text-lg md:text-2xl tracking-tight text-foreground group-hover:text-accent transition-colors truncate">
                    {siteTitle}
@@ -117,7 +142,7 @@ function NavbarContent() {
                    {siteSubtitle}
                  </span>
               </div>
-            </Link>
+            </div>
           </div>
           
           {/* 2. Desktop Layout */}

@@ -1,3 +1,4 @@
+
 import type { Metadata } from 'next';
 import './globals.css';
 import { Navbar } from '@/components/navbar';
@@ -8,6 +9,7 @@ import { LanguageProvider } from '@/components/language-provider';
 import { BackgroundLayer } from '@/components/background-layer';
 import { DesignSystemProvider } from '@/components/design-system-provider';
 import { InlineStyleEditor } from '@/components/inline-style-editor';
+import { MatrixEffect } from '@/components/matrix-effect';
 import { Suspense } from 'react';
 import { Loader2 } from 'lucide-react';
 
@@ -66,6 +68,7 @@ export default function RootLayout({
         <FirebaseClientProvider>
           <DesignSystemProvider>
             <LanguageProvider>
+              <MatrixEffect />
               <Navbar />
               <BackgroundLayer />
               {children}
