@@ -61,9 +61,9 @@ import { translateMuseumText } from '@/ai/flows/translate-flow';
 
 const PAGES = [
   { id: 'home', label: 'Homepage' },
-  { id: 'gallery', label: 'Zalen Overzicht' },
+  { id: 'gallery', label: 'Alle Schilderijen' },
   { id: 'curator', label: 'Zelf iets moois maken' },
-  { id: 'shop', label: 'Winkel' },
+  { id: 'shop', label: 'Schilderij kopen' },
   { id: 'beatrijs', label: 'Beatrijs Sterk' },
   { id: 'hanneke', label: 'Hanneke Sterk' },
   { id: 'peter-bes', label: 'Peter Bes' },
@@ -79,18 +79,19 @@ const LANGUAGES = [
 ];
 
 const CONTENT_FIELDS = [
-  { id: 'siteTitle', label: 'Website Titel', type: 'input', category: 'Algemeen' },
-  { id: 'siteSubtitle', label: 'Website Ondertitel', type: 'input', category: 'Algemeen' },
-  { id: 'homeHeroTitle', label: 'Hero Hoofdtitel', type: 'input', category: 'Homepage' },
-  { id: 'homeBioTitle', label: 'Biografie Titel', type: 'input', category: 'Homepage' },
-  { id: 'homeBio', label: 'Biografie Tekst', type: 'textarea', category: 'Homepage' },
-  { id: 'gallery_title', label: 'Zalen Overzicht Titel', type: 'input', category: 'Zalen' },
-  { id: 'gallery_select', label: 'Zalen Selectie Instructie', type: 'input', category: 'Zalen' },
-  { id: 'curator_title', label: 'Zelf iets moois maken Titel', type: 'input', category: 'Uw Zaal' },
-  { id: 'curator_subtitle', label: 'Zelf iets moois maken Ondertitel', type: 'input', category: 'Uw Zaal' },
-  { id: 'shopIntro', label: 'Winkel Introductie', type: 'textarea', category: 'Winkel' },
+  { id: 'siteTitle', label: 'Naam van de Show', type: 'input', category: 'Algemeen' },
+  { id: 'siteSubtitle', label: 'Kleine tekst eronder', type: 'input', category: 'Algemeen' },
+  { id: 'homeHeroTitle', label: 'Grote tekst op de startpagina', type: 'input', category: 'Homepage' },
+  { id: 'homeBioTitle', label: 'Titel bij het levensverhaal', type: 'input', category: 'Homepage' },
+  { id: 'homeBio', label: 'Het levensverhaal zelf', type: 'textarea', category: 'Homepage' },
+  { id: 'gallery_title', label: 'Titel van de verzameling', type: 'input', category: 'Zalen' },
+  { id: 'gallery_select', label: 'Tekst: Klik op een groep', type: 'input', category: 'Zalen' },
+  { id: 'curator_title', label: 'Titel bij zelf-maken', type: 'input', category: 'Uw Zaal' },
+  { id: 'curator_subtitle', label: 'Uitleg bij zelf-maken', type: 'input', category: 'Uw Zaal' },
+  { id: 'shopIntro', label: 'Uitleg bij de winkel', type: 'textarea', category: 'Winkel' },
 ];
 
+// AUTONOOM SLIDER COMPONENT - Strikte Controlled State
 const AutonomousSlider = ({ label, field, value, onChange, min = 0, max = 100, step = 1, unit = "%" }: any) => {
   return (
     <div className="space-y-4">
@@ -116,6 +117,7 @@ const AutonomousSlider = ({ label, field, value, onChange, min = 0, max = 100, s
   );
 };
 
+// BACKGROUND EDITOR SECTIE - Strikte Controlled State
 const BackgroundEditorSection = ({ pageId, label, state, onChange, onPick }: any) => {
   const isGlobal = pageId === 'global';
   const prefix = isGlobal ? '' : `_${pageId}`;
@@ -137,20 +139,20 @@ const BackgroundEditorSection = ({ pageId, label, state, onChange, onPick }: any
         <div className="grid md:grid-cols-2 gap-10">
           <div className="space-y-6">
             <div className="space-y-3">
-              <Label className="text-[10px] uppercase font-black opacity-40">Afbeelding URL</Label>
+              <Label className="text-[10px] uppercase font-black opacity-40">Afbeelding Kiezen</Label>
               <div className="flex gap-2">
                 <Input 
                   value={state[urlField] || ''} 
                   onChange={e => onChange(urlField, e.target.value)} 
                   className="h-12 rounded-xl bg-black/5 border-none text-xs" 
-                  placeholder="https://..."
+                  placeholder="Plak een link of kies uit archief..."
                 />
                 <button type="button" onClick={() => onPick(urlField)} className="h-12 w-12 rounded-xl border border-black/10 flex items-center justify-center bg-white hover:bg-black/5 transition-colors"><Library className="w-5 h-5" /></button>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-6">
-              <AutonomousSlider label="Opacity" field={opacityField} value={state[opacityField] ?? 10} onChange={onChange} />
+              <AutonomousSlider label="Doorzichtigheid" field={opacityField} value={state[opacityField] ?? 10} onChange={onChange} />
               <AutonomousSlider label="Vervaging" field={blurField} value={state[blurField] ?? 0} max={40} unit="px" onChange={onChange} />
             </div>
 
@@ -256,7 +258,7 @@ export default function AdminPage() {
     if (sessionStorage.getItem('admin_auth') === 'true') setIsAuthorized(true);
   }, []);
 
-  // REALTIME RENDERING LOGIC
+  // REALTIME RENDERING LOGIC - Bereken de styles voor de actieve editor
   const computedPreview = useMemo(() => {
     const pageKey = activeAccordionItem === 'global' ? '' : `_${activeAccordionItem}`;
     
@@ -286,8 +288,8 @@ export default function AdminPage() {
     setIsVerifying(false);
   };
 
-  const handleSaveSettings = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const handleSaveSettings = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!settingsRef) return;
     setIsSavingSettings(true);
     try {
@@ -407,19 +409,19 @@ export default function AdminPage() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
           <TabsList className="bg-muted p-1 rounded-full w-fit mx-auto h-14 border shadow-sm flex flex-nowrap overflow-x-auto no-scrollbar">
             <TabsTrigger value="artworks" className="rounded-full px-8 h-12 uppercase font-black text-[10px] tracking-widest shrink-0">
-              <Palette className="w-4 h-4 mr-2" /> Collectie
+              <Palette className="w-4 h-4 mr-2" /> Schilderijen
             </TabsTrigger>
             <TabsTrigger value="rooms" className="rounded-full px-8 h-12 uppercase font-black text-[10px] tracking-widest shrink-0">
-              <Layers className="w-4 h-4 mr-2" /> Zalen
+              <Layers className="w-4 h-4 mr-2" /> Groepen
             </TabsTrigger>
             <TabsTrigger value="story" className="rounded-full px-8 h-12 uppercase font-black text-[10px] tracking-widest shrink-0">
               <LayoutTemplate className="w-4 h-4 mr-2" /> Story Designer
             </TabsTrigger>
             <TabsTrigger value="translations" className="rounded-full px-8 h-12 uppercase font-black text-[10px] tracking-widest shrink-0">
-              <Languages className="w-4 h-4 mr-2" /> Teksten
+              <Languages className="w-4 h-4 mr-2" /> Tekstjes
             </TabsTrigger>
             <TabsTrigger value="settings" className="rounded-full px-8 h-12 uppercase font-black text-[10px] tracking-widest shrink-0">
-              <Settings className="w-4 h-4 mr-2" /> Stramien
+              <Settings className="w-4 h-4 mr-2" /> Sfeer & Kleuren
             </TabsTrigger>
           </TabsList>
 
@@ -428,7 +430,7 @@ export default function AdminPage() {
                 <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
                    <div className="relative w-full md:w-64">
                       <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-30" />
-                      <Input placeholder="Zoek..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-12 h-12 rounded-full bg-white border-none shadow-inner" />
+                      <Input placeholder="Schilderij zoeken..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-12 h-12 rounded-full bg-white border-none shadow-inner" />
                    </div>
                 </div>
                 <Button onClick={() => { setEditingArtwork(null); setArtworkForm({ title: '', displayTitle: '', slug: '', image: '', roomIds: [], year: '', medium: '', description: '', featured: false, inShop: false, tags: '' }); setIsArtworkDialogOpen(true); }} className="rounded-full px-8 h-12 bg-primary"><Plus className="w-4 h-4 mr-2" /> Nieuw Werk</Button>
@@ -451,8 +453,8 @@ export default function AdminPage() {
           </TabsContent>
 
           <TabsContent value="rooms" className="space-y-8">
-            <div className="flex justify-between items-center"><h2 className="font-headline text-3xl italic opacity-40">Museum Zalen</h2><Button onClick={() => { setEditingRoom(null); setRoomForm({ title: '', slug: '', description: '', order: (rooms?.length || 0) + 1, isPublic: true }); setIsRoomDialogOpen(true); }} className="rounded-full bg-accent text-white"><Plus className="w-4 h-4 mr-2" /> Nieuwe Zaal</Button></div>
-            <div className="grid md:grid-cols-3 gap-6">{rooms?.map((room: any) => (<Card key={room.id} className="p-8 rounded-[2rem] border-none shadow-md bg-white space-y-4"><div><h3 className="font-headline text-2xl italic">{room.title}</h3><p className="text-[10px] font-black uppercase opacity-30">Slug: {room.slug}</p></div><div className="flex gap-2"><Button onClick={() => { setEditingRoom(room); setRoomForm(room); setIsRoomDialogOpen(true); }} variant="outline" className="flex-1 rounded-xl text-[10px] font-black">Bewerken</Button><Button onClick={() => { if(confirm("Zaal verwijderen?")) deleteDoc(doc(firestore!, 'rooms', room.id)); }} variant="ghost" className="text-destructive"><Trash2 className="w-4 h-4" /></Button></div></Card>))}</div>
+            <div className="flex justify-between items-center"><h2 className="font-headline text-3xl italic opacity-40">Groepen (Zalen)</h2><Button onClick={() => { setEditingRoom(null); setRoomForm({ title: '', slug: '', description: '', order: (rooms?.length || 0) + 1, isPublic: true }); setIsRoomDialogOpen(true); }} className="rounded-full bg-accent text-white"><Plus className="w-4 h-4 mr-2" /> Nieuwe Groep</Button></div>
+            <div className="grid md:grid-cols-3 gap-6">{rooms?.map((room: any) => (<Card key={room.id} className="p-8 rounded-[2rem] border-none shadow-md bg-white space-y-4"><div><h3 className="font-headline text-2xl italic">{room.title}</h3><p className="text-[10px] font-black uppercase opacity-30">Link: {room.slug}</p></div><div className="flex gap-2"><Button onClick={() => { setEditingRoom(room); setRoomForm(room); setIsRoomDialogOpen(true); }} variant="outline" className="flex-1 rounded-xl text-[10px] font-black">Naam Veranderen</Button><Button onClick={() => { if(confirm("Zaal verwijderen?")) deleteDoc(doc(firestore!, 'rooms', room.id)); }} variant="ghost" className="text-destructive"><Trash2 className="w-4 h-4" /></Button></div></Card>))}</div>
           </TabsContent>
 
           <TabsContent value="story" className="space-y-12">
@@ -502,31 +504,31 @@ export default function AdminPage() {
                  </div>
                </section>
              ))}
-             <Button onClick={async () => { setIsSavingSettings(true); await updateDoc(settingsRef!, formData); setIsSavingSettings(false); toast({title:"Teksten opgeslagen"}); }} className="w-full h-20 rounded-[2.5rem] bg-primary text-xl font-black uppercase tracking-widest shadow-2xl">Teksten Opslaan</Button>
+             <Button onClick={async () => { setIsSavingSettings(true); await updateDoc(settingsRef!, formData); setIsSavingSettings(false); toast({title:"Teksten opgeslagen"}); }} className="w-full h-20 rounded-[2.5rem] bg-primary text-xl font-black uppercase tracking-widest shadow-2xl">Tekstjes Opslaan</Button>
           </TabsContent>
 
           <TabsContent value="settings">
              <Card className="p-12 rounded-[3rem] bg-white/90 backdrop-blur-xl border-none shadow-xl">
-                <form onSubmit={handleSaveSettings} className="space-y-12">
+                <form onSubmit={(e) => handleSaveSettings(e)} className="space-y-12">
                    <div className="grid md:grid-cols-2 gap-12">
                       <div className="space-y-8">
-                         <div className="flex items-center gap-3 opacity-40"><Type className="w-5 h-5" /><h3 className="text-xs font-black uppercase">Typografie</h3></div>
+                         <div className="flex items-center gap-3 opacity-40"><Type className="w-5 h-5" /><h3 className="text-xs font-black uppercase">Letters</h3></div>
                          <div className="grid gap-6">
                             <div className="grid grid-cols-2 gap-4">
-                               <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Body Font</Label><Select name="bodyFont" value={formData.bodyFont} onValueChange={v => setFormData(p => ({...p, bodyFont: v}))}><SelectTrigger className="h-12 rounded-xl bg-black/5 border-none"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="sans">Modern</SelectItem><SelectItem value="serif">Klassiek</SelectItem></SelectContent></Select></div>
-                               <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Headline Font</Label><Select name="headFont" value={formData.headFont} onValueChange={v => setFormData(p => ({...p, headFont: v}))}><SelectTrigger className="h-12 rounded-xl bg-black/5 border-none"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="sans">Modern</SelectItem><SelectItem value="serif">Klassiek</SelectItem></SelectContent></Select></div>
+                               <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Gewone Letters</Label><Select name="bodyFont" value={formData.bodyFont} onValueChange={v => setFormData(p => ({...p, bodyFont: v}))}><SelectTrigger className="h-12 rounded-xl bg-black/5 border-none"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="sans">Modern</SelectItem><SelectItem value="serif">Klassiek</SelectItem></SelectContent></Select></div>
+                               <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Grote Letters</Label><Select name="headFont" value={formData.headFont} onValueChange={v => setFormData(p => ({...p, headFont: v}))}><SelectTrigger className="h-12 rounded-xl bg-black/5 border-none"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="sans">Modern</SelectItem><SelectItem value="serif">Klassiek</SelectItem></SelectContent></Select></div>
                             </div>
-                            <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Base Size (px)</Label><Input value={formData.baseFontSize || ''} onChange={e => setFormData(p => ({...p, baseFontSize: e.target.value}))} className="h-12 rounded-xl bg-black/5 border-none" /></div>
+                            <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Grootte (Standaard 16)</Label><Input value={formData.baseFontSize || ''} onChange={e => setFormData(p => ({...p, baseFontSize: e.target.value}))} className="h-12 rounded-xl bg-black/5 border-none" /></div>
                          </div>
                       </div>
                       <div className="space-y-8">
-                         <div className="flex items-center gap-3 opacity-40"><Palette className="w-5 h-5" /><h3 className="text-xs font-black uppercase">Kleuren & Raster</h3></div>
+                         <div className="flex items-center gap-3 opacity-40"><Palette className="w-5 h-5" /><h3 className="text-xs font-black uppercase">Kleuren</h3></div>
                          <div className="grid gap-6">
                             <div className="grid grid-cols-2 gap-4">
-                               <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Accent (HSL)</Label><Input value={formData.accentColor || ''} onChange={e => setFormData(p => ({...p, accentColor: e.target.value}))} className="h-12 rounded-xl bg-black/5 border-none" /></div>
-                               <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">BG (HSL)</Label><Input value={formData.bgColor || ''} onChange={e => setFormData(p => ({...p, bgColor: e.target.value}))} className="h-12 rounded-xl bg-black/5 border-none" /></div>
+                               <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Opvallende Kleur</Label><Input value={formData.accentColor || ''} onChange={e => setFormData(p => ({...p, accentColor: e.target.value}))} className="h-12 rounded-xl bg-black/5 border-none" /></div>
+                               <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Achtergrondkleur</Label><Input value={formData.bgColor || ''} onChange={e => setFormData(p => ({...p, bgColor: e.target.value}))} className="h-12 rounded-xl bg-black/5 border-none" /></div>
                             </div>
-                            <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Radius</Label><Input value={formData.radius || ''} onChange={e => setFormData(p => ({...p, radius: e.target.value}))} className="h-12 rounded-xl bg-black/5 border-none" /></div>
+                            <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Ronde Hoekjes</Label><Input value={formData.radius || ''} onChange={e => setFormData(p => ({...p, radius: e.target.value}))} className="h-12 rounded-xl bg-black/5 border-none" /></div>
                          </div>
                       </div>
                    </div>
@@ -535,11 +537,11 @@ export default function AdminPage() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3 opacity-40">
                           <Monitor className="w-5 h-5" />
-                          <h3 className="text-xs font-black uppercase">Achtergrond & Realtime Preview</h3>
+                          <h3 className="text-xs font-black uppercase">Achtergrond & Sfeer</h3>
                         </div>
                         <div className="flex items-center gap-2 px-4 py-2 bg-accent/5 rounded-full border border-accent/10">
                            <Sparkles className="w-3 h-3 text-accent" />
-                           <span className="text-[9px] font-black uppercase tracking-widest text-accent">Realtime WYSIWYG Actief</span>
+                           <span className="text-[9px] font-black uppercase tracking-widest text-accent">Realtime Preview Actief</span>
                         </div>
                       </div>
 
@@ -552,19 +554,19 @@ export default function AdminPage() {
                       >
                          <BackgroundEditorSection 
                           pageId="global" 
-                          label="Globale Achtergrond (Basis)" 
+                          label="Overal hetzelfde (Basis)" 
                           state={editorState}
                           onChange={updateEditorField}
                           onPick={(f: string) => { setPickerTarget(f); setIsImagePickerOpen(true); }}
                          />
                          <div className="pt-4 pb-2 border-b border-black/5 px-4">
-                            <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-30">Pagina Overrides</p>
+                            <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-30">Aparte Sfeer per Pagina</p>
                          </div>
                          {PAGES.map(page => (
                            <BackgroundEditorSection 
                             key={page.id} 
                             pageId={page.id} 
-                            label={`${page.label} Override`}
+                            label={`${page.label} Sfeer`}
                             state={editorState}
                             onChange={updateEditorField}
                             onPick={(f: string) => { setPickerTarget(f); setIsImagePickerOpen(true); }}
@@ -575,7 +577,7 @@ export default function AdminPage() {
 
                    <Button type="submit" disabled={isSavingSettings} className="w-full h-20 rounded-[2.5rem] bg-primary text-xl font-black uppercase shadow-2xl group">
                       {isSavingSettings ? <Loader2 className="animate-spin mr-3" /> : <Save className="w-5 h-5 mr-3 group-hover:scale-110 transition-transform" />} 
-                      Alle Instellingen Definitief Opslaan
+                      Alle Instellingen Opslaan
                    </Button>
                 </form>
              </Card>
@@ -586,7 +588,7 @@ export default function AdminPage() {
       <Dialog open={isImagePickerOpen} onOpenChange={setIsImagePickerOpen}>
         <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto rounded-[2.5rem] p-10">
           <DialogHeader>
-            <DialogTitle className="font-headline text-3xl italic">Kies uit Archief</DialogTitle>
+            <DialogTitle className="font-headline text-3xl italic">Kies een Schilderij</DialogTitle>
           </DialogHeader>
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4 py-8">
             {filteredAndSortedArtworks.map((art: any) => (
@@ -612,14 +614,14 @@ export default function AdminPage() {
 
       <Dialog open={isArtworkDialogOpen} onOpenChange={setIsArtworkDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-[2rem] p-8">
-          <DialogHeader><DialogTitle className="font-headline text-2xl italic">{editingArtwork ? 'Bewerken' : 'Nieuw'}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="font-headline text-2xl italic">{editingArtwork ? 'Aanpassen' : 'Nieuw Schilderij'}</DialogTitle></DialogHeader>
           <div className="grid gap-6 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Titel</Label><Input value={artworkForm.title} onChange={e => setArtworkForm({...artworkForm, title: e.target.value})} className="rounded-xl h-12" /></div>
-              <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Afbeelding URL</Label><Input value={artworkForm.image || ''} onChange={e => setArtworkForm({...artworkForm, image: e.target.value})} className="rounded-xl h-12" /></div>
+              <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Schilderij Foto Link</Label><Input value={artworkForm.image || ''} onChange={e => setArtworkForm({...artworkForm, image: e.target.value})} className="rounded-xl h-12" /></div>
             </div>
             <div className="space-y-2">
-              <Label className="text-[10px] uppercase font-black opacity-40">Zalen</Label>
+              <Label className="text-[10px] uppercase font-black opacity-40">Groepen waar hij in moet</Label>
               <div className="flex flex-wrap gap-2 p-3 bg-black/5 rounded-xl">
                 {rooms?.map((r: any) => (
                   <label key={r.id} className={cn("px-4 py-1.5 rounded-full border text-[10px] font-black uppercase cursor-pointer transition-all", artworkForm.roomIds?.includes(r.id) ? "bg-accent text-white border-accent" : "bg-white border-black/5 opacity-50")}>
@@ -629,30 +631,30 @@ export default function AdminPage() {
                 ))}
               </div>
             </div>
-            <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Tags</Label><Input value={artworkForm.tags} onChange={e => setArtworkForm({...artworkForm, tags: e.target.value})} className="rounded-xl h-12" /></div>
+            <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Extra zoekwoorden (Tags)</Label><Input value={artworkForm.tags} onChange={e => setArtworkForm({...artworkForm, tags: e.target.value})} className="rounded-xl h-12" /></div>
           </div>
           <DialogFooter><Button onClick={async () => {
             const clean = sanitizeArtwork({...artworkForm, tags: artworkForm.tags.split(',').map(t => t.trim()).filter(Boolean)});
             if(editingArtwork) await updateDoc(doc(firestore!, 'artworks', editingArtwork.id), clean);
             else await addDoc(collection(firestore!, 'artworks'), { ...clean, createdAt: serverTimestamp() });
             setIsArtworkDialogOpen(false); toast({title:"Opgeslagen"});
-          }} className="w-full h-14 rounded-2xl bg-primary">Opslaan</Button></DialogFooter>
+          }} className="w-full h-14 rounded-2xl bg-primary">Schilderij Opslaan</Button></DialogFooter>
         </DialogContent>
       </Dialog>
 
       <Dialog open={isRoomDialogOpen} onOpenChange={setIsRoomDialogOpen}>
         <DialogContent className="max-w-xl rounded-[2rem] p-8">
-          <DialogHeader><DialogTitle className="font-headline text-2xl italic">Zaal</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="font-headline text-2xl italic">Groep (Zaal)</DialogTitle></DialogHeader>
           <div className="grid gap-6 py-4">
-            <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Titel</Label><Input value={roomForm.title} onChange={e => setRoomForm({...roomForm, title: e.target.value})} className="rounded-xl h-12" /></div>
-            <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Slug (URL)</Label><Input value={roomForm.slug} onChange={e => setRoomForm({...roomForm, slug: e.target.value.toLowerCase().replace(/ /g, '-')})} className="rounded-xl h-12" /></div>
-            <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Volgorde</Label><Input type="number" value={roomForm.order} onChange={e => setRoomForm({...roomForm, order: parseInt(e.target.value, 10)})} className="rounded-xl h-12" /></div>
+            <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Naam</Label><Input value={roomForm.title} onChange={e => setRoomForm({...roomForm, title: e.target.value})} className="rounded-xl h-12" /></div>
+            <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Naam in de link</Label><Input value={roomForm.slug} onChange={e => setRoomForm({...roomForm, slug: e.target.value.toLowerCase().replace(/ /g, '-')})} className="rounded-xl h-12" /></div>
+            <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Volgorde (Getal)</Label><Input type="number" value={roomForm.order} onChange={e => setRoomForm({...roomForm, order: parseInt(e.target.value, 10)})} className="rounded-xl h-12" /></div>
           </div>
           <DialogFooter><Button onClick={async () => {
             if(editingRoom) await updateDoc(doc(firestore!, 'rooms', editingRoom.id), {...roomForm, updatedAt: serverTimestamp()});
             else await addDoc(collection(firestore!, 'rooms'), { ...roomForm, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
-            setIsRoomDialogOpen(false); toast({title:"Zaal opgeslagen"});
-          }} className="w-full h-14 rounded-2xl bg-primary">Zaal Opslaan</Button></DialogFooter>
+            setIsRoomDialogOpen(false); toast({title:"Groep opgeslagen"});
+          }} className="w-full h-14 rounded-2xl bg-primary">Groep Opslaan</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

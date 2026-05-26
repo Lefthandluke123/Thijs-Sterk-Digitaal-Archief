@@ -6,24 +6,24 @@ import { doc } from 'firebase/firestore';
 import { usePathname } from 'next/navigation';
 
 /**
- * @fileOverview BackgroundLayer: Beheert de achtergrondafbeelding op de hele site.
- * STABILIZED VERSION: Gebruikt alleen Firestore waarden als we NIET in de admin zijn.
+ * @fileOverview BackgroundLayer: Beheert de atmosferische achtergrond op de hele site.
+ * Deze component luistert naar de realtime settings in Firestore.
  */
 export function BackgroundLayer() {
   const firestore = useFirestore();
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
 
-  const settingsRef = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return doc(firestore, 'settings', 'site');
-  }, [firestore]);
-
-  const { data: settings } = useDoc(settingsRef);
-
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const settingsRef = useMemoFirebase(() => {
+    if (!firestore || !mounted) return null;
+    return doc(firestore, 'settings', 'site');
+  }, [firestore, mounted]);
+
+  const { data: settings } = useDoc(settingsRef);
 
   // Bepaal de huidige page-key op basis van het pad
   const getPageKey = () => {
@@ -42,34 +42,32 @@ export function BackgroundLayer() {
   useEffect(() => {
     if (!mounted || !settings) return;
 
-    // Als we in de admin zijn, laten we de AdminPage de visuele rendering doen 
-    // om conflicten tussen de editor-state en de database-state te voorkomen.
+    // Als we in de admin zijn, wordt de preview afgehandeld door de AdminPage zelf
+    // om conflicten tussen editor-state en database-state te voorkomen.
     if (pathname.startsWith('/admin')) return;
 
     const pageKey = getPageKey();
+    const prefix = pageKey === 'global' ? '' : `_${pageKey}`;
     
-    // 1. URL bepalen
-    const bgUrl = settings[`backgroundImageUrl_${pageKey}`] || settings.backgroundImageUrl || '';
+    // 1. Bron van waarheid: Check eerst de pagina-override, dan de globale waarde
+    const bgUrl = settings[`backgroundImageUrl${prefix}`] || settings.backgroundImageUrl || '';
     
-    // 2. Opacity bepalen
-    let opacity = settings[`backgroundOpacity_${pageKey}`] ?? settings.backgroundOpacity ?? (bgUrl ? 10 : 0);
-    
-    // 3. Blur bepalen
-    let blur = settings[`backgroundBlur_${pageKey}`] ?? settings.backgroundBlur ?? 0;
-    
-    // 4. Scale bepalen
-    let scale = settings[`backgroundScale_${pageKey}`] ?? settings.backgroundScale ?? 100;
+    // 2. Waarden bepalen met correcte fallbacks
+    const opacity = settings[`backgroundOpacity${prefix}`] ?? settings.backgroundOpacity ?? 10;
+    const blur = settings[`backgroundBlur${prefix}`] ?? settings.backgroundBlur ?? 0;
+    const scale = settings[`backgroundScale${prefix}`] ?? settings.backgroundScale ?? 100;
+    const brightness = settings[`backgroundBrightness${prefix}`] ?? settings.backgroundBrightness ?? 100;
 
-    // 5. Brightness bepalen
-    let brightness = settings[`backgroundBrightness_${pageKey}`] ?? settings.backgroundBrightness ?? 100;
-
-    // Injecteer in :root voor de .bg-fade-layer class
+    // 3. Toepassen op de CSS variabelen in de :root
     const root = document.documentElement;
     root.style.setProperty('--bg-image', bgUrl ? `url("${bgUrl}")` : 'none');
     root.style.setProperty('--bg-opacity', (opacity / 100).toString());
     root.style.setProperty('--bg-blur', `${blur}px`);
     root.style.setProperty('--bg-scale', (scale / 100).toString());
     root.style.setProperty('--bg-brightness', (brightness / 100).toString());
+
+    // Debug log voor publieke sync
+    console.log(`[BACKGROUND SYNC] Page: ${pageKey} | Image: ${bgUrl ? 'YES' : 'NONE'} | Opacity: ${opacity}%`);
 
   }, [settings, pathname, mounted]);
 

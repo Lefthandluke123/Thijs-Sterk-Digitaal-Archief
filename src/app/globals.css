@@ -26,7 +26,7 @@
     --ring: 142 30% 25%;
     --radius: 2rem; 
 
-    /* Realtime Background Variables */
+    /* Realtime Background Variables - Default Values */
     --bg-opacity: 0.1;
     --bg-blur: 0px;
     --bg-scale: 1;
@@ -51,6 +51,14 @@
     /* Body MOET transparant zijn om de z-index: -1 laag te zien */
     background-color: transparent !important;
     min-height: 100vh;
+  }
+
+  /* 
+     FORCEER TRANSPARANTIE OP PAGINA WRAPPERS 
+     Zorgt dat de BackgroundLayer (z-index -1) altijd zichtbaar is.
+  */
+  main, [role="main"] {
+    background-color: transparent !important;
   }
   
   h1, h2, h3, h4, h5, h6 {
