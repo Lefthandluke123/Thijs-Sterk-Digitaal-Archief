@@ -40,9 +40,20 @@
   * {
     @apply border-border transition-all duration-300;
   }
-  body {
-    @apply bg-background text-foreground font-body antialiased selection:bg-accent/15 selection:text-accent;
+  
+  /* 
+     STRICT LAYERING FIX: 
+     Background color goes on HTML so z-index: -1 on children of body works correctly.
+  */
+  html {
+    background-color: hsl(var(--background));
   }
+
+  body {
+    @apply text-foreground font-body antialiased selection:bg-accent/15 selection:text-accent;
+    background-color: transparent;
+  }
+  
   h1, h2, h3, h4, h5, h6 {
     @apply font-headline text-foreground font-medium tracking-tight;
   }
@@ -73,7 +84,6 @@
 
   .bg-fade-layer {
     @apply fixed inset-0 z-[-1] pointer-events-none;
-    /* Gebruik standaard CSS eigenschappen i.p.v. arbitrary tailwind voor stabiliteit */
     transition: opacity 0.4s ease, filter 0.4s ease, transform 0.4s ease, background-image 1s ease;
     background-size: cover;
     background-position: center;

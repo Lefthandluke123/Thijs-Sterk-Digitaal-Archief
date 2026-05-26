@@ -109,7 +109,6 @@ const AutonomousSlider = ({ label, field, value, onChange, min = 0, max = 100, s
         value={value ?? 0}
         onChange={(e) => {
           const val = Number(e.target.value);
-          console.log("slider change", field, val);
           onChange(field, val);
         }}
         className="w-full h-1.5 bg-black/5 rounded-full appearance-none cursor-pointer accent-accent"
@@ -184,7 +183,7 @@ const BackgroundEditorSection = ({ pageId, label, state, onChange, onPick }: any
               <div 
                 className="absolute inset-0 transition-all duration-200 pointer-events-none"
                 style={{ 
-                  backgroundImage: state[urlField] ? `url(${state[urlField]})` : 'none',
+                  backgroundImage: state[urlField] ? `url("${state[urlField]}")` : 'none',
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
                   backgroundRepeat: 'no-repeat',
@@ -257,26 +256,17 @@ export default function AdminPage() {
     if (sessionStorage.getItem('admin_auth') === 'true') setIsAuthorized(true);
   }, []);
 
-  // REALTIME RENDERING LOGIC & DEBUGGING
+  // REALTIME RENDERING LOGIC
   const computedPreview = useMemo(() => {
     const pageKey = activeAccordionItem === 'global' ? '' : `_${activeAccordionItem}`;
     
-    const computed = {
+    return {
       image: editorState[`backgroundImageUrl${pageKey}`] || editorState.backgroundImageUrl || '',
       opacity: editorState[`backgroundOpacity${pageKey}`] ?? editorState.backgroundOpacity ?? 10,
       blur: editorState[`backgroundBlur${pageKey}`] ?? editorState.backgroundBlur ?? 0,
       scale: editorState[`backgroundScale${pageKey}`] ?? editorState.backgroundScale ?? 100,
       brightness: editorState[`backgroundBrightness${pageKey}`] ?? editorState.backgroundBrightness ?? 100,
     };
-
-    console.log("previewState", activeAccordionItem, computed);
-    console.log("computed styles", {
-      opacity: computed.opacity / 100,
-      blur: computed.blur,
-      brightness: computed.brightness
-    });
-
-    return computed;
   }, [editorState, activeAccordionItem]);
 
   const updateEditorField = (field: string, value: any) => {
@@ -316,9 +306,7 @@ export default function AdminPage() {
     setPickerTarget(null);
   };
 
-  // ---------------------------------------------------------------------------
   // STORIES LOGIC
-  // ---------------------------------------------------------------------------
   const [selectedStoryId, setSelectedStoryId] = useState<string>('beatrijs');
   const [storyNodes, setStoryNodes] = useState<StoryNode[]>([]);
   const [isSavingStory, setIsSavingStory] = useState(false);
@@ -369,18 +357,18 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8f9fa] pt-32 px-8">
+    <div className="min-h-screen pt-32 px-8 bg-transparent">
       {/* 
           STRICT REALTIME FULL-SITE PREVIEW LAYER 
-          Dit element simuleert de website achtergrond en reageert DIRECT op de previewState.
+          This layer sits behind the admin UI.
       */}
       <div 
-        key={JSON.stringify(computedPreview)} // Forceer rerender bij state wijziging voor maximale betrouwbaarheid
+        key={JSON.stringify(computedPreview)}
         className="fixed inset-0 z-[-1] pointer-events-none transition-all duration-200"
         style={{
           opacity: computedPreview.opacity / 100,
           filter: `blur(${computedPreview.blur}px) brightness(${computedPreview.brightness}%)`,
-          backgroundImage: computedPreview.image ? `url(${computedPreview.image})` : 'none',
+          backgroundImage: computedPreview.image ? `url("${computedPreview.image}")` : 'none',
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
@@ -404,7 +392,7 @@ export default function AdminPage() {
               <span className="text-[9px] font-black uppercase tracking-widest opacity-30">Status</span>
               <div className="flex items-center gap-2">
                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                 <span className="text-[10px] font-bold text-accent">Realtime DTP Actief</span>
+                 <span className="text-[10px] font-bold text-accent">Realtime Preview Actief</span>
               </div>
            </div>
            <Link href="/" className="text-[11px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 hover:text-accent transition-colors">
