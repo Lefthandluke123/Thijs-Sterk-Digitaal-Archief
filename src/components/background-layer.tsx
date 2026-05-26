@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation';
 
 /**
  * @fileOverview BackgroundLayer: Beheert de achtergrondafbeelding op de hele site.
+ * STABILIZED VERSION: Gebruikt alleen Firestore waarden als we NIET in de admin zijn.
  */
 export function BackgroundLayer() {
   const firestore = useFirestore();
@@ -42,7 +43,7 @@ export function BackgroundLayer() {
     if (!mounted || !settings) return;
 
     // Als we in de admin zijn, laten we de AdminPage de CSS variabelen bepalen 
-    // voor de live-preview van de sliders. We doen hier dus niets.
+    // voor de live-preview van de sliders. We doen hier dus niets om 'snapping back' te voorkomen.
     if (pathname.startsWith('/admin')) return;
 
     const pageKey = getPageKey();
@@ -59,12 +60,16 @@ export function BackgroundLayer() {
     // 4. Scale bepalen
     let scale = settings[`backgroundScale_${pageKey}`] ?? settings.backgroundScale ?? 100;
 
+    // 5. Brightness bepalen
+    let brightness = settings[`backgroundBrightness_${pageKey}`] ?? settings.backgroundBrightness ?? 100;
+
     // Injecteer in :root voor de .bg-fade-layer class
     const root = document.documentElement;
     root.style.setProperty('--bg-image', bgUrl ? `url("${bgUrl}")` : 'none');
     root.style.setProperty('--bg-opacity', (opacity / 100).toString());
     root.style.setProperty('--bg-blur', `${blur}px`);
     root.style.setProperty('--bg-scale', (scale / 100).toString());
+    root.style.setProperty('--bg-brightness', (brightness / 100).toString());
 
   }, [settings, pathname, mounted]);
 

@@ -41,7 +41,8 @@ import {
   Library,
   LayoutTemplate,
   Languages,
-  RotateCcw
+  RotateCcw,
+  Sun
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -55,7 +56,6 @@ import {
   DialogFooter
 } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
 import { verifyAdminPassword } from '@/lib/admin-actions';
 import { cn } from '@/lib/utils';
 import { sortArtworksByTitle, sanitizeArtwork, normalizeArtwork, cleanString, cleanArray } from '@/lib/museum-utils';
@@ -104,57 +104,50 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState('artworks');
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Background Settings State (Controlled)
-  const [bgUrls, setBgUrls] = useState<Record<string, string>>({});
-  const [opacities, setOpacities] = useState<Record<string, number>>({});
-  const [blurs, setBlurs] = useState<Record<string, number>>({});
-  const [scales, setScales] = useState<Record<string, number>>({});
+  // ---------------------------------------------------------------------------
+  // AUTONOMOUS REALTIME BACKGROUND STATE
+  // ---------------------------------------------------------------------------
+  const [editorState, setEditorState] = useState<Record<string, any>>({});
+  const [previewState, setPreviewState] = useState<Record<string, any>>({});
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
 
+  // Sync editor to preview
+  useEffect(() => {
+    setPreviewState(editorState);
+    if (Object.keys(editorState).length > 0) {
+      console.log("BACKGROUND EDITOR SYNC", editorState);
+    }
+  }, [editorState]);
+
+  // Image Picker Logic
   const [isImagePickerOpen, setIsImagePickerOpen] = useState(false);
   const [pickerTarget, setPickerTarget] = useState<string | null>(null);
 
-  // Story Designer State
+  const selectImageFromArchive = (imageUrl: string | null) => {
+    if (pickerTarget && imageUrl) {
+      setEditorState(prev => ({ ...prev, [pickerTarget]: imageUrl }));
+    }
+    setIsImagePickerOpen(false);
+    setPickerTarget(null);
+  };
+
+  // ---------------------------------------------------------------------------
+  // REST OF THE ADMIN LOGIC
+  // ---------------------------------------------------------------------------
   const [selectedStoryId, setSelectedStoryId] = useState<string>('beatrijs');
   const [storyNodes, setStoryNodes] = useState<StoryNode[]>([]);
   const [isSavingStory, setIsSavingStory] = useState(false);
-
-  // Translation State
   const [translatingField, setTranslatingField] = useState<string | null>(null);
   const [formData, setFormData] = useState<Record<string, string>>({});
-
-  // Bulk State
   const [selectedArtIds, setSelectedArtIds] = useState<string[]>([]);
-  const [isBulkEditConfirmOpen, setIsBulkEditConfirmOpen] = useState(false);
-  const [bulkForm, setBulkForm] = useState({
-    addRoomIds: [] as string[],
-    addTags: '',
-    featured: 'keep' as 'keep' | 'yes' | 'no',
-    inShop: 'keep' as 'keep' | 'yes' | 'no'
-  });
-  const [isProcessing, setIsProcessing] = useState(false);
-
-  // Settings State
-  const [isSavingSettings, setIsSavingSettings] = useState(false);
-
-  // Dialog States
   const [isRoomDialogOpen, setIsRoomDialogOpen] = useState(false);
   const [editingRoom, setEditingRoom] = useState<any>(null);
   const [roomForm, setRoomForm] = useState({ title: '', slug: '', description: '', order: 0, isPublic: true });
-
   const [isArtworkDialogOpen, setIsArtworkDialogOpen] = useState(false);
   const [editingArtwork, setEditingArtwork] = useState<any>(null);
   const [artworkForm, setArtworkForm] = useState({ 
-    title: '', 
-    displayTitle: '',
-    slug: '', 
-    image: '', 
-    roomIds: [] as string[],
-    year: '', 
-    medium: '', 
-    description: '',
-    featured: false,
-    inShop: false,
-    tags: ''
+    title: '', displayTitle: '', slug: '', image: '', roomIds: [] as string[],
+    year: '', medium: '', description: '', featured: false, inShop: false, tags: ''
   });
 
   useEffect(() => {
@@ -179,54 +172,22 @@ export default function AdminPage() {
   }, [firestore, isAuthorized]);
   const { data: settings } = useDoc(settingsRef);
 
-  const storyRef = useMemoFirebase(() => {
-    if (!firestore || !isAuthorized || !selectedStoryId) return null;
-    return doc(firestore, 'stories', selectedStoryId);
-  }, [firestore, isAuthorized, selectedStoryId]);
-  const { data: storyData } = useDoc(storyRef);
-
   useEffect(() => {
     if (settings) {
       setFormData(settings as Record<string, string>);
-      
-      const urls: Record<string, string> = { global: settings.backgroundImageUrl || '' };
-      const ops: Record<string, number> = { global: typeof settings.backgroundOpacity === 'number' ? settings.backgroundOpacity : 10 };
-      const blrs: Record<string, number> = { global: typeof settings.backgroundBlur === 'number' ? settings.backgroundBlur : 0 };
-      const scls: Record<string, number> = { global: typeof settings.backgroundScale === 'number' ? settings.backgroundScale : 100 };
-
+      // Initialize editor state from database
+      const initialState: Record<string, any> = {};
+      const fields = ['backgroundImageUrl', 'backgroundOpacity', 'backgroundBlur', 'backgroundScale', 'backgroundBrightness'];
+      fields.forEach(f => { initialState[f] = settings[f] ?? (f === 'backgroundOpacity' ? 10 : f === 'backgroundScale' ? 100 : f === 'backgroundBrightness' ? 100 : 0); });
       PAGES.forEach(p => {
-        urls[p.id] = settings[`backgroundImageUrl_${p.id}`] || '';
-        ops[p.id] = typeof settings[`backgroundOpacity_${p.id}`] === 'number' ? settings[`backgroundOpacity_${p.id}`] : (settings.backgroundOpacity ?? 10);
-        blrs[p.id] = typeof settings[`backgroundBlur_${p.id}`] === 'number' ? settings[`backgroundBlur_${p.id}`] : (settings.backgroundBlur ?? 0);
-        scls[p.id] = typeof settings[`backgroundScale_${p.id}`] === 'number' ? settings[`backgroundScale_${p.id}`] : (settings.backgroundScale ?? 100);
+        fields.forEach(f => {
+          const key = `${f}_${p.id}`;
+          initialState[key] = settings[key] ?? initialState[f.replace(`_${p.id}`, '')];
+        });
       });
-
-      setBgUrls(urls);
-      setOpacities(ops);
-      setBlurs(blrs);
-      setScales(scls);
+      setEditorState(initialState);
     }
   }, [settings]);
-
-  // Realtime CSS Variable Sync for Live Preview
-  useEffect(() => {
-    const root = document.documentElement;
-    // We tonen in de admin preview standaard de 'global' settings op de echte achtergrond
-    // of we laten het over aan de preview-container. 
-    // Om de hele site live te laten reageren terwijl we editen:
-    root.style.setProperty('--bg-image', bgUrls.global ? `url("${bgUrls.global}")` : 'none');
-    root.style.setProperty('--bg-opacity', ((opacities.global ?? 10) / 100).toString());
-    root.style.setProperty('--bg-blur', `${blurs.global ?? 0}px`);
-    root.style.setProperty('--bg-scale', ((scales.global ?? 100) / 100).toString());
-  }, [bgUrls.global, opacities.global, blurs.global, scales.global]);
-
-  useEffect(() => {
-    if (storyData?.nodes) {
-      setStoryNodes(storyData.nodes);
-    } else {
-      setStoryNodes([]);
-    }
-  }, [storyData]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -239,6 +200,21 @@ export default function AdminPage() {
       toast({ variant: "destructive", title: "Fout", description: "Wachtwoord onjuist." });
     }
     setIsVerifying(false);
+  };
+
+  const handleSaveSettings = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!settingsRef) return;
+    setIsSavingSettings(true);
+    const updates = { ...formData, ...editorState, updatedAt: serverTimestamp() };
+    try {
+      await updateDoc(settingsRef, updates);
+      toast({ title: "Instellingen opgeslagen" });
+    } catch (e) {
+      toast({ variant: "destructive", title: "Fout bij opslaan" });
+    } finally {
+      setIsSavingSettings(false);
+    }
   };
 
   const filteredAndSortedArtworks = useMemo(() => {
@@ -254,164 +230,6 @@ export default function AdminPage() {
     }
     return list.sort(sortArtworksByTitle);
   }, [rawArtworks, searchTerm]);
-
-  const handleSaveSettings = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!settingsRef) return;
-    setIsSavingSettings(true);
-    
-    const formFields = new FormData(e.currentTarget);
-    const updates: any = { updatedAt: serverTimestamp() };
-    
-    const fields = ['bgColor', 'primaryColor', 'accentColor', 'baseFontSize', 'lineHeight', 'headingScale', 'containerWidth', 'radius', 'bodyFont', 'headFont'];
-    fields.forEach(f => {
-      const val = formFields.get(f);
-      if (val !== null) updates[f] = String(val);
-    });
-
-    // Sla waarden op uit de controlled state
-    updates['backgroundImageUrl'] = bgUrls.global || "";
-    updates['backgroundOpacity'] = Number(opacities.global ?? 10);
-    updates['backgroundBlur'] = Number(blurs.global ?? 0);
-    updates['backgroundScale'] = Number(scales.global ?? 100);
-
-    PAGES.forEach(p => {
-      updates[`backgroundImageUrl_${p.id}`] = bgUrls[p.id] || "";
-      updates[`backgroundOpacity_${p.id}`] = Number(opacities[p.id] ?? 10);
-      updates[`backgroundBlur_${p.id}`] = Number(blurs[p.id] ?? 0);
-      updates[`backgroundScale_${p.id}`] = Number(scales[p.id] ?? 100);
-    });
-
-    try {
-      await updateDoc(settingsRef, updates);
-      toast({ title: "Instellingen opgeslagen" });
-    } catch (e) {
-      toast({ variant: "destructive", title: "Fout bij opslaan" });
-    } finally {
-      setIsSavingSettings(false);
-    }
-  };
-
-  const resetBg = (pageId: string) => {
-    if (pageId === 'global') {
-      setBgUrls(prev => ({ ...prev, global: '' }));
-      setOpacities(prev => ({ ...prev, global: 10 }));
-      setBlurs(prev => ({ ...prev, global: 0 }));
-      setScales(prev => ({ ...prev, global: 100 }));
-    } else {
-      setBgUrls(prev => ({ ...prev, [pageId]: '' }));
-      setOpacities(prev => ({ ...prev, [pageId]: opacities.global }));
-      setBlurs(prev => ({ ...prev, [pageId]: blurs.global }));
-      setScales(prev => ({ ...prev, [pageId]: scales.global }));
-    }
-    toast({ title: "Preview gereset" });
-  };
-
-  const handleTranslateField = async (fieldId: string) => {
-    const sourceText = formData[fieldId];
-    if (!sourceText) return toast({ variant: "destructive", title: "Leeg veld" });
-    setTranslatingField(fieldId);
-    const newTranslations: Record<string, string> = { ...formData };
-    try {
-      for (const lang of LANGUAGES.filter(l => !l.isSource)) {
-        const result = await translateMuseumText({ text: sourceText, targetLanguage: lang.label, context: `Veld: ${fieldId}` });
-        newTranslations[`${fieldId}_${lang.code}`] = result.translatedText;
-      }
-      setFormData(newTranslations);
-      toast({ title: "Vertaling voltooid" });
-    } catch (error: any) {
-      toast({ variant: "destructive", title: "AI Fout", description: error.message });
-    } finally {
-      setTranslatingField(null);
-    }
-  };
-
-  const handleSaveStory = async () => {
-    if (!storyRef) return;
-    setIsSavingStory(true);
-    try {
-      await setDoc(storyRef, { nodes: storyNodes, updatedAt: serverTimestamp() }, { merge: true });
-      toast({ title: "Story layout opgeslagen" });
-    } catch (error) {
-      toast({ variant: "destructive", title: "Fout bij opslaan" });
-    } finally {
-      setIsSavingStory(false);
-    }
-  };
-
-  const openImagePicker = (targetField: string) => {
-    setPickerTarget(targetField);
-    setIsImagePickerOpen(true);
-  };
-
-  const selectImageFromArchive = (imageUrl: string | null) => {
-    if (pickerTarget && imageUrl) {
-      const pageId = pickerTarget.replace('backgroundImageUrl_', '');
-      const key = pageId === 'backgroundImageUrl' ? 'global' : pageId;
-      setBgUrls(prev => ({ ...prev, [key]: imageUrl }));
-    }
-    setIsImagePickerOpen(false);
-    setPickerTarget(null);
-  };
-
-  const handleBulkSave = async () => {
-    if (!firestore || !selectedArtIds.length) return;
-    setIsProcessing(true);
-    const batch = writeBatch(firestore);
-    const tagsToAdd = cleanArray(bulkForm.addTags.split(','));
-    const roomIdsToAdd = cleanArray(bulkForm.addRoomIds);
-    for (const id of selectedArtIds) {
-      const artRef = doc(firestore, 'artworks', id);
-      const updateData: any = { updatedAt: serverTimestamp() };
-      if (roomIdsToAdd.length > 0) updateData.roomIds = arrayUnion(...roomIdsToAdd);
-      if (tagsToAdd.length > 0) updateData.tags = arrayUnion(...tagsToAdd);
-      if (bulkForm.featured !== 'keep') updateData.featured = bulkForm.featured === 'yes';
-      if (bulkForm.inShop !== 'keep') updateData.inShop = bulkForm.inShop === 'yes';
-      batch.update(artRef, updateData);
-    }
-    try {
-      await batch.commit();
-      toast({ title: "Bulk update voltooid" });
-      setSelectedArtIds([]);
-      setIsBulkEditConfirmOpen(false);
-    } catch (e) {
-      toast({ variant: "destructive", title: "Batch fout" });
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const handleSaveRoom = async () => {
-    if (!firestore) return;
-    const title = cleanString(roomForm.title);
-    const slug = cleanString(roomForm.slug);
-    if (!title || !slug) {
-      toast({ variant: "destructive", title: "Validatiefout" });
-      return;
-    }
-    const data = { ...roomForm, title, slug, description: cleanString(roomForm.description) || "", updatedAt: serverTimestamp() };
-    try {
-      if (editingRoom) await updateDoc(doc(firestore, 'rooms', editingRoom.id), data);
-      else await addDoc(collection(firestore, 'rooms'), { ...data, createdAt: serverTimestamp() });
-      setIsRoomDialogOpen(false);
-      toast({ title: "Zaal opgeslagen" });
-    } catch (e) { toast({ variant: "destructive", title: "Fout" }); }
-  };
-
-  const handleSaveArtwork = async () => {
-    if (!firestore) return;
-    if (!cleanString(artworkForm.title)) {
-      toast({ variant: "destructive", title: "Naam verplicht" });
-      return;
-    }
-    const cleanData = sanitizeArtwork({ ...artworkForm, tags: artworkForm.tags.split(',') });
-    try {
-      if (editingArtwork) await updateDoc(doc(firestore, 'artworks', editingArtwork.id), cleanData);
-      else await addDoc(collection(firestore, 'artworks'), { ...cleanData, createdAt: serverTimestamp() });
-      setIsArtworkDialogOpen(false);
-      toast({ title: "Opgeslagen" });
-    } catch (e) { toast({ variant: "destructive", title: "Fout" }); }
-  };
 
   if (!isAuthorized) {
     return (
@@ -432,121 +250,152 @@ export default function AdminPage() {
     );
   }
 
-  const categories = Array.from(new Set(CONTENT_FIELDS.map(f => f.category)));
+  // ---------------------------------------------------------------------------
+  // RENDERER COMPONENTS
+  // ---------------------------------------------------------------------------
 
-  const BackgroundEditorSection = ({ pageId, label }: { pageId: string, label: string }) => (
-    <AccordionItem value={pageId} className="border-b border-black/5">
-      <AccordionTrigger className="font-bold text-sm uppercase">
-        <div className="flex items-center gap-3">
-          <Monitor className="w-4 h-4 opacity-30" />
-          {label}
-        </div>
-      </AccordionTrigger>
-      <AccordionContent className="space-y-8 pt-6 pb-10">
-        <div className="grid md:grid-cols-2 gap-10">
-          <div className="space-y-6">
-            <div className="space-y-3">
-              <Label className="text-[10px] uppercase font-black opacity-40">Afbeelding URL</Label>
-              <div className="flex gap-2">
-                <Input 
-                  value={bgUrls[pageId] || ''} 
-                  onChange={e => setBgUrls(p => ({...p, [pageId]: e.target.value}))} 
-                  className="h-12 rounded-xl bg-black/5 border-none text-xs" 
-                  placeholder="https://..."
-                />
-                <Button type="button" onClick={() => openImagePicker(pageId === 'global' ? 'backgroundImageUrl' : `backgroundImageUrl_${pageId}`)} size="icon" variant="outline" className="h-12 w-12 rounded-xl shrink-0"><Library className="w-5 h-5" /></Button>
-              </div>
-            </div>
+  const AutonomousSlider = ({ label, field, min = 0, max = 100, step = 1, unit = "%" }: { label: string, field: string, min?: number, max?: number, step?: number, unit?: string }) => (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <Label className="text-[10px] uppercase font-black opacity-40">{label}</Label>
+        <span className="text-[10px] font-bold bg-accent/10 text-accent px-2 py-0.5 rounded-full">
+          {editorState[field] ?? 0}{unit}
+        </span>
+      </div>
+      <input 
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={editorState[field] ?? 0}
+        onChange={(e) => setEditorState(prev => ({ ...prev, [field]: Number(e.target.value) }))}
+        className="w-full h-1.5 bg-black/5 rounded-full appearance-none cursor-pointer accent-accent"
+      />
+    </div>
+  );
 
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <Label className="text-[10px] uppercase font-black opacity-40">Opacity</Label>
-                  <span className="text-[10px] font-bold bg-accent/10 text-accent px-2 py-0.5 rounded-full">{opacities[pageId] ?? 10}%</span>
+  const BackgroundEditorSection = ({ pageId, label }: { pageId: string, label: string }) => {
+    const isGlobal = pageId === 'global';
+    const prefix = isGlobal ? '' : `_${pageId}`;
+    const urlField = `backgroundImageUrl${prefix}`;
+    const opacityField = `backgroundOpacity${prefix}`;
+    const blurField = `backgroundBlur${prefix}`;
+    const scaleField = `backgroundScale${prefix}`;
+    const brightnessField = `backgroundBrightness${prefix}`;
+
+    return (
+      <AccordionItem value={pageId} className="border-b border-black/5">
+        <AccordionTrigger className="font-bold text-sm uppercase">
+          <div className="flex items-center gap-3">
+            <Monitor className="w-4 h-4 opacity-30" />
+            {label}
+          </div>
+        </AccordionTrigger>
+        <AccordionContent className="space-y-8 pt-6 pb-10">
+          <div className="grid md:grid-cols-2 gap-10">
+            <div className="space-y-6">
+              <div className="space-y-3">
+                <Label className="text-[10px] uppercase font-black opacity-40">Afbeelding URL</Label>
+                <div className="flex gap-2">
+                  <Input 
+                    value={editorState[urlField] || ''} 
+                    onChange={e => setEditorState(p => ({...p, [urlField]: e.target.value}))} 
+                    className="h-12 rounded-xl bg-black/5 border-none text-xs" 
+                    placeholder="https://..."
+                  />
+                  <Button type="button" onClick={() => { setPickerTarget(urlField); setIsImagePickerOpen(true); }} size="icon" variant="outline" className="h-12 w-12 rounded-xl shrink-0"><Library className="w-5 h-5" /></Button>
                 </div>
-                <Slider 
-                  value={[opacities[pageId] ?? 10]} 
-                  onValueChange={(v) => setOpacities(p => ({...p, [pageId]: v[0]}))} 
-                  max={100} 
-                  step={1} 
-                />
               </div>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <Label className="text-[10px] uppercase font-black opacity-40">Vervaging (Blur)</Label>
-                  <span className="text-[10px] font-bold bg-accent/10 text-accent px-2 py-0.5 rounded-full">{blurs[pageId] ?? 0}px</span>
-                </div>
-                <Slider 
-                  value={[blurs[pageId] ?? 0]} 
-                  onValueChange={(v) => setBlurs(p => ({...p, [pageId]: v[0]}))} 
-                  max={40} 
-                  step={1} 
-                />
+
+              <div className="grid grid-cols-2 gap-6">
+                <AutonomousSlider label="Opacity" field={opacityField} />
+                <AutonomousSlider label="Vervaging" field={blurField} max={40} unit="px" />
               </div>
+
+              <div className="grid grid-cols-2 gap-6">
+                <AutonomousSlider label="Zoom / Schaal" field={scaleField} min={100} max={150} unit="%" />
+                <AutonomousSlider label="Helderheid" field={brightnessField} min={0} max={200} unit="%" />
+              </div>
+
+              <Button 
+                type="button" 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => {
+                  const defaults: any = { [urlField]: '', [opacityField]: 10, [blurField]: 0, [scaleField]: 100, [brightnessField]: 100 };
+                  setEditorState(prev => ({ ...prev, ...defaults }));
+                }}
+                className="text-[9px] font-black uppercase tracking-widest opacity-40 hover:opacity-100 p-0 h-auto"
+              >
+                <RotateCcw className="w-3 h-3 mr-2" /> Reset deze pagina
+              </Button>
             </div>
 
             <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <Label className="text-[10px] uppercase font-black opacity-40">Zoom / Schaal</Label>
-                <span className="text-[10px] font-bold bg-accent/10 text-accent px-2 py-0.5 rounded-full">{scales[pageId] ?? 100}%</span>
-              </div>
-              <Slider 
-                value={[scales[pageId] ?? 100]} 
-                onValueChange={(v) => setScales(p => ({...p, [pageId]: v[0]}))} 
-                min={100} 
-                max={150} 
-                step={1} 
-              />
-            </div>
-
-            <Button 
-              type="button" 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => resetBg(pageId)}
-              className="text-[9px] font-black uppercase tracking-widest opacity-40 hover:opacity-100 p-0 h-auto"
-            >
-              <RotateCcw className="w-3 h-3 mr-2" /> Reset deze pagina
-            </Button>
-          </div>
-
-          <div className="space-y-4">
-            <Label className="text-[10px] uppercase font-black opacity-40">Live Preview</Label>
-            <div className="relative aspect-video rounded-2xl overflow-hidden border-4 border-white shadow-xl bg-black/5 group">
-              {bgUrls[pageId] ? (
+              <Label className="text-[10px] uppercase font-black opacity-40">Live Kaart Preview</Label>
+              <div className="relative aspect-video rounded-2xl overflow-hidden border-4 border-white shadow-xl bg-black/5 group">
                 <div 
                   className="absolute inset-0 bg-cover bg-center transition-all duration-300"
                   style={{ 
-                    backgroundImage: `url(${bgUrls[pageId]})`,
-                    opacity: (opacities[pageId] ?? 10) / 100,
-                    filter: `blur(${blurs[pageId] ?? 0}px)`,
-                    transform: `scale(${(scales[pageId] ?? 100) / 100})`
+                    backgroundImage: editorState[urlField] ? `url(${editorState[urlField]})` : 'none',
+                    opacity: (previewState[opacityField] ?? 10) / 100,
+                    filter: `blur(${previewState[blurField] ?? 0}px) brightness(${previewState[brightnessField] ?? 100}%)`,
+                    transform: `scale(${(previewState[scaleField] ?? 100) / 100})`
                   }}
                 />
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center opacity-10">
-                  <ImageIcon className="w-12 h-12" />
+                {!editorState[urlField] && (
+                  <div className="absolute inset-0 flex items-center justify-center opacity-10">
+                    <ImageIcon className="w-12 h-12" />
+                  </div>
+                )}
+                <div className="absolute bottom-3 left-3 bg-white/80 backdrop-blur-md px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border border-black/5">
+                  Lokaal Stramien
                 </div>
-              )}
-              <div className="absolute bottom-3 left-3 bg-white/80 backdrop-blur-md px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border border-black/5">
-                Stramien Preview
               </div>
             </div>
           </div>
-        </div>
-      </AccordionContent>
-    </AccordionItem>
-  );
+        </AccordionContent>
+      </AccordionItem>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-[#f8f9fa] pt-32 px-8">
+      {/* 
+          REALTIME SITE-WIDE STYLE INJECTION 
+          This ensures that as you slide, the ACTUAL site background updates.
+      */}
+      <style>{`
+        :root {
+          --bg-image: ${editorState.backgroundImageUrl ? `url("${editorState.backgroundImageUrl}")` : 'none'};
+          --bg-opacity: ${(editorState.backgroundOpacity ?? 10) / 100};
+          --bg-blur: ${editorState.backgroundBlur ?? 0}px;
+          --bg-scale: ${(editorState.backgroundScale ?? 100) / 100};
+          --bg-brightness: ${(editorState.backgroundBrightness ?? 100) / 100};
+        }
+        ${PAGES.map(p => {
+          const url = editorState[`backgroundImageUrl_${p.id}`] || editorState.backgroundImageUrl;
+          const op = editorState[`backgroundOpacity_${p.id}`] ?? editorState.backgroundOpacity ?? 10;
+          const bl = editorState[`backgroundBlur_${p.id}`] ?? editorState.backgroundBlur ?? 0;
+          const sc = editorState[`backgroundScale_${p.id}`] ?? editorState.backgroundScale ?? 100;
+          const br = editorState[`backgroundBrightness_${p.id}`] ?? editorState.backgroundBrightness ?? 100;
+          return `
+            .bg-preview-${p.id} {
+              --bg-image: ${url ? `url("${url}")` : 'none'};
+              --bg-opacity: ${op / 100};
+              --bg-blur: ${bl}px;
+              --bg-scale: ${sc / 100};
+              --bg-brightness: ${br / 100};
+            }
+          `;
+        }).join('\n')}
+      `}</style>
+
       <header className="fixed top-0 left-0 right-0 h-24 bg-white/80 backdrop-blur-md border-b z-40 px-8 flex items-center justify-between">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-4">
             <LayoutDashboard className="w-6 h-6 text-accent" />
-            <div>
-              <h1 className="font-headline text-2xl italic">Museum Beheer</h1>
-            </div>
+            <h1 className="font-headline text-2xl italic">Museum Beheer</h1>
           </div>
           <div className="h-8 w-px bg-black/5 mx-2" />
           <Button onClick={() => setActiveTab('story')} variant="outline" className="rounded-full bg-accent text-white hover:bg-accent/90 border-none shadow-lg px-6">
@@ -558,7 +407,7 @@ export default function AdminPage() {
               <span className="text-[9px] font-black uppercase tracking-widest opacity-30">Status</span>
               <div className="flex items-center gap-2">
                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                 <span className="text-[10px] font-bold text-accent">Realtime Preview Actief</span>
+                 <span className="text-[10px] font-bold text-accent">Realtime DTP Actief</span>
               </div>
            </div>
            <Link href="/" className="text-[11px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 hover:text-accent transition-colors">
@@ -587,37 +436,39 @@ export default function AdminPage() {
             </TabsTrigger>
           </TabsList>
 
+          {/* ... Other tabs (Rooms, Stories, Translations) ... */}
+
           <TabsContent value="artworks" className="space-y-8">
-            <div className="flex flex-col md:flex-row gap-6 justify-between items-start md:items-center bg-white/50 backdrop-blur-md p-6 rounded-[2.5rem] border sticky top-24 z-30 shadow-sm">
-              <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
-                 <div className="relative w-full md:w-64">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-30" />
-                    <Input placeholder="Zoek..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-12 h-12 rounded-full bg-white border-none shadow-inner" />
-                 </div>
-                 {selectedArtIds.length > 0 && <Button size="sm" onClick={() => setIsBulkEditConfirmOpen(true)} className="rounded-full bg-accent text-white"><Settings2 className="w-4 h-4 mr-2" /> Bulk ({selectedArtIds.length})</Button>}
-              </div>
-              <Button onClick={() => { setEditingArtwork(null); setArtworkForm({ title: '', displayTitle: '', slug: '', image: '', roomIds: [], year: '', medium: '', description: '', featured: false, inShop: false, tags: '' }); setIsArtworkDialogOpen(true); }} className="rounded-full px-8 h-12 bg-primary"><Plus className="w-4 h-4 mr-2" /> Nieuw Werk</Button>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
-               {filteredAndSortedArtworks.map((art: any) => (
-                 <Card key={art.id} className={cn("p-4 rounded-2xl border-none shadow-md group relative", selectedArtIds.includes(art.id) && "ring-2 ring-accent")}>
-                    <button onClick={() => setSelectedArtIds(p => p.includes(art.id) ? p.filter(i => i !== art.id) : [...p, art.id])} className={cn("absolute top-4 left-4 z-20 w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all", selectedArtIds.includes(art.id) ? "bg-accent border-accent text-white" : "bg-white/80 border-black/10 opacity-0 group-hover:opacity-100")}><CheckSquare className="w-4 h-4" /></button>
-                    <div className="aspect-square rounded-xl overflow-hidden bg-black/5 mb-4 flex items-center justify-center">
-                      {art.image ? <img src={art.image} className="w-full h-full object-cover" alt={art.title} /> : <ImageIcon className="w-8 h-8 opacity-10" />}
-                    </div>
-                    <h3 className="font-bold text-sm truncate">{art.displayTitle || art.title}</h3>
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                       <Button size="sm" onClick={() => { setEditingArtwork(art); setArtworkForm({ ...art, tags: (art.tags || []).join(', ') }); setIsArtworkDialogOpen(true); }} className="rounded-full bg-white text-black"><Edit3 className="w-4 h-4" /></Button>
-                       <Button size="sm" variant="destructive" onClick={() => { if(confirm("Wissen?")) deleteDoc(doc(firestore, 'artworks', art.id)); }} className="rounded-full"><Trash2 className="w-4 h-4" /></Button>
-                    </div>
-                 </Card>
-               ))}
-            </div>
+             <div className="flex flex-col md:flex-row gap-6 justify-between items-start md:items-center bg-white/50 backdrop-blur-md p-6 rounded-[2.5rem] border sticky top-24 z-30 shadow-sm">
+                <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
+                   <div className="relative w-full md:w-64">
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-30" />
+                      <Input placeholder="Zoek..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-12 h-12 rounded-full bg-white border-none shadow-inner" />
+                   </div>
+                   {selectedArtIds.length > 0 && <Button size="sm" className="rounded-full bg-accent text-white"><Settings2 className="w-4 h-4 mr-2" /> Bulk ({selectedArtIds.length})</Button>}
+                </div>
+                <Button onClick={() => { setEditingArtwork(null); setArtworkForm({ title: '', displayTitle: '', slug: '', image: '', roomIds: [], year: '', medium: '', description: '', featured: false, inShop: false, tags: '' }); setIsArtworkDialogOpen(true); }} className="rounded-full px-8 h-12 bg-primary"><Plus className="w-4 h-4 mr-2" /> Nieuw Werk</Button>
+             </div>
+             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+                {filteredAndSortedArtworks.map((art: any) => (
+                  <Card key={art.id} className={cn("p-4 rounded-2xl border-none shadow-md group relative", selectedArtIds.includes(art.id) && "ring-2 ring-accent")}>
+                     <button onClick={() => setSelectedArtIds(p => p.includes(art.id) ? p.filter(i => i !== art.id) : [...p, art.id])} className={cn("absolute top-4 left-4 z-20 w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all", selectedArtIds.includes(art.id) ? "bg-accent border-accent text-white" : "bg-white/80 border-black/10 opacity-0 group-hover:opacity-100")}><CheckSquare className="w-4 h-4" /></button>
+                     <div className="aspect-square rounded-xl overflow-hidden bg-black/5 mb-4 flex items-center justify-center">
+                       {art.image ? <img src={art.image} className="w-full h-full object-cover" alt={art.title} /> : <ImageIcon className="w-8 h-8 opacity-10" />}
+                     </div>
+                     <h3 className="font-bold text-sm truncate">{art.displayTitle || art.title}</h3>
+                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                        <Button size="sm" onClick={() => { setEditingArtwork(art); setArtworkForm({ ...art, tags: (art.tags || []).join(', ') }); setIsArtworkDialogOpen(true); }} className="rounded-full bg-white text-black"><Edit3 className="w-4 h-4" /></Button>
+                        <Button size="sm" variant="destructive" onClick={() => { if(confirm("Wissen?")) deleteDoc(doc(firestore!, 'artworks', art.id)); }} className="rounded-full"><Trash2 className="w-4 h-4" /></Button>
+                     </div>
+                  </Card>
+                ))}
+             </div>
           </TabsContent>
 
           <TabsContent value="rooms" className="space-y-8">
             <div className="flex justify-between items-center"><h2 className="font-headline text-3xl italic opacity-40">Museum Zalen</h2><Button onClick={() => { setEditingRoom(null); setRoomForm({ title: '', slug: '', description: '', order: (rooms?.length || 0) + 1, isPublic: true }); setIsRoomDialogOpen(true); }} className="rounded-full bg-accent text-white"><Plus className="w-4 h-4 mr-2" /> Nieuwe Zaal</Button></div>
-            <div className="grid md:grid-cols-3 gap-6">{rooms?.map((room: any) => (<Card key={room.id} className="p-8 rounded-[2rem] border-none shadow-md bg-white space-y-4"><div><h3 className="font-headline text-2xl italic">{room.title}</h3><p className="text-[10px] font-black uppercase opacity-30">Slug: {room.slug}</p></div><div className="flex gap-2"><Button onClick={() => { setEditingRoom(room); setRoomForm(room); setIsRoomDialogOpen(true); }} variant="outline" className="flex-1 rounded-xl text-[10px] font-black">Bewerken</Button><Button onClick={() => { if(confirm("Zaal verwijderen?")) deleteDoc(doc(firestore, 'rooms', room.id)); }} variant="ghost" className="text-destructive"><Trash2 className="w-4 h-4" /></Button></div></Card>))}</div>
+            <div className="grid md:grid-cols-3 gap-6">{rooms?.map((room: any) => (<Card key={room.id} className="p-8 rounded-[2rem] border-none shadow-md bg-white space-y-4"><div><h3 className="font-headline text-2xl italic">{room.title}</h3><p className="text-[10px] font-black uppercase opacity-30">Slug: {room.slug}</p></div><div className="flex gap-2"><Button onClick={() => { setEditingRoom(room); setRoomForm(room); setIsRoomDialogOpen(true); }} variant="outline" className="flex-1 rounded-xl text-[10px] font-black">Bewerken</Button><Button onClick={() => { if(confirm("Zaal verwijderen?")) deleteDoc(doc(firestore!, 'rooms', room.id)); }} variant="ghost" className="text-destructive"><Trash2 className="w-4 h-4" /></Button></div></Card>))}</div>
           </TabsContent>
 
           <TabsContent value="story" className="space-y-12">
@@ -632,7 +483,7 @@ export default function AdminPage() {
                         <SelectTrigger className="w-[240px] h-14 rounded-2xl bg-black/5 border-none text-sm font-bold uppercase"><SelectValue placeholder="Pagina..." /></SelectTrigger>
                         <SelectContent>{PAGES.filter(p => p.id.includes('beatrijs') || p.id.includes('hanneke') || p.id.includes('peter') || p.id.includes('leo')).map(p => (<SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>))}</SelectContent>
                       </Select>
-                      <Button onClick={handleSaveStory} disabled={isSavingStory} className="h-14 px-8 rounded-2xl bg-primary shadow-lg">{isSavingStory ? <Loader2 className="animate-spin" /> : <Save className="w-4 h-4 mr-2" />} Opslaan</Button>
+                      <Button onClick={async () => { setIsSavingStory(true); await setDoc(doc(firestore!, 'stories', selectedStoryId), { nodes: storyNodes, updatedAt: serverTimestamp() }, { merge: true }); setIsSavingStory(false); toast({title:"Story opgeslagen"}); }} disabled={isSavingStory} className="h-14 px-8 rounded-2xl bg-primary shadow-lg">{isSavingStory ? <Loader2 className="animate-spin" /> : <Save className="w-4 h-4 mr-2" />} Opslaan</Button>
                    </div>
                 </div>
                 <StoryEditor nodes={storyNodes} onChange={(data) => setStoryNodes(data.nodes)} />
@@ -640,13 +491,24 @@ export default function AdminPage() {
           </TabsContent>
 
           <TabsContent value="translations" className="space-y-12">
-             {categories.map(cat => (
+             {Array.from(new Set(CONTENT_FIELDS.map(f => f.category))).map(cat => (
                <section key={cat} className="space-y-8">
                  <h2 className="font-headline text-3xl italic opacity-40 border-l-4 border-accent pl-6">{cat}</h2>
                  <div className="grid gap-8">
                    {CONTENT_FIELDS.filter(f => f.category === cat).map(field => (
                      <Card key={field.id} className="p-8 rounded-[2.5rem] border-none shadow-xl bg-white space-y-6">
-                       <div className="flex justify-between items-start"><Label className="text-[11px] font-black uppercase text-accent/40">{field.label}</Label><Button size="sm" variant="secondary" onClick={() => handleTranslateField(field.id)} disabled={translatingField === field.id} className="rounded-full px-6">{translatingField === field.id ? <Loader2 className="animate-spin mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />} AI Vertaal</Button></div>
+                       <div className="flex justify-between items-start"><Label className="text-[11px] font-black uppercase text-accent/40">{field.label}</Label><Button size="sm" variant="secondary" onClick={async () => {
+                         setTranslatingField(field.id);
+                         const sourceText = formData[field.id];
+                         if(!sourceText) return;
+                         const newTrans = { ...formData };
+                         for(const l of LANGUAGES.filter(l => !l.isSource)) {
+                           const res = await translateMuseumText({ text: sourceText, targetLanguage: l.label });
+                           newTrans[`${field.id}_${l.code}`] = res.translatedText;
+                         }
+                         setFormData(newTrans);
+                         setTranslatingField(null);
+                       }} disabled={translatingField === field.id} className="rounded-full px-6">{translatingField === field.id ? <Loader2 className="animate-spin mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />} AI Vertaal</Button></div>
                        <div className="space-y-4">
                          <div className="space-y-2"><span className="text-[9px] font-black bg-primary text-primary-foreground px-3 py-1 rounded-full uppercase">Bron</span>{field.type === 'textarea' ? <Textarea value={formData[field.id] || ''} onChange={e => setFormData({ ...formData, [field.id]: e.target.value })} className="bg-black/5 min-h-[140px] rounded-2xl" /> : <Input value={formData[field.id] || ''} onChange={e => setFormData({ ...formData, [field.id]: e.target.value })} className="bg-black/5 h-14 rounded-xl" />}</div>
                          <div className="grid md:grid-cols-4 gap-6">{LANGUAGES.filter(l => !l.isSource).map(lang => (<div key={lang.code} className="space-y-2"><span className="text-[9px] font-black bg-accent/10 text-accent px-3 py-1 rounded-full uppercase">{lang.code}</span>{field.type === 'textarea' ? <Textarea value={formData[`${field.id}_${lang.code}`] || ''} onChange={e => setFormData({ ...formData, [`${field.id}_${lang.code}`]: e.target.value })} className="border-2 border-black/5 min-h-[100px] rounded-2xl text-xs" /> : <Input value={formData[`${field.id}_${lang.code}`] || ''} onChange={e => setFormData({ ...formData, [`${field.id}_${lang.code}`]: e.target.value })} className="border-2 border-black/5 h-12 rounded-xl text-xs" />}</div>))}</div>
@@ -667,20 +529,20 @@ export default function AdminPage() {
                          <div className="flex items-center gap-3 opacity-40"><Type className="w-5 h-5" /><h3 className="text-xs font-black uppercase">Typografie</h3></div>
                          <div className="grid gap-6">
                             <div className="grid grid-cols-2 gap-4">
-                               <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Body Font</Label><Select name="bodyFont" defaultValue={settings?.bodyFont || 'sans'}><SelectTrigger className="h-12 rounded-xl bg-black/5 border-none"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="sans">Modern</SelectItem><SelectItem value="serif">Klassiek</SelectItem></SelectContent></Select></div>
-                               <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Headline Font</Label><Select name="headFont" defaultValue={settings?.headFont || 'serif'}><SelectTrigger className="h-12 rounded-xl bg-black/5 border-none"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="sans">Modern</SelectItem><SelectItem value="serif">Klassiek</SelectItem></SelectContent></Select></div>
+                               <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Body Font</Label><Select name="bodyFont" value={formData.bodyFont} onValueChange={v => setFormData(p => ({...p, bodyFont: v}))}><SelectTrigger className="h-12 rounded-xl bg-black/5 border-none"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="sans">Modern</SelectItem><SelectItem value="serif">Klassiek</SelectItem></SelectContent></Select></div>
+                               <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Headline Font</Label><Select name="headFont" value={formData.headFont} onValueChange={v => setFormData(p => ({...p, headFont: v}))}><SelectTrigger className="h-12 rounded-xl bg-black/5 border-none"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="sans">Modern</SelectItem><SelectItem value="serif">Klassiek</SelectItem></SelectContent></Select></div>
                             </div>
-                            <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Base Size (px)</Label><Input name="baseFontSize" defaultValue={settings?.baseFontSize || '16px'} className="h-12 rounded-xl bg-black/5 border-none" /></div>
+                            <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Base Size (px)</Label><Input value={formData.baseFontSize || ''} onChange={e => setFormData(p => ({...p, baseFontSize: e.target.value}))} className="h-12 rounded-xl bg-black/5 border-none" /></div>
                          </div>
                       </div>
                       <div className="space-y-8">
                          <div className="flex items-center gap-3 opacity-40"><Palette className="w-5 h-5" /><h3 className="text-xs font-black uppercase">Kleuren & Raster</h3></div>
                          <div className="grid gap-6">
                             <div className="grid grid-cols-2 gap-4">
-                               <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Accent (HSL)</Label><Input name="accentColor" defaultValue={settings?.accentColor || '142 30% 25%'} className="h-12 rounded-xl bg-black/5 border-none" /></div>
-                               <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">BG (HSL)</Label><Input name="bgColor" defaultValue={settings?.bgColor || '40 15% 97%'} className="h-12 rounded-xl bg-black/5 border-none" /></div>
+                               <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Accent (HSL)</Label><Input value={formData.accentColor || ''} onChange={e => setFormData(p => ({...p, accentColor: e.target.value}))} className="h-12 rounded-xl bg-black/5 border-none" /></div>
+                               <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">BG (HSL)</Label><Input value={formData.bgColor || ''} onChange={e => setFormData(p => ({...p, bgColor: e.target.value}))} className="h-12 rounded-xl bg-black/5 border-none" /></div>
                             </div>
-                            <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Radius</Label><Input name="radius" defaultValue={settings?.radius || '2rem'} className="h-12 rounded-xl bg-black/5 border-none" /></div>
+                            <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Radius</Label><Input value={formData.radius || ''} onChange={e => setFormData(p => ({...p, radius: e.target.value}))} className="h-12 rounded-xl bg-black/5 border-none" /></div>
                          </div>
                       </div>
                    </div>
@@ -693,7 +555,7 @@ export default function AdminPage() {
                         </div>
                         <div className="flex items-center gap-2 px-4 py-2 bg-accent/5 rounded-full border border-accent/10">
                            <Sparkles className="w-3 h-3 text-accent" />
-                           <span className="text-[9px] font-black uppercase tracking-widest text-accent">WYSIWYG Editor Actief</span>
+                           <span className="text-[9px] font-black uppercase tracking-widest text-accent">Realtime Preview Actief</span>
                         </div>
                       </div>
 
@@ -765,7 +627,12 @@ export default function AdminPage() {
             </div>
             <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Tags</Label><Input value={artworkForm.tags} onChange={e => setArtworkForm({...artworkForm, tags: e.target.value})} className="rounded-xl h-12" /></div>
           </div>
-          <DialogFooter><Button onClick={handleSaveArtwork} className="w-full h-14 rounded-2xl bg-primary">Opslaan</Button></DialogFooter>
+          <DialogFooter><Button onClick={async () => {
+            const clean = sanitizeArtwork({...artworkForm, tags: artworkForm.tags.split(',').map(t => t.trim()).filter(Boolean)});
+            if(editingArtwork) await updateDoc(doc(firestore!, 'artworks', editingArtwork.id), clean);
+            else await addDoc(collection(firestore!, 'artworks'), { ...clean, createdAt: serverTimestamp() });
+            setIsArtworkDialogOpen(false); toast({title:"Opgeslagen"});
+          }} className="w-full h-14 rounded-2xl bg-primary">Opslaan</Button></DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -777,7 +644,11 @@ export default function AdminPage() {
             <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Slug (URL)</Label><Input value={roomForm.slug} onChange={e => setRoomForm({...roomForm, slug: e.target.value.toLowerCase().replace(/ /g, '-')})} className="rounded-xl h-12" /></div>
             <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Volgorde</Label><Input type="number" value={roomForm.order} onChange={e => setRoomForm({...roomForm, order: parseInt(e.target.value, 10)})} className="rounded-xl h-12" /></div>
           </div>
-          <DialogFooter><Button onClick={handleSaveRoom} className="w-full h-14 rounded-2xl bg-primary">Zaal Opslaan</Button></DialogFooter>
+          <DialogFooter><Button onClick={async () => {
+            if(editingRoom) await updateDoc(doc(firestore!, 'rooms', editingRoom.id), {...roomForm, updatedAt: serverTimestamp()});
+            else await addDoc(collection(firestore!, 'rooms'), { ...roomForm, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+            setIsRoomDialogOpen(false); toast({title:"Zaal opgeslagen"});
+          }} className="w-full h-14 rounded-2xl bg-primary">Zaal Opslaan</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

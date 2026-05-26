@@ -31,6 +31,7 @@
     --bg-opacity: 0.1;
     --bg-blur: 0px;
     --bg-scale: 1;
+    --bg-brightness: 1;
     --bg-image: none;
   }
 }
@@ -72,12 +73,13 @@
 
   .bg-fade-layer {
     @apply fixed inset-0 z-[-1] pointer-events-none;
+    /* Gebruik standaard CSS eigenschappen i.p.v. arbitrary tailwind voor stabiliteit */
     transition: opacity 0.4s ease, filter 0.4s ease, transform 0.4s ease, background-image 1s ease;
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
     opacity: var(--bg-opacity);
-    filter: blur(var(--bg-blur));
+    filter: blur(var(--bg-blur)) brightness(var(--bg-brightness));
     transform: scale(var(--bg-scale));
     background-image: var(--bg-image);
   }
