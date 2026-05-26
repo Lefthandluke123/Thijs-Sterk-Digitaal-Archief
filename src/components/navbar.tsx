@@ -30,10 +30,11 @@ import { MuseumGuide } from './museum-guide';
 import { LanguageSwitcher } from './language-switcher';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
+import { cleanString } from '@/lib/museum-utils';
 
 /**
  * @fileOverview Navbar: Centrale navigatie met ondersteuning voor zalen, community en nalatenschap.
- * Bevat een Matrix Easter Egg (4x klikken op het logo).
+ * Bevat een Matrix Easter Egg (4x klikken op het logo) die nu de kleuren van het logo gebruikt.
  */
 
 const NavLink = ({ href, children, active }: { href: string; children: React.ReactNode; active: boolean }) => (
@@ -61,6 +62,7 @@ function NavbarContent() {
   // Easter Egg State
   const [logoClicks, setLogoClicks] = useState(0);
   const clickTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const logoRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -103,7 +105,7 @@ function NavbarContent() {
   ];
 
   // Easter Egg Handler
-  const handleLogoClick = (e: React.MouseEvent) => {
+  const handleLogoClick = async (e: React.MouseEvent) => {
     const newCount = logoClicks + 1;
     setLogoClicks(newCount);
 
@@ -115,8 +117,38 @@ function NavbarContent() {
 
     if (newCount >= 4) {
       setLogoClicks(0);
-      window.dispatchEvent(new CustomEvent('trigger-simulation'));
+      
+      // Extraheer kleuren uit het logo voor de regen
+      const logoUrl = siteSettings?.logoUrl || "/logo.png";
+      const colors = await extractColors(logoUrl);
+      
+      window.dispatchEvent(new CustomEvent('trigger-simulation', { detail: { colors } }));
     }
+  };
+
+  const extractColors = (imgUrl: string): Promise<string[]> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = "Anonymous";
+      img.src = imgUrl;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return resolve(["#0F0"]);
+        canvas.width = 10;
+        canvas.height = 10;
+        ctx.drawImage(img, 0, 0, 10, 10);
+        const data = ctx.getImageData(0, 0, 10, 10).data;
+        const colors = [];
+        for (let i = 0; i < data.length; i += 16) {
+          if (data[i+3] > 50) { // Alleen niet-transparante kleuren
+            colors.push(`rgb(${data[i]}, ${data[i+1]}, ${data[i+2]})`);
+          }
+        }
+        resolve(colors.length > 0 ? colors : ["#0F0"]);
+      };
+      img.onerror = () => resolve(["#0F0"]);
+    });
   };
 
   return (
@@ -129,6 +161,7 @@ function NavbarContent() {
             <div className="flex items-center gap-3 md:gap-6 group cursor-pointer" onClick={handleLogoClick}>
               <Link href="/" className="contents">
                 <img 
+                  ref={logoRef}
                   src={siteSettings?.logoUrl || "/logo.png"} 
                   alt="Logo" 
                   className="h-10 md:h-20 w-auto object-contain transition-all duration-1000 group-hover:scale-110 flex-shrink-0 animate-logo-float" 
