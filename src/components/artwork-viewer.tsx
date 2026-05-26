@@ -158,22 +158,25 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
         </div>
       </div>
 
-      {/* Interaction Hint Overlay (Subtle) */}
-      <div className="absolute top-32 left-1/2 -translate-x-1/2 z-[10040] flex flex-col items-center gap-3 pointer-events-none animate-in fade-in slide-in-from-top-4 duration-1000">
-         <div className="bg-white/60 backdrop-blur-xl border border-black/5 px-6 py-2 rounded-full flex items-center gap-6 shadow-sm">
+      {/* Interaction Hint Overlay (Subtle) - Moved to bottom area */}
+      <div className={cn(
+        "absolute bottom-20 left-1/2 -translate-x-1/2 z-[10040] flex flex-col items-center gap-3 pointer-events-none animate-in fade-in slide-in-from-bottom-4 duration-1000",
+        showMetadata && "opacity-0"
+      )}>
+         <div className="bg-white/40 backdrop-blur-xl border border-black/5 px-6 py-1.5 rounded-full flex items-center gap-6 shadow-sm">
             <div className="flex items-center gap-2">
-               <MousePointer2 className="w-3 h-3 opacity-40" />
-               <span className="text-[9px] font-bold uppercase tracking-widest opacity-40">Klik: Zoom</span>
+               <MousePointer2 className="w-3 h-3 opacity-30" />
+               <span className="text-[8px] font-bold uppercase tracking-widest opacity-40">Klik: Zoom</span>
             </div>
-            <div className="w-1 h-1 bg-black/10 rounded-full" />
+            <div className="w-0.5 h-0.5 bg-black/10 rounded-full" />
             <div className="flex items-center gap-2">
-               <span className="text-[9px] font-black px-1.5 py-0.5 bg-black/5 rounded border border-black/10 text-accent">Cmd+Klik</span>
-               <span className="text-[9px] font-bold uppercase tracking-widest opacity-40">Uitzoomen</span>
+               <span className="text-[8px] font-black px-1 py-0.5 bg-black/5 rounded border border-black/10 text-accent/60">Cmd+Klik</span>
+               <span className="text-[8px] font-bold uppercase tracking-widest opacity-40">Uitzoomen</span>
             </div>
-            <div className="w-1 h-1 bg-black/10 rounded-full" />
+            <div className="w-0.5 h-0.5 bg-black/10 rounded-full" />
             <div className="flex items-center gap-2">
-               <Move className="w-3 h-3 opacity-40" />
-               <span className="text-[9px] font-bold uppercase tracking-widest opacity-40">Slepen: Bewegen</span>
+               <Move className="w-3 h-3 opacity-30" />
+               <span className="text-[8px] font-bold uppercase tracking-widest opacity-40">Slepen: Bewegen</span>
             </div>
          </div>
       </div>
