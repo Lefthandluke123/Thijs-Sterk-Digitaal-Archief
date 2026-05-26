@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -154,7 +153,7 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
           <h2 className="text-lg md:text-xl font-headline font-light italic text-foreground leading-tight">{artwork.displayTitle || artwork.title}</h2>
           <div className="h-px w-12 bg-accent/20 mx-auto" />
           <p className="text-sm md:text-base text-muted-foreground font-light leading-relaxed max-w-2xl mx-auto italic">
-            {artwork.description || 'Ontdek de essentie van licht en ruimte.'}
+            {artwork.description || 'Beschrijving volgt...'}
           </p>
         </div>
       </div>

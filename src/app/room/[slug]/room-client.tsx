@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -233,7 +232,7 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
               </div>
 
               <p className="text-base text-muted-foreground font-light leading-relaxed text-center italic">
-                {activeItem.description || 'De essentie van licht en ruimte in een verstild Noord-Hollands landschap.'}
+                {activeItem.description || 'Beschrijving volgt...'}
               </p>
             </div>
           </div>

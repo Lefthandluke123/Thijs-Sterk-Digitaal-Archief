@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useRef, useState, useEffect } from 'react';
@@ -18,7 +17,7 @@ export function ArtworkClientPage({ artwork }: { artwork: any }) {
     setShareUrl(window.location.href);
   }, []);
 
-  const audioUrl = artwork.audioUrls?.[language] || artwork.audioUrls?.['nl'];
+  const audioUrl = artwork.audioUrls?.[language] || artwork.audioUrls?.[ 'nl'];
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const toggleAudio = () => {
@@ -132,7 +131,7 @@ export function ArtworkClientPage({ artwork }: { artwork: any }) {
           </div>
 
           <p className="text-sm md:text-base text-muted-foreground font-light leading-relaxed max-w-2xl mx-auto">
-            {artwork.description || 'Ontdek de essentie van licht en ruimte in dit meesterlijke werk van Thijs Sterk.'}
+            {artwork.description || 'Beschrijving volgt...'}
           </p>
 
           <div className="pt-8">
