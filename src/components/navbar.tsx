@@ -19,7 +19,9 @@ import {
   Menu,
   Filter,
   LayoutDashboard,
-  Users
+  Users,
+  History,
+  Sparkles
 } from 'lucide-react';
 import { useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, doc, orderBy } from 'firebase/firestore';
@@ -30,7 +32,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/s
 import { Button } from '@/components/ui/button';
 
 /**
- * @fileOverview Navbar: Centrale navigatie met ondersteuning voor zalen en community.
+ * @fileOverview Navbar: Centrale navigatie met ondersteuning voor zalen, community en nalatenschap.
  */
 
 const NavLink = ({ href, children, active }: { href: string; children: React.ReactNode; active: boolean }) => (
@@ -88,6 +90,13 @@ function NavbarContent() {
     setMobileMenuOpen(false);
   }, [pathname]);
 
+  const teamPages = [
+    { id: 'leo-duppen', label: 'Leo Duppen (Leraar)', href: '/leo-duppen' },
+    { id: 'beatrijs', label: 'Beatrijs Sterk', href: '/beatrijs' },
+    { id: 'hanneke', label: 'Hanneke Sterk', href: '/hanneke' },
+    { id: 'peter-bes', label: 'Peter Bes (Leerling)', href: '/peter-bes' },
+  ];
+
   return (
     <>
       <nav className="fixed top-0 left-0 right-0 z-50 h-24 md:h-32 px-4 md:px-6 flex items-center justify-center pointer-events-none">
@@ -133,6 +142,26 @@ function NavbarContent() {
                     {rooms?.map((r: any) => (
                       <DropdownMenuItem key={r.id} asChild className="text-[10px] uppercase font-bold tracking-wider focus:bg-accent focus:text-accent-foreground rounded-2xl cursor-pointer p-4">
                         <Link href={`/room/${r.slug || r.id}`} className="flex w-full items-center">{r.title}</Link>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className={cn(
+                      "px-5 py-2.5 rounded-full text-[10px] font-black tracking-[0.2em] uppercase transition-all flex items-center gap-1 outline-none nav-item-style",
+                      teamPages.some(p => pathname === p.href)
+                        ? "bg-accent text-accent-foreground shadow-lg scale-105" 
+                        : "text-foreground/60 hover:bg-accent/5"
+                    )}>
+                      <History className="w-3 h-3 mr-1" /> Nalatenschap <ChevronDown className="w-3 h-3 opacity-30" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="center" className="bg-white/95 backdrop-blur-2xl border-black/5 rounded-3xl min-w-[240px] p-2 shadow-2xl mt-4">
+                    {teamPages.map((p) => (
+                      <DropdownMenuItem key={p.id} asChild className="text-[10px] uppercase font-bold tracking-wider focus:bg-accent focus:text-accent-foreground rounded-2xl cursor-pointer p-4">
+                        <Link href={p.href} className="flex w-full items-center">{p.label}</Link>
                       </DropdownMenuItem>
                     ))}
                   </DropdownMenuContent>
@@ -189,6 +218,14 @@ function NavbarContent() {
                   <div className="flex-1 overflow-y-auto p-8 space-y-8">
                      <div className="space-y-3">
                        <Link href="/" className="flex items-center gap-4 p-6 rounded-3xl bg-black/5 text-[13px] font-black uppercase tracking-widest nav-item-style">{t('home')}</Link>
+                       
+                       <div className="p-4 space-y-2">
+                          <p className="text-[10px] font-black uppercase tracking-widest opacity-30 px-2">Nalatenschap</p>
+                          {teamPages.map(p => (
+                            <Link key={p.id} href={p.href} className="flex items-center gap-4 p-4 rounded-2xl bg-black/5 text-[11px] font-bold uppercase tracking-widest">{p.label}</Link>
+                          ))}
+                       </div>
+
                        <Link href="/forum" className="flex items-center gap-4 p-6 rounded-3xl bg-accent/5 text-[13px] font-black uppercase tracking-widest text-accent border border-accent/10 nav-item-style">
                          <Users className="w-6 h-6" /> Forum
                        </Link>

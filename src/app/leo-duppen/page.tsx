@@ -6,7 +6,7 @@ import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { StoryRenderer } from '@/components/story-renderer';
 import { StoryEditor, StoryNode } from '@/components/story-editor';
-import { Loader2, Palette, Edit3, Save, X } from 'lucide-react';
+import { Loader2, BookOpen, Edit3, Save, X, Palette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -79,8 +79,8 @@ export default function LeoDuppenPage() {
       <div className="container mx-auto px-6 max-w-5xl">
         <div className={cn("mb-20 space-y-4 transition-all duration-700", isEditMode && "opacity-20 blur-sm pointer-events-none")}>
            <div className="inline-flex items-center gap-3 px-4 py-1 rounded-full bg-accent/5 border border-accent/10">
-              <Palette className="w-3.5 h-3.5 text-accent" />
-              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-accent">Kunsthistoricus</span>
+              <BookOpen className="w-3.5 h-3.5 text-accent" />
+              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-accent">Kunsthistoricus & Kenner</span>
            </div>
            <h1 className="font-headline text-5xl md:text-7xl font-light leading-tight">
              Leo <span className="italic">Duppen</span>
@@ -90,7 +90,15 @@ export default function LeoDuppenPage() {
         {isEditMode ? (
           <StoryEditor nodes={localNodes} onChange={(data) => setLocalNodes(data.nodes)} />
         ) : (
-          localNodes.length > 0 ? <StoryRenderer nodes={localNodes} /> : <div className="py-20 text-center opacity-20 italic">Nog geen content ontworpen...</div>
+          localNodes.length > 0 ? (
+            <StoryRenderer nodes={localNodes} />
+          ) : (
+            <div className="py-32 text-center space-y-8 opacity-20">
+               <Palette className="w-16 h-16 mx-auto" />
+               <p className="font-headline text-2xl italic">Nog geen analyse aanwezig...</p>
+               {isAdmin && <Button onClick={() => setIsEditMode(true)} variant="outline" className="rounded-full">Maak eerste ontwerp</Button>}
+            </div>
+          )
         )}
       </div>
     </main>
