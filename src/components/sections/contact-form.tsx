@@ -107,7 +107,6 @@ export function ContactForm() {
         <div className="grid lg:grid-cols-2 gap-20 items-start">
           <div className="space-y-8">
             <div className="space-y-4">
-              <span className="text-accent font-black tracking-[0.4em] uppercase text-[11px] block">{t('nav_collections')} & Archief</span>
               <h2 id="contact-heading" className="font-headline text-3xl md:text-4xl lg:text-5xl font-medium leading-tight">
                 {contactTitle.split(' ').map((word, i, arr) => 
                   i === arr.length - 1 ? <span key={i} className="italic text-accent">{word}</span> : word + ' '
