@@ -125,10 +125,10 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
                 style={{ animationDelay: `${idx * 100}ms` }}
                 onClick={() => enterViewer(idx)}
               >
-                <div className="relative aspect-[4/5] overflow-hidden rounded-[2.5rem] bg-black/[0.03] shadow-md group-hover:shadow-2xl transition-all duration-700 flex items-center justify-center p-4 border border-black/5">
+                <div className="relative aspect-[4/5] overflow-hidden rounded-[2.5rem] bg-black/[0.03] shadow-md group-hover:shadow-2xl transition-all duration-[1500ms] flex items-center justify-center p-4 border border-black/5">
                   <img 
                     src={item.image || item.imageUrl} 
-                    className="max-w-full max-h-full object-contain transition-transform duration-[1.5s] group-hover:scale-110" 
+                    className="max-w-full max-h-full object-contain transition-transform duration-[1500ms] group-hover:scale-110" 
                     style={{ filter: `brightness(${item.brightness || 1})` }}
                     alt={item.displayTitle || item.title}
                   />

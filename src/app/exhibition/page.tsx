@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
@@ -93,7 +92,7 @@ function ExhibitionContent() {
 
       <div className="relative flex-1 flex items-center justify-center overflow-hidden">
         <div 
-          className="relative w-full h-full flex items-center transition-transform duration-[1.2s] ease-out" 
+          className="relative w-full h-full flex items-center transition-transform duration-[1200ms] ease-out" 
           style={{ transform: `translateX(${-scrollX}px)` }}
         >
           <div className="flex gap-[40vw] px-[50vw] items-center pt-8">

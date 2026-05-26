@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useCallback } from 'react';
@@ -166,11 +165,11 @@ export default function CuratorPage() {
           <div className="mt-32 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-10 animate-in fade-in slide-in-from-bottom-12 duration-1000">
             {filteredArtworks.map((item: any) => (
               <div key={item.id} className="group cursor-pointer space-y-4" onClick={() => setSelectedArtwork(item)}>
-                <div className="relative aspect-[4/5] overflow-hidden rounded-[2.5rem] bg-black/[0.02] shadow-md transition-all duration-700 group-hover:shadow-2xl flex items-center justify-center p-4 border border-black/5">
+                <div className="relative aspect-[4/5] overflow-hidden rounded-[2.5rem] bg-black/[0.02] shadow-md transition-all duration-[1500ms] group-hover:shadow-2xl flex items-center justify-center p-4 border border-black/5">
                   {item.image ? (
                     <img 
                       src={item.image} 
-                      className="max-w-full max-h-full object-contain transition-transform duration-[1.5s] group-hover:scale-110" 
+                      className="max-w-full max-h-full object-contain transition-transform duration-[1500ms] group-hover:scale-110" 
                       style={{ filter: `brightness(${item.brightness || 1})` }} 
                       alt={item.title}
                     />
