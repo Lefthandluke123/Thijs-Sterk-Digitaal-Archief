@@ -962,9 +962,13 @@ export default function AdminPage() {
           </div>
           <DialogFooter>
             <Button onClick={async () => {
-               // Ensure slug is always kebab-case
+               // Ensure slug is always strictly uniform (lowercase kebab-case)
                const finalSlug = slugify(roomForm.slug || roomForm.title);
-               const clean = { ...roomForm, slug: finalSlug, updatedAt: serverTimestamp() };
+               const clean = { 
+                 ...roomForm, 
+                 slug: finalSlug, 
+                 updatedAt: serverTimestamp() 
+               };
                
                if(editingRoom) await updateDoc(doc(firestore!, 'rooms', editingRoom.id), clean);
                else await addDoc(collection(firestore!, 'rooms'), { ...clean, createdAt: serverTimestamp() });

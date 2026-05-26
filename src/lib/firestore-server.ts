@@ -1,5 +1,6 @@
 
 import { firebaseConfig } from '@/firebase/config';
+import { slugify } from './museum-utils';
 
 /**
  * @fileOverview Server-side Firestore data fetching via REST API.
@@ -51,7 +52,7 @@ const mapDocument = (doc: any) => {
 
 export async function getRoomsServer() {
   try {
-    const res = await fetch(`${BASE_URL}/rooms`, { next: { revalidate: 60 } });
+    const res = await fetch(`${BASE_URL}/rooms`, { next: { revalidate: 10 } });
     if (!res.ok) return [];
     const json = await res.json();
     return (json.documents || [])
@@ -62,10 +63,12 @@ export async function getRoomsServer() {
 }
 
 export async function getRoomBySlugServer(slug: string) {
+  if (!slug) return null;
+  
   try {
     const url = `${BASE_URL}:runQuery`;
-    // Consistent lookup: slugs are stored in lowercase kebab-case
-    const searchSlug = slug.toLowerCase().trim();
+    // We zoeken op de exacte slug zoals die door de website wordt gegenereerd
+    const searchSlug = slugify(slug);
     
     const res = await fetch(url, {
       method: 'POST',
@@ -83,11 +86,27 @@ export async function getRoomBySlugServer(slug: string) {
           limit: 1
         }
       }),
-      next: { revalidate: 60 }
+      next: { revalidate: 10 }
     });
+    
     const results = await res.json();
-    return results?.[0]?.document ? mapDocument(results[0].document) : null;
-  } catch (e) { return null; }
+    const doc = results?.[0]?.document;
+    
+    if (doc) {
+      return mapDocument(doc);
+    }
+    
+    // Fallback: Als slug-search faalt, probeer of de 'slug' parameter stiekem een document ID is
+    const fallbackRes = await fetch(`${BASE_URL}/rooms/${slug}`);
+    if (fallbackRes.ok) {
+      return mapDocument(await fallbackRes.json());
+    }
+
+    return null;
+  } catch (e) { 
+    console.error("[Firestore Server] Error fetching room:", e);
+    return null; 
+  }
 }
 
 export async function getArtworksByRoomIdServer(roomId: string) {
@@ -108,7 +127,7 @@ export async function getArtworksByRoomIdServer(roomId: string) {
           }
         }
       }),
-      next: { revalidate: 60 }
+      next: { revalidate: 10 }
     });
     const results = await res.json();
     return results.filter((r: any) => r.document).map((r: any) => mapDocument(r.document));
@@ -116,9 +135,10 @@ export async function getArtworksByRoomIdServer(roomId: string) {
 }
 
 export async function getArtworkBySlugServer(slug: string) {
+  if (!slug) return null;
   try {
     const url = `${BASE_URL}:runQuery`;
-    const searchSlug = slug.toLowerCase().trim();
+    const searchSlug = slugify(slug);
     
     const res = await fetch(url, {
       method: 'POST',
@@ -135,7 +155,8 @@ export async function getArtworkBySlugServer(slug: string) {
           },
           limit: 1
         }
-      })
+      }),
+      next: { revalidate: 10 }
     });
     const results = await res.json();
     return results?.[0]?.document ? mapDocument(results[0].document) : null;
@@ -144,7 +165,7 @@ export async function getArtworkBySlugServer(slug: string) {
 
 export async function getArtworkServer(id: string) {
   try {
-    const res = await fetch(`${BASE_URL}/artworks/${id}`);
+    const res = await fetch(`${BASE_URL}/artworks/${id}`, { next: { revalidate: 10 } });
     if (!res.ok) return null;
     return mapDocument(await res.json());
   } catch (e) { return null; }

@@ -23,18 +23,21 @@ export const MUSEUM_TAGS = {
 
 /**
  * Maakt een string URL-vriendelijk (kebab-case).
+ * Verbetert: verwijdert accenten en zorgt voor strikte lowercase.
  */
 export function slugify(text: string): string {
   if (!text) return "";
   return text
     .toString()
+    .normalize('NFD')                   // Splits accenten van letters
+    .replace(/[\u0300-\u036f]/g, '')    // Verwijder accenten
     .toLowerCase()
     .trim()
-    .replace(/\s+/g, '-')           // Vervang spaties door -
-    .replace(/[^\w\-]+/g, '')       // Verwijder alle niet-woord karakters (behalve -)
-    .replace(/\-\-+/g, '-')         // Vervang dubbele -- door enkele -
-    .replace(/^-+/, '')             // Trim - aan het begin
-    .replace(/-+$/, '');            // Trim - aan het einde
+    .replace(/\s+/g, '-')               // Vervang spaties door -
+    .replace(/[^\w\-]+/g, '')           // Verwijder alle niet-woord karakters
+    .replace(/\-\-+/g, '-')             // Vervang dubbele -- door enkele -
+    .replace(/^-+/, '')                 // Trim - aan het begin
+    .replace(/-+$/, '');                // Trim - aan het einde
 }
 
 /**
