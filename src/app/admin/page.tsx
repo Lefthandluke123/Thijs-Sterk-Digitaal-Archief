@@ -351,19 +351,8 @@ export default function AdminPage() {
             <LayoutDashboard className="w-6 h-6 text-accent" />
             <h1 className="font-headline text-2xl italic">Museum Beheer</h1>
           </div>
-          <div className="h-8 w-px bg-black/5 mx-2" />
-          <Button onClick={() => setActiveTab('story')} variant="outline" className="rounded-full bg-accent text-white hover:bg-accent/90 border-none shadow-lg px-6">
-             <LayoutTemplate className="w-4 h-4 mr-2" /> Story Designer
-          </Button>
         </div>
         <div className="flex items-center gap-6">
-           <div className="flex flex-col items-end">
-              <span className="text-[9px] font-black uppercase tracking-widest opacity-30">Status</span>
-              <div className="flex items-center gap-2">
-                 <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                 <span className="text-[10px] font-bold text-accent">Realtime Stramien Actief</span>
-              </div>
-           </div>
            <Link href="/" className="text-[11px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 hover:text-accent transition-colors">
               <ArrowLeft className="w-3 h-3" /> Naar Website
            </Link>
@@ -521,10 +510,6 @@ export default function AdminPage() {
                             <Monitor className="w-5 h-5" />
                             <h3 className="text-xs font-black uppercase">Achtergrond & Stramien</h3>
                           </div>
-                          <div className="flex items-center gap-2 px-4 py-2 bg-accent/5 rounded-full border border-accent/10">
-                             <Sparkles className="w-3 h-3 text-accent" />
-                             <span className="text-[9px] font-black uppercase tracking-widest text-accent">Realtime Stramien Actief</span>
-                          </div>
                         </div>
 
                         <Accordion 
@@ -586,9 +571,6 @@ export default function AdminPage() {
                 ) : (
                   <ImageIcon className="w-6 h-6 mx-auto opacity-10" />
                 )}
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-end p-2 transition-opacity">
-                  <p className="text-[8px] text-white font-bold truncate w-full">{art.displayTitle || art.title}</p>
-                </div>
               </button>
             ))}
           </div>
@@ -622,22 +604,6 @@ export default function AdminPage() {
             else await addDoc(collection(firestore!, 'artworks'), { ...clean, createdAt: serverTimestamp() });
             setIsArtworkDialogOpen(false); toast({title:"Opgeslagen in archief"});
           }} className="w-full h-14 rounded-2xl bg-primary">Opslaan in Archief</Button></DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isRoomDialogOpen} onOpenChange={setIsRoomDialogOpen}>
-        <DialogContent className="max-w-xl rounded-[2rem] p-8">
-          <DialogHeader><DialogTitle className="font-headline text-2xl italic">Museumzaal</DialogTitle></DialogHeader>
-          <div className="grid gap-6 py-4">
-            <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Naam</Label><Input value={roomForm.title} onChange={e => setRoomForm({...roomForm, title: e.target.value})} className="rounded-xl h-12" /></div>
-            <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Slug (URL)</Label><Input value={roomForm.slug} onChange={e => setRoomForm({...roomForm, slug: e.target.value.toLowerCase().replace(/ /g, '-')})} className="rounded-xl h-12" /></div>
-            <div className="space-y-2"><Label className="text-[10px] uppercase font-black opacity-40">Volgorde</Label><Input type="number" value={roomForm.order} onChange={e => setRoomForm({...roomForm, order: parseInt(e.target.value, 10)})} className="rounded-xl h-12" /></div>
-          </div>
-          <DialogFooter><Button onClick={async () => {
-            if(editingRoom) await updateDoc(doc(firestore!, 'rooms', editingRoom.id), {...roomForm, updatedAt: serverTimestamp()});
-            else await addDoc(collection(firestore!, 'rooms'), { ...roomForm, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
-            setIsRoomDialogOpen(false); toast({title:"Zaal opgeslagen"});
-          }} className="w-full h-14 rounded-2xl bg-primary">Opslaan</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
