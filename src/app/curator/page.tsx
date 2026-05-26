@@ -51,7 +51,6 @@ export default function CuratorPage() {
   }, [artworks, activeTags]);
 
   const resultCount = filteredArtworks.length;
-  // Alleen 'geen resultaten' tonen als we NIET aan het laden zijn
   const hasNoResults = !loading && activeTags.length > 0 && resultCount === 0;
 
   const navigateArtwork = useCallback((direction: 'next' | 'prev') => {
@@ -79,8 +78,8 @@ export default function CuratorPage() {
   };
 
   const handleOpenGallery = () => {
+    if (hasNoResults) return;
     setShowResults(true);
-    // Scroll soepel naar beneden naar de resultaten
     setTimeout(() => {
       resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 100);
@@ -124,7 +123,6 @@ export default function CuratorPage() {
   return (
     <main className="min-h-screen bg-background pt-24 md:pt-32 pb-48 px-6">
       <div className="container mx-auto max-w-4xl space-y-8 md:space-y-12">
-        {/* HEADER SECTION */}
         <div className="text-center space-y-6 md:space-y-8 animate-subtle-fade">
           <div className="space-y-2">
             <h1 className="font-headline text-3xl md:text-5xl font-medium tracking-tight text-foreground leading-tight">
@@ -135,13 +133,17 @@ export default function CuratorPage() {
             </p>
           </div>
 
-          {/* PRIMARY ACTION BUTTONS */}
           <div className="flex flex-col items-center gap-6">
             <div className="flex flex-wrap justify-center gap-4">
               <Button 
                 onClick={handleOpenGallery} 
                 disabled={activeTags.length === 0 || hasNoResults || loading}
-                className="rounded-full h-14 md:h-16 px-8 md:px-12 bg-primary text-primary-foreground uppercase font-black text-[10px] md:text-[11px] tracking-widest shadow-xl hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-20"
+                className={cn(
+                  "rounded-full h-14 md:h-16 px-8 md:px-12 uppercase font-black text-[10px] md:text-[11px] tracking-widest shadow-xl transition-all",
+                  hasNoResults 
+                    ? "bg-black/5 text-black/20 cursor-not-allowed" 
+                    : "bg-primary text-primary-foreground hover:scale-[1.02] active:scale-95"
+                )}
               >
                 {loading ? <Loader2 className="w-4 h-4 mr-3 animate-spin" /> : <Play className="w-4 h-4 mr-3 fill-current" />}
                 {t('curator_open')}
@@ -155,8 +157,7 @@ export default function CuratorPage() {
               </Button>
             </div>
 
-            {/* LIVE FEEDBACK COUNTER */}
-            <div className="min-h-[24px]">
+            <div className="min-h-[40px]">
                {loading ? (
                  <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-accent opacity-40">
                    <Loader2 className="w-3 h-3 animate-spin" />
@@ -165,12 +166,14 @@ export default function CuratorPage() {
                ) : activeTags.length > 0 ? (
                  <div className="flex flex-col items-center gap-2 animate-in fade-in duration-500">
                     <div className={cn(
-                      "flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-colors",
-                      hasNoResults ? "bg-destructive/10 text-destructive" : "bg-accent/10 text-accent"
+                      "flex items-center gap-2 px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-500",
+                      hasNoResults 
+                        ? "bg-destructive text-destructive-foreground shadow-[0_0_25px_rgba(220,38,38,0.4)] scale-110" 
+                        : "bg-accent/10 text-accent"
                     )}>
                       {hasNoResults ? (
                         <>
-                          <AlertCircle className="w-3 h-3" />
+                          <AlertCircle className="w-4 h-4 animate-pulse" />
                           Geen resultaten gevonden
                         </>
                       ) : (
@@ -181,7 +184,9 @@ export default function CuratorPage() {
                       )}
                     </div>
                     {hasNoResults && (
-                      <p className="text-[10px] font-bold uppercase tracking-widest opacity-40">Probeer een andere combinatie</p>
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-destructive/60 animate-bounce mt-3">
+                        Pas uw selectie aan om werken te vinden ↑
+                      </p>
                     )}
                  </div>
                ) : (
@@ -193,7 +198,6 @@ export default function CuratorPage() {
           </div>
         </div>
 
-        {/* TAGS SELECTION BLOCK */}
         <div className="bg-white/40 backdrop-blur-xl rounded-[2.5rem] p-8 md:p-12 border border-white/60 shadow-lg space-y-10 md:space-y-12 animate-subtle-fade">
           {Object.entries(MUSEUM_TAGS).map(([cat, tags]) => (
             <div key={cat} className="space-y-4 md:space-y-6">
@@ -229,7 +233,6 @@ export default function CuratorPage() {
           ))}
         </div>
 
-        {/* RESULTS GRID */}
         <div ref={resultsRef} className="scroll-mt-32">
           {showResults && !hasNoResults && (
             <div className="mt-16 md:mt-24 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 md:gap-8 animate-in fade-in slide-in-from-bottom-8 duration-1000">
