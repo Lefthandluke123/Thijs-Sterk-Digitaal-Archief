@@ -44,7 +44,7 @@ import {
   CheckCircle,
   MinusCircle,
   ChevronDown,
-  ChevronUp,
+  Search as SearchIcon,
   Filter,
   CheckCircle2,
   Tags as TagsIcon,
@@ -600,7 +600,9 @@ export default function AdminPage() {
                        </div>
                        <h3 className="font-bold text-xs truncate px-1">{art.displayTitle || art.title}</h3>
                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 rounded-2xl">
-                          <Button size="icon" variant="ghost" onClick={() => { setEditingArtwork(art); setArtworkForm({ ...art, tags: (art.tags || []).join(', ') }); setIsArtworkDialogOpen(true); }} className="rounded-full bg-white text-black hover:bg-white/80 w-10 h-10"><Edit3 className="w-4 h-4" /></button>
+                          <Button size="icon" variant="ghost" onClick={() => { setEditingArtwork(art); setArtworkForm({ ...art, tags: (art.tags || []).join(', ') }); setIsArtworkDialogOpen(true); }} className="rounded-full bg-white text-black hover:bg-white/80 w-10 h-10">
+                            <Edit3 className="w-4 h-4" />
+                          </Button>
                        </div>
                     </Card>
                   ))}
