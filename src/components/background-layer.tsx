@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useEffect, useState } from 'react';
@@ -78,7 +77,7 @@ export function BackgroundLayer() {
 
   return (
     <div 
-      className="bg-fade-layer fixed inset-0 z-[-1] pointer-events-none"
+      className="bg-fade-layer"
       aria-hidden="true"
     />
   );

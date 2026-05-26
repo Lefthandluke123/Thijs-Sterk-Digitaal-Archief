@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
@@ -189,7 +188,8 @@ const BackgroundEditorSection = ({ pageId, label, state, onChange, onPick }: any
                   backgroundRepeat: 'no-repeat',
                   opacity: (state[opacityField] ?? 10) / 100,
                   filter: `blur(${state[blurField] ?? 0}px) brightness(${state[brightnessField] ?? 100}%)`,
-                  transform: `scale(${(state[scaleField] ?? 100) / 100})`
+                  transform: `scale(${(state[scaleField] ?? 100) / 100})`,
+                  backgroundColor: "transparent"
                 }}
               />
               {!state[urlField] && (
@@ -360,19 +360,21 @@ export default function AdminPage() {
     <div className="min-h-screen pt-32 px-8 bg-transparent">
       {/* 
           STRICT REALTIME FULL-SITE PREVIEW LAYER 
-          This layer sits behind the admin UI.
+          Geforceerd transparante achtergrond voor de admin om preview te zien.
       */}
       <div 
         key={JSON.stringify(computedPreview)}
-        className="fixed inset-0 z-[-1] pointer-events-none transition-all duration-200"
+        className="fixed inset-0 pointer-events-none transition-all duration-200"
         style={{
+          zIndex: -1,
           opacity: computedPreview.opacity / 100,
           filter: `blur(${computedPreview.blur}px) brightness(${computedPreview.brightness}%)`,
           backgroundImage: computedPreview.image ? `url("${computedPreview.image}")` : 'none',
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
-          transform: `scale(${computedPreview.scale / 100})`
+          transform: `scale(${computedPreview.scale / 100})`,
+          backgroundColor: "transparent"
         }}
       />
 

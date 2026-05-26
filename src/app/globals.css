@@ -4,8 +4,8 @@
 
 @layer base {
   :root {
-    /* Verfijnd galerij-palet met de terugkeer van het karakteristieke groen */
-    --background: 40 15% 97%; /* Warmer galerie-wit */
+    /* Verfijnd galerij-palet */
+    --background: 40 15% 97%;
     --foreground: 201 45% 10%;
     --card: 0 0% 100%;
     --card-foreground: 201 45% 10%;
@@ -18,7 +18,6 @@
     --muted: 40 5% 88%;
     --muted-foreground: 201 15% 35%;
     
-    /* Thijs Sterk Groen: Een diepe, natuurlijke poldergroen */
     --accent: 142 30% 25%;
     --accent-foreground: 0 0% 100%;
     
@@ -41,31 +40,21 @@
     @apply border-border transition-all duration-300;
   }
   
-  /* 
-     STRICT LAYERING FIX: 
-     Background color goes on HTML so z-index: -1 on children of body works correctly.
-  */
   html {
+    /* De html bevat de absolute fallback kleur */
     background-color: hsl(var(--background));
+    min-height: 100%;
   }
 
   body {
     @apply text-foreground font-body antialiased selection:bg-accent/15 selection:text-accent;
-    background-color: transparent;
+    /* Body MOET transparant zijn om de z-index: -1 laag te zien */
+    background-color: transparent !important;
+    min-height: 100vh;
   }
   
   h1, h2, h3, h4, h5, h6 {
     @apply font-headline text-foreground font-medium tracking-tight;
-  }
-  
-  :focus-visible {
-    @apply outline-none ring-2 ring-accent ring-offset-2 ring-offset-background;
-  }
-  
-  img {
-    @apply select-none pointer-events-auto;
-    -webkit-user-drag: none;
-    -webkit-touch-callout: none;
   }
 }
 
@@ -74,28 +63,30 @@
     @apply bg-white/80 backdrop-blur-2xl border border-white/40 shadow-xl;
   }
   
-  .btn-museum {
-    @apply rounded-full px-10 py-4 font-bold uppercase tracking-[0.2em] text-[10px] transition-all active:scale-95 disabled:opacity-50 shadow-md hover:shadow-xl;
-  }
-
-  .museum-label {
-    @apply bg-white/95 backdrop-blur-md p-5 rounded-3xl shadow-2xl border border-black/[0.03] space-y-3;
-  }
-
   .bg-fade-layer {
-    @apply fixed inset-0 z-[-1] pointer-events-none;
-    transition: opacity 0.4s ease, filter 0.4s ease, transform 0.4s ease, background-image 1s ease;
+    @apply fixed inset-0 pointer-events-none;
+    /* Laagste laag in de body, maar boven de html-kleur */
+    z-index: -1;
+    transition: opacity 0.4s ease, filter 0.4s ease, transform 0.4s ease;
     background-size: cover;
     background-position: center;
+    background-repeat: no-repeat;
     background-attachment: fixed;
+    background-color: transparent !important;
     opacity: var(--bg-opacity);
     filter: blur(var(--bg-blur)) brightness(var(--bg-brightness));
     transform: scale(var(--bg-scale));
     background-image: var(--bg-image);
   }
+
+  /* Reset pseudo elements die achtergronden kunnen blokkeren */
+  .bg-fade-layer::before,
+  .bg-fade-layer::after {
+    content: none !important;
+    display: none !important;
+  }
 }
 
-/* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
 }
