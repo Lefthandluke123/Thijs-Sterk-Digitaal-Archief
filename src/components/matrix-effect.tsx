@@ -6,11 +6,13 @@ import React, { useEffect, useRef, useState } from 'react';
 /**
  * @fileOverview MatrixEffect: Een digitale regen-animatie die de hele pagina overneemt.
  * Bevat een complexe 'dialoog' exit-sequentie om de simulatie te verlaten.
+ * Inclusief een 'fleeing button' grap bij de JA/NEE keuze.
  */
 export function MatrixEffect() {
   const [active, setActive] = useState(false);
   const [colors, setColors] = useState<string[]>(["#0F0"]); 
   const [exitStep, setExitStep] = useState(0); 
+  const [neeOffset, setNeeOffset] = useState({ x: 0, y: 0 });
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // Exit Sequentie Config
@@ -21,7 +23,7 @@ export function MatrixEffect() {
       sub: "De kleuren van Thijs Sterk vloeien weg in de code." 
     },
     { 
-      button: "WAT KIEST U?", 
+      isChoice: true,
       heading: "IS DIT DE WEG?", 
       sub: "Zou u dat nou wel doen?" 
     },
@@ -45,6 +47,7 @@ export function MatrixEffect() {
         setColors(["#0F0"]); 
       }
       setExitStep(0); 
+      setNeeOffset({ x: 0, y: 0 });
       setActive(true);
     };
     window.addEventListener('trigger-simulation', handleTrigger);
@@ -108,6 +111,13 @@ export function MatrixEffect() {
     }
   };
 
+  const handleNeeHover = () => {
+    // Spring weg naar een willekeurige plek binnen een straal
+    const randomX = (Math.random() - 0.5) * 400;
+    const randomY = (Math.random() - 0.5) * 200;
+    setNeeOffset({ x: randomX, y: randomY });
+  };
+
   if (!active) return null;
 
   const current = steps[exitStep];
@@ -127,16 +137,39 @@ export function MatrixEffect() {
          </div>
       </div>
 
-      <button 
-        onClick={handleExitClick}
-        className={`absolute top-10 right-10 z-[1000000] border-2 px-8 py-3 rounded-full font-mono text-[10px] font-black uppercase tracking-[0.3em] transition-all shadow-[0_0_30px_rgba(255,255,255,0.2)] ${
-          exitStep > 0 
-          ? "bg-red-600 border-red-600 text-white animate-bounce" 
-          : "border-white text-white hover:bg-white hover:text-black"
-        }`}
-      >
-        {current.button}
-      </button>
+      <div className="absolute top-10 right-10 z-[1000000] flex gap-4">
+        {current.isChoice ? (
+          <div className="flex gap-4 items-center">
+            <span className="text-white font-mono text-[10px] uppercase tracking-widest mr-4 opacity-40">Wat kiest u?</span>
+            
+            <button 
+              onClick={handleExitClick}
+              className="bg-green-600 text-white border-2 border-green-600 px-8 py-3 rounded-full font-mono text-[10px] font-black uppercase tracking-[0.3em] transition-all shadow-[0_0_30px_rgba(34,197,94,0.4)] hover:scale-110"
+            >
+              JA
+            </button>
+
+            <button 
+              onMouseEnter={handleNeeHover}
+              style={{ transform: `translate(${neeOffset.x}px, ${neeOffset.y}px)` }}
+              className="border-white text-white border-2 px-8 py-3 rounded-full font-mono text-[10px] font-black uppercase tracking-[0.3em] transition-transform duration-100 ease-out"
+            >
+              NEE
+            </button>
+          </div>
+        ) : (
+          <button 
+            onClick={handleExitClick}
+            className={`border-2 px-8 py-3 rounded-full font-mono text-[10px] font-black uppercase tracking-[0.3em] transition-all shadow-[0_0_30px_rgba(255,255,255,0.2)] ${
+              exitStep > 0 
+              ? "bg-red-600 border-red-600 text-white animate-bounce" 
+              : "border-white text-white hover:bg-white hover:text-black"
+            }`}
+          >
+            {current.button}
+          </button>
+        )}
+      </div>
 
       <div className="absolute bottom-10 left-10 text-white/10 font-mono text-[8px] uppercase tracking-[0.5em] pointer-events-none">
          Archief Error 1913-1982 // Protocol: Sterk_Atmosphere_Sync // Step: {exitStep + 1}
