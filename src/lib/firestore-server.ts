@@ -64,6 +64,9 @@ export async function getRoomsServer() {
 export async function getRoomBySlugServer(slug: string) {
   try {
     const url = `${BASE_URL}:runQuery`;
+    // Consistent lookup: slugs are stored in lowercase kebab-case
+    const searchSlug = slug.toLowerCase().trim();
+    
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -74,7 +77,7 @@ export async function getRoomBySlugServer(slug: string) {
             fieldFilter: {
               field: { fieldPath: 'slug' },
               op: 'EQUAL',
-              value: { stringValue: slug.toLowerCase().trim() }
+              value: { stringValue: searchSlug }
             }
           },
           limit: 1
@@ -115,6 +118,8 @@ export async function getArtworksByRoomIdServer(roomId: string) {
 export async function getArtworkBySlugServer(slug: string) {
   try {
     const url = `${BASE_URL}:runQuery`;
+    const searchSlug = slug.toLowerCase().trim();
+    
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -125,7 +130,7 @@ export async function getArtworkBySlugServer(slug: string) {
             fieldFilter: {
               field: { fieldPath: 'slug' },
               op: 'EQUAL',
-              value: { stringValue: slug }
+              value: { stringValue: searchSlug }
             }
           },
           limit: 1

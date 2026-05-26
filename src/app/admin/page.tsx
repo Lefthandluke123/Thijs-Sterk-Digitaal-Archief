@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
@@ -71,11 +72,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { sortArtworksByTitle, sanitizeArtwork, normalizeArtwork, MUSEUM_TAGS } from '@/lib/museum-utils';
+import { sortArtworksByTitle, sanitizeArtwork, normalizeArtwork, MUSEUM_TAGS, slugify } from '@/lib/museum-utils';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { StoryEditor, StoryNode } from '@/components/story-editor';
 import { translateMuseumText } from '@/ai/flows/translate-flow';
 import { Badge } from '@/components/ui/badge';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 const PAGES = [
   { id: 'home', label: 'Homepage' },
@@ -325,7 +328,7 @@ export default function AdminPage() {
     const roomTitle = targetRoom?.title || "Geselecteerde Zaal";
 
     try {
-      const updates = selectedArtIds.map(async (id) => {
+      selectedArtIds.forEach((id) => {
         const art = rawArtworks?.find(a => a.id === id);
         if (!art) return;
         const currentRooms = art.roomIds || [];
@@ -333,20 +336,25 @@ export default function AdminPage() {
           ? Array.from(new Set([...currentRooms, roomId]))
           : currentRooms.filter((r: string) => r !== roomId);
         
-        // Optimistische non-blocking write
-        updateDoc(doc(firestore, 'artworks', id), { 
+        const updateData = { 
           roomIds: nextRooms, 
           updatedAt: serverTimestamp() 
-        }).catch(err => console.error("Update error for artwork", id, err));
+        };
+
+        updateDoc(doc(firestore, 'artworks', id), updateData)
+          .catch(async (serverError) => {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+              path: `artworks/${id}`,
+              operation: 'update',
+              requestResourceData: updateData
+            }));
+          });
       });
       
       toast({ 
-        title: "Bulk update verwerkt", 
+        title: action === 'add' ? "Werken toegevoegd" : "Werken verwijderd", 
         description: `${count} werken ${action === 'add' ? 'toegevoegd aan' : 'verwijderd uit'} ${roomTitle}.` 
       });
-      
-      // We wachten niet op alle individuele updates om de UI vlot te houden, 
-      // maar we geven wel direct de bevestiging van het aantal.
     } catch (e) {
       toast({ variant: "destructive", title: "Bulk update mislukt" });
     } finally {
@@ -361,7 +369,18 @@ export default function AdminPage() {
       if (!art) return;
       const currentRooms = art.roomIds || [];
       const nextRooms = currentRooms.filter((r: string) => r !== roomId);
-      await updateDoc(doc(firestore, 'artworks', artId), { roomIds: nextRooms, updatedAt: serverTimestamp() });
+      
+      const updateData = { roomIds: nextRooms, updatedAt: serverTimestamp() };
+      
+      updateDoc(doc(firestore, 'artworks', artId), updateData)
+        .catch(async () => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: `artworks/${artId}`,
+            operation: 'update',
+            requestResourceData: updateData
+          }));
+        });
+
       toast({ title: "1 werk verwijderd uit zaal" });
     } catch (e) {
       toast({ variant: "destructive", title: "Verwijderen mislukt" });
@@ -384,8 +403,16 @@ export default function AdminPage() {
           ? Array.from(new Set([...currentTags, ...tagsToProcess]))
           : currentTags.filter((t: string) => !tagsToProcess.includes(t));
         
-        updateDoc(doc(firestore, 'artworks', id), { tags: nextTags, updatedAt: serverTimestamp() })
-          .catch(err => console.error(err));
+        const updateData = { tags: nextTags, updatedAt: serverTimestamp() };
+        
+        updateDoc(doc(firestore, 'artworks', id), updateData)
+          .catch(async () => {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+              path: `artworks/${id}`,
+              operation: 'update',
+              requestResourceData: updateData
+            }));
+          });
       });
       
       toast({ 
@@ -912,10 +939,15 @@ export default function AdminPage() {
           </div>
           <DialogFooter>
             <Button onClick={async () => {
-               const clean = { ...roomForm, updatedAt: serverTimestamp() };
+               // Ensure slug is always kebab-case
+               const finalSlug = slugify(roomForm.slug || roomForm.title);
+               const clean = { ...roomForm, slug: finalSlug, updatedAt: serverTimestamp() };
+               
                if(editingRoom) await updateDoc(doc(firestore!, 'rooms', editingRoom.id), clean);
                else await addDoc(collection(firestore!, 'rooms'), { ...clean, createdAt: serverTimestamp() });
-               setIsRoomDialogOpen(false); toast({title:"Zaal bewaard"});
+               
+               setIsRoomDialogOpen(false); 
+               toast({title:"Zaal bewaard"});
             }} className="w-full h-14 rounded-2xl bg-primary">Zaal Opslaan</Button>
           </DialogFooter>
         </DialogContent>

@@ -22,6 +22,22 @@ export const MUSEUM_TAGS = {
 };
 
 /**
+ * Maakt een string URL-vriendelijk (kebab-case).
+ */
+export function slugify(text: string): string {
+  if (!text) return "";
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')           // Vervang spaties door -
+    .replace(/[^\w\-]+/g, '')       // Verwijder alle niet-woord karakters (behalve -)
+    .replace(/\-\-+/g, '-')         // Vervang dubbele -- door enkele -
+    .replace(/^-+/, '')             // Trim - aan het begin
+    .replace(/-+$/, '');            // Trim - aan het einde
+}
+
+/**
  * Normaliseert Firestore data voor veilig gebruik in de UI.
  * Verbergt NOOIT data, maar geeft fallbacks voor lege velden.
  */
@@ -50,10 +66,13 @@ export function normalizeArtwork(id: string, data: any) {
  * Voorkomt empty strings en corrupte types in Firestore.
  */
 export function sanitizeArtwork(input: any) {
+  const baseTitle = cleanString(input.displayTitle) || cleanString(input.title) || "Ongetiteld";
+  const finalSlug = slugify(cleanString(input.slug) || baseTitle);
+
   return {
     title: cleanString(input.title) || "Ongetiteld",
-    displayTitle: cleanString(input.displayTitle) || cleanString(input.title) || "Ongetiteld",
-    slug: cleanString(input.slug) || null,
+    displayTitle: baseTitle,
+    slug: finalSlug,
     image: cleanString(input.image) || null,
     description: cleanString(input.description) || "",
     year: cleanString(input.year) || "",
