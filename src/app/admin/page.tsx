@@ -14,6 +14,8 @@ import {
   setDoc,
   serverTimestamp, 
   orderBy,
+  arrayUnion,
+  arrayRemove
 } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -48,7 +50,9 @@ import {
   Tags as TagsIcon,
   Archive,
   MoreVertical,
-  Library
+  Library,
+  Box,
+  Eraser
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -248,7 +252,7 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState('artworks');
   const [searchTerm, setSearchTerm] = useState('');
   
-  // Persistent selection across tabs
+  // Persistent selection
   const [selectedArtIds, setSelectedArtIds] = useState<string[]>([]);
   
   const [editorState, setEditorState] = useState<Record<string, any>>({});
@@ -329,20 +333,14 @@ export default function AdminPage() {
 
     try {
       selectedArtIds.forEach((id) => {
-        const art = rawArtworks?.find(a => a.id === id);
-        if (!art) return;
-        const currentRooms = art.roomIds || [];
-        const nextRooms = action === 'add' 
-          ? Array.from(new Set([...currentRooms, roomId]))
-          : currentRooms.filter((r: string) => r !== roomId);
-        
+        const artRef = doc(firestore, 'artworks', id);
         const updateData = { 
-          roomIds: nextRooms, 
+          roomIds: action === 'add' ? arrayUnion(roomId) : arrayRemove(roomId),
           updatedAt: serverTimestamp() 
         };
 
-        updateDoc(doc(firestore, 'artworks', id), updateData)
-          .catch(async (serverError) => {
+        updateDoc(artRef, updateData)
+          .catch(async () => {
             errorEmitter.emit('permission-error', new FirestorePermissionError({
               path: `artworks/${id}`,
               operation: 'update',
@@ -353,37 +351,12 @@ export default function AdminPage() {
       
       toast({ 
         title: action === 'add' ? "Werken toegevoegd" : "Werken verwijderd", 
-        description: `${count} werken ${action === 'add' ? 'toegevoegd aan' : 'verwijderd uit'} ${roomTitle}.` 
+        description: `${count} werken succesvol ${action === 'add' ? 'toegevoegd aan' : 'verwijderd uit'} ${roomTitle}.` 
       });
     } catch (e) {
       toast({ variant: "destructive", title: "Bulk update mislukt" });
     } finally {
       setIsProcessingBulk(false);
-    }
-  };
-
-  const handleRemoveFromRoom = async (artId: string, roomId: string) => {
-    if (!firestore) return;
-    try {
-      const art = rawArtworks?.find(a => a.id === artId);
-      if (!art) return;
-      const currentRooms = art.roomIds || [];
-      const nextRooms = currentRooms.filter((r: string) => r !== roomId);
-      
-      const updateData = { roomIds: nextRooms, updatedAt: serverTimestamp() };
-      
-      updateDoc(doc(firestore, 'artworks', artId), updateData)
-        .catch(async () => {
-          errorEmitter.emit('permission-error', new FirestorePermissionError({
-            path: `artworks/${artId}`,
-            operation: 'update',
-            requestResourceData: updateData
-          }));
-        });
-
-      toast({ title: "1 werk verwijderd uit zaal" });
-    } catch (e) {
-      toast({ variant: "destructive", title: "Verwijderen mislukt" });
     }
   };
 
@@ -396,16 +369,13 @@ export default function AdminPage() {
     const count = selectedArtIds.length;
     try {
       selectedArtIds.forEach((id) => {
-        const art = rawArtworks?.find(a => a.id === id);
-        if (!art) return;
-        const currentTags = art.tags || [];
-        const nextTags = action === 'add'
-          ? Array.from(new Set([...currentTags, ...tagsToProcess]))
-          : currentTags.filter((t: string) => !tagsToProcess.includes(t));
+        const artRef = doc(firestore, 'artworks', id);
+        const updateData = { 
+          tags: action === 'add' ? arrayUnion(...tagsToProcess) : arrayRemove(...tagsToProcess),
+          updatedAt: serverTimestamp() 
+        };
         
-        const updateData = { tags: nextTags, updatedAt: serverTimestamp() };
-        
-        updateDoc(doc(firestore, 'artworks', id), updateData)
+        updateDoc(artRef, updateData)
           .catch(async () => {
             errorEmitter.emit('permission-error', new FirestorePermissionError({
               path: `artworks/${id}`,
@@ -454,25 +424,16 @@ export default function AdminPage() {
     if (!confirmed) return;
     
     try {
-      // 1. Zoek alle kunstwerken die in deze zaal zitten
       const artworksInRoom = rawArtworks?.filter(a => a.roomIds?.includes(room.id)) || [];
       
-      // 2. Verwijder de zaal-ID uit al deze kunstwerken (non-blocking)
       artworksInRoom.forEach(art => {
-        const nextRooms = (art.roomIds || []).filter((id: string) => id !== room.id);
-        const updateData = { roomIds: nextRooms, updatedAt: serverTimestamp() };
-        
-        updateDoc(doc(firestore, 'artworks', art.id), updateData)
-          .catch(async () => {
-            errorEmitter.emit('permission-error', new FirestorePermissionError({
-              path: `artworks/${art.id}`,
-              operation: 'update',
-              requestResourceData: updateData
-            }));
-          });
+        const artRef = doc(firestore, 'artworks', art.id);
+        updateDoc(artRef, { 
+          roomIds: arrayRemove(room.id), 
+          updatedAt: serverTimestamp() 
+        }).catch(err => console.error(err));
       });
 
-      // 3. Verwijder de zaal zelf
       await deleteDoc(doc(firestore, 'rooms', room.id));
       
       toast({ 
@@ -516,7 +477,7 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen pt-32 px-8 bg-transparent">
-      {/* Background Sync for Admin */}
+      {/* HEADER */}
       <header className="fixed top-0 left-0 right-0 h-24 bg-white/90 backdrop-blur-md border-b z-40 px-8 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-4">
@@ -536,6 +497,58 @@ export default function AdminPage() {
            </Link>
         </div>
       </header>
+
+      {/* SNELMENU (STICKY BULK ACTIONS) */}
+      {selectedArtIds.length > 0 && (
+        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[100] w-full max-w-4xl px-4 animate-in slide-in-from-bottom-10 duration-500">
+           <div className="bg-primary text-primary-foreground p-3 rounded-[2.5rem] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] border-2 border-white/20 flex items-center justify-between backdrop-blur-xl">
+              <div className="flex items-center gap-6 pl-6">
+                 <div className="flex flex-col">
+                    <span className="text-[14px] font-black leading-none">{selectedArtIds.length}</span>
+                    <span className="text-[8px] font-bold uppercase opacity-60">werken</span>
+                 </div>
+                 <div className="h-8 w-px bg-white/10" />
+                 <div className="flex items-center gap-2">
+                    <DropdownMenu>
+                       <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-12 rounded-2xl hover:bg-white/10 text-[10px] font-black uppercase tracking-widest px-6">
+                             <Layers className="w-4 h-4 mr-3" /> Toewijzen Zaal
+                          </Button>
+                       </DropdownMenuTrigger>
+                       <DropdownMenuContent align="start" className="w-64 rounded-2xl p-2 shadow-2xl">
+                          <DropdownMenuLabel className="text-[9px] uppercase font-black opacity-40 px-3 py-2">Toevoegen aan...</DropdownMenuLabel>
+                          {rooms?.map(room => (
+                            <DropdownMenuItem key={room.id} onClick={() => handleBulkRoomUpdate(room.id, 'add')} className="rounded-xl cursor-pointer p-3 text-xs font-bold uppercase tracking-wider">
+                               {room.title}
+                            </DropdownMenuItem>
+                          ))}
+                          <DropdownMenuSeparator />
+                          <DropdownMenuLabel className="text-[9px] uppercase font-black opacity-40 px-3 py-2 text-destructive">Verwijderen uit...</DropdownMenuLabel>
+                          {rooms?.map(room => (
+                            <DropdownMenuItem key={room.id} onClick={() => handleBulkRoomUpdate(room.id, 'remove')} className="rounded-xl cursor-pointer p-3 text-xs font-bold uppercase tracking-wider text-destructive">
+                               {room.title}
+                            </DropdownMenuItem>
+                          ))}
+                       </DropdownMenuContent>
+                    </DropdownMenu>
+
+                    <Button variant="ghost" onClick={() => setIsBulkTagDialogOpen(true)} className="h-12 rounded-2xl hover:bg-white/10 text-[10px] font-black uppercase tracking-widest px-6">
+                       <TagsIcon className="w-4 h-4 mr-3" /> Tags Beheren
+                    </Button>
+                 </div>
+              </div>
+
+              <div className="flex items-center gap-2 pr-2">
+                 <Button variant="ghost" onClick={handleBulkDelete} className="h-12 w-12 rounded-full hover:bg-destructive text-white p-0">
+                    <Trash2 className="w-4 h-4" />
+                 </Button>
+                 <Button onClick={() => setSelectedArtIds([])} className="h-12 px-6 rounded-full bg-white text-black hover:bg-white/90 text-[10px] font-black uppercase tracking-widest">
+                    Klaar
+                 </Button>
+              </div>
+           </div>
+        </div>
+      )}
 
       <div className="max-w-[1600px] mx-auto space-y-12 pb-32">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
@@ -575,37 +588,6 @@ export default function AdminPage() {
                      </Button>
                   </div>
                   
-                  {selectedArtIds.length > 0 && (
-                    <div className="flex items-center gap-2 bg-primary text-primary-foreground p-2 px-6 rounded-full shadow-lg animate-in slide-in-from-top-4 border-2 border-white/20">
-                       <div className="mr-4 pr-4 border-r border-white/10 flex flex-col justify-center">
-                          <span className="text-[10px] font-black uppercase tracking-widest leading-none">{selectedArtIds.length}</span>
-                          <span className="text-[7px] font-bold uppercase opacity-60">klaar voor actie</span>
-                       </div>
-                       <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                             <Button variant="ghost" size="sm" className="hover:bg-white/10 text-[10px] font-black uppercase h-9 rounded-full px-4"><Layers className="w-3.5 h-3.5 mr-2" /> Zaal</Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="start" className="w-56 rounded-2xl p-2 shadow-2xl">
-                             <DropdownMenuLabel className="text-[9px] uppercase font-black opacity-40 px-3 py-2">Toevoegen aan...</DropdownMenuLabel>
-                             {rooms?.map(room => (
-                               <DropdownMenuItem key={room.id} onClick={() => handleBulkRoomUpdate(room.id, 'add')} className="rounded-xl cursor-pointer p-3 text-xs font-bold uppercase tracking-wider">
-                                  {room.title}
-                               </DropdownMenuItem>
-                             ))}
-                             <DropdownMenuSeparator />
-                             <DropdownMenuLabel className="text-[9px] uppercase font-black opacity-40 px-3 py-2 text-destructive">Verwijderen uit...</DropdownMenuLabel>
-                             {rooms?.map(room => (
-                               <DropdownMenuItem key={room.id} onClick={() => handleBulkRoomUpdate(room.id, 'remove')} className="rounded-xl cursor-pointer p-3 text-xs font-bold uppercase tracking-wider text-destructive">
-                                  {room.title}
-                               </DropdownMenuItem>
-                             ))}
-                          </DropdownMenuContent>
-                       </DropdownMenu>
-                       <Button variant="ghost" size="sm" onClick={() => setIsBulkTagDialogOpen(true)} className="hover:bg-white/10 text-[10px] font-black uppercase h-9 rounded-full px-4"><TagsIcon className="w-3.5 h-3.5 mr-2" /> Tags</Button>
-                       <Button variant="ghost" size="sm" onClick={handleBulkDelete} className="hover:bg-destructive text-[10px] font-black uppercase h-9 rounded-full px-4"><Trash2 className="w-3.5 h-3.5 mr-2" /> Wis</Button>
-                    </div>
-                  )}
-
                   <Button onClick={() => { setEditingArtwork(null); setArtworkForm({ title: '', displayTitle: '', slug: '', image: '', roomIds: [], year: '', medium: '', description: '', featured: false, inShop: false, tags: '' }); setIsArtworkDialogOpen(true); }} className="rounded-full px-8 h-12 bg-accent text-white"><Plus className="w-4 h-4 mr-2" /> Nieuw Werk</Button>
                </div>
 
@@ -654,6 +636,11 @@ export default function AdminPage() {
                           </div>
                           
                           <div className="flex items-center gap-4">
+                             {selectedArtIds.length > 0 && (
+                               <Button size="sm" onClick={() => handleBulkRoomUpdate(room.id, 'add')} className="h-10 px-6 rounded-full bg-accent text-white text-[10px] font-black uppercase tracking-widest shadow-md hover:scale-105 transition-all">
+                                  Voeg {selectedArtIds.length} toe
+                               </Button>
+                             )}
                              <Button size="sm" variant="ghost" onClick={() => { setEditingRoom(room); setRoomForm(room); setIsRoomDialogOpen(true); }} className="h-9 px-4 rounded-xl text-[9px] font-black uppercase tracking-widest opacity-60 hover:opacity-100">Hernoemen</Button>
                              <Button 
                                size="sm" 
@@ -677,23 +664,6 @@ export default function AdminPage() {
                        <Accordion type="single" collapsible>
                           <AccordionItem value={room.id} className="border-none">
                              <AccordionContent className="px-8 pb-10 pt-4 space-y-8 border-t border-black/5 mt-0">
-                                <div className="flex items-center justify-between">
-                                   <div className="flex flex-col">
-                                      <h4 className="text-[10px] font-black uppercase tracking-widest opacity-40">Inhoud van de zaal</h4>
-                                      <p className="text-[9px] font-bold opacity-30">{roomArtworks.length} schilderijen momenteel in collectie</p>
-                                   </div>
-                                   {selectedArtIds.length > 0 && (
-                                     <div className="flex gap-2 animate-in slide-in-from-right-4">
-                                       <Button size="sm" onClick={() => handleBulkRoomUpdate(room.id, 'add')} className="h-10 px-6 rounded-full bg-accent text-white text-[9px] font-black uppercase tracking-widest shadow-md">
-                                          <Plus className="w-3.5 h-3.5 mr-2" /> Plaats {selectedArtIds.length} geselecteerde werken
-                                       </Button>
-                                       <Button size="sm" variant="outline" onClick={() => handleBulkRoomUpdate(room.id, 'remove')} className="h-10 px-6 rounded-full text-[9px] font-black uppercase tracking-widest border-2">
-                                          <MinusCircle className="w-3.5 h-3.5 mr-2" /> Wis selectie uit deze zaal
-                                       </Button>
-                                     </div>
-                                   )}
-                                </div>
-
                                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
                                    {roomArtworks.length === 0 ? (
                                      <div className="col-span-full py-12 text-center border-2 border-dashed rounded-3xl opacity-20 italic">Deze zaal is momenteel leeg</div>
@@ -702,7 +672,7 @@ export default function AdminPage() {
                                        <div key={art.id} className="relative aspect-square rounded-2xl overflow-hidden group/art border border-black/5">
                                           <img src={art.image} className="w-full h-full object-cover" alt={art.title} />
                                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/art:opacity-100 transition-opacity flex items-center justify-center">
-                                             <button onClick={() => handleRemoveFromRoom(art.id, room.id)} title="Verwijderen uit deze zaal" className="p-2 bg-white rounded-full text-destructive shadow-lg hover:scale-110 transition-transform"><X className="w-4 h-4" /></button>
+                                             <button onClick={() => handleBulkRoomUpdate(room.id, 'remove')} title="Verwijderen uit deze zaal" className="p-2 bg-white rounded-full text-destructive shadow-lg hover:scale-110 transition-transform"><X className="w-4 h-4" /></button>
                                           </div>
                                        </div>
                                      ))
@@ -962,7 +932,6 @@ export default function AdminPage() {
           </div>
           <DialogFooter>
             <Button onClick={async () => {
-               // Ensure slug is always strictly uniform (lowercase kebab-case)
                const finalSlug = slugify(roomForm.slug || roomForm.title);
                const clean = { 
                  ...roomForm, 
@@ -982,3 +951,4 @@ export default function AdminPage() {
     </div>
   );
 }
+
