@@ -5,11 +5,12 @@ import React, { useEffect, useRef, useState } from 'react';
 
 /**
  * @fileOverview MatrixEffect: Een digitale regen-animatie die de hele pagina overneemt.
- * Nu uitgebreid met ondersteuning voor dynamische kleuren uit schilderijen.
+ * Bevat een 'tweetraps' exit-knop om de simulatie te verlaten.
  */
 export function MatrixEffect() {
   const [active, setActive] = useState(false);
   const [colors, setColors] = useState<string[]>(["#0F0"]); // Default Matrix Groen
+  const [exitStep, setExitStep] = useState(0); // 0: init, 1: confirm
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -19,6 +20,7 @@ export function MatrixEffect() {
       } else {
         setColors(["#0F0"]); // Reset naar groen voor de logo-trigger
       }
+      setExitStep(0); // Reset exit state
       setActive(true);
     };
     window.addEventListener('trigger-simulation', handleTrigger);
@@ -76,6 +78,15 @@ export function MatrixEffect() {
     };
   }, [active, colors]);
 
+  const handleExitClick = () => {
+    if (exitStep === 0) {
+      setExitStep(1);
+    } else {
+      setActive(false);
+      setExitStep(0);
+    }
+  };
+
   if (!active) return null;
 
   return (
@@ -84,18 +95,24 @@ export function MatrixEffect() {
       
       <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center gap-8">
          <h2 className="text-white font-mono text-4xl md:text-6xl tracking-[0.5em] animate-pulse text-center px-6 mix-blend-difference">
-            SYSTEM CRASHED
+            {exitStep === 1 ? "INSTABILITEIT BEVESTIGD" : "SYSTEM CRASHED"}
          </h2>
          <p className="text-white/40 font-mono text-xs md:text-sm uppercase tracking-widest text-center max-w-md px-10">
-            De artistieke simulatie is instabiel. De kleuren van Sterk vloeien weg in de code.
+            {exitStep === 1 
+              ? "Wilt u de artistieke werkelijkheid herstellen?" 
+              : "De artistieke simulatie is instabiel. De kleuren van Sterk vloeien weg in de code."}
          </p>
       </div>
 
       <button 
-        onClick={() => setActive(false)}
-        className="absolute top-10 right-10 z-[1000000] border-2 border-white text-white px-8 py-3 rounded-full font-mono text-[10px] font-black uppercase tracking-[0.3em] hover:bg-white hover:text-black transition-all shadow-[0_0_20px_rgba(255,255,255,0.3)]"
+        onClick={handleExitClick}
+        className={`absolute top-10 right-10 z-[1000000] border-2 px-8 py-3 rounded-full font-mono text-[10px] font-black uppercase tracking-[0.3em] transition-all shadow-[0_0_20px_rgba(255,255,255,0.3)] ${
+          exitStep === 1 
+          ? "bg-red-600 border-red-600 text-white animate-bounce" 
+          : "border-white text-white hover:bg-white hover:text-black"
+        }`}
       >
-        EXIT SIMULATION
+        {exitStep === 1 ? "BEVESTIG REDDING" : "RED VAN ONDERGANG"}
       </button>
     </div>
   );
