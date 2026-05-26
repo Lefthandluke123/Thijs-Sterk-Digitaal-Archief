@@ -450,12 +450,35 @@ export default function AdminPage() {
   const handleDeleteRoom = async (room: any) => {
     if (!firestore || !room?.id) return;
     
-    const confirmed = window.confirm(`Weet u zeker dat u zaal "${room.title}" wilt verwijderen? De kunstwerken zelf blijven behouden.`);
+    const confirmed = window.confirm(`Weet u zeker dat u zaal "${room.title}" wilt verwijderen? Alle verwijzingen in kunstwerken worden ook opgeschoond uit de database.`);
     if (!confirmed) return;
     
     try {
+      // 1. Zoek alle kunstwerken die in deze zaal zitten
+      const artworksInRoom = rawArtworks?.filter(a => a.roomIds?.includes(room.id)) || [];
+      
+      // 2. Verwijder de zaal-ID uit al deze kunstwerken (non-blocking)
+      artworksInRoom.forEach(art => {
+        const nextRooms = (art.roomIds || []).filter((id: string) => id !== room.id);
+        const updateData = { roomIds: nextRooms, updatedAt: serverTimestamp() };
+        
+        updateDoc(doc(firestore, 'artworks', art.id), updateData)
+          .catch(async () => {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+              path: `artworks/${art.id}`,
+              operation: 'update',
+              requestResourceData: updateData
+            }));
+          });
+      });
+
+      // 3. Verwijder de zaal zelf
       await deleteDoc(doc(firestore, 'rooms', room.id));
-      toast({ title: "Zaal succesvol verwijderd" });
+      
+      toast({ 
+        title: "Zaal succesvol verwijderd", 
+        description: `Zaal "${room.title}" is gewist en ${artworksInRoom.length} kunstwerk-koppelingen zijn opgeschoond.` 
+      });
     } catch (e: any) {
       console.error("Delete room error:", e);
       toast({ variant: "destructive", title: "Fout bij verwijderen van zaal" });
