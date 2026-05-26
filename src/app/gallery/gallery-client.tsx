@@ -28,15 +28,18 @@ export function GalleryClient({ initialRoomSlug }: { initialRoomSlug: string | n
 
   useEffect(() => {
     if (rooms && rooms.length > 0 && !currentRoomSlug) {
-      router.replace(`/gallery?room=${rooms[0].slug}`);
+      router.replace(`/gallery?room=${rooms[0].slug || rooms[0].id}`);
     }
   }, [rooms, currentRoomSlug, router]);
 
-  const activeRoom = useMemo(() => rooms?.find((r: any) => r.slug === currentRoomSlug), [rooms, currentRoomSlug]);
+  // Verbeterde lookup: zoek op slug óf ID
+  const activeRoom = useMemo(() => 
+    rooms?.find((r: any) => r.slug === currentRoomSlug || r.id === currentRoomSlug), 
+    [rooms, currentRoomSlug]
+  );
 
   const artworksQuery = useMemoFirebase(() => {
     if (!firestore || !activeRoom) return null;
-    // Gebruik de nieuwe multi-room architectuur: zoek op roomId in de roomIds array
     return query(
       collection(firestore, 'artworks'), 
       where('roomIds', 'array-contains', activeRoom.id)
@@ -89,10 +92,10 @@ export function GalleryClient({ initialRoomSlug }: { initialRoomSlug: string | n
            {rooms?.map((r: any) => (
              <button 
                 key={r.id} 
-                onClick={() => router.push(`/gallery?room=${r.slug}`)} 
+                onClick={() => router.push(`/gallery?room=${r.slug || r.id}`)} 
                 className={cn(
                   "px-6 py-2.5 rounded-full text-[11px] font-bold uppercase tracking-widest transition-all whitespace-nowrap border-2", 
-                  currentRoomSlug === r.slug 
+                  (currentRoomSlug === r.slug || currentRoomSlug === r.id)
                     ? "bg-accent text-accent-foreground border-accent shadow-md scale-105" 
                     : "bg-white/50 border-transparent hover:border-accent/20"
                 )}

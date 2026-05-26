@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
@@ -25,11 +26,14 @@ function ExhibitionContent() {
   }, [firestore]);
   const { data: rooms } = useCollection(roomsQuery);
 
-  const activeRoom = useMemo(() => rooms?.find((r: any) => r.slug === currentRoomSlug), [rooms, currentRoomSlug]);
+  // Verbeterde lookup: zoek op slug óf ID
+  const activeRoom = useMemo(() => 
+    rooms?.find((r: any) => r.slug === currentRoomSlug || r.id === currentRoomSlug), 
+    [rooms, currentRoomSlug]
+  );
 
   const artworksQuery = useMemoFirebase(() => {
     if (!firestore || !activeRoom) return null;
-    // Zoek via de roomIds array voor de actieve zaal ID
     return query(
       collection(firestore, 'artworks'), 
       where('roomIds', 'array-contains', activeRoom.id)
@@ -44,11 +48,11 @@ function ExhibitionContent() {
 
   useEffect(() => {
     if (rooms && rooms.length > 0 && !currentRoomSlug) {
-      router.replace(`/exhibition?room=${rooms[0].slug}`);
+      router.replace(`/exhibition?room=${rooms[0].slug || rooms[0].id}`);
     }
   }, [rooms, currentRoomSlug, router]);
 
-  const currentIndex = rooms?.findIndex((r: any) => r.slug === currentRoomSlug) ?? -1;
+  const currentIndex = rooms?.findIndex((r: any) => r.slug === currentRoomSlug || r.id === currentRoomSlug) ?? -1;
   const nextRoom = currentIndex < (rooms?.length || 0) - 1 ? rooms?.[currentIndex + 1] : null;
 
   const handleStep = (delta: number) => {
@@ -76,9 +80,12 @@ function ExhibitionContent() {
                 key={r.id} 
                 onClick={() => {
                   setScrollX(0);
-                  router.push(`/exhibition?room=${r.slug}`);
+                  router.push(`/exhibition?room=${r.slug || r.id}`);
                 }} 
-                className={cn("text-[14px] font-bold uppercase tracking-widest whitespace-nowrap transition-all", currentRoomSlug === r.slug ? "text-accent scale-105" : "text-black/30 hover:text-black")}
+                className={cn(
+                  "text-[14px] font-bold uppercase tracking-widest whitespace-nowrap transition-all", 
+                  (currentRoomSlug === r.slug || currentRoomSlug === r.id) ? "text-accent scale-105" : "text-black/30 hover:text-black"
+                )}
               >
                 {r.title}
               </button>
@@ -125,7 +132,7 @@ function ExhibitionContent() {
                  <button 
                   onClick={() => {
                     setScrollX(0);
-                    router.push(`/exhibition?room=${nextRoom.slug}`);
+                    router.push(`/exhibition?room=${nextRoom.slug || nextRoom.id}`);
                   }} 
                   className="mt-12 px-10 py-4 rounded-full bg-accent text-accent-foreground text-[10px] font-bold uppercase tracking-[0.25em] shadow-xl hover:scale-105 transition-all flex items-center gap-4"
                  >
