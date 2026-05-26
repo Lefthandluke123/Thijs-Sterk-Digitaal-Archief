@@ -190,7 +190,7 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
             <div className="w-0.5 h-0.5 bg-black/10 rounded-full" />
             <div className="flex items-center gap-2">
                <Move className="w-3 h-3 opacity-30" />
-               <span className="text-[8px] font-bold uppercase tracking-widest opacity-40">Slepen: Bewegen</span>
+               <span className="text-[8px] font-bold uppercase tracking-widest opacity-40">Muis vasthouden: Bewegen</span>
             </div>
          </div>
       </div>
