@@ -1,3 +1,4 @@
+
 import type {Config} from 'tailwindcss';
 
 export default {
@@ -71,12 +72,18 @@ export default {
           '0%': { opacity: '0', transform: 'translateX(-20px)' },
           '100%': { opacity: '1', transform: 'translateX(0)' },
         },
+        'flash-error': {
+          '0%, 100%': { transform: 'translateX(0)', backgroundColor: 'transparent' },
+          '20%, 60%': { transform: 'translateX(-4px)', backgroundColor: 'rgba(239, 68, 68, 0.2)', borderColor: 'rgb(239, 68, 68)' },
+          '40%, 80%': { transform: 'translateX(4px)', backgroundColor: 'rgba(239, 68, 68, 0.2)', borderColor: 'rgb(239, 68, 68)' },
+        }
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
         'fade-in-up': 'fade-in-up 0.8s ease-out forwards',
         'fade-in-left': 'fade-in-left 1s ease-out forwards',
+        'flash-error': 'flash-error 0.5s ease-in-out',
       },
     },
   },

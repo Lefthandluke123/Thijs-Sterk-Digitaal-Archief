@@ -24,6 +24,7 @@ export default function CuratorPage() {
   const [isSharing, setIsSharing] = useState(false);
   const [shareDialog, setShareDialog] = useState<string | null>(null);
   const [roomTitle, setRoomTitle] = useState("");
+  const [flashingTag, setFlashingTag] = useState<string | null>(null);
   
   const resultsRef = useRef<HTMLDivElement>(null);
   const firestore = useFirestore();
@@ -64,7 +65,16 @@ export default function CuratorPage() {
 
   const toggleTag = (tag: string) => {
     const isActive = activeTags.includes(tag);
-    if (!isActive && activeTags.length >= 4) {
+    
+    // Altijd toestaan om een actieve tag uit te zetten
+    if (isActive) {
+      setActiveTags(p => p.filter(t => t !== tag));
+      setShowResults(false);
+      return;
+    }
+
+    // Check limiet
+    if (activeTags.length >= 4) {
       toast({ 
         variant: "destructive", 
         title: t('curator_limit_reached'),
@@ -73,12 +83,28 @@ export default function CuratorPage() {
       return;
     }
 
-    setActiveTags(p => isActive ? p.filter(t => t !== tag) : [...p, tag]);
+    // PRE-VALIDATIE: Wat zou het resultaat zijn met deze nieuwe tag?
+    const prospectiveTags = [...activeTags, tag];
+    const prospectiveResults = artworks.filter((art: any) => {
+      const artTags = (art.tags || []).map((t: string) => t.toLowerCase());
+      return prospectiveTags.every(pt => artTags.includes(nt => nt.toLowerCase() === pt.toLowerCase()));
+      // Corrected matching logic for prospective filter
+      return prospectiveTags.every(pt => artTags.includes(pt.toLowerCase()));
+    }).length;
+
+    if (prospectiveResults === 0 && !loading) {
+      // De actie die 0 resultaten zou veroorzaken: knipper rood en doe niets
+      setFlashingTag(tag);
+      setTimeout(() => setFlashingTag(null), 800);
+      return;
+    }
+
+    setActiveTags(p => [...p, tag]);
     setShowResults(false);
   };
 
   const handleOpenGallery = () => {
-    if (hasNoResults) return;
+    if (hasNoResults || resultCount === 0) return;
     setShowResults(true);
     setTimeout(() => {
       resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -137,10 +163,10 @@ export default function CuratorPage() {
             <div className="flex flex-wrap justify-center gap-4">
               <Button 
                 onClick={handleOpenGallery} 
-                disabled={activeTags.length === 0 || hasNoResults || loading}
+                disabled={activeTags.length === 0 || resultCount === 0 || loading}
                 className={cn(
                   "rounded-full h-14 md:h-16 px-8 md:px-12 uppercase font-black text-[10px] md:text-[11px] tracking-widest shadow-xl transition-all",
-                  hasNoResults 
+                  (activeTags.length === 0 || resultCount === 0) 
                     ? "bg-black/5 text-black/20 cursor-not-allowed" 
                     : "bg-primary text-primary-foreground hover:scale-[1.02] active:scale-95"
                 )}
@@ -167,11 +193,11 @@ export default function CuratorPage() {
                  <div className="flex flex-col items-center gap-2 animate-in fade-in duration-500">
                     <div className={cn(
                       "flex items-center gap-2 px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-500",
-                      hasNoResults 
+                      resultCount === 0 
                         ? "bg-destructive text-destructive-foreground shadow-[0_0_25px_rgba(220,38,38,0.4)] scale-110" 
                         : "bg-accent/10 text-accent"
                     )}>
-                      {hasNoResults ? (
+                      {resultCount === 0 ? (
                         <>
                           <AlertCircle className="w-4 h-4 animate-pulse" />
                           Geen resultaten gevonden
@@ -183,7 +209,7 @@ export default function CuratorPage() {
                         </>
                       )}
                     </div>
-                    {hasNoResults && (
+                    {resultCount === 0 && (
                       <p className="text-[10px] font-bold uppercase tracking-widest text-destructive/60 animate-bounce mt-3">
                         Pas uw selectie aan om werken te vinden ↑
                       </p>
@@ -191,7 +217,7 @@ export default function CuratorPage() {
                  </div>
                ) : (
                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-accent opacity-40">
-                   {t('curator_counter').replace('{count}', '0')}
+                   {t('curator_counter').replace('{count}', activeTags.length.toString())}
                  </p>
                )}
             </div>
@@ -207,18 +233,21 @@ export default function CuratorPage() {
               <div className="flex flex-wrap gap-2">
                 {tags.map(tag => {
                   const active = activeTags.includes(tag);
+                  const isFlashing = flashingTag === tag;
                   const atLimit = activeTags.length >= 4 && !active;
+                  
                   return (
                     <button 
                       key={tag} 
                       onClick={() => toggleTag(tag)} 
-                      disabled={atLimit}
+                      disabled={atLimit || isFlashing}
                       className={cn(
                         "px-4 md:px-5 py-2.5 md:py-3 rounded-xl text-[10px] md:text-[11px] font-bold uppercase transition-all border-2", 
                         active 
                           ? "bg-accent text-accent-foreground border-accent shadow-md scale-105" 
                           : "bg-white border-black/5 text-foreground/50 hover:border-accent/30",
-                        atLimit && "opacity-20 cursor-not-allowed grayscale"
+                        atLimit && "opacity-20 cursor-not-allowed grayscale",
+                        isFlashing && "animate-flash-error border-destructive text-destructive"
                       )}
                     >
                       <div className="flex items-center gap-2">
@@ -234,7 +263,7 @@ export default function CuratorPage() {
         </div>
 
         <div ref={resultsRef} className="scroll-mt-32">
-          {showResults && !hasNoResults && (
+          {showResults && resultCount > 0 && (
             <div className="mt-16 md:mt-24 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 md:gap-8 animate-in fade-in slide-in-from-bottom-8 duration-1000">
               {filteredArtworks.map((item: any) => (
                 <div key={item.id} className="group cursor-pointer space-y-3 md:space-y-4" onClick={() => setSelectedArtwork(item)}>
@@ -242,7 +271,7 @@ export default function CuratorPage() {
                     {item.image ? (
                       <img 
                         src={item.image} 
-                        className="max-w-full max-h-full object-contain transition-transform duration-[1000ms] group-hover:scale-110" 
+                        className="max-w-full max-h-full object-contain transition-transform duration-[1500ms] group-hover:scale-110" 
                         style={{ filter: `brightness(${item.brightness || 1})` }} 
                         alt={item.title}
                       />
