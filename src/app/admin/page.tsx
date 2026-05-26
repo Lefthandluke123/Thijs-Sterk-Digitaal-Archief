@@ -52,7 +52,8 @@ import {
   MoreVertical,
   Library,
   Box,
-  Eraser
+  Eraser,
+  Lock
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -83,6 +84,7 @@ import { translateMuseumText } from '@/ai/flows/translate-flow';
 import { Badge } from '@/components/ui/badge';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { verifyAdminPassword } from '@/lib/admin-actions';
 
 const PAGES = [
   { id: 'home', label: 'Homepage' },
@@ -218,7 +220,7 @@ const BackgroundEditorSection = ({ pageId, label, state, onChange, onPick }: any
             <Label className="text-[10px] uppercase font-black opacity-40">Lokaal Preview Paneel</Label>
             <div className="relative aspect-video rounded-2xl overflow-hidden border-4 border-white shadow-xl bg-black/5 group">
               <div 
-                className="absolute inset-0 transition-all duration-200 pointer-events-none"
+                className="absolute inset-0 transition-all duration-[200ms] pointer-events-none"
                 style={{ 
                   backgroundImage: state[urlField] ? `url("${state[urlField]}")` : 'none',
                   backgroundSize: 'cover',
@@ -249,6 +251,11 @@ const BackgroundEditorSection = ({ pageId, label, state, onChange, onPick }: any
 export default function AdminPage() {
   const firestore = useFirestore();
   
+  // Auth State
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [password, setPassword] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
+
   const [activeTab, setActiveTab] = useState('artworks');
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -269,9 +276,25 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      sessionStorage.setItem('admin_auth', 'true');
+      const auth = sessionStorage.getItem('admin_auth');
+      if (auth === 'true') {
+        setIsAuthorized(true);
+      }
     }
   }, []);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsVerifying(true);
+    const isValid = await verifyAdminPassword(password);
+    if (isValid) {
+      setIsAuthorized(true);
+      sessionStorage.setItem('admin_auth', 'true');
+    } else {
+      toast({ variant: "destructive", title: "Fout", description: "Wachtwoord onjuist." });
+    }
+    setIsVerifying(false);
+  };
 
   const artworksQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -481,6 +504,30 @@ export default function AdminPage() {
     return list.sort(sortArtworksByTitle);
   }, [rawArtworks, searchTerm]);
 
+  if (!isAuthorized) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
+        <Card className="max-w-md w-full p-12 rounded-[2.5rem] shadow-2xl border-none space-y-8">
+           <div className="text-center space-y-4">
+              <Lock className="w-10 h-10 text-accent mx-auto" />
+              <h1 className="font-headline text-3xl font-light italic">Museum Beheer</h1>
+           </div>
+           <form onSubmit={handleLogin} className="space-y-6">
+              <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="h-14 rounded-2xl text-center" placeholder="Wachtwoord" disabled={isVerifying} />
+              <Button type="submit" disabled={isVerifying} className="w-full h-14 rounded-2xl bg-primary text-primary-foreground">
+                 {isVerifying ? <Loader2 className="animate-spin" /> : "Toegang Beheer"}
+              </Button>
+           </form>
+           <p className="text-center">
+             <Link href="/" className="text-[10px] font-black uppercase tracking-widest opacity-40 hover:opacity-100">
+               Terug naar de website
+             </Link>
+           </p>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen pt-32 px-8 bg-transparent">
       {/* HEADER */}
@@ -491,7 +538,7 @@ export default function AdminPage() {
             <h1 className="font-headline text-2xl italic">Museum Beheer</h1>
           </div>
           {selectedArtIds.length > 0 && (
-            <div className="flex items-center gap-2 bg-accent/10 text-accent px-5 py-2 rounded-full animate-in fade-in zoom-in duration-300 shadow-sm border border-accent/20">
+            <div className="flex items-center gap-2 bg-accent/10 text-accent px-5 py-2 rounded-full animate-in fade-in zoom-in duration-[300ms] shadow-sm border border-accent/20">
                <span className="text-[11px] font-black uppercase tracking-widest">{selectedArtIds.length} geselecteerd</span>
                <button onClick={() => setSelectedArtIds([])} className="ml-1 hover:text-foreground p-1"><X className="w-3.5 h-3.5" /></button>
             </div>
@@ -506,7 +553,7 @@ export default function AdminPage() {
 
       {/* SNELMENU (STICKY BULK ACTIONS) */}
       {selectedArtIds.length > 0 && (
-        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[100] w-full max-w-4xl px-4 animate-in slide-in-from-bottom-10 duration-500">
+        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[100] w-full max-w-4xl px-4 animate-in slide-in-from-bottom-10 duration-[500ms]">
            <div className="bg-primary text-primary-foreground p-3 rounded-[2.5rem] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] border-2 border-white/20 flex items-center justify-between backdrop-blur-xl">
               <div className="flex items-center gap-6 pl-6">
                  <div className="flex flex-col">
