@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, Suspense } from 'react';
@@ -136,7 +137,7 @@ function NavbarContent() {
                     </DropdownMenuItem>
                     {rooms?.map((r: any) => (
                       <DropdownMenuItem key={r.id} asChild className="text-[10px] uppercase font-bold tracking-wider focus:bg-accent focus:text-accent-foreground rounded-2xl cursor-pointer p-4">
-                        <Link href={`/room/${r.slug}`} className="flex w-full items-center">{r.title}</Link>
+                        <Link href={`/room/${r.slug || r.id}`} className="flex w-full items-center">{r.title}</Link>
                       </DropdownMenuItem>
                     ))}
                   </DropdownMenuContent>
@@ -211,7 +212,7 @@ function NavbarContent() {
                        </Link>
                        <div className="grid grid-cols-1 gap-2.5 pt-4">
                          {rooms?.map((r: any) => (
-                           <Link key={r.id} href={`/room/${r.slug}`} className="p-5 rounded-2xl bg-black/[0.02] text-[12px] font-bold uppercase tracking-wider opacity-70 nav-item-style">{r.title}</Link>
+                           <Link key={r.id} href={`/room/${r.slug || r.id}`} className="p-5 rounded-2xl bg-black/[0.02] text-[12px] font-bold uppercase tracking-wider opacity-70 nav-item-style">{r.title}</Link>
                          ))}
                        </div>
                      </div>

@@ -52,7 +52,8 @@ const mapDocument = (doc: any) => {
 
 export async function getRoomsServer() {
   try {
-    const res = await fetch(`${BASE_URL}/rooms`, { next: { revalidate: 10 } });
+    // Gebruik revalidate: 0 om te garanderen dat nieuwe zalen direct zichtbaar zijn
+    const res = await fetch(`${BASE_URL}/rooms`, { next: { revalidate: 0 } });
     if (!res.ok) return [];
     const json = await res.json();
     return (json.documents || [])
@@ -65,7 +66,6 @@ export async function getRoomsServer() {
 /**
  * Bulletproof lookup voor zalen.
  * In plaats van runQuery (die indexen vereist), halen we alle zalen op en filteren we in-memory.
- * Dit is extreem betrouwbaar voor collecties van deze omvang.
  */
 export async function getRoomBySlugServer(slug: string) {
   if (!slug) return null;
@@ -73,10 +73,16 @@ export async function getRoomBySlugServer(slug: string) {
 
   try {
     const rooms = await getRoomsServer();
-    // 1. Zoek op slug match
-    let room = rooms.find((r: any) => slugify(r.slug || r.title) === targetSlug);
     
-    // 2. Fallback: Zoek op document ID match
+    // 1. Zoek op directe slug match
+    let room = rooms.find((r: any) => r.slug === slug || r.slug === targetSlug);
+    
+    // 2. Zoek op geslugificeerde titel (fallback voor oude data)
+    if (!room) {
+      room = rooms.find((r: any) => slugify(r.slug || r.title || "") === targetSlug);
+    }
+    
+    // 3. Fallback: Zoek op document ID match
     if (!room) {
       room = rooms.find((r: any) => r.id === slug);
     }
@@ -106,7 +112,7 @@ export async function getArtworksByRoomIdServer(roomId: string) {
           }
         }
       }),
-      next: { revalidate: 10 }
+      next: { revalidate: 0 }
     });
     const results = await res.json();
     if (!Array.isArray(results)) return [];
@@ -124,7 +130,6 @@ export async function getArtworkBySlugServer(slug: string) {
   const targetSlug = slugify(slug);
 
   try {
-    // Voor artworks (grotere collectie) gebruiken we wel een query, maar met fallback
     const url = `${BASE_URL}:runQuery`;
     const res = await fetch(url, {
       method: 'POST',
@@ -142,14 +147,14 @@ export async function getArtworkBySlugServer(slug: string) {
           limit: 1
         }
       }),
-      next: { revalidate: 10 }
+      next: { revalidate: 0 }
     });
     const results = await res.json();
     const docResult = results?.[0]?.document;
     
     if (docResult) return mapDocument(docResult);
 
-    // Fallback: Check of de slug stiekem een direct ID is
+    // Fallback op ID
     return await getArtworkServer(slug);
   } catch (e) { 
     return null; 
@@ -158,7 +163,7 @@ export async function getArtworkBySlugServer(slug: string) {
 
 export async function getArtworkServer(id: string) {
   try {
-    const res = await fetch(`${BASE_URL}/artworks/${id}`, { next: { revalidate: 10 } });
+    const res = await fetch(`${BASE_URL}/artworks/${id}`, { next: { revalidate: 0 } });
     if (!res.ok) return null;
     return mapDocument(await res.json());
   } catch (e) { return null; }
