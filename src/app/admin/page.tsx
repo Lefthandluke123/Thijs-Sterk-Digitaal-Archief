@@ -825,6 +825,10 @@ export default function AdminPage() {
         </Tabs>
       </div>
 
+      <div className="fixed inset-0 pointer-events-none z-[999]">
+         {/* Render any needed global overlays here if required */}
+      </div>
+
       <Dialog open={isImagePickerOpen} onOpenChange={setIsImagePickerOpen}>
         <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto rounded-[2.5rem] p-10">
           <DialogHeader>
@@ -928,6 +932,7 @@ export default function AdminPage() {
           </div>
           <DialogFooter>
             <Button onClick={async () => {
+               // Geforceerde slugification bij opslaan om 404s te voorkomen
                const finalSlug = slugify(roomForm.slug || roomForm.title);
                const clean = { 
                  ...roomForm, 

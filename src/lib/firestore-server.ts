@@ -52,7 +52,7 @@ const mapDocument = (doc: any) => {
 
 export async function getRoomsServer() {
   try {
-    // Gebruik revalidate: 0 om te garanderen dat nieuwe zalen direct zichtbaar zijn
+    // Forceer revalidate: 0 voor onmiddellijke updates na wijzigingen in admin
     const res = await fetch(`${BASE_URL}/rooms`, { next: { revalidate: 0 } });
     if (!res.ok) return [];
     const json = await res.json();
@@ -65,7 +65,7 @@ export async function getRoomsServer() {
 
 /**
  * Bulletproof lookup voor zalen.
- * In plaats van runQuery (die indexen vereist), halen we alle zalen op en filteren we in-memory.
+ * Zoekt in het geheugen naar slugs, titels of IDs om 404s te voorkomen.
  */
 export async function getRoomBySlugServer(slug: string) {
   if (!slug) return null;
@@ -77,9 +77,9 @@ export async function getRoomBySlugServer(slug: string) {
     // 1. Zoek op directe slug match
     let room = rooms.find((r: any) => r.slug === slug || r.slug === targetSlug);
     
-    // 2. Zoek op geslugificeerde titel (fallback voor oude data)
+    // 2. Zoek op geslugificeerde titel (fallback voor handmatige URL invoer)
     if (!room) {
-      room = rooms.find((r: any) => slugify(r.slug || r.title || "") === targetSlug);
+      room = rooms.find((r: any) => slugify(r.title || "") === targetSlug);
     }
     
     // 3. Fallback: Zoek op document ID match
