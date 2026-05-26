@@ -1,6 +1,7 @@
+
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
 import { 
@@ -12,8 +13,6 @@ import {
   addDoc, 
   setDoc,
   serverTimestamp, 
-  writeBatch,
-  arrayUnion,
   orderBy
 } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
@@ -41,8 +40,7 @@ import {
   Library,
   LayoutTemplate,
   Languages,
-  RotateCcw,
-  Sun
+  RotateCcw
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -58,7 +56,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { verifyAdminPassword } from '@/lib/admin-actions';
 import { cn } from '@/lib/utils';
-import { sortArtworksByTitle, sanitizeArtwork, normalizeArtwork, cleanString, cleanArray } from '@/lib/museum-utils';
+import { sortArtworksByTitle, sanitizeArtwork, normalizeArtwork } from '@/lib/museum-utils';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { StoryEditor, StoryNode } from '@/components/story-editor';
 import { translateMuseumText } from '@/ai/flows/translate-flow';
@@ -66,7 +64,7 @@ import { translateMuseumText } from '@/ai/flows/translate-flow';
 const PAGES = [
   { id: 'home', label: 'Homepage' },
   { id: 'gallery', label: 'Zalen Overzicht' },
-  { id: 'curator', label: 'Samenstellen' },
+  { id: 'curator', label: 'Zelf iets moois maken' },
   { id: 'shop', label: 'Winkel' },
   { id: 'beatrijs', label: 'Beatrijs Sterk' },
   { id: 'hanneke', label: 'Hanneke Sterk' },
@@ -108,16 +106,8 @@ export default function AdminPage() {
   // AUTONOMOUS REALTIME BACKGROUND STATE
   // ---------------------------------------------------------------------------
   const [editorState, setEditorState] = useState<Record<string, any>>({});
-  const [previewState, setPreviewState] = useState<Record<string, any>>({});
+  const isInitialized = useRef(false);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
-
-  // Sync editor to preview
-  useEffect(() => {
-    setPreviewState(editorState);
-    if (Object.keys(editorState).length > 0) {
-      console.log("BACKGROUND EDITOR SYNC", editorState);
-    }
-  }, [editorState]);
 
   // Image Picker Logic
   const [isImagePickerOpen, setIsImagePickerOpen] = useState(false);
@@ -173,19 +163,26 @@ export default function AdminPage() {
   const { data: settings } = useDoc(settingsRef);
 
   useEffect(() => {
-    if (settings) {
+    if (settings && !isInitialized.current) {
       setFormData(settings as Record<string, string>);
-      // Initialize editor state from database
+      
+      // Initialize editor state from database ONCE
       const initialState: Record<string, any> = {};
       const fields = ['backgroundImageUrl', 'backgroundOpacity', 'backgroundBlur', 'backgroundScale', 'backgroundBrightness'];
-      fields.forEach(f => { initialState[f] = settings[f] ?? (f === 'backgroundOpacity' ? 10 : f === 'backgroundScale' ? 100 : f === 'backgroundBrightness' ? 100 : 0); });
+      
+      fields.forEach(f => { 
+        initialState[f] = settings[f] ?? (f === 'backgroundOpacity' ? 10 : f === 'backgroundScale' ? 100 : f === 'backgroundBrightness' ? 100 : 0); 
+      });
+
       PAGES.forEach(p => {
         fields.forEach(f => {
           const key = `${f}_${p.id}`;
-          initialState[key] = settings[key] ?? initialState[f.replace(`_${p.id}`, '')];
+          initialState[key] = settings[key] ?? initialState[f];
         });
       });
+
       setEditorState(initialState);
+      isInitialized.current = true;
     }
   }, [settings]);
 
@@ -206,7 +203,16 @@ export default function AdminPage() {
     e.preventDefault();
     if (!settingsRef) return;
     setIsSavingSettings(true);
-    const updates = { ...formData, ...editorState, updatedAt: serverTimestamp() };
+    
+    // Ensure all numeric values are numbers, not strings
+    const cleanedEditorState = { ...editorState };
+    Object.keys(cleanedEditorState).forEach(key => {
+      if (typeof cleanedEditorState[key] === 'string' && !isNaN(Number(cleanedEditorState[key])) && key !== 'backgroundImageUrl') {
+        cleanedEditorState[key] = Number(cleanedEditorState[key]);
+      }
+    });
+
+    const updates = { ...formData, ...cleanedEditorState, updatedAt: serverTimestamp() };
     try {
       await updateDoc(settingsRef, updates);
       toast({ title: "Instellingen opgeslagen" });
@@ -254,25 +260,33 @@ export default function AdminPage() {
   // RENDERER COMPONENTS
   // ---------------------------------------------------------------------------
 
-  const AutonomousSlider = ({ label, field, min = 0, max = 100, step = 1, unit = "%" }: { label: string, field: string, min?: number, max?: number, step?: number, unit?: string }) => (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <Label className="text-[10px] uppercase font-black opacity-40">{label}</Label>
-        <span className="text-[10px] font-bold bg-accent/10 text-accent px-2 py-0.5 rounded-full">
-          {editorState[field] ?? 0}{unit}
-        </span>
+  const AutonomousSlider = ({ label, field, min = 0, max = 100, step = 1, unit = "%" }: { label: string, field: string, min?: number, max?: number, step?: number, unit?: string }) => {
+    const value = editorState[field] ?? (field.includes('Scale') || field.includes('Brightness') ? 100 : 0);
+    
+    return (
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
+          <Label className="text-[10px] uppercase font-black opacity-40">{label}</Label>
+          <span className="text-[10px] font-bold bg-accent/10 text-accent px-2 py-0.5 rounded-full">
+            {value}{unit}
+          </span>
+        </div>
+        <input 
+          type="range"
+          min={min}
+          max={max}
+          step={step}
+          value={value}
+          onChange={(e) => {
+            const val = Number(e.target.value);
+            console.log("slider change", field, val);
+            setEditorState(prev => ({ ...prev, [field]: val }));
+          }}
+          className="w-full h-1.5 bg-black/5 rounded-full appearance-none cursor-pointer accent-accent"
+        />
       </div>
-      <input 
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={editorState[field] ?? 0}
-        onChange={(e) => setEditorState(prev => ({ ...prev, [field]: Number(e.target.value) }))}
-        className="w-full h-1.5 bg-black/5 rounded-full appearance-none cursor-pointer accent-accent"
-      />
-    </div>
-  );
+    );
+  };
 
   const BackgroundEditorSection = ({ pageId, label }: { pageId: string, label: string }) => {
     const isGlobal = pageId === 'global';
@@ -322,7 +336,13 @@ export default function AdminPage() {
                 variant="ghost" 
                 size="sm" 
                 onClick={() => {
-                  const defaults: any = { [urlField]: '', [opacityField]: 10, [blurField]: 0, [scaleField]: 100, [brightnessField]: 100 };
+                  const defaults: any = { 
+                    [urlField]: '', 
+                    [opacityField]: 10, 
+                    [blurField]: 0, 
+                    [scaleField]: 100, 
+                    [brightnessField]: 100 
+                  };
                   setEditorState(prev => ({ ...prev, ...defaults }));
                 }}
                 className="text-[9px] font-black uppercase tracking-widest opacity-40 hover:opacity-100 p-0 h-auto"
@@ -338,9 +358,9 @@ export default function AdminPage() {
                   className="absolute inset-0 bg-cover bg-center transition-all duration-300"
                   style={{ 
                     backgroundImage: editorState[urlField] ? `url(${editorState[urlField]})` : 'none',
-                    opacity: (previewState[opacityField] ?? 10) / 100,
-                    filter: `blur(${previewState[blurField] ?? 0}px) brightness(${previewState[brightnessField] ?? 100}%)`,
-                    transform: `scale(${(previewState[scaleField] ?? 100) / 100})`
+                    opacity: (editorState[opacityField] ?? 10) / 100,
+                    filter: `blur(${editorState[blurField] ?? 0}px) brightness(${editorState[brightnessField] ?? 100}%)`,
+                    transform: `scale(${(editorState[scaleField] ?? 100) / 100})`
                   }}
                 />
                 {!editorState[urlField] && (
@@ -364,6 +384,7 @@ export default function AdminPage() {
       {/* 
           REALTIME SITE-WIDE STYLE INJECTION 
           This ensures that as you slide, the ACTUAL site background updates.
+          We use percentages directly from editorState for instant feedback.
       */}
       <style>{`
         :root {
@@ -436,8 +457,6 @@ export default function AdminPage() {
             </TabsTrigger>
           </TabsList>
 
-          {/* ... Other tabs (Rooms, Stories, Translations) ... */}
-
           <TabsContent value="artworks" className="space-y-8">
              <div className="flex flex-col md:flex-row gap-6 justify-between items-start md:items-center bg-white/50 backdrop-blur-md p-6 rounded-[2.5rem] border sticky top-24 z-30 shadow-sm">
                 <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
@@ -445,7 +464,6 @@ export default function AdminPage() {
                       <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-30" />
                       <Input placeholder="Zoek..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-12 h-12 rounded-full bg-white border-none shadow-inner" />
                    </div>
-                   {selectedArtIds.length > 0 && <Button size="sm" className="rounded-full bg-accent text-white"><Settings2 className="w-4 h-4 mr-2" /> Bulk ({selectedArtIds.length})</Button>}
                 </div>
                 <Button onClick={() => { setEditingArtwork(null); setArtworkForm({ title: '', displayTitle: '', slug: '', image: '', roomIds: [], year: '', medium: '', description: '', featured: false, inShop: false, tags: '' }); setIsArtworkDialogOpen(true); }} className="rounded-full px-8 h-12 bg-primary"><Plus className="w-4 h-4 mr-2" /> Nieuw Werk</Button>
              </div>
