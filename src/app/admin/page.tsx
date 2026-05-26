@@ -861,7 +861,7 @@ export default function AdminPage() {
                    variant="outline"
                    className="h-16 rounded-2xl font-black uppercase tracking-widest text-[11px]"
                  >
-                    <MinusCircle className="w-4 h-4 mr-2" /> Verwijder Tags
+                    < любоCircle className="w-4 h-4 mr-2" /> Verwijder Tags
                  </Button>
               </div>
            </div>
