@@ -398,13 +398,16 @@ export default function AdminPage() {
   };
 
   const handleDeleteRoom = async (room: any) => {
-    if (!firestore) return;
-    if (!confirm(`Weet u zeker dat u zaal "${room.title}" wilt verwijderen? De kunstwerken zelf blijven behouden.`)) return;
+    if (!firestore || !room?.id) return;
+    
+    const confirmed = window.confirm(`Weet u zeker dat u zaal "${room.title}" wilt verwijderen? De kunstwerken zelf blijven behouden.`);
+    if (!confirmed) return;
     
     try {
       await deleteDoc(doc(firestore, 'rooms', room.id));
       toast({ title: "Zaal succesvol verwijderd" });
-    } catch (e) {
+    } catch (e: any) {
+      console.error("Delete room error:", e);
       toast({ variant: "destructive", title: "Fout bij verwijderen van zaal" });
     }
   };
@@ -557,56 +560,78 @@ export default function AdminPage() {
                 </Button>
               </div>
 
-              <Accordion type="single" collapsible className="space-y-4">
+              <div className="space-y-4">
                 {rooms?.map((room: any) => {
                   const roomArtworks = filteredAndSortedArtworks.filter(art => art.roomIds?.includes(room.id));
                   return (
-                    <AccordionItem key={room.id} value={room.id} className="border bg-white/60 backdrop-blur-md rounded-[2.5rem] px-8 overflow-hidden">
-                      <AccordionTrigger className="hover:no-underline py-8 group">
-                         <div className="flex items-center gap-6 w-full text-left">
-                            <div className="w-12 h-12 bg-accent/5 rounded-2xl flex items-center justify-center text-accent group-data-[state=open]:bg-accent group-data-[state=open]:text-white transition-all">
-                               <Layers className="w-5 h-5" />
-                            </div>
-                            <div className="flex-1">
-                               <h3 className="font-headline text-2xl italic leading-none">{room.title}</h3>
-                               <p className="text-[9px] font-black uppercase tracking-widest opacity-30 mt-2">{roomArtworks.length} werken &bull; /{room.slug}</p>
-                            </div>
-                            <div className="flex items-center gap-4 mr-4">
-                               <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); setEditingRoom(room); setRoomForm(room); setIsRoomDialogOpen(true); }} className="h-9 px-4 rounded-xl text-[9px] font-black uppercase tracking-widest opacity-60 hover:opacity-100">Hernoemen</Button>
-                               <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); handleDeleteRoom(room); }} className="h-9 w-9 p-0 rounded-xl text-destructive hover:bg-destructive/10 transition-all"><Trash2 className="w-4 h-4" /></Button>
-                            </div>
-                         </div>
-                      </AccordionTrigger>
-                      <AccordionContent className="pb-10 pt-4 space-y-8 border-t border-black/5 mt-4">
-                         <div className="flex items-center justify-between">
-                            <h4 className="text-[10px] font-black uppercase tracking-widest opacity-40">Inhoud van de zaal</h4>
-                            {selectedArtIds.length > 0 && (
-                              <div className="flex gap-2">
-                                <Button size="sm" onClick={() => handleBulkRoomUpdate(room.id, 'add')} className="h-10 px-6 rounded-full bg-accent text-white text-[9px] font-black uppercase tracking-widest"><Plus className="w-3.5 h-3.5 mr-2" /> Voeg {selectedArtIds.length} toe</Button>
-                                <Button size="sm" variant="outline" onClick={() => handleBulkRoomUpdate(room.id, 'remove')} className="h-10 px-6 rounded-full text-[9px] font-black uppercase tracking-widest border-2"><MinusCircle className="w-3.5 h-3.5 mr-2" /> Verwijder selectie</Button>
-                              </div>
-                            )}
-                         </div>
+                    <div key={room.id} className="border bg-white/60 backdrop-blur-md rounded-[2.5rem] overflow-hidden group">
+                       <div className="flex items-center justify-between px-8 py-8">
+                          <div className="flex items-center gap-6 flex-1">
+                             <div className="w-12 h-12 bg-accent/5 rounded-2xl flex items-center justify-center text-accent">
+                                <Layers className="w-5 h-5" />
+                             </div>
+                             <div className="flex-1">
+                                <h3 className="font-headline text-2xl italic leading-none">{room.title}</h3>
+                                <p className="text-[9px] font-black uppercase tracking-widest opacity-30 mt-2">{roomArtworks.length} werken &bull; /{room.slug}</p>
+                             </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-4">
+                             <Button size="sm" variant="ghost" onClick={() => { setEditingRoom(room); setRoomForm(room); setIsRoomDialogOpen(true); }} className="h-9 px-4 rounded-xl text-[9px] font-black uppercase tracking-widest opacity-60 hover:opacity-100">Hernoemen</Button>
+                             <Button 
+                               size="sm" 
+                               variant="ghost" 
+                               onClick={() => handleDeleteRoom(room)} 
+                               className="h-9 w-9 p-0 rounded-xl text-destructive hover:bg-destructive/10 transition-all z-20"
+                             >
+                               <Trash2 className="w-4 h-4" />
+                             </Button>
+                             <div className="w-px h-6 bg-black/5 mx-2" />
+                             <Accordion type="single" collapsible className="border-none">
+                                <AccordionItem value={room.id} className="border-none">
+                                   <AccordionTrigger className="p-0 hover:no-underline border-none">
+                                      <span className="sr-only">Details</span>
+                                   </AccordionTrigger>
+                                   {/* Content is below fixed trigger */}
+                                </AccordionItem>
+                             </Accordion>
+                          </div>
+                       </div>
 
-                         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
-                            {roomArtworks.length === 0 ? (
-                              <div className="col-span-full py-12 text-center border-2 border-dashed rounded-3xl opacity-20 italic">Deze zaal is momenteel leeg</div>
-                            ) : (
-                              roomArtworks.map(art => (
-                                <div key={art.id} className="relative aspect-square rounded-2xl overflow-hidden group/art">
-                                   <img src={art.image} className="w-full h-full object-cover" alt={art.title} />
-                                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/art:opacity-100 transition-opacity flex items-center justify-center">
-                                      <button onClick={() => handleRemoveFromRoom(art.id, room.id)} title="Verwijderen uit deze zaal" className="p-2 bg-white rounded-full text-destructive shadow-lg hover:scale-110 transition-transform"><X className="w-4 h-4" /></button>
-                                   </div>
+                       <Accordion type="single" collapsible>
+                          <AccordionItem value={room.id} className="border-none">
+                             <AccordionContent className="px-8 pb-10 pt-4 space-y-8 border-t border-black/5 mt-0">
+                                <div className="flex items-center justify-between">
+                                   <h4 className="text-[10px] font-black uppercase tracking-widest opacity-40">Inhoud van de zaal</h4>
+                                   {selectedArtIds.length > 0 && (
+                                     <div className="flex gap-2">
+                                       <Button size="sm" onClick={() => handleBulkRoomUpdate(room.id, 'add')} className="h-10 px-6 rounded-full bg-accent text-white text-[9px] font-black uppercase tracking-widest"><Plus className="w-3.5 h-3.5 mr-2" /> Voeg {selectedArtIds.length} toe</Button>
+                                       <Button size="sm" variant="outline" onClick={() => handleBulkRoomUpdate(room.id, 'remove')} className="h-10 px-6 rounded-full text-[9px] font-black uppercase tracking-widest border-2"><MinusCircle className="w-3.5 h-3.5 mr-2" /> Verwijder selectie</Button>
+                                     </div>
+                                   )}
                                 </div>
-                              ))
-                            )}
-                         </div>
-                      </AccordionContent>
-                    </AccordionItem>
+
+                                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
+                                   {roomArtworks.length === 0 ? (
+                                     <div className="col-span-full py-12 text-center border-2 border-dashed rounded-3xl opacity-20 italic">Deze zaal is momenteel leeg</div>
+                                   ) : (
+                                     roomArtworks.map(art => (
+                                       <div key={art.id} className="relative aspect-square rounded-2xl overflow-hidden group/art">
+                                          <img src={art.image} className="w-full h-full object-cover" alt={art.title} />
+                                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/art:opacity-100 transition-opacity flex items-center justify-center">
+                                             <button onClick={() => handleRemoveFromRoom(art.id, room.id)} title="Verwijderen uit deze zaal" className="p-2 bg-white rounded-full text-destructive shadow-lg hover:scale-110 transition-transform"><X className="w-4 h-4" /></button>
+                                          </div>
+                                       </div>
+                                     ))
+                                   )}
+                                </div>
+                             </AccordionContent>
+                          </AccordionItem>
+                       </Accordion>
+                    </div>
                   );
                 })}
-              </Accordion>
+              </div>
             </TabsContent>
 
             {/* 3. STORY TAB */}
