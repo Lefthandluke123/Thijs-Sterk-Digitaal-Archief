@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, Suspense } from 'react';
@@ -99,7 +98,7 @@ function NavbarContent() {
               <img 
                 src={siteSettings?.logoUrl || "/logo.png"} 
                 alt="Logo" 
-                className="h-8 md:h-12 w-auto object-contain transition-transform duration-700 group-hover:scale-105 flex-shrink-0" 
+                className="h-10 md:h-16 w-auto object-contain transition-transform duration-700 group-hover:scale-105 flex-shrink-0" 
               />
               <div className="hidden sm:flex flex-col leading-tight border-l-2 border-accent/10 pl-4 md:pl-6 min-w-0">
                  <span className="font-headline font-medium text-lg md:text-2xl tracking-tight text-foreground group-hover:text-accent transition-colors truncate">
