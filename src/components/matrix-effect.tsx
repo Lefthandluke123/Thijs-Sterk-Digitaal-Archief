@@ -24,12 +24,12 @@ export function MatrixEffect() {
     },
     { 
       isChoice: true,
-      heading: "IS DIT DE WEG?", 
-      sub: "Zou u dat nou wel doen?" 
+      heading: "HARDE SCHIJF FORMATEREN?", 
+      sub: "Wat kiest u?" 
     },
     { 
       button: "NEE TOCH, OF WEL?", 
-      heading: "ONZEKERHEID GEDETECTEERD", 
+      heading: "IS DIT DE WEG?", 
       sub: "De artistieke simulatie is instabiel." 
     },
     { 
@@ -127,7 +127,7 @@ export function MatrixEffect() {
       <canvas ref={canvasRef} className="block w-full h-full" />
       
       <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center gap-8">
-         <h2 className="text-white font-mono text-4xl md:text-6xl tracking-[0.5em] animate-pulse text-center px-6 mix-blend-difference uppercase">
+         <h2 className="text-white font-mono text-4xl md:text-6xl tracking-[0.2em] animate-pulse text-center px-6 mix-blend-difference uppercase">
             {current.heading}
          </h2>
          <div className="space-y-4 text-center max-w-md px-10">
