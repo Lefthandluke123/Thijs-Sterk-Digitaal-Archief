@@ -116,25 +116,6 @@ export function ArtistBio() {
             <div className="space-y-8 text-xl text-foreground leading-relaxed font-light whitespace-pre-line border-l-4 border-accent/10 pl-8">
               {renderTextWithLinks(bioText)}
             </div>
-            
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 mt-12 pt-12 border-t border-border/40">
-              <div>
-                <p className="font-headline text-2xl font-medium text-foreground mb-1">1913</p>
-                <p className="text-[10px] font-black uppercase tracking-widest text-accent/60">Geboortejaar</p>
-              </div>
-              <div>
-                <p className="font-headline text-2xl font-medium text-foreground mb-1">Monumentaal</p>
-                <p className="text-[10px] font-black uppercase tracking-widest text-accent/60">Wandkunst</p>
-              </div>
-              <div>
-                <p className="font-headline text-2xl font-medium text-foreground mb-1">Glas</p>
-                <p className="text-[10px] font-black uppercase tracking-widest text-accent/60">In lood</p>
-              </div>
-              <div>
-                <p className="font-headline text-2xl font-medium text-foreground mb-1">Internationaal</p>
-                <p className="text-[10px] font-black uppercase tracking-widest text-accent/60">Exposities</p>
-              </div>
-            </div>
           </div>
         </div>
       </div>
