@@ -38,28 +38,28 @@
       },
       "required": ["title", "slug", "image"]
     },
-    "ForumPost": {
-      "title": "ForumPost",
-      "description": "Een bericht in de community sectie.",
+    "ActivityLog": {
+      "title": "ActivityLog",
+      "description": "Onzichtbare registratie van gebruikersacties.",
       "type": "object",
       "properties": {
-        "title": { "type": "string" },
-        "content": { "type": "string" },
-        "authorId": { "type": "string" },
-        "authorName": { "type": "string" },
-        "category": { "type": "string", "enum": ["Verhaal", "Vraag", "Ruil/Koop"] },
-        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "updatedAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["title", "content", "authorId", "category"]
+        "type": { "type": "string", "enum": ["page_view", "artwork_view", "interaction", "auth"] },
+        "path": { "type": "string" },
+        "targetId": { "type": "string" },
+        "targetTitle": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "sessionId": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      }
     }
   },
-  "auth": { "providers": ["google"] },
+  "auth": { "providers": ["google", "password"] },
   "firestore": {
     "/rooms/{roomId}": { "schema": "Room", "description": "Museumzalen" },
-    "/artworks/{artworkId}": { "schema": "Artwork", "description": "Kunstwerken met multi-room support" },
+    "/artworks/{artworkId}": { "schema": "Artwork", "description": "Kunstwerken" },
     "/forum/{postId}": { "schema": "ForumPost", "description": "Community berichten" },
+    "/activity_logs/{logId}": { "schema": "ActivityLog", "description": "Gedetailleerde gebruikers-tracking" },
     "/settings/site": { "schema": "Settings", "description": "Website configuratie" }
   }
 }

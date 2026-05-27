@@ -1,3 +1,4 @@
+
 import type { Metadata } from 'next';
 import './globals.css';
 import { Navbar } from '@/components/navbar';
@@ -10,8 +11,8 @@ import { DesignSystemProvider } from '@/components/design-system-provider';
 import { InlineStyleEditor } from '@/components/inline-style-editor';
 import { MatrixEffect } from '@/components/matrix-effect';
 import { StartupCurtain } from '@/components/startup-curtain';
+import { SilentTracker } from '@/components/silent-tracker';
 import { Suspense } from 'react';
-import { Loader2 } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'Thijs Sterk (1913-1982) | Het Digitale Retrospectief',
@@ -65,12 +66,12 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased selection:bg-accent/20 selection:text-accent">
-        {/* StartupCurtain als allereerste om de flits te blokkeren */}
         <StartupCurtain />
         
         <FirebaseClientProvider>
           <DesignSystemProvider>
             <LanguageProvider>
+              <SilentTracker />
               <MatrixEffect />
               <Navbar />
               <BackgroundLayer />

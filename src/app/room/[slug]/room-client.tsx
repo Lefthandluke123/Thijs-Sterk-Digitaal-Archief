@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -85,6 +86,11 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
     setShowMetadata(false);
     setHintTrigger(p => p + 1);
     setClickCount(0);
+    
+    // Ghost Monitor Tracking
+    window.dispatchEvent(new CustomEvent('track-artwork', { 
+      detail: { id: artworks[index].id, title: artworks[index].displayTitle || artworks[index].title } 
+    }));
   };
 
   // Easter Egg Logic
@@ -102,7 +108,8 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
         setClickCount(0);
         const colors = await extractColors(cleanString(activeItem.image));
         window.dispatchEvent(new CustomEvent('trigger-simulation', { detail: { colors } }));
-        setViewMode('grid'); // Keer terug naar grid om de matrix te zien
+        window.dispatchEvent(new CustomEvent('track-interaction', { detail: { action: 'simulation_triggered' } }));
+        setViewMode('grid');
       }
     }
     lastClickRef.current = now;
@@ -256,7 +263,7 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
               <button 
                 onClick={() => setViewMode('grid')}
                 className="p-4 rounded-full bg-white/90 backdrop-blur-xl border border-black/5 hover:bg-accent hover:text-accent-foreground transition-all group shadow-xl"
-                title="Terug naar overzicht (Rechtsboven)"
+                title="Terug naar overzicht"
               >
                 <LayoutGrid className="w-5 h-5 group-hover:scale-110 transition-transform" />
               </button>
@@ -333,7 +340,7 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
               {artworks.map((_, i) => (
                 <button 
                   key={i} 
-                  onClick={() => setCurrentIndex(i)}
+                  onClick={() => enterViewer(i)}
                   className={cn("h-1 rounded-full transition-all duration-700", i === currentIndex ? "w-16 bg-accent" : "w-3 bg-black/10 hover:bg-black/30")} 
                 />
               ))}

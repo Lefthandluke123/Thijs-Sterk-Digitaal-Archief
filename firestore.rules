@@ -1,17 +1,14 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Helper: Is de gebruiker een geautoriseerde beheerder?
-    // In dit prototype gebruiken we een simpele check of de gebruiker is ingelogd
-    // voor schrijfbevoegdheid op publieke collecties.
     function isAuthenticated() {
       return request.auth != null;
     }
 
-    // 1. Publieke Collecties: Iedereen mag lezen (get + list), alleen admins mogen schrijven.
-    
+    // Publieke leesrechten, schrijven alleen voor admin
     match /rooms/{roomId} {
       allow read: if true;
       allow write: if isAuthenticated();
@@ -38,20 +35,26 @@ service cloud.firestore {
       allow write: if isAuthenticated();
     }
 
-    match /shared_rooms/{roomId} {
-      allow read: if true;
-      allow create: if true; // Bezoekers kunnen hun eigen kamers aanmaken
-      allow update, delete: if isAuthenticated();
+    // Tracking: Iedereen mag logs MAKEN, niemand mag ze lezen (behalve admin op papier)
+    match /activity_logs/{logId} {
+      allow create: if true;
+      allow read: if isAuthenticated(); 
     }
 
-    // 2. Beschermde Collecties: Alleen voor Vrienden (ingelogd) of Admins.
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    match /shared_rooms/{roomId} {
+      allow read: if true;
+      allow create: if true;
+    }
 
     match /privatePhotos/{photoId} {
       allow read: if isAuthenticated();
       allow write: if isAuthenticated();
     }
-
-    // 3. Private Systeem Collecties: Alleen schrijven door systeem/bezoeker, lezen door admin.
 
     match /mail/{mailId} {
       allow create: if true;
@@ -60,10 +63,9 @@ service cloud.firestore {
 
     match /orders/{orderId} {
       allow create: if true;
-      allow read, write: if isAuthenticated();
+      allow read: if isAuthenticated();
     }
 
-    // Fallback: Alles wat niet expliciet is gedefinieerd is verboden.
     match /{document=**} {
       allow read, write: if false;
     }

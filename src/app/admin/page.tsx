@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
@@ -47,7 +48,8 @@ import {
   Type,
   Calendar,
   Hammer,
-  Camera
+  Camera,
+  Activity
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -443,17 +445,17 @@ export default function AdminPage() {
                <Users className="w-4 h-4" />
                <span className="text-[10px] font-black uppercase tracking-widest">Forum</span>
             </Link>
+            <Link href="/admin/activity" className="flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/5 text-blue-600 hover:bg-blue-500 hover:text-white transition-all shrink-0">
+               <Activity className="w-4 h-4" />
+               <span className="text-[10px] font-black uppercase tracking-widest">Ghost Monitor</span>
+            </Link>
             <Link href="/admin/private" className="flex items-center gap-2 px-4 py-2 rounded-full bg-orange-500/5 text-orange-600 hover:bg-orange-500 hover:text-white transition-all shrink-0">
                <Camera className="w-4 h-4" />
                <span className="text-[10px] font-black uppercase tracking-widest">Privé Archief</span>
             </Link>
-            <Link href="/admin/team" className="flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/5 text-blue-600 hover:bg-blue-500 hover:text-white transition-all shrink-0">
+            <Link href="/admin/team" className="flex items-center gap-2 px-4 py-2 rounded-full bg-green-500/5 text-green-600 hover:bg-green-500 hover:text-white transition-all shrink-0">
                <Zap className="w-4 h-4" />
                <span className="text-[10px] font-black uppercase tracking-widest">Team Hub</span>
-            </Link>
-            <Link href="/admin/translate" className="flex items-center gap-2 px-4 py-2 rounded-full bg-black/5 text-black hover:bg-black/white transition-all shrink-0">
-               <Languages className="w-4 h-4" />
-               <span className="text-[10px] font-black uppercase tracking-widest">DTP & Teksten</span>
             </Link>
           </div>
         </div>
