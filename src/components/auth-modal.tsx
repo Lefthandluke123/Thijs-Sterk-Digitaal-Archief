@@ -33,7 +33,7 @@ import { cn } from '@/lib/utils';
 interface AuthModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onLogin: () => void; // Dit blijft de Google login trigger
+  onLogin: () => void; // Google login trigger
   isLoggingIn: boolean;
 }
 
@@ -59,14 +59,22 @@ export function AuthModal({ isOpen, onOpenChange, onLogin, isLoggingIn }: AuthMo
     try {
       if (mode === 'email-register') {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        // Direct de naam opslaan
-        await updateProfile(userCredential.user, { displayName: name });
-        // Verificatie mail sturen
-        await sendEmailVerification(userCredential.user);
+        
+        // Gebruikersnaam direct instellen
+        await updateProfile(userCredential.user, { 
+          displayName: name || "Anonieme Vriend" 
+        });
+
+        // Optioneel: Verificatie mail sturen
+        try {
+          await sendEmailVerification(userCredential.user);
+        } catch (vErr) {
+          console.error("Verification email failed", vErr);
+        }
         
         toast({
-          title: "Account aangemaakt!",
-          description: "Controleer uw inbox voor de verificatiemail.",
+          title: "Welkom als Vriend!",
+          description: "Uw account is aangemaakt. Controleer eventueel uw inbox voor de verificatie.",
         });
       } else {
         await signInWithEmailAndPassword(auth, email, password);
@@ -76,20 +84,20 @@ export function AuthModal({ isOpen, onOpenChange, onLogin, isLoggingIn }: AuthMo
         });
       }
       onOpenChange(false);
-      // Reset form
-      setMode('options');
-      setEmail('');
-      setPassword('');
-      setName('');
+      resetForm();
     } catch (error: any) {
-      let msg = "Er is een fout opgetreden.";
-      if (error.code === 'auth/email-already-in-use') msg = "Dit e-mailadres is al bekend.";
-      if (error.code === 'auth/wrong-password') msg = "Onjuist wachtwoord.";
-      if (error.code === 'auth/user-not-found') msg = "Gebruiker niet gevonden.";
+      console.error("Auth error:", error);
+      let msg = "Er is een fout opgetreden bij de authenticatie.";
+      
+      if (error.code === 'auth/email-already-in-use') msg = "Dit e-mailadres is al gekoppeld aan een account.";
+      if (error.code === 'auth/wrong-password') msg = "Het opgegeven wachtwoord is onjuist.";
+      if (error.code === 'auth/user-not-found') msg = "Er is geen account gevonden met dit e-mailadres.";
+      if (error.code === 'auth/weak-password') msg = "Het wachtwoord moet minimaal 6 tekens bevatten.";
+      if (error.code === 'auth/invalid-email') msg = "Ongeldig e-mailformaat.";
       
       toast({
         variant: "destructive",
-        title: "Inloggen mislukt",
+        title: "Toegang geweigerd",
         description: msg,
       });
     } finally {
@@ -97,10 +105,17 @@ export function AuthModal({ isOpen, onOpenChange, onLogin, isLoggingIn }: AuthMo
     }
   };
 
+  const resetForm = () => {
+    setMode('options');
+    setEmail('');
+    setPassword('');
+    setName('');
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {
       onOpenChange(open);
-      if (!open) setMode('options');
+      if (!open) setTimeout(resetForm, 300);
     }}>
       <DialogContent className="rounded-[2.5rem] p-0 max-w-md border-none shadow-2xl bg-white overflow-hidden">
         <div className="bg-primary p-10 text-primary-foreground text-center space-y-4">
@@ -109,10 +124,10 @@ export function AuthModal({ isOpen, onOpenChange, onLogin, isLoggingIn }: AuthMo
           </div>
           <div>
             <DialogTitle className="font-headline text-3xl italic">
-              {mode === 'email-register' ? 'Vriend worden' : 'Word Vriend'}
+              {mode === 'email-register' ? 'Word Vriend' : mode === 'email-login' ? 'Inloggen' : 'Vrienden van Thijs'}
             </DialogTitle>
             <DialogDescription className="text-primary-foreground/60 text-sm font-light mt-2">
-              Krijg toegang tot het forum en bewaar uw eigen collecties.
+              Krijg toegang tot persoonlijke collecties en het forum.
             </DialogDescription>
           </div>
         </div>
@@ -142,21 +157,21 @@ export function AuthModal({ isOpen, onOpenChange, onLogin, isLoggingIn }: AuthMo
                 <Button 
                   variant="outline"
                   onClick={() => setMode('email-login')}
-                  className="h-14 rounded-2xl border-black/5 font-black uppercase text-[10px] tracking-widest"
+                  className="h-14 rounded-2xl border-black/5 font-black uppercase text-[10px] tracking-widest hover:bg-accent/5 hover:text-accent"
                 >
                   <LogIn className="w-4 h-4 mr-2" /> Inloggen
                 </Button>
                 <Button 
                   variant="outline"
                   onClick={() => setMode('email-register')}
-                  className="h-14 rounded-2xl border-black/5 font-black uppercase text-[10px] tracking-widest"
+                  className="h-14 rounded-2xl border-black/5 font-black uppercase text-[10px] tracking-widest hover:bg-accent/5 hover:text-accent"
                 >
                   <UserPlus className="w-4 h-4 mr-2" /> Registreren
                 </Button>
               </div>
             </div>
           ) : (
-            <form onSubmit={handleEmailAuth} className="space-y-6">
+            <form onSubmit={handleEmailAuth} className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
               <div className="space-y-4">
                 {mode === 'email-register' && (
                   <div className="space-y-2">
@@ -198,11 +213,11 @@ export function AuthModal({ isOpen, onOpenChange, onLogin, isLoggingIn }: AuthMo
                 <Button 
                   type="submit" 
                   disabled={loading}
-                  className="w-full h-16 rounded-2xl bg-accent text-white font-black uppercase tracking-widest text-[11px] shadow-lg"
+                  className="w-full h-16 rounded-2xl bg-accent text-white font-black uppercase tracking-widest text-[11px] shadow-lg hover:scale-[1.02] active:scale-95 transition-all"
                 >
                   {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
                     <>
-                      {mode === 'email-register' ? 'Vriend worden' : 'Inloggen'}
+                      {mode === 'email-register' ? 'Account aanmaken' : 'Inloggen'}
                       <ArrowRight className="w-4 h-4 ml-2" />
                     </>
                   )}
@@ -212,22 +227,16 @@ export function AuthModal({ isOpen, onOpenChange, onLogin, isLoggingIn }: AuthMo
                   onClick={() => setMode('options')}
                   className="text-[10px] font-bold uppercase tracking-widest opacity-40 hover:opacity-100 transition-opacity"
                 >
-                  Terug naar keuzes
+                  Andere inlogmethode
                 </button>
               </div>
-              
-              {mode === 'email-register' && (
-                <p className="text-[9px] text-center italic opacity-40 leading-relaxed">
-                  Na registratie ontvangt u een e-mail om uw account te verifiëren.
-                </p>
-              )}
             </form>
           )}
         </div>
 
         <div className="bg-black/[0.02] p-6 text-center border-t border-black/5">
            <p className="text-[9px] font-black uppercase tracking-[0.3em] opacity-30">
-             Veilig verbonden via Firebase Auth
+             Veilig verbonden via de Erven Thijs Sterk
            </p>
         </div>
       </DialogContent>
