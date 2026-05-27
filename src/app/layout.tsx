@@ -10,6 +10,7 @@ import { BackgroundLayer } from '@/components/background-layer';
 import { DesignSystemProvider } from '@/components/design-system-provider';
 import { InlineStyleEditor } from '@/components/inline-style-editor';
 import { MatrixEffect } from '@/components/matrix-effect';
+import { StartupCurtain } from '@/components/startup-curtain';
 import { Suspense } from 'react';
 import { Loader2 } from 'lucide-react';
 
@@ -65,6 +66,7 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased selection:bg-accent/20 selection:text-accent">
+        <StartupCurtain />
         <FirebaseClientProvider>
           <DesignSystemProvider>
             <LanguageProvider>
