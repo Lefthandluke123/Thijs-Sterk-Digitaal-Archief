@@ -111,14 +111,14 @@ export function IntroductionGallery() {
               return (
                 <div key={item.id} className="group flex flex-col space-y-6 animate-subtle-fade">
                   <button 
-                    className="relative aspect-[4/5] overflow-hidden rounded-[2rem] bg-black/[0.03] shadow-md transition-all duration-[1500ms] hover:shadow-2xl cursor-pointer flex items-center justify-center p-3 border border-black/5"
+                    className="relative aspect-[4/5] overflow-hidden rounded-[2rem] bg-black/[0.03] shadow-md transition-all duration-1500 hover:shadow-2xl cursor-pointer flex items-center justify-center p-3 border border-black/5"
                     onClick={() => setSelectedArtwork(item)}
                   >
                     {displayImage ? (
                       <img 
                         src={displayImage} 
                         alt={title} 
-                        className="max-w-full max-h-full object-contain transition-transform duration-[1500ms] group-hover:scale-110"
+                        className="max-w-full max-h-full object-contain transition-transform duration-1500 group-hover:scale-110"
                         style={{ filter: `brightness(${item.brightness || 1})` }}
                       />
                     ) : (

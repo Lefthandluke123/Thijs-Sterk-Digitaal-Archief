@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -224,7 +223,7 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
       </div>
 
       <div className={cn(
-        "absolute bottom-20 left-1/2 -translate-x-1/2 z-[10040] flex flex-col items-center gap-3 pointer-events-none transition-opacity duration-[2000ms] ease-in-out",
+        "absolute bottom-20 left-1/2 -translate-x-1/2 z-[10040] flex flex-col items-center gap-3 pointer-events-none transition-opacity duration-2000 ease-in-out",
         (showMetadata || !showHints) ? "opacity-0" : "opacity-100"
       )}>
          <div className="bg-white/40 backdrop-blur-xl border border-black/5 px-6 py-1.5 rounded-full flex items-center gap-6 shadow-sm">

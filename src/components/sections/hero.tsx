@@ -96,7 +96,7 @@ export function Hero() {
             src={heroImage}
             alt={artwork?.displayTitle || artwork?.title || 'Monumentaal werk van Thijs Sterk'}
             fill
-            className="object-cover transition-transform duration-[3000ms] group-hover:scale-105"
+            className="object-cover transition-transform duration-3000 group-hover:scale-105"
             priority
           />
           <div className="absolute inset-0 bg-black/15 opacity-0 group-hover:opacity-100 transition-opacity duration-1000 flex items-center justify-center">
