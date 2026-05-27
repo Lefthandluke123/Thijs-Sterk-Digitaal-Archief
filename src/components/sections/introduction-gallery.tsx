@@ -9,6 +9,10 @@ import Link from 'next/link';
 import { cleanString } from '@/lib/museum-utils';
 import { useLanguage } from '@/components/language-provider';
 
+/**
+ * @fileOverview Introductie galerij op de homepage.
+ * Toont een curatie van werken en verwijst door naar de zalen.
+ */
 export function IntroductionGallery() {
   const [selectedArtwork, setSelectedArtwork] = useState<any | null>(null);
   const firestore = useFirestore();
@@ -56,7 +60,7 @@ export function IntroductionGallery() {
     if (item.roomSlug) return item.roomSlug;
     if (item.roomIds?.length > 0 && rooms) {
       const firstRoom = rooms.find(r => r.id === item.roomIds[0]);
-      return firstRoom?.slug || 'gallery';
+      return firstRoom?.slug || firstRoom?.id || 'gallery';
     }
     return 'gallery';
   };
@@ -141,7 +145,7 @@ export function IntroductionGallery() {
                         <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-60">{item.year} &bull; {item.medium}</p>
                       </div>
                       <Link 
-                        href={`/gallery?room=${roomSlug}`}
+                        href={`/room/${roomSlug}`}
                         className="inline-flex items-center gap-3 px-6 py-2.5 rounded-full border border-black/5 text-accent text-[10px] font-black uppercase tracking-widest hover:bg-accent hover:text-accent-foreground transition-all"
                       >
                         Verken Serie <ArrowRight className="w-3 h-3" />

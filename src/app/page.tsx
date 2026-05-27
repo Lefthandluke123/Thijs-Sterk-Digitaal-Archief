@@ -15,7 +15,7 @@ import { useLanguage } from '@/components/language-provider';
 
 /**
  * @fileOverview Homepage van Thijs Sterk Retrospectief.
- * Geoptimaliseerd voor stabiele rendering zonder layout-shifts of hydration errors.
+ * Geoptimaliseerd voor stabiele rendering en robuuste navigatie.
  */
 export default function Home() {
   const firestore = useFirestore();
@@ -72,7 +72,7 @@ export default function Home() {
                 {rooms.map((room: any) => (
                   <Link 
                     key={room.id} 
-                    href={`/room/${room.slug}`}
+                    href={`/room/${room.slug || room.id}`}
                     className="group p-10 bg-white/50 backdrop-blur-sm rounded-[2.5rem] border border-black/5 hover:bg-white hover:shadow-2xl transition-all hover:scale-[1.02] focus-visible:ring-4 focus-visible:ring-accent"
                   >
                     <h3 className="font-headline text-3xl mb-4 italic group-hover:text-accent transition-colors">{room.title}</h3>
