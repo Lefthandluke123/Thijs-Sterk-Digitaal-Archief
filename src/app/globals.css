@@ -48,7 +48,7 @@
   }
   
   html {
-    background-color: hsl(var(--background));
+    background-color: #f4f4f2; /* Hardcoded fallback om flitsen te voorkomen */
     min-height: 100%;
   }
 

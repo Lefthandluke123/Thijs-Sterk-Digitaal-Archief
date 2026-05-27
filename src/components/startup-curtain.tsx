@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useEffect, useState } from 'react';
@@ -13,15 +12,15 @@ export function StartupCurtain() {
   const [shouldRender, setShouldRender] = useState(true);
 
   useEffect(() => {
-    // Geef de app even de tijd om de eerste verfbeurt en hydratatie af te ronden
+    // Geef de app ruim de tijd om de eerste verfbeurt en hydratatie af te ronden
     const timer = setTimeout(() => {
       setIsVisible(false);
-    }, 800);
+    }, 1200);
 
     // Verwijder het element volledig uit de DOM na de animatie om interactie niet te blokkeren
     const removeTimer = setTimeout(() => {
       setShouldRender(false);
-    }, 2000);
+    }, 2500);
 
     return () => {
       clearTimeout(timer);
@@ -34,26 +33,26 @@ export function StartupCurtain() {
   return (
     <div 
       className={cn(
-        "fixed inset-0 z-[1000000] bg-[#f4f4f2] flex flex-col items-center justify-center transition-all duration-1000 ease-in-out pointer-events-none",
-        !isVisible ? "opacity-0 scale-105" : "opacity-100"
+        "fixed inset-0 z-[9999999] bg-[#f4f4f2] flex flex-col items-center justify-center transition-all duration-1000 ease-in-out pointer-events-auto",
+        !isVisible ? "opacity-0 scale-105 pointer-events-none" : "opacity-100"
       )}
     >
       <div className="relative flex flex-col items-center gap-8 animate-pulse">
         <img 
           src="/logo.png" 
           alt="Thijs Sterk" 
-          className="h-24 md:h-32 w-auto opacity-20 grayscale"
+          className="h-24 md:h-32 w-auto opacity-30 grayscale"
         />
-        <div className="flex flex-col items-center text-center gap-2">
-           <span className="text-[10px] font-black uppercase tracking-[0.5em] text-accent opacity-20">
+        <div className="flex flex-col items-center text-center gap-3">
+           <span className="text-[10px] font-black uppercase tracking-[0.6em] text-accent opacity-30">
              Het Digitale Retrospectief
            </span>
-           <div className="w-12 h-[1px] bg-accent/20" />
+           <div className="w-16 h-[1px] bg-accent/20" />
         </div>
       </div>
       
       {/* Subtiele textuur om het minder 'digitaal' te maken */}
-      <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')]" />
+      <div className="absolute inset-0 opacity-[0.04] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')]" />
     </div>
   );
 }

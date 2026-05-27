@@ -1,4 +1,3 @@
-
 import type { Metadata } from 'next';
 import './globals.css';
 import { Navbar } from '@/components/navbar';
@@ -66,7 +65,9 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased selection:bg-accent/20 selection:text-accent">
+        {/* StartupCurtain als allereerste om de flits te blokkeren */}
         <StartupCurtain />
+        
         <FirebaseClientProvider>
           <DesignSystemProvider>
             <LanguageProvider>
