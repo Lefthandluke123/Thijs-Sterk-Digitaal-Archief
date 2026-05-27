@@ -1,16 +1,16 @@
 'use client';
 
-import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getFirestore, Firestore } from 'firebase/firestore';
-import { getAuth, Auth } from 'firebase/auth';
-import { getStorage, FirebaseStorage } from 'firebase/storage';
+import { initializeApp, getApps, getApp } from 'firebase/app';
+import { getFirestore } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
+import { getStorage } from 'firebase/storage';
 import { firebaseConfig } from './config';
 
 /**
  * @fileOverview SSR-safe Firebase initialisatie.
+ * Geïsoleerd van de providers om circulaire dependencies te voorkomen.
  */
 export function initializeFirebase() {
-  // Voorkom initialisatie tijdens SSR
   if (typeof window === 'undefined') {
     return { firebaseApp: null, firestore: null, auth: null, storage: null };
   }

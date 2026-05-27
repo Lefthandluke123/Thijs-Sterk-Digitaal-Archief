@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useRef } from 'react';
@@ -31,7 +30,7 @@ import { AuthModal } from '@/components/auth-modal';
 export default function ForumPage() {
   const firestore = useFirestore();
   const auth = useAuth();
-  const { user, loading: authLoading } = useUser();
+  const { user } = useUser();
   
   const [isPostingOpen, setIsPostingOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -82,7 +81,7 @@ export default function ForumPage() {
         toast({ 
           variant: "destructive", 
           title: "Inloggen mislukt", 
-          description: "Controleer of uw browser pop-ups toestaat." 
+          description: "Controleer pop-ups of Firebase instellingen." 
         });
       }
     } finally {
@@ -154,9 +153,6 @@ export default function ForumPage() {
              <h1 className="font-headline text-5xl md:text-7xl font-light leading-tight">
                Forum <span className="italic">Community</span>
              </h1>
-             <p className="text-xl text-muted-foreground font-light max-w-xl">
-               Deel uw verhalen over Thijs Sterk, stel vragen of ruil werken met andere verzamelaars.
-             </p>
           </div>
 
           <div className="flex items-center gap-4">
@@ -169,15 +165,15 @@ export default function ForumPage() {
           </div>
         </header>
 
-        <div className="flex flex-wrap gap-3 justify-center md:justify-start">
+        <div className="flex flex-wrap gap-3">
            <button 
               onClick={() => setActiveCategory('Alle')}
               className={cn(
                 "px-8 py-3 rounded-full text-[11px] font-black uppercase tracking-widest transition-all",
-                activeCategory === 'Alle' ? "bg-accent text-white shadow-xl scale-105" : "bg-white/50 border hover:border-accent/30"
+                activeCategory === 'Alle' ? "bg-accent text-white shadow-xl" : "bg-white/50 border hover:border-accent/30"
               )}
            >
-              Alle Berichten
+              Alle
            </button>
            {CATEGORIES.map(cat => (
              <button 
@@ -185,7 +181,7 @@ export default function ForumPage() {
                 onClick={() => setActiveCategory(cat.value)}
                 className={cn(
                   "px-8 py-3 rounded-full text-[11px] font-black uppercase tracking-widest transition-all flex items-center gap-3",
-                  activeCategory === cat.value ? "bg-accent text-white shadow-xl scale-105" : "bg-white/50 border hover:border-accent/30"
+                  activeCategory === cat.value ? "bg-accent text-white shadow-xl" : "bg-white/50 border hover:border-accent/30"
                 )}
              >
                 <cat.icon className="w-3.5 h-3.5" />
@@ -198,15 +194,10 @@ export default function ForumPage() {
            {loading ? (
              <div className="py-32 flex flex-col items-center gap-4 opacity-20">
                 <Loader2 className="w-10 h-10 animate-spin" />
-                <span className="text-[10px] font-black uppercase tracking-widest">Archief wordt doorzocht...</span>
+                <span className="text-[10px] font-black uppercase tracking-widest">Laden...</span>
              </div>
-           ) : !posts || posts.length === 0 ? (
-             <Card className="py-32 text-center bg-white/40 border-dashed border-2 rounded-[3rem] opacity-30 italic">
-                Geen openbare berichten gevonden in deze categorie.
-             </Card>
-           ) : (
-             posts.map((post: any) => (
-               <Card key={post.id} className="p-10 rounded-[2.5rem] bg-white/60 backdrop-blur-xl border-none shadow-xl hover:shadow-2xl transition-all group">
+           ) : posts?.map((post: any) => (
+               <Card key={post.id} className="p-10 rounded-[2.5rem] bg-white/60 backdrop-blur-xl border-none shadow-xl">
                   <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-8">
                      <div className="space-y-3">
                         <div className="flex items-center gap-3">
@@ -217,16 +208,11 @@ export default function ForumPage() {
                               {post.createdAt ? format(post.createdAt.toDate(), 'd MMMM yyyy', { locale: nl }) : 'Zojuist'}
                            </span>
                         </div>
-                        <h3 className="font-headline text-3xl italic leading-tight group-hover:text-accent transition-colors">{post.title}</h3>
+                        <h3 className="font-headline text-3xl italic leading-tight">{post.title}</h3>
                      </div>
-                     <div className="flex items-center gap-4 border-l-2 border-accent/10 pl-6 h-fit">
-                        <div className="w-10 h-10 rounded-full bg-accent/5 flex items-center justify-center text-accent">
-                           <Users className="w-5 h-5" />
-                        </div>
-                        <div>
-                           <p className="text-[9px] font-black uppercase tracking-widest opacity-40">Geplaatst door</p>
-                           <p className="text-sm font-bold">{post.authorName}</p>
-                        </div>
+                     <div className="text-right">
+                        <p className="text-[9px] font-black uppercase tracking-widest opacity-40">Door</p>
+                        <p className="text-sm font-bold">{post.authorName}</p>
                      </div>
                   </div>
                   <div className="text-lg font-light leading-relaxed text-muted-foreground whitespace-pre-line">
@@ -234,58 +220,48 @@ export default function ForumPage() {
                   </div>
                </Card>
              ))
-           )}
+           }
         </div>
       </div>
 
-      {/* Posting Modal */}
       <Dialog open={isPostingOpen} onOpenChange={setIsPostingOpen}>
         <DialogContent className="rounded-[2.5rem] p-10 max-w-2xl border-none bg-white/95 backdrop-blur-3xl shadow-2xl">
            <DialogHeader>
               <DialogTitle className="font-headline text-3xl italic">Nieuwe Bijdrage</DialogTitle>
-              <DialogDescription className="text-xs uppercase font-black tracking-widest opacity-40 pt-2">
-                Uw bericht wordt gecontroleerd op kwaliteit en relevantie.
-              </DialogDescription>
            </DialogHeader>
            <form onSubmit={handleSubmit} className="space-y-6 pt-6">
               <div className="grid grid-cols-2 gap-4">
                  <div className="space-y-2">
-                    <Label className="text-[10px] uppercase font-black opacity-40 ml-2">Categorie</Label>
+                    <Label className="text-[10px] font-black opacity-40 ml-2">Categorie</Label>
                     <Select value={formData.category} onValueChange={(v) => setFormData({...formData, category: v})}>
                        <SelectTrigger className="h-14 rounded-2xl bg-black/5 border-none text-xs font-bold uppercase tracking-widest">
                           <SelectValue />
                        </SelectTrigger>
                        <SelectContent className="rounded-2xl shadow-xl border-none">
-                          <SelectItem value="Verhaal" className="rounded-xl p-3 text-xs uppercase font-bold">Verhaal</SelectItem>
-                          <SelectItem value="Vraag" className="rounded-xl p-3 text-xs uppercase font-bold">Vraag</SelectItem>
-                          <SelectItem value="Ruil/Koop" className="rounded-xl p-3 text-xs uppercase font-bold">Ruil / Koop / Verkoop</SelectItem>
+                          <SelectItem value="Verhaal">Verhaal</SelectItem>
+                          <SelectItem value="Vraag">Vraag</SelectItem>
+                          <SelectItem value="Ruil/Koop">Ruil / Koop</SelectItem>
                        </SelectContent>
                     </Select>
                  </div>
                  <div className="space-y-2">
-                    <Label className="text-[10px] uppercase font-black opacity-40 ml-2">Titel</Label>
+                    <Label className="text-[10px] font-black opacity-40 ml-2">Titel</Label>
                     <Input 
                       value={formData.title} 
                       onChange={e => setFormData({...formData, title: e.target.value})} 
-                      className="h-14 rounded-2xl bg-black/5 border-none px-6 text-base"
+                      className="h-14 rounded-2xl bg-black/5 border-none px-6"
                       required
                     />
                  </div>
               </div>
               <div className="space-y-2">
-                 <Label className="text-[10px] uppercase font-black opacity-40 ml-2">Uw Bericht</Label>
+                 <Label className="text-[10px] font-black opacity-40 ml-2">Uw Bericht</Label>
                  <Textarea 
                     value={formData.content} 
                     onChange={e => setFormData({...formData, content: e.target.value})} 
-                    className="min-h-[200px] rounded-[1.5rem] bg-black/5 border-none p-6 text-base"
+                    className="min-h-[200px] rounded-[1.5rem] bg-black/5 border-none p-6"
                     required
                  />
-              </div>
-              <div className="bg-accent/5 p-6 rounded-2xl flex items-start gap-4">
-                 <Clock className="w-5 h-5 text-accent mt-0.5" />
-                 <p className="text-xs italic text-accent/80 leading-relaxed">
-                    <strong>Moderatie:</strong> Na verzending controleert onze conservator uw bericht.
-                 </p>
               </div>
               <Button type="submit" disabled={isSubmitting} className="w-full h-16 rounded-2xl bg-primary text-white font-black uppercase tracking-widest">
                  {isSubmitting ? <Loader2 className="animate-spin" /> : "Indienen voor controle"}
@@ -294,7 +270,6 @@ export default function ForumPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Centrale Auth Modal */}
       <AuthModal 
         isOpen={authModalOpen} 
         onOpenChange={setAuthModalOpen} 
