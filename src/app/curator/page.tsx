@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useCallback, useRef } from 'react';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore } from '@/firebase';
 import { collection, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Loader2, Maximize2, Play, Eraser, Share2, Copy, Filter, CheckCircle2, AlertCircle } from 'lucide-react';
@@ -29,7 +29,7 @@ export default function CuratorPage() {
   const firestore = useFirestore();
   const { t, language } = useLanguage();
   
-  const artworksQuery = useMemoFirebase(() => {
+  const artworksQuery = useMemo(() => {
     if (!firestore) return null;
     return collection(firestore, 'artworks');
   }, [firestore]);
@@ -51,7 +51,6 @@ export default function CuratorPage() {
   }, [artworks, activeTags]);
 
   const resultCount = filteredArtworks.length;
-  const hasNoResults = !loading && activeTags.length > 0 && resultCount === 0;
 
   const navigateArtwork = useCallback((direction: 'next' | 'prev') => {
     if (!selectedArtwork || filteredArtworks.length === 0) return;
@@ -97,7 +96,7 @@ export default function CuratorPage() {
   };
 
   const handleOpenGallery = () => {
-    if (hasNoResults || resultCount === 0) return;
+    if (resultCount === 0) return;
     setShowResults(true);
     setTimeout(() => {
       resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -142,9 +141,7 @@ export default function CuratorPage() {
   return (
     <main className="min-h-screen bg-background pt-24 md:pt-32 pb-48 px-6">
       <div className="container mx-auto max-w-4xl space-y-8 md:space-y-12">
-        
-        {/* 1. HEADER & INSTRUCTION */}
-        <div className="text-center space-y-4 md:space-y-6 animate-subtle-fade">
+        <div className="text-center space-y-4 md:space-y-6">
           <div className="space-y-2">
             <h1 className="font-headline text-3xl md:text-5xl font-medium tracking-tight text-foreground leading-tight">
               {t('curator_subtitle')}
@@ -155,13 +152,12 @@ export default function CuratorPage() {
           </div>
         </div>
 
-        {/* 2. THE GALLERY */}
         <div ref={resultsRef} className="scroll-mt-32">
           {showResults && resultCount > 0 && (
             <div className="mb-12 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 md:gap-8 animate-in fade-in slide-in-from-top-8 duration-1000">
               {filteredArtworks.map((item: any) => (
                 <div key={item.id} className="group cursor-pointer space-y-3 md:space-y-4" onClick={() => setSelectedArtwork(item)}>
-                  <div className="relative aspect-[4/5] overflow-hidden rounded-2xl md:rounded-[2rem] bg-black/[0.02] shadow-md transition-all duration-1500 group-hover:shadow-xl flex items-center justify-center p-3 border border-black/5">
+                  <div className="relative aspect-[4/5] overflow-hidden rounded-2xl md:rounded-[2rem] bg-black/[0.02] shadow-md transition-all flex items-center justify-center p-3 border border-black/5">
                     {item.image ? (
                       <img 
                         src={item.image} 
@@ -172,8 +168,8 @@ export default function CuratorPage() {
                     ) : (
                       <Filter className="w-10 h-10 opacity-10" />
                     )}
-                    <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-500">
-                      <div className="p-3 rounded-full bg-white/30 backdrop-blur-xl scale-90 group-hover:scale-100 transition-transform duration-500">
+                    <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                      <div className="p-3 rounded-full bg-white/30 backdrop-blur-xl scale-90 group-hover:scale-100 transition-transform">
                         <Maximize2 className="text-white w-5 h-5" />
                       </div>
                     </div>
@@ -196,9 +192,7 @@ export default function CuratorPage() {
           )}
         </div>
 
-        {/* 3. LIVE COUNTER & ACTION BUTTONS */}
-        <div className="flex flex-col items-center gap-8 py-12 border-y border-black/5 animate-subtle-fade">
-          
+        <div className="flex flex-col items-center gap-8 py-12 border-y border-black/5">
           <div className="min-h-[60px] flex items-center justify-center">
              {loading ? (
                <div className="flex items-center gap-3 text-[12px] font-black uppercase tracking-widest text-accent opacity-40">
@@ -225,11 +219,6 @@ export default function CuratorPage() {
                       </>
                     )}
                   </div>
-                  {resultCount === 0 && (
-                    <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-destructive/80 animate-bounce mt-2">
-                      Pas uw selectie aan om werken te vinden ↑
-                    </p>
-                  )}
                </div>
              ) : (
                <p className="text-[12px] font-black uppercase tracking-[0.4em] text-accent opacity-40">
@@ -262,8 +251,7 @@ export default function CuratorPage() {
           </div>
         </div>
 
-        {/* 4. COMPACT TAG BLOCK */}
-        <div className="bg-white/40 backdrop-blur-xl rounded-[2.5rem] p-8 md:p-12 border border-white/60 shadow-lg space-y-10 md:space-y-12 animate-subtle-fade">
+        <div className="bg-white/40 backdrop-blur-xl rounded-[2.5rem] p-8 md:p-12 border border-white/60 shadow-lg space-y-10 md:space-y-12">
           {Object.entries(MUSEUM_TAGS).map(([cat, tags]) => (
             <div key={cat} className="space-y-4 md:space-y-6">
               <h2 className="font-headline text-2xl md:text-3xl italic text-foreground/70 border-l-4 border-accent/20 pl-5 leading-none">

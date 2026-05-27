@@ -2,12 +2,11 @@
 
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, where, orderBy } from 'firebase/firestore';
 import { ArtworkViewer } from '@/components/artwork-viewer';
 import { Loader2, ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useLanguage } from '@/components/language-provider';
 import { sortArtworksByTitle } from '@/lib/museum-utils';
 
 function ExhibitionContent() {
@@ -19,19 +18,18 @@ function ExhibitionContent() {
   const [scrollX, setScrollX] = useState(0);
   const [selectedArtwork, setSelectedArtwork] = useState<any | null>(null);
 
-  const roomsQuery = useMemoFirebase(() => {
+  const roomsQuery = useMemo(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'rooms'), orderBy('order', 'asc'));
   }, [firestore]);
   const { data: rooms } = useCollection(roomsQuery);
 
-  // Verbeterde lookup: zoek op slug óf ID
   const activeRoom = useMemo(() => 
     rooms?.find((r: any) => r.slug === currentRoomSlug || r.id === currentRoomSlug), 
     [rooms, currentRoomSlug]
   );
 
-  const artworksQuery = useMemoFirebase(() => {
+  const artworksQuery = useMemo(() => {
     if (!firestore || !activeRoom) return null;
     return query(
       collection(firestore, 'artworks'), 

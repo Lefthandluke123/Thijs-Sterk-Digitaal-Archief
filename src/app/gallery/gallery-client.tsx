@@ -1,9 +1,8 @@
-
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, orderBy, where } from 'firebase/firestore';
 import { ArtworkViewer } from '@/components/artwork-viewer';
 import { Maximize2, Loader2, LayoutGrid } from 'lucide-react';
@@ -20,7 +19,7 @@ export function GalleryClient({ initialRoomSlug }: { initialRoomSlug: string | n
   const currentRoomSlug = searchParams.get('room') || initialRoomSlug;
   const [selectedArtwork, setSelectedArtwork] = useState<any | null>(null);
 
-  const roomsQuery = useMemoFirebase(() => {
+  const roomsQuery = useMemo(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'rooms'), orderBy('order', 'asc'));
   }, [firestore]);
@@ -32,13 +31,12 @@ export function GalleryClient({ initialRoomSlug }: { initialRoomSlug: string | n
     }
   }, [rooms, currentRoomSlug, router]);
 
-  // Verbeterde lookup: zoek op slug óf ID
   const activeRoom = useMemo(() => 
     rooms?.find((r: any) => r.slug === currentRoomSlug || r.id === currentRoomSlug), 
     [rooms, currentRoomSlug]
   );
 
-  const artworksQuery = useMemoFirebase(() => {
+  const artworksQuery = useMemo(() => {
     if (!firestore || !activeRoom) return null;
     return query(
       collection(firestore, 'artworks'), 
@@ -81,11 +79,6 @@ export function GalleryClient({ initialRoomSlug }: { initialRoomSlug: string | n
           <h1 className="font-headline text-3xl md:text-5xl font-light italic text-accent leading-tight">
             {activeRoom?.title || t('gallery_select')}
           </h1>
-          {activeRoom?.description && (
-            <p className="text-lg text-muted-foreground font-light max-w-3xl mx-auto leading-relaxed">
-              {activeRoom?.description}
-            </p>
-          )}
         </header>
 
         <div className="flex gap-3 overflow-x-auto no-scrollbar pb-6 justify-center border-b mb-12 px-4">

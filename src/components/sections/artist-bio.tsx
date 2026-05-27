@@ -1,36 +1,29 @@
-
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
-import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { useFirestore, useDoc } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { Maximize2 } from 'lucide-react';
 import { ArtworkViewer } from '@/components/artwork-viewer';
 import { useLanguage } from '@/components/language-provider';
 
 export function ArtistBio() {
-  const [mounted, setMounted] = useState(false);
   const [activeArtwork, setActiveArtwork] = useState<any | null>(null);
   const [selectedArtworkId, setSelectedArtworkId] = useState<string | null>(null);
   const firestore = useFirestore();
   const { language, t } = useLanguage();
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const siteSettingsRef = useMemoFirebase(() => {
-    if (!firestore || !mounted) return null;
+  const siteSettingsRef = useMemo(() => {
+    if (!firestore) return null;
     return doc(firestore, 'settings', 'site');
-  }, [firestore, mounted]);
+  }, [firestore]);
   const { data: siteSettings } = useDoc(siteSettingsRef);
 
-  const linkedArtworkRef = useMemoFirebase(() => {
-    if (!firestore || !selectedArtworkId || !mounted) return null;
+  const linkedArtworkRef = useMemo(() => {
+    if (!firestore || !selectedArtworkId) return null;
     return doc(firestore, 'artworks', selectedArtworkId);
-  }, [firestore, selectedArtworkId, mounted]);
+  }, [firestore, selectedArtworkId]);
   
   const { data: selectedArtwork } = useDoc(linkedArtworkRef);
 
@@ -40,11 +33,11 @@ export function ArtistBio() {
     }
   }, [selectedArtwork]);
 
-  const bioTitle = (mounted && language !== 'nl' && siteSettings?.[`homeBioTitle_${language}`])
+  const bioTitle = (language !== 'nl' && siteSettings?.[`homeBioTitle_${language}`])
     ? siteSettings[`homeBioTitle_${language}`]
     : siteSettings?.homeBioTitle || 'Een leven gewijd aan de Essentie';
 
-  const bioText = (mounted && language !== 'nl' && siteSettings?.[`homeBio_${language}`])
+  const bioText = (language !== 'nl' && siteSettings?.[`homeBio_${language}`])
     ? siteSettings[`homeBio_${language}`]
     : siteSettings?.homeBio || `Thijs Sterk (1913-1982) wijdde zijn leven aan het doorgronden van de atmosferische kwaliteiten van de wereld om hem heen.`;
   

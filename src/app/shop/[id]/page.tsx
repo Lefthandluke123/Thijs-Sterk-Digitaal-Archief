@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { useFirestore, useDoc } from '@/firebase';
 import { doc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { ShoppingBag, ArrowLeft, CircleCheck, Loader2, Info, Mail, CreditCard } from 'lucide-react';
 import { useLanguage } from '@/components/language-provider';
@@ -26,13 +26,13 @@ export default function ProductDetailPage() {
   const [isOrdering, setIsOrdering] = useState(false);
   const [orderComplete, setOrderSuccess] = useState(false);
 
-  const siteSettingsRef = useMemoFirebase(() => {
+  const siteSettingsRef = useMemo(() => {
     if (!firestore) return null;
     return doc(firestore, 'settings', 'site');
   }, [firestore]);
   const { data: settings } = useDoc(siteSettingsRef);
 
-  const artworkRef = useMemoFirebase(() => {
+  const artworkRef = useMemo(() => {
     if (!firestore || !id) return null;
     return doc(firestore, 'artworks', id as string);
   }, [firestore, id]);
@@ -90,16 +90,6 @@ export default function ProductDetailPage() {
 
     try {
       await addDoc(collection(firestore, 'orders'), orderData);
-      
-      await addDoc(collection(firestore, 'mail'), {
-        to: settings?.adminEmail || 'lhcsterk@doggyfew.com',
-        message: {
-          subject: `[NIEUWE BESTELLING] ${orderData.artworkTitle} - ${selectedProduct}`,
-          html: `<h2>Nieuwe bestelling uit de Museumwinkel</h2><p><strong>Werk:</strong> ${orderData.artworkTitle}</p><p><strong>Product:</strong> ${selectedProduct}</p>`
-        },
-        createdAt: serverTimestamp()
-      });
-
       setOrderSuccess(true);
       toast({ title: t('shop_order_success') });
     } catch (err) { console.error(err); }
@@ -148,15 +138,8 @@ export default function ProductDetailPage() {
                   src={displayImage} 
                   alt={artwork.displayTitle || artwork.title} 
                   className="w-full h-full object-cover"
-                  style={{ filter: `brightness(1)` }}
                 />
               )}
-            </div>
-            <div className="p-8 bg-secondary/5 rounded-3xl space-y-4">
-               <div className="flex items-start gap-4">
-                  <div className="mt-1"><Info className="w-5 h-5 text-accent shrink-0" /></div>
-                  <p className="text-sm text-muted-foreground leading-relaxed italic">{t('shop_quality_notice')}</p>
-               </div>
             </div>
           </div>
 
@@ -165,9 +148,6 @@ export default function ProductDetailPage() {
               <h1 className="font-headline text-4xl md:text-6xl font-light leading-tight">
                 {artwork.displayTitle || artwork.title}
               </h1>
-              <p className="text-sm font-black uppercase tracking-[0.3em] text-accent">
-                {artwork.year} &bull; {artwork.series}
-              </p>
             </div>
 
             <div className="space-y-8">
@@ -203,19 +183,14 @@ export default function ProductDetailPage() {
                 >
                   {isOrdering ? <Loader2 className="animate-spin" /> : (
                     <div className="flex items-center justify-center gap-4">
-                      <CreditCard className="w-6 h-6 group-hover:rotate-12 transition-transform" />
+                      <CreditCard className="w-6 h-6" />
                       Direct Afrekenen (€{currentPrice.toFixed(2)})
                     </div>
                   )}
                 </Button>
-                <p className="text-[10px] text-center text-muted-foreground uppercase tracking-widest opacity-60">Beveiligde betaling via Stripe</p>
               </div>
             ) : (
               <Card className="p-8 rounded-3xl border-none shadow-xl bg-secondary/10 space-y-8">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center text-white"><Mail className="w-5 h-5" /></div>
-                  <h3 className="font-black uppercase tracking-widest text-sm">{t('shop_order_form')}</h3>
-                </div>
                 <form onSubmit={handleOrder} className="space-y-6">
                   <div className="space-y-4">
                     <div className="space-y-2">

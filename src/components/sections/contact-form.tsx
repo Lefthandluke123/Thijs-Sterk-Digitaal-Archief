@@ -1,7 +1,6 @@
-
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -12,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
 import { Send, Mail, Phone, Loader2 } from 'lucide-react';
 import { useLanguage } from '@/components/language-provider';
-import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { useFirestore, useDoc } from '@/firebase';
 import { doc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -25,23 +24,18 @@ const formSchema = z.object({
 });
 
 export function ContactForm() {
-  const [mounted, setMounted] = useState(false);
   const { language, t } = useLanguage();
   const firestore = useFirestore();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const siteSettingsRef = useMemoFirebase(() => {
-    if (!firestore || !mounted) return null;
+  const siteSettingsRef = useMemo(() => {
+    if (!firestore) return null;
     return doc(firestore, 'settings', 'site');
-  }, [firestore, mounted]);
+  }, [firestore]);
   const { data: siteSettings } = useDoc(siteSettingsRef);
 
   const getTranslatedValue = (field: string, defaultVal: string) => {
-    if (!siteSettings || !mounted) return defaultVal;
+    if (!siteSettings) return defaultVal;
     if (language === 'nl') return siteSettings[field] || defaultVal;
     return siteSettings[`${field}_${language}`] || siteSettings[field] || defaultVal;
   };

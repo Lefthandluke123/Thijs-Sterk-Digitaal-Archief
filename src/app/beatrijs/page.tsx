@@ -1,12 +1,11 @@
-
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useFirestore, useDoc } from '@/firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { StoryRenderer } from '@/components/story-renderer';
 import { StoryEditor, StoryNode } from '@/components/story-editor';
-import { Loader2, Palette, Edit3, Save, X, Eye } from 'lucide-react';
+import { Loader2, Palette, Edit3, Save, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -26,7 +25,7 @@ export default function BeatrijsSterkPage() {
     }
   }, []);
 
-  const storyRef = useMemoFirebase(() => {
+  const storyRef = useMemo(() => {
     if (!firestore) return null;
     return doc(firestore, 'stories', PAGE_ID);
   }, [firestore]);
@@ -63,7 +62,6 @@ export default function BeatrijsSterkPage() {
 
   return (
     <main className="min-h-screen bg-background pt-32 pb-48 relative">
-      {/* Admin Live Toolbar */}
       {isAdmin && (
         <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[1000] flex items-center gap-3 bg-white/90 backdrop-blur-2xl p-3 rounded-full shadow-2xl border-2 border-accent/20 animate-in slide-in-from-bottom-10 duration-700">
           {!isEditMode ? (
@@ -81,11 +79,6 @@ export default function BeatrijsSterkPage() {
               </Button>
             </>
           )}
-          <div className="w-px h-6 bg-black/10 mx-2" />
-          <div className="flex flex-col pr-4">
-             <span className="text-[8px] font-black uppercase opacity-40">Live DTP Mode</span>
-             <span className="text-[10px] font-bold text-accent">Admin Toegang</span>
-          </div>
         </div>
       )}
 

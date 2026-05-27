@@ -1,8 +1,7 @@
-
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useFirestore, useDoc } from '@/firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { StoryRenderer } from '@/components/story-renderer';
 import { StoryEditor, StoryNode } from '@/components/story-editor';
@@ -26,7 +25,7 @@ export default function HannekeSterkPage() {
     }
   }, []);
 
-  const storyRef = useMemoFirebase(() => {
+  const storyRef = useMemo(() => {
     if (!firestore) return null;
     return doc(firestore, 'stories', PAGE_ID);
   }, [firestore]);

@@ -1,8 +1,7 @@
-
 "use client";
 
 import React, { useMemo } from 'react';
-import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { useFirestore, useDoc } from '@/firebase';
 import { doc } from 'firebase/firestore';
 
 /**
@@ -12,7 +11,7 @@ import { doc } from 'firebase/firestore';
 export function DesignSystemProvider({ children }: { children: React.ReactNode }) {
   const firestore = useFirestore();
 
-  const settingsRef = useMemoFirebase(() => {
+  const settingsRef = useMemo(() => {
     if (!firestore) return null;
     return doc(firestore, 'settings', 'site');
   }, [firestore]);
@@ -25,13 +24,11 @@ export function DesignSystemProvider({ children }: { children: React.ReactNode }
     const background = settings.bgColor || '40 15% 97%';
     const primary = settings.primaryColor || '201 45% 5%';
     const accent = settings.accentColor || '142 30% 25%';
-    const baseFontSize = settings.baseFontSize || '16px';
     const radius = settings.radius || '2rem';
     
     const bodyFont = settings.bodyFont === 'serif' ? '"Playfair Display", serif' : '"Inter", sans-serif';
     const headFont = settings.headFont === 'sans' ? '"Inter", sans-serif' : '"Playfair Display", serif';
 
-    // Typography Tokens uit database (met harde fallbacks uit globals.css)
     const t = settings.typography || {};
     const h1Size = t.h1?.fontSize || 64;
     const h2Size = t.h2?.fontSize || 48;
@@ -39,10 +36,8 @@ export function DesignSystemProvider({ children }: { children: React.ReactNode }
     const btnSize = t.button?.fontSize || 14;
     const navSize = t.nav?.fontSize || 10;
 
-    // Pas de globale schaal toe (indien aanwezig)
     const scale = settings.headingScale ?? 1;
     
-    // CSS Variables bouwen
     let css = `
       :root {
         --background: ${background};
@@ -61,7 +56,6 @@ export function DesignSystemProvider({ children }: { children: React.ReactNode }
       }
     `;
 
-    // Pas individuele overrides toe (locked elements)
     const overrides = settings.typographyOverrides || {};
     Object.entries(overrides).forEach(([id, style]: [string, any]) => {
       if (style.fontSize) {

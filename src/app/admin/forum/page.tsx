@@ -1,9 +1,8 @@
-
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, useCollection } from '@/firebase';
 import { 
   collection, 
   doc, 
@@ -23,11 +22,6 @@ import {
   Clock, 
   Trash2, 
   ArrowLeft, 
-  LayoutDashboard,
-  ShieldCheck,
-  MessageSquare,
-  Loader2,
-  AlertCircle,
   Users
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -45,7 +39,7 @@ export default function ForumModerationPage() {
     }
   }, []);
 
-  const forumQuery = useMemoFirebase(() => {
+  const forumQuery = useMemo(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'forum'), orderBy('createdAt', 'desc'));
   }, [firestore]);

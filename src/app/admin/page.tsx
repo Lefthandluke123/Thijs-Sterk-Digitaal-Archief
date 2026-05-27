@@ -1,9 +1,8 @@
-
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, useCollection } from '@/firebase';
 import { 
   collection, 
   doc, 
@@ -22,15 +21,12 @@ import { toast } from '@/hooks/use-toast';
 import { 
   Trash2, 
   Loader2, 
-  Palette,
   Plus,
   LayoutDashboard,
   Layers,
   Edit3,
   Search,
   Settings,
-  Type,
-  LayoutTemplate,
   Languages,
   X,
   CheckCircle2,
@@ -50,8 +46,7 @@ import {
   DialogContent, 
   DialogTitle, 
   DialogHeader, 
-  DialogFooter,
-  DialogDescription
+  DialogFooter
 } from '@/components/ui/dialog';
 import { 
   DropdownMenu,
@@ -61,7 +56,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { sortArtworksByTitle, sanitizeArtwork, normalizeArtwork, MUSEUM_TAGS, slugify } from '@/lib/museum-utils';
+import { sanitizeArtwork, MUSEUM_TAGS, slugify } from '@/lib/museum-utils';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { verifyAdminPassword } from '@/lib/admin-actions';
 
@@ -75,7 +70,6 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState('archive');
   const [selectedArtworks, setSelectedItems] = useState<string[]>([]);
   
-  // Dialog states
   const [isArtworkDialogOpen, setIsArtworkDialogOpen] = useState(false);
   const [isRoomDialogOpen, setIsRoomDialogOpen] = useState(false);
   const [editingArtwork, setEditingArtwork] = useState<any>(null);
@@ -94,12 +88,12 @@ export default function AdminPage() {
     }
   }, []);
 
-  const artworksQuery = useMemoFirebase(() => {
+  const artworksQuery = useMemo(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'artworks'), orderBy('title', 'asc'));
   }, [firestore]);
 
-  const roomsQuery = useMemoFirebase(() => {
+  const roomsQuery = useMemo(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'rooms'), orderBy('order', 'asc'));
   }, [firestore]);
@@ -167,15 +161,12 @@ export default function AdminPage() {
   const handleDeleteRoom = async (room: any) => {
     if (!firestore || !confirm(`Weet u zeker dat u '${room.title}' wilt verwijderen? De schilderijen blijven behouden.`)) return;
     try {
-      // 1. Haal alle schilderijen op die in deze zaal zitten
       const associated = artworks?.filter((a: any) => a.roomIds?.includes(room.id)) || [];
-      // 2. Verwijder de zaal-referentie uit deze schilderijen
       for (const art of associated) {
         await updateDoc(doc(firestore, 'artworks', art.id), {
           roomIds: arrayRemove(room.id)
         });
       }
-      // 3. Verwijder de zaal zelf
       await deleteDoc(doc(firestore, 'rooms', room.id));
       toast({ title: "Zaal verwijderd", description: `${associated.length} koppelingen opgeschoond.` });
     } catch (e) { toast({ variant: "destructive", title: "Verwijderen mislukt" }); }
@@ -256,7 +247,6 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen pt-32 px-8 bg-transparent">
-      {/* HEADER */}
       <header className="fixed top-0 left-0 right-0 h-24 bg-white/90 backdrop-blur-md border-b z-40 px-8 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-4">
@@ -287,7 +277,6 @@ export default function AdminPage() {
         </div>
       </header>
 
-      {/* BULK ACTION BAR */}
       {selectedArtworks.length > 0 && (
         <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 bg-primary text-primary-foreground p-4 px-8 rounded-full shadow-2xl flex items-center gap-8 animate-in slide-in-from-bottom-10 duration-500">
            <div className="flex items-center gap-3 border-r border-white/20 pr-8">
@@ -344,7 +333,6 @@ export default function AdminPage() {
             </TabsTrigger>
           </TabsList>
 
-          {/* TAB 1: ARCHIVE */}
           <TabsContent value="archive" className="space-y-8 mt-0">
             <div className="flex items-center justify-between gap-8 bg-white/50 backdrop-blur-md p-6 rounded-[2.5rem] border border-white/60">
                <div className="relative flex-1 max-w-md">
@@ -412,7 +400,6 @@ export default function AdminPage() {
             </div>
           </TabsContent>
 
-          {/* TAB 2: ROOMS */}
           <TabsContent value="rooms" className="space-y-8 mt-0">
             <div className="flex justify-between items-center bg-white/50 backdrop-blur-md p-6 rounded-[2.5rem] border border-white/60">
                <div>
@@ -475,7 +462,6 @@ export default function AdminPage() {
         </Tabs>
       </main>
 
-      {/* MODALS */}
       <Dialog open={isArtworkDialogOpen} onOpenChange={setIsArtworkDialogOpen}>
         <DialogContent className="max-w-3xl rounded-[3rem] p-12">
           <DialogHeader>

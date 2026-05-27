@@ -1,4 +1,3 @@
-
 'use client';
 
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
@@ -28,9 +27,3 @@ export * from './provider';
 export * from './auth/use-user';
 export * from './firestore/use-collection';
 export * from './firestore/use-doc';
-
-// Helper for memoizing Firebase queries
-import { useMemo } from 'react';
-export function useMemoFirebase<T>(factory: () => T, deps: React.DependencyList): T {
-  return useMemo(factory, deps);
-}

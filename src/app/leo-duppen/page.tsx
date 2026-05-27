@@ -1,8 +1,7 @@
-
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useFirestore, useDoc } from '@/firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { StoryRenderer } from '@/components/story-renderer';
 import { StoryEditor, StoryNode } from '@/components/story-editor';
@@ -26,7 +25,7 @@ export default function LeoDuppenPage() {
     }
   }, []);
 
-  const storyRef = useMemoFirebase(() => {
+  const storyRef = useMemo(() => {
     if (!firestore) return null;
     return doc(firestore, 'stories', PAGE_ID);
   }, [firestore]);
@@ -94,9 +93,7 @@ export default function LeoDuppenPage() {
             <StoryRenderer nodes={localNodes} />
           ) : (
             <div className="py-32 text-center space-y-8 opacity-20">
-               <Palette className="w-16 h-16 mx-auto" />
                <p className="font-headline text-2xl italic">Nog geen analyse aanwezig...</p>
-               {isAdmin && <Button onClick={() => setIsEditMode(true)} variant="outline" className="rounded-full">Maak eerste ontwerp</Button>}
             </div>
           )
         )}

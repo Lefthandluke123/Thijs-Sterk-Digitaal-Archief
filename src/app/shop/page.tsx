@@ -2,7 +2,7 @@
 
 import React, { useMemo } from 'react';
 import Link from 'next/link';
-import { useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
+import { useFirestore, useCollection, useDoc } from '@/firebase';
 import { collection, query, where, doc } from 'firebase/firestore';
 import { ShoppingBag, Loader2 } from 'lucide-react';
 import { useLanguage } from '@/components/language-provider';
@@ -13,14 +13,14 @@ export default function ShopPage() {
   const firestore = useFirestore();
   const { t, language } = useLanguage();
 
-  const artworksQuery = useMemoFirebase(() => {
+  const artworksQuery = useMemo(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'artworks'), where('inShop', '==', true));
   }, [firestore]);
 
   const { data: artworks, loading } = useCollection(artworksQuery);
 
-  const siteSettingsRef = useMemoFirebase(() => {
+  const siteSettingsRef = useMemo(() => {
     if (!firestore) return null;
     return doc(firestore, 'settings', 'site');
   }, [firestore]);
@@ -40,16 +40,14 @@ export default function ShopPage() {
 
   return (
     <main className="min-h-screen bg-background pt-16 md:pt-48 pb-32">
-      <div className="container mx-auto px-6 max-w-7xl">
+      <div className="container mx-auto px-6 max-7-7xl">
         <header className="mb-20 text-center space-y-4 max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent/10 border border-accent/20 mb-4">
             <ShoppingBag className="w-3.5 h-3.5 text-accent" />
             <span className="text-[10px] font-black uppercase tracking-[0.3em] text-accent">{t('shop')}</span>
           </div>
           <h1 className="font-headline text-4xl md:text-6xl font-light leading-tight">
-            {t('shop_title').split(' ').map((word, i, arr) => 
-              i === arr.length - 1 ? <span key={i} className="italic">{word}</span> : word + ' '
-            )}
+            {t('shop_title')}
           </h1>
           <p className="text-xl text-muted-foreground font-light leading-relaxed">
             {shopIntroText}
@@ -81,7 +79,7 @@ export default function ShopPage() {
                     </div>
                     <div className="space-y-1 text-center">
                       <h3 className="font-headline text-lg group-hover:text-accent transition-colors">{art.displayTitle || art.title}</h3>
-                      <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-30">{art.year} &bull; {art.series}</p>
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-30">{art.year}</p>
                       <p className="text-[12px] font-bold text-accent pt-2">{t('shop_price')} v.a. €{art.pricePostcard || '2.50'}</p>
                     </div>
                   </Card>

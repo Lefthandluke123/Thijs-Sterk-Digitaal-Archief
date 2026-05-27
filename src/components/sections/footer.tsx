@@ -1,21 +1,16 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import Link from 'next/link';
 import { useLanguage } from '@/components/language-provider';
-import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { useFirestore, useDoc } from '@/firebase';
 import { doc } from 'firebase/firestore';
 
 export function Footer() {
   const { t, language } = useLanguage();
   const firestore = useFirestore();
-  const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const siteSettingsRef = useMemoFirebase(() => {
+  const siteSettingsRef = useMemo(() => {
     if (!firestore) return null;
     return doc(firestore, 'settings', 'site');
   }, [firestore]);
@@ -29,8 +24,6 @@ export function Footer() {
     ? siteSettings[`siteSubtitle_${language}`]
     : (siteSettings?.siteSubtitle || t('museum_subtitle'));
   
-  if (!mounted) return null;
-
   return (
     <footer className="py-12 border-t border-border bg-background px-4">
       <div className="container mx-auto flex flex-col md:flex-row items-center justify-between gap-8">

@@ -1,20 +1,17 @@
-
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
-import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useFirestore, useDoc } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { 
   Type, 
-  Settings2, 
   Lock, 
   Unlock, 
   X, 
   Plus, 
   Minus,
-  CheckCircle2,
-  Loader2
+  CheckCircle2
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -37,20 +34,17 @@ export function InlineStyleEditor() {
   } | null>(null);
 
   const firestore = useFirestore();
-  const settingsRef = useMemoFirebase(() => {
+  const settingsRef = useMemo(() => {
     if (!firestore) return null;
     return doc(firestore, 'settings', 'site');
   }, [firestore]);
   const { data: settings } = useDoc(settingsRef);
 
-  // Toggle Edit Mode via Global Key (Meta+E) - Alleen voor Admins
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'e' && (e.metaKey || e.ctrlKey)) {
-        // Check of de gebruiker geautoriseerd is (via sessie ingesteld in Admin)
         const isAdmin = typeof window !== 'undefined' && sessionStorage.getItem('admin_auth') === 'true';
-        
-        if (!isAdmin) return; // Doe niets voor gewone bezoekers
+        if (!isAdmin) return;
 
         e.preventDefault();
         const newState = !active;
@@ -68,7 +62,6 @@ export function InlineStyleEditor() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [active]);
 
-  // Selection Logic
   useEffect(() => {
     if (!active) {
       setSelectedElement(null);
@@ -93,7 +86,6 @@ export function InlineStyleEditor() {
           ? 'nav' 
           : selectable.tagName.toLowerCase() as any;
 
-      // Genereer een stabiele ID op basis van positie/inhoud voor persistentie van overrides
       let dtpId = selectable.getAttribute('data-dtp-id');
       if (!dtpId) {
         const index = Array.from(document.querySelectorAll(selectable.tagName)).indexOf(selectable);
@@ -157,9 +149,6 @@ export function InlineStyleEditor() {
       const overrides = { ...(settings?.typographyOverrides || {}) };
       delete overrides[selectedElement.id];
       await updateDoc(settingsRef, { typographyOverrides: overrides });
-      toast({ title: "Nu in Global Mode", description: "Dit element volgt weer de algemene instelling." });
-    } else {
-      toast({ title: "Nu in Unique Mode", description: "Aanpassingen gelden alleen voor dit element." });
     }
   };
 

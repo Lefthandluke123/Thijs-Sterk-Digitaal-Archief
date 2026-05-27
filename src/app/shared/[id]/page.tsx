@@ -1,11 +1,10 @@
-
 "use client";
 
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
+import { useFirestore, useDoc, useCollection } from '@/firebase';
 import { doc, collection, query, where, documentId } from 'firebase/firestore';
-import { Loader2, ArrowRight, ArrowLeft, Mic, Play, Pause, Palette } from 'lucide-react';
+import { Loader2, ArrowRight, ArrowLeft, Play, Pause, Palette } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { useLanguage } from '@/components/language-provider';
@@ -25,10 +24,10 @@ export default function SharedRoomPage() {
     setShareUrl(window.location.href);
   }, []);
 
-  const roomRef = useMemoFirebase(() => id && firestore ? doc(firestore, 'shared_rooms', id as string) : null, [firestore, id]);
+  const roomRef = useMemo(() => id && firestore ? doc(firestore, 'shared_rooms', id as string) : null, [firestore, id]);
   const { data: room, loading: roomLoading } = useDoc(roomRef);
 
-  const artworksQuery = useMemoFirebase(() => {
+  const artworksQuery = useMemo(() => {
     if (!room?.artworkIds || room.artworkIds.length === 0 || !firestore) return null;
     return query(collection(firestore, 'artworks'), where(documentId(), 'in', room.artworkIds));
   }, [firestore, room]);
@@ -75,19 +74,11 @@ export default function SharedRoomPage() {
         </Link>
         <div className="flex flex-col">
           <h1 className="font-headline text-2xl md:text-3xl italic leading-tight text-foreground">{room.title}</h1>
-          <div className="flex items-center gap-3">
-             <span className="text-[9px] font-black uppercase tracking-[0.3em] text-accent">Privé Expositie</span>
-             <span className="w-1 h-1 bg-black/10 rounded-full" />
-             <span className="text-[9px] font-black uppercase tracking-[0.3em] text-black/30">Thijs Sterk Archief</span>
-          </div>
         </div>
       </div>
 
       <div className="absolute top-10 right-10 z-50 flex items-center gap-4">
-        <ShareButton 
-          title={room.title}
-          url={shareUrl}
-        />
+        <ShareButton title={room.title} url={shareUrl} />
 
         {audio && (
           <button onClick={toggleAudio} className={cn("flex items-center gap-3 px-6 py-3 rounded-full backdrop-blur-md border border-black/5 transition-all shadow-lg", isPlaying ? "bg-accent text-accent-foreground" : "bg-white/80 text-foreground")}>

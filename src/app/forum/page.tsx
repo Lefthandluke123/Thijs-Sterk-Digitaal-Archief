@@ -1,10 +1,9 @@
-
 "use client";
 
-import React, { useState } from 'react';
-import { useFirestore, useCollection, useMemoFirebase, useAuth } from '@/firebase';
+import React, { useState, useMemo } from 'react';
+import { useFirestore, useCollection, useAuth } from '@/firebase';
 import { collection, query, where, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
-import { signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
+import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -15,16 +14,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { 
-  MessageSquare, 
   Users, 
   Plus, 
-  Search, 
   History, 
   HelpCircle, 
   ArrowRightLeft,
   Loader2,
   Lock,
-  CheckCircle2,
   Clock
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -45,7 +41,6 @@ export default function ForumPage() {
     category: 'Verhaal'
   });
 
-  // Auth listener
   React.useEffect(() => {
     if (!auth) return;
     return auth.onAuthStateChanged(u => setUser(u));
@@ -62,7 +57,7 @@ export default function ForumPage() {
     }
   };
 
-  const forumQuery = useMemoFirebase(() => {
+  const forumQuery = useMemo(() => {
     if (!firestore) return null;
     let base = query(collection(firestore, 'forum'), where('status', '==', 'approved'), orderBy('createdAt', 'desc'));
     if (activeCategory !== 'Alle') {
@@ -111,7 +106,6 @@ export default function ForumPage() {
   return (
     <main className="min-h-screen bg-background pt-32 pb-48 px-6">
       <div className="container mx-auto max-w-5xl space-y-12">
-        {/* Header */}
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-8 border-b border-black/5 pb-12">
           <div className="space-y-4">
              <div className="inline-flex items-center gap-3 px-4 py-1 rounded-full bg-accent/5 border border-accent/10">
@@ -178,7 +172,7 @@ export default function ForumPage() {
                       <div className="bg-accent/5 p-6 rounded-2xl flex items-start gap-4">
                          <Clock className="w-5 h-5 text-accent mt-0.5" />
                          <p className="text-xs italic text-accent/80 leading-relaxed">
-                            <strong>Moderatie:</strong> Na verzending controleert onze conservator uw bericht. Bij goedkeuring verschijnt het direct op het forum.
+                            <strong>Moderatie:</strong> Na verzending controleert onze conservator uw bericht.
                          </p>
                       </div>
                       <Button type="submit" disabled={isSubmitting} className="w-full h-16 rounded-2xl bg-primary text-white font-black uppercase tracking-widest">
@@ -195,7 +189,6 @@ export default function ForumPage() {
           </div>
         </header>
 
-        {/* Categories Filter */}
         <div className="flex flex-wrap gap-3 justify-center md:justify-start">
            <button 
               onClick={() => setActiveCategory('Alle')}
@@ -221,7 +214,6 @@ export default function ForumPage() {
            ))}
         </div>
 
-        {/* Main Feed */}
         <div className="grid gap-8">
            {loading ? (
              <div className="py-32 flex flex-col items-center gap-4 opacity-20">

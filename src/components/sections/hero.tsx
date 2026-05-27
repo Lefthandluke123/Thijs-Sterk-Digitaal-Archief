@@ -1,46 +1,41 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Maximize2, Sparkles, Layout, BookOpen } from 'lucide-react';
-import { useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
+import { useCollection, useFirestore, useDoc } from '@/firebase';
 import { collection, query, where, limit, doc } from 'firebase/firestore';
 import { ArtworkViewer } from '@/components/artwork-viewer';
 import { useLanguage } from '@/components/language-provider';
 import Link from 'next/link';
 
 export function Hero() {
-  const [mounted, setMounted] = useState(false);
   const [selectedArtwork, setSelectedArtwork] = useState<any | null>(null);
   const firestore = useFirestore();
   const { language, t } = useLanguage();
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const siteSettingsRef = useMemoFirebase(() => {
-    if (!firestore || !mounted) return null;
+  const siteSettingsRef = useMemo(() => {
+    if (!firestore) return null;
     return doc(firestore, 'settings', 'site');
-  }, [firestore, mounted]);
+  }, [firestore]);
   const { data: siteSettings } = useDoc(siteSettingsRef);
 
-  const featuredQuery = useMemoFirebase(() => {
-    if (!firestore || !mounted) return null;
+  const featuredQuery = useMemo(() => {
+    if (!firestore) return null;
     return query(collection(firestore, 'artworks'), where('featured', '==', true), limit(1));
-  }, [firestore, mounted]);
+  }, [firestore]);
 
   const { data: featured } = useCollection(featuredQuery);
   const artwork = featured?.[0];
   
   const heroImage = artwork?.image || artwork?.imageUrl || 'https://firebasestorage.googleapis.com/v0/b/studio-7311695883-2090f.firebasestorage.app/o/artworks%2F1778851761923_x2p82k_maannacht%20copy.jpg?alt=media';
 
-  const heroTitle = (mounted && language !== 'nl' && siteSettings?.[`homeHeroTitle_${language}`]) 
+  const heroTitle = (language !== 'nl' && siteSettings?.[`homeHeroTitle_${language}`]) 
     ? siteSettings[`homeHeroTitle_${language}`] 
     : siteSettings?.homeHeroTitle || t('homeHeroTitle');
 
-  const heroSubtitle = (mounted && language !== 'nl' && siteSettings?.[`homeHeroSubtitle_${language}`])
+  const heroSubtitle = (language !== 'nl' && siteSettings?.[`homeHeroSubtitle_${language}`])
     ? siteSettings[`homeHeroSubtitle_${language}`]
     : siteSettings?.homeHeroSubtitle || t('homeHeroSubtitle');
 
@@ -51,7 +46,7 @@ export function Hero() {
       <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')]" />
       
       <div className="container max-w-5xl mx-auto z-10 text-center space-y-16">
-        <div className="space-y-8 animate-subtle-fade">
+        <div className="space-y-8 animate-in fade-in slide-in-from-top-4 duration-1000">
           <div className="inline-flex items-center gap-3 px-6 py-2.5 rounded-full bg-accent/5 border border-accent/10 mx-auto shadow-sm">
             <BookOpen className="w-4 h-4 text-accent" />
             <span className="text-[11px] font-black uppercase tracking-[0.4em] text-accent">{heroBadge}</span>
@@ -63,7 +58,7 @@ export function Hero() {
           </h1>
         </div>
         
-        <div className="flex flex-col items-center gap-12 animate-subtle-fade" style={{ animationDelay: '0.3s' }}>
+        <div className="flex flex-col items-center gap-12 animate-in fade-in duration-1000 delay-300">
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6 w-full max-w-2xl">
             <Button variant="outline" size="lg" className="w-full sm:w-auto min-w-[280px] h-20 rounded-full border-2 border-accent/20 text-accent hover:bg-accent/5 font-black uppercase tracking-[0.25em] text-[12px] transition-all shadow-md hover:shadow-xl" asChild>
               <Link href="/gallery">
@@ -86,7 +81,7 @@ export function Hero() {
         </div>
       </div>
 
-      <div className="container max-w-7xl mx-auto mt-32 z-10 px-6 animate-subtle-fade" style={{ animationDelay: '0.6s' }}>
+      <div className="container max-w-7xl mx-auto mt-32 z-10 px-6 animate-in fade-in duration-1000 delay-500">
         <button 
           className="relative aspect-[21/10] md:aspect-[21/8] w-full rounded-[4rem] overflow-hidden shadow-[0_60px_120px_-20px_rgba(0,0,0,0.4)] border border-white/60 cursor-pointer group focus-visible:ring-4 focus-visible:ring-accent"
           onClick={() => setSelectedArtwork(artwork || { imageUrl: heroImage, title: "Maannacht" })}

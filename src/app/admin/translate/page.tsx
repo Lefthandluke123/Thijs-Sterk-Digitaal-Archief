@@ -1,9 +1,8 @@
-
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { useFirestore, useDoc } from '@/firebase';
 import { doc, updateDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -68,14 +67,14 @@ export default function TranslateStationPage() {
   const [storyNodes, setStoryNodes] = useState<StoryNode[]>([]);
   const [formData, setFormData] = useState<Record<string, string>>({});
 
-  const settingsRef = useMemoFirebase(() => {
+  const settingsRef = useMemo(() => {
     if (!firestore) return null;
     return doc(firestore, 'settings', 'site');
   }, [firestore]);
   
   const { data: settings } = useDoc(settingsRef);
 
-  const storyRef = useMemoFirebase(() => {
+  const storyRef = useMemo(() => {
     if (!firestore || !selectedStoryId) return null;
     return doc(firestore, 'stories', selectedStoryId);
   }, [firestore, selectedStoryId]);
@@ -271,7 +270,7 @@ export default function TranslateStationPage() {
                         </div>
                         <div>
                            <h3 className="font-headline text-2xl italic leading-tight">Stramien Designer</h3>
-                           <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Positioneer uw elementen vrij op het canvas (Drag & Drop)</p>
+                           <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Positioneer uw elementen vrij op het canvas</p>
                         </div>
                      </div>
                      <div className="min-w-[280px]">
@@ -293,10 +292,6 @@ export default function TranslateStationPage() {
                         <div className="flex items-center gap-3">
                            <Monitor className="w-5 h-5 opacity-30" />
                            <h2 className="font-headline text-3xl italic opacity-30">WYSIWYG Layout Designer</h2>
-                        </div>
-                        <div className="flex gap-2 items-center">
-                           <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                           <span className="text-[9px] font-black uppercase tracking-widest opacity-60">Canvas Active (Grid: 12 col)</span>
                         </div>
                      </div>
                      

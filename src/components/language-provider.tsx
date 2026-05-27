@@ -1,7 +1,7 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import { useFirestore, useDoc } from '@/firebase';
 import { doc } from 'firebase/firestore';
 
 type Language = 'nl' | 'en' | 'de' | 'fr' | 'es';
@@ -52,7 +52,6 @@ const staticTranslations: Record<Language, Record<string, string>> = {
     curator_open: 'Open uw galerij',
     curator_clear: 'Keuze wissen',
     curator_link_ready: 'Privékamer gereed!',
-    // Contact Form
     contact_label_name: 'Uw Naam',
     contact_label_email: 'E-mailadres',
     contact_label_subject: 'Onderwerp',
@@ -61,7 +60,6 @@ const staticTranslations: Record<Language, Record<string, string>> = {
     contact_success_title: 'Bericht verzonden',
     contact_success_desc: 'Bedankt voor uw bericht. Wij nemen zo spoedig mogelijk contact met u op.',
     contact_phone: 'Telefoon',
-    // Guide Translations
     guide_welcome: 'Welkom & Ontdekking',
     guide_intro: 'Dit digitale platform is een levend archief van het oeuvre van Thijs Sterk. Hieronder leest u hoe u het meeste uit uw bezoek kunt halen.',
     guide_concept_title: 'Het Concept',
@@ -123,7 +121,6 @@ const staticTranslations: Record<Language, Record<string, string>> = {
     curator_open: 'Open your gallery',
     curator_clear: 'Clear selection',
     curator_link_ready: 'Private room ready!',
-    // Contact Form
     contact_label_name: 'Your Name',
     contact_label_email: 'Email Address',
     contact_label_subject: 'Subject',
@@ -132,7 +129,6 @@ const staticTranslations: Record<Language, Record<string, string>> = {
     contact_success_title: 'Message sent',
     contact_success_desc: 'Thank you for your message. We will contact you as soon as possible.',
     contact_phone: 'Phone',
-    // Guide Translations
     guide_welcome: 'Welcome & Discovery',
     guide_intro: 'This digital platform is a living archive of Thijs Sterk\'s work. Below you can read how to make the most of your visit.',
     guide_concept_title: 'The Concept',
@@ -178,7 +174,7 @@ const staticTranslations: Record<Language, Record<string, string>> = {
     homeHeroSubtitle: 'Entdecken Sie die stille Kraft der nordholländischen Landschaft durch die Augen eines Meisters.',
     homeIntroBadge: 'Die Sammlung',
     homeIntroTitle: 'Ein Kennenlernen',
-    homeIntroSubtitle: 'Ein Querschnitt durch das Gesamtwerk.',
+    homeIntroSubtitle: 'Ein Querschnitt door het Gesamtwerk.',
     homeRoomsBadge: 'Die Tour',
     homeRoomsTitle: 'Thematische Räume',
     homeRoomsSubtitle: 'Wandern Sie durch sorgfältig kuratierte Sammlungen.',
@@ -194,7 +190,6 @@ const staticTranslations: Record<Language, Record<string, string>> = {
     curator_open: 'Galerie öffnen',
     curator_clear: 'Auswahl löschen',
     curator_link_ready: 'Privatraum fertig!',
-    // Contact Form
     contact_label_name: 'Ihr Name',
     contact_label_email: 'E-Mail-Adresse',
     contact_label_subject: 'Betreff',
@@ -203,7 +198,6 @@ const staticTranslations: Record<Language, Record<string, string>> = {
     contact_success_title: 'Nachricht gesendet',
     contact_success_desc: 'Vielen Dank für Ihre Nachricht. Wir werden uns so schnell wie möglich bei Ihnen melden.',
     contact_phone: 'Telefon',
-    // Guide Translations
     guide_welcome: 'Willkommen & Entdeckung',
     guide_intro: 'Diese digitale Plattform ist ein lebendiges Archiv des Werks von Thijs Sterk. Erfahren Sie hier, wie Sie Ihren Besuch optimal nutzen können.',
     guide_concept_title: 'Das Konzept',
@@ -265,7 +259,6 @@ const staticTranslations: Record<Language, Record<string, string>> = {
     curator_open: 'Ouvrir la galerie',
     curator_clear: 'Effacer la sélection',
     curator_link_ready: 'Nouvelle salle prête!',
-    // Contact Form
     contact_label_name: 'Votre Nom',
     contact_label_email: 'Adresse E-mail',
     contact_label_subject: 'Sujet',
@@ -274,7 +267,6 @@ const staticTranslations: Record<Language, Record<string, string>> = {
     contact_success_title: 'Message envoyé',
     contact_success_desc: 'Merci pour votre message. Nous vous contacterons dès que possible.',
     contact_phone: 'Téléphone',
-    // Guide Translations
     guide_welcome: 'Bienvenue & Découverte',
     guide_intro: 'Cette plateforme numérique est une archive vivante de l\'œuvre de Thijs Sterk. Apprenez comment profiter au mieux de votre visite.',
     guide_concept_title: 'Le Concept',
@@ -336,7 +328,6 @@ const staticTranslations: Record<Language, Record<string, string>> = {
     curator_open: 'Abrir galería',
     curator_clear: 'Borrar selección',
     curator_link_ready: '¡Sala privada lista!',
-    // Contact Form
     contact_label_name: 'Su Nombre',
     contact_label_email: 'Correo Electrónico',
     contact_label_subject: 'Asunto',
@@ -345,7 +336,6 @@ const staticTranslations: Record<Language, Record<string, string>> = {
     contact_success_title: 'Mensaje enviado',
     contact_success_desc: 'Gracias por su mensaje. Nos pondremos en contacto con usted lo antes posible.',
     contact_phone: 'Telefoon',
-    // Guide Translations
     guide_welcome: 'Bienvenido y Descubrimiento',
     guide_intro: 'Esta plataforma digital es un archivo vivo de la obra de Thijs Sterk. Aprenda a aprovechar al máximo su visita.',
     guide_concept_title: 'El Concepto',
@@ -357,7 +347,7 @@ const staticTranslations: Record<Language, Record<string, string>> = {
     guide_curator_step2: 'Paso 2: Abra su galería personal.',
     guide_curator_step3: 'Paso 3: Genere un enlace único para guardar su selección.',
     guide_curator_step4: 'Paso 4: Comparta su exposición en las redes sociales.',
-    guide_nav_title: 'Navegación',
+    guide_nav_title: 'Navigation',
     guide_nav_tour_label: 'El Recorrido',
     guide_nav_tour_desc: 'Utilice las flechas o la barre de progreso para caminar por una sala.',
     guide_nav_shop_desc: 'Las reproducciones certificadas están disponibles directamente con cada obra.',
@@ -376,21 +366,19 @@ const staticTranslations: Record<Language, Record<string, string>> = {
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<Language>('nl');
-  const [mounted, setMounted] = useState(false);
   const firestore = useFirestore();
 
   useEffect(() => {
-    setMounted(true);
     const saved = localStorage.getItem('app-lang') as Language;
     if (saved && ['nl', 'en', 'de', 'fr', 'es'].includes(saved)) {
       setLanguageState(saved);
     }
   }, []);
 
-  const settingsRef = useMemoFirebase(() => {
-    if (!firestore || !mounted) return null;
+  const settingsRef = useMemo(() => {
+    if (!firestore) return null;
     return doc(firestore, 'settings', 'site');
-  }, [firestore, mounted]);
+  }, [firestore]);
   
   const { data: dbSettings, loading } = useDoc(settingsRef);
 
@@ -402,10 +390,9 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const t = (key: string) => {
-    if (!mounted) return key; // Guard tegen hydration mismatch
     const dbKey = language === 'nl' ? key : `${key}_${language}`;
-    if (dbSettings && dbSettings[dbKey]) return dbSettings[dbKey];
-    if (dbSettings && dbSettings[key]) return dbSettings[key];
+    if (dbSettings && (dbSettings as any)[dbKey]) return (dbSettings as any)[dbKey];
+    if (dbSettings && (dbSettings as any)[key]) return (dbSettings as any)[key];
     return staticTranslations[language]?.[key] || staticTranslations['nl'][key] || key;
   };
 
