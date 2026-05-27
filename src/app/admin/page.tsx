@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
-import { useFirestore, useCollection } from '@/firebase';
+import { useFirestore, useCollection, useStorage } from '@/firebase';
 import { 
   collection, 
   doc, 
@@ -15,6 +15,7 @@ import {
   arrayUnion,
   arrayRemove
 } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
@@ -35,7 +36,9 @@ import {
   Library,
   ChevronDown,
   Sparkles,
-  Zap
+  Zap,
+  Upload,
+  Image as ImageIcon
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -62,6 +65,7 @@ import { verifyAdminPassword } from '@/lib/admin-actions';
 
 export default function AdminPage() {
   const firestore = useFirestore();
+  const storage = useStorage();
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [password, setPassword] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
@@ -74,6 +78,11 @@ export default function AdminPage() {
   const [isRoomDialogOpen, setIsRoomDialogOpen] = useState(false);
   const [editingArtwork, setEditingArtwork] = useState<any>(null);
   const [editingRoom, setEditingRoom] = useState<any>(null);
+  
+  // Upload states
+  const [isUploading, setIsUploading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [artworkForm, setArtworkForm] = useState<any>({
     title: '', displayTitle: '', slug: '', image: '', year: '', medium: '', description: '', tags: '', featured: false, inShop: false
@@ -124,12 +133,26 @@ export default function AdminPage() {
 
   const handleSaveArtwork = async () => {
     if (!firestore) return;
-    const data = sanitizeArtwork({
-      ...artworkForm,
-      tags: typeof artworkForm.tags === 'string' ? artworkForm.tags.split(',').map((t: string) => t.trim()).filter(Boolean) : artworkForm.tags
-    });
+
+    let finalImageUrl = artworkForm.image;
+    setIsUploading(true);
 
     try {
+      // 1. Check if we need to upload a file first
+      if (selectedFile && storage) {
+        const storageRef = ref(storage, `artworks/${Date.now()}_${selectedFile.name}`);
+        const uploadResult = await uploadBytes(storageRef, selectedFile);
+        finalImageUrl = await getDownloadURL(uploadResult.ref);
+      }
+
+      // 2. Prepare data
+      const data = sanitizeArtwork({
+        ...artworkForm,
+        image: finalImageUrl,
+        tags: typeof artworkForm.tags === 'string' ? artworkForm.tags.split(',').map((t: string) => t.trim()).filter(Boolean) : artworkForm.tags
+      });
+
+      // 3. Save to Firestore
       if (editingArtwork) {
         await updateDoc(doc(firestore, 'artworks', editingArtwork.id), data);
         toast({ title: "Bijgewerkt" });
@@ -137,8 +160,14 @@ export default function AdminPage() {
         await addDoc(collection(firestore, 'artworks'), { ...data, createdAt: serverTimestamp() });
         toast({ title: "Toegevoegd" });
       }
+
       setIsArtworkDialogOpen(false);
-    } catch (e) { toast({ variant: "destructive", title: "Fout bij opslaan" }); }
+      setSelectedFile(null);
+    } catch (e: any) { 
+      toast({ variant: "destructive", title: "Fout bij opslaan", description: e.message }); 
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleSaveRoom = async () => {
@@ -271,7 +300,7 @@ export default function AdminPage() {
              <Languages className="w-4 h-4" />
              <span className="text-[10px] font-black uppercase tracking-widest">Vertalingen & Story DTP</span>
            </Link>
-           <Button onClick={() => { setEditingArtwork(null); setArtworkForm({ title: '', displayTitle: '', slug: '', image: '', year: '', medium: '', description: '', tags: '', featured: false, inShop: false }); setIsArtworkDialogOpen(true); }} className="h-12 rounded-full bg-accent text-white px-8 font-black uppercase tracking-widest text-[10px]">
+           <Button onClick={() => { setEditingArtwork(null); setSelectedFile(null); setArtworkForm({ title: '', displayTitle: '', slug: '', image: '', year: '', medium: '', description: '', tags: '', featured: false, inShop: false }); setIsArtworkDialogOpen(true); }} className="h-12 rounded-full bg-accent text-white px-8 font-black uppercase tracking-widest text-[10px]">
              <Plus className="w-4 h-4 mr-2" /> Nieuw Kunstwerk
            </Button>
         </div>
@@ -382,6 +411,7 @@ export default function AdminPage() {
                         onClick={(e) => { 
                           e.stopPropagation();
                           setEditingArtwork(art); 
+                          setSelectedFile(null);
                           setArtworkForm({ ...art, tags: (art.tags || []).join(', ') }); 
                           setIsArtworkDialogOpen(true); 
                         }} 
@@ -463,7 +493,7 @@ export default function AdminPage() {
       </main>
 
       <Dialog open={isArtworkDialogOpen} onOpenChange={setIsArtworkDialogOpen}>
-        <DialogContent className="max-w-3xl rounded-[3rem] p-12">
+        <DialogContent className="max-w-3xl rounded-[3rem] p-12 overflow-y-auto max-h-[90vh]">
           <DialogHeader>
             <DialogTitle className="font-headline text-3xl italic">{editingArtwork ? 'Kunstwerk Bewerken' : 'Nieuw Kunstwerk'}</DialogTitle>
           </DialogHeader>
@@ -489,18 +519,70 @@ export default function AdminPage() {
                 </div>
              </div>
              <div className="space-y-6">
-                <div className="space-y-2">
-                   <Label className="text-[10px] uppercase font-black tracking-widest opacity-40 ml-2">Afbeelding URL</Label>
-                   <Input value={artworkForm.image} onChange={e => setArtworkForm({...artworkForm, image: e.target.value})} className="h-14 rounded-2xl bg-black/5 border-none font-mono text-xs" />
+                <div className="space-y-4">
+                   <Label className="text-[10px] uppercase font-black tracking-widest opacity-40 ml-2">Afbeelding</Label>
+                   
+                   <div className="flex flex-col gap-4">
+                      {/* Upload Area */}
+                      <div 
+                        onClick={() => fileInputRef.current?.click()}
+                        className="group relative aspect-video rounded-2xl border-2 border-dashed border-black/10 flex flex-col items-center justify-center gap-3 cursor-pointer hover:border-accent/40 hover:bg-accent/5 transition-all overflow-hidden"
+                      >
+                         {selectedFile || artworkForm.image ? (
+                           <>
+                             <img 
+                               src={selectedFile ? URL.createObjectURL(selectedFile) : artworkForm.image} 
+                               className="absolute inset-0 w-full h-full object-cover opacity-40"
+                               alt=""
+                             />
+                             <div className="relative z-10 flex flex-col items-center gap-2">
+                               <CheckCircle2 className="w-6 h-6 text-accent" />
+                               <span className="text-[9px] font-black uppercase tracking-widest">Nieuw bestand geselecteerd</span>
+                             </div>
+                           </>
+                         ) : (
+                           <>
+                             <Upload className="w-8 h-8 opacity-20 group-hover:text-accent group-hover:opacity-100 transition-all" />
+                             <span className="text-[9px] font-black uppercase tracking-widest opacity-40">Kies bestand vanaf computer</span>
+                           </>
+                         )}
+                         <input 
+                           type="file" 
+                           ref={fileInputRef}
+                           onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                           className="hidden" 
+                           accept="image/*"
+                         />
+                      </div>
+
+                      <div className="relative">
+                         <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none opacity-20">
+                            <ImageIcon className="w-4 h-4" />
+                         </div>
+                         <Input 
+                            placeholder="Of plak een directe URL..." 
+                            value={artworkForm.image} 
+                            onChange={e => setArtworkForm({...artworkForm, image: e.target.value})} 
+                            className="h-12 pl-12 rounded-xl bg-black/5 border-none text-xs font-mono" 
+                         />
+                      </div>
+                   </div>
                 </div>
                 <div className="space-y-2">
                    <Label className="text-[10px] uppercase font-black tracking-widest opacity-40 ml-2">Beschrijving</Label>
-                   <Textarea value={artworkForm.description} onChange={e => setArtworkForm({...artworkForm, description: e.target.value})} className="min-h-[160px] rounded-[2rem] bg-black/5 border-none p-6" />
+                   <Textarea value={artworkForm.description} onChange={e => setArtworkForm({...artworkForm, description: e.target.value})} className="min-h-[140px] rounded-[2rem] bg-black/5 border-none p-6" />
                 </div>
              </div>
           </div>
           <DialogFooter className="mt-12">
-             <Button onClick={handleSaveArtwork} className="w-full h-16 rounded-2xl bg-accent text-white font-black uppercase tracking-widest text-xs">Wijzigingen Opslaan</Button>
+             <Button 
+                onClick={handleSaveArtwork} 
+                disabled={isUploading}
+                className="w-full h-16 rounded-2xl bg-accent text-white font-black uppercase tracking-widest text-xs"
+             >
+                {isUploading ? <Loader2 className="animate-spin mr-2" /> : null}
+                {editingArtwork ? 'Wijzigingen Opslaan' : 'Toevoegen aan Archief'}
+             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
