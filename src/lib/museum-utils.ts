@@ -41,6 +41,10 @@ export function slugify(text: string): string {
  * Normaliseert Firestore data voor veilig gebruik in de UI.
  */
 export function normalizeArtwork(id: string, data: any) {
+  // Verwijder "2026" uit het jaar voor weergave
+  const rawYear = cleanString(data.year) || "";
+  const filteredYear = rawYear.replace(/2026/g, '').trim() || "Onbekend";
+
   return {
     id,
     title: cleanString(data.title) || "Ongetiteld",
@@ -48,7 +52,7 @@ export function normalizeArtwork(id: string, data: any) {
     slug: cleanString(data.slug) || id,
     image: cleanString(data.image || data.imageUrl || data.url) || null,
     description: cleanString(data.description) || "",
-    year: cleanString(data.year) || "Onbekend",
+    year: filteredYear,
     medium: cleanString(data.medium) || "Schilderij",
     tags: cleanArray(data.tags),
     roomIds: cleanArray(data.roomIds),
@@ -66,6 +70,10 @@ export function normalizeArtwork(id: string, data: any) {
 export function sanitizeArtwork(input: any) {
   const baseTitle = cleanString(input.displayTitle) || cleanString(input.title) || "Ongetiteld";
   const finalSlug = slugify(cleanString(input.slug) || baseTitle);
+  
+  // Verwijder "2026" uit het jaar bij opslaan
+  const rawYear = cleanString(input.year) || "";
+  const filteredYear = rawYear.replace(/2026/g, '').trim();
 
   return {
     title: cleanString(input.title) || "Ongetiteld",
@@ -73,7 +81,7 @@ export function sanitizeArtwork(input: any) {
     slug: finalSlug,
     image: cleanString(input.image) || null,
     description: cleanString(input.description) || "",
-    year: cleanString(input.year) || "",
+    year: filteredYear,
     medium: cleanString(input.medium) || "",
     tags: cleanArray(input.tags),
     roomIds: cleanArray(input.roomIds),
