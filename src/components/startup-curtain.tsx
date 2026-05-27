@@ -6,12 +6,17 @@ import { cn } from '@/lib/utils';
 /**
  * @fileOverview StartupCurtain: Maskeert de "techniek" en het framework tijdens de initiële hydratatie.
  * Zorgt voor een serene, museale binnenkomst.
+ * 
+ * FIX: Waarden gestabiliseerd om hydration mismatches te voorkomen.
  */
 export function StartupCurtain() {
+  const [mounted, setMounted] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [shouldRender, setShouldRender] = useState(true);
 
   useEffect(() => {
+    setMounted(true);
+    
     // Geef de app ruim de tijd om de eerste verfbeurt en hydratatie af te ronden
     const timer = setTimeout(() => {
       setIsVisible(false);
@@ -28,13 +33,18 @@ export function StartupCurtain() {
     };
   }, []);
 
+  // We renderen ALTIJD de initiële staat op de server en tijdens de eerste client-render
+  // om hydration mismatches in de classNames en structuur te voorkomen.
   if (!shouldRender) return null;
 
   return (
     <div 
       className={cn(
-        "fixed inset-0 z-[9999999] bg-[#f4f4f2] flex flex-col items-center justify-center transition-all duration-1000 ease-in-out pointer-events-auto",
-        !isVisible ? "opacity-0 scale-105 pointer-events-none" : "opacity-100"
+        "fixed inset-0 bg-[#f4f4f2] flex flex-col items-center justify-center transition-all duration-1000 ease-in-out pointer-events-auto",
+        // Z-index extreem hoog om alles (ook nav) te bedekken
+        "z-[9999999]",
+        // De overgang naar onzichtbaar gebeurt alleen na montage
+        (!mounted || isVisible) ? "opacity-100" : "opacity-0 scale-105 pointer-events-none"
       )}
     >
       <div className="relative flex flex-col items-center gap-8 animate-pulse">
@@ -52,7 +62,10 @@ export function StartupCurtain() {
       </div>
       
       {/* Subtiele textuur om het minder 'digitaal' te maken */}
-      <div className="absolute inset-0 opacity-[0.04] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')]" />
+      <div 
+        className="absolute inset-0 opacity-[0.04] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')]" 
+        aria-hidden="true"
+      />
     </div>
   );
 }
