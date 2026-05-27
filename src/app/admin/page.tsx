@@ -67,6 +67,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { normalizeArtwork, sanitizeArtwork, MUSEUM_TAGS, slugify, sortArtworksByTitle } from '@/lib/museum-utils';
@@ -75,6 +82,20 @@ import { verifyAdminPassword } from '@/lib/admin-actions';
 import { Checkbox } from '@/components/ui/checkbox';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
+
+const ART_TECHNIQUES = [
+  "Olieverf",
+  "Aquarel",
+  "Gouache",
+  "Litho",
+  "Pentekening",
+  "Gemengde techniek",
+  "Glas in lood",
+  "Houtskool",
+  "Ets",
+  "Zeefdruk",
+  "Anders..."
+];
 
 export default function AdminPage() {
   const firestore = useFirestore();
@@ -107,6 +128,7 @@ export default function AdminPage() {
   
   const [roomForm, setRoomForm] = useState({ title: '', description: '', order: 0 });
   const [tempBulkTags, setTempBulkTags] = useState<string[]>([]);
+  const [showCustomMedium, setShowCustomMedium] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -159,13 +181,16 @@ export default function AdminPage() {
   const handleOpenNewArtwork = () => {
     setEditingArtwork(null);
     setSelectedFile(null);
-    setArtworkForm({ title: '', displayTitle: '', slug: '', image: '', year: '', medium: '', description: '', tags: '', featured: false, inShop: false });
+    setShowCustomMedium(false);
+    setArtworkForm({ title: '', displayTitle: '', slug: '', image: '', year: '', medium: 'Olieverf', description: '', tags: '', featured: false, inShop: false });
     setIsArtworkDialogOpen(true);
   };
 
   const handleEditArtwork = (art: any) => {
     setEditingArtwork(art); 
     setSelectedFile(null);
+    const isCustom = art.medium && !ART_TECHNIQUES.includes(art.medium);
+    setShowCustomMedium(isCustom);
     setArtworkForm({ 
       ...art, 
       tags: Array.isArray(art.tags) ? art.tags.join(', ') : (art.tags || '')
@@ -368,54 +393,6 @@ export default function AdminPage() {
     setSelectedItems([]);
     setIsUploading(false);
   };
-
-  const bulkRemoveFromRoom = (roomId: string, roomTitle: string) => {
-    if (!firestore || selectedArtworks.length === 0) return;
-    selectedArtworks.forEach(id => {
-      const docRef = doc(firestore, 'artworks', id);
-      updateDoc(docRef, { roomIds: arrayRemove(roomId) })
-        .catch(async () => {
-          errorEmitter.emit('permission-error', new FirestorePermissionError({
-            path: docRef.path,
-            operation: 'update',
-            requestResourceData: { roomIds: arrayRemove(roomId) }
-          } satisfies SecurityRuleContext));
-        });
-    });
-    toast({ title: "Verwijderd uit zaal", description: `${selectedArtworks.length} items verwijderd uit '${roomTitle}'` });
-    setSelectedItems([]);
-  };
-
-  if (!isAuthorized) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
-        <Card className="max-w-md w-full p-12 rounded-[3rem] shadow-2xl space-y-8 animate-in fade-in zoom-in duration-500">
-           <div className="text-center space-y-4">
-              <div className="w-20 h-20 bg-accent/10 rounded-full flex items-center justify-center mx-auto text-accent">
-                 <Settings className="w-10 h-10" />
-              </div>
-              <h1 className="font-headline text-3xl italic">Museum <span className="text-accent">Beheer</span></h1>
-           </div>
-           <form onSubmit={handleLogin} className="space-y-6">
-              <div className="space-y-2">
-                 <Label className="text-[10px] uppercase font-black tracking-widest ml-4 opacity-40">Toegangscode</Label>
-                 <Input 
-                   type="password" 
-                   value={password} 
-                   onChange={(e) => setPassword(e.target.value)} 
-                   className="h-14 rounded-2xl text-center bg-black/5 border-none text-xl" 
-                   placeholder="••••••"
-                   autoFocus
-                 />
-              </div>
-              <Button type="submit" disabled={isVerifying} className="w-full h-14 rounded-2xl bg-primary text-white font-black uppercase tracking-widest text-[11px]">
-                 {isVerifying ? <Loader2 className="animate-spin" /> : "Ontgrendel Beheer"}
-              </Button>
-           </form>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen pt-32 px-8 bg-transparent">
@@ -755,7 +732,38 @@ export default function AdminPage() {
                   </div>
                   <div className="space-y-2">
                     <Label className="text-[10px] uppercase font-black tracking-widest opacity-40 ml-2">Techniek</Label>
-                    <Input value={artworkForm.medium} onChange={e => setArtworkForm({...artworkForm, medium: e.target.value})} className="h-14 rounded-2xl bg-black/5 border-none" />
+                    {showCustomMedium ? (
+                      <div className="flex gap-2">
+                         <Input 
+                            value={artworkForm.medium} 
+                            onChange={e => setArtworkForm({...artworkForm, medium: e.target.value})} 
+                            className="h-14 rounded-2xl bg-black/5 border-none" 
+                            placeholder="Type techniek..."
+                         />
+                         <Button variant="ghost" size="icon" onClick={() => setShowCustomMedium(false)} className="h-14 w-12 rounded-xl"><X className="w-4 h-4" /></Button>
+                      </div>
+                    ) : (
+                      <Select 
+                        value={artworkForm.medium} 
+                        onValueChange={(v) => {
+                          if (v === "Anders...") {
+                            setShowCustomMedium(true);
+                            setArtworkForm({...artworkForm, medium: ""});
+                          } else {
+                            setArtworkForm({...artworkForm, medium: v});
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="h-14 rounded-2xl bg-black/5 border-none">
+                          <SelectValue placeholder="Kies techniek" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-2xl border-none shadow-2xl">
+                           {ART_TECHNIQUES.map(t => (
+                             <SelectItem key={t} value={t} className="rounded-xl p-3 text-sm">{t}</SelectItem>
+                           ))}
+                        </SelectContent>
+                      </Select>
+                    )}
                   </div>
                 </div>
              </div>
@@ -858,9 +866,12 @@ function ArtworkEditorCard({ artwork, isSelected, onToggleSelect }: { artwork: a
   const firestore = useFirestore();
   const [isSaving, setIsSaving] = useState(false);
   const [localData, setLocalData] = useState(artwork);
+  const [showCustomMedium, setShowCustomMedium] = useState(false);
 
   useEffect(() => {
     setLocalData(artwork);
+    const isCustom = artwork.medium && !ART_TECHNIQUES.includes(artwork.medium);
+    setShowCustomMedium(isCustom);
   }, [artwork]);
 
   const handleSave = async () => {
@@ -966,11 +977,39 @@ function ArtworkEditorCard({ artwork, isSelected, onToggleSelect }: { artwork: a
                   <Label className="text-[10px] font-black uppercase tracking-widest opacity-30 flex items-center gap-2">
                     <Hammer className="w-3 h-3" /> Techniek
                   </Label>
-                  <Input 
-                    value={localData.medium} 
-                    onChange={e => setLocalData({...localData, medium: e.target.value})}
-                    className="h-12 rounded-xl bg-black/[0.03] border-none font-medium"
-                  />
+                  {showCustomMedium ? (
+                    <div className="flex gap-2">
+                       <Input 
+                          value={localData.medium} 
+                          onChange={e => setLocalData({...localData, medium: e.target.value})} 
+                          className="h-12 rounded-xl bg-black/[0.03] border-none font-medium" 
+                          placeholder="Type techniek..."
+                          autoFocus
+                       />
+                       <Button variant="ghost" size="icon" onClick={() => setShowCustomMedium(false)} className="h-12 w-10"><X className="w-4 h-4" /></Button>
+                    </div>
+                  ) : (
+                    <Select 
+                      value={localData.medium} 
+                      onValueChange={(v) => {
+                        if (v === "Anders...") {
+                          setShowCustomMedium(true);
+                          setLocalData({...localData, medium: ""});
+                        } else {
+                          setLocalData({...localData, medium: v});
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="h-12 rounded-xl bg-black/[0.03] border-none font-medium">
+                        <SelectValue placeholder="Kies techniek" />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl border-none shadow-2xl">
+                         {ART_TECHNIQUES.map(t => (
+                           <SelectItem key={t} value={t} className="text-xs uppercase font-bold tracking-widest">{t}</SelectItem>
+                         ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                </div>
             </div>
 
