@@ -131,6 +131,13 @@ export default function AdminPage() {
     setIsVerifying(false);
   };
 
+  const handleOpenNewArtwork = () => {
+    setEditingArtwork(null);
+    setSelectedFile(null);
+    setArtworkForm({ title: '', displayTitle: '', slug: '', image: '', year: '', medium: '', description: '', tags: '', featured: false, inShop: false });
+    setIsArtworkDialogOpen(true);
+  };
+
   const handleSaveArtwork = async () => {
     if (!firestore) return;
 
@@ -143,6 +150,12 @@ export default function AdminPage() {
         const storageRef = ref(storage, `artworks/${Date.now()}_${selectedFile.name}`);
         const uploadResult = await uploadBytes(storageRef, selectedFile);
         finalImageUrl = await getDownloadURL(uploadResult.ref);
+      }
+
+      if (!finalImageUrl && !selectedFile) {
+        toast({ variant: "destructive", title: "Afbeelding ontbreekt", description: "Upload een bestand of voer een URL in." });
+        setIsUploading(false);
+        return;
       }
 
       // 2. Prepare data
@@ -158,7 +171,7 @@ export default function AdminPage() {
         toast({ title: "Bijgewerkt" });
       } else {
         await addDoc(collection(firestore, 'artworks'), { ...data, createdAt: serverTimestamp() });
-        toast({ title: "Toegevoegd" });
+        toast({ title: "Toegevoegd aan archief" });
       }
 
       setIsArtworkDialogOpen(false);
@@ -276,32 +289,37 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen pt-32 px-8 bg-transparent">
-      <header className="fixed top-0 left-0 right-0 h-24 bg-white/90 backdrop-blur-md border-b z-40 px-8 flex items-center justify-between shadow-sm">
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-4">
+      <header className="fixed top-0 left-0 right-0 h-24 bg-white/95 backdrop-blur-md border-b z-50 px-8 flex items-center justify-between shadow-sm">
+        <div className="flex items-center gap-6 overflow-hidden">
+          <div className="flex items-center gap-4 shrink-0">
             <LayoutDashboard className="w-6 h-6 text-accent" />
-            <h1 className="font-headline text-2xl italic">Museum Beheer</h1>
+            <h1 className="font-headline text-2xl italic hidden sm:block">Museum Beheer</h1>
           </div>
-          <div className="h-8 w-px bg-black/10 mx-2" />
-          <div className="flex items-center gap-2">
-            <Link href="/admin/forum" className="flex items-center gap-2 px-4 py-2 rounded-full bg-accent/5 text-accent hover:bg-accent hover:text-white transition-all">
+          <div className="h-8 w-px bg-black/10 mx-2 hidden md:block" />
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+            <Link href="/admin/forum" className="flex items-center gap-2 px-4 py-2 rounded-full bg-accent/5 text-accent hover:bg-accent hover:text-white transition-all shrink-0">
                <Users className="w-4 h-4" />
-               <span className="text-[10px] font-black uppercase tracking-widest">Moderatie Forum</span>
+               <span className="text-[10px] font-black uppercase tracking-widest">Forum</span>
             </Link>
-            <Link href="/admin/team" className="flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/5 text-blue-600 hover:bg-blue-500 hover:text-white transition-all">
+            <Link href="/admin/team" className="flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/5 text-blue-600 hover:bg-blue-500 hover:text-white transition-all shrink-0">
                <Zap className="w-4 h-4" />
-               <span className="text-[10px] font-black uppercase tracking-widest">Team Hub (Mark & Co)</span>
+               <span className="text-[10px] font-black uppercase tracking-widest">Team Hub</span>
+            </Link>
+            <Link href="/admin/translate" className="flex items-center gap-2 px-4 py-2 rounded-full bg-black/5 text-black hover:bg-black hover:text-white transition-all shrink-0">
+               <Languages className="w-4 h-4" />
+               <span className="text-[10px] font-black uppercase tracking-widest">DTP & Teksten</span>
             </Link>
           </div>
         </div>
         
-        <div className="flex items-center gap-3">
-           <Link href="/admin/translate" className="h-12 px-6 rounded-full border-2 flex items-center gap-3 hover:bg-black/5">
-             <Languages className="w-4 h-4" />
-             <span className="text-[10px] font-black uppercase tracking-widest">Vertalingen & Story DTP</span>
-           </Link>
-           <Button onClick={() => { setEditingArtwork(null); setSelectedFile(null); setArtworkForm({ title: '', displayTitle: '', slug: '', image: '', year: '', medium: '', description: '', tags: '', featured: false, inShop: false }); setIsArtworkDialogOpen(true); }} className="h-12 rounded-full bg-accent text-white px-8 font-black uppercase tracking-widest text-[10px]">
-             <Plus className="w-4 h-4 mr-2" /> Nieuw Kunstwerk
+        <div className="flex items-center gap-3 shrink-0">
+           <Button 
+             onClick={handleOpenNewArtwork} 
+             className="h-12 rounded-full bg-accent text-white px-6 md:px-8 font-black uppercase tracking-widest text-[10px] shadow-lg hover:scale-105 active:scale-95 transition-all"
+           >
+             <Plus className="w-4 h-4 md:mr-2" /> 
+             <span className="hidden md:inline">Nieuw Kunstwerk</span>
+             <span className="md:hidden inline">Toevoegen</span>
            </Button>
         </div>
       </header>
@@ -363,8 +381,8 @@ export default function AdminPage() {
           </TabsList>
 
           <TabsContent value="archive" className="space-y-8 mt-0">
-            <div className="flex items-center justify-between gap-8 bg-white/50 backdrop-blur-md p-6 rounded-[2.5rem] border border-white/60">
-               <div className="relative flex-1 max-w-md">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-white/50 backdrop-blur-md p-6 rounded-[2.5rem] border border-white/60">
+               <div className="relative flex-1 w-full max-w-md">
                  <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 opacity-30" />
                  <Input 
                    placeholder="Zoek in archief..." 
@@ -373,14 +391,30 @@ export default function AdminPage() {
                    className="h-14 pl-14 rounded-2xl bg-white border-none shadow-inner"
                  />
                </div>
-               <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest opacity-40">
-                  <Library className="w-4 h-4" /> {artworks?.length || 0} items totaal
+               
+               <div className="flex items-center gap-6">
+                 <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest opacity-40">
+                    <Library className="w-4 h-4" /> {artworks?.length || 0} items totaal
+                 </div>
+                 <Button 
+                   onClick={handleOpenNewArtwork}
+                   variant="outline" 
+                   className="h-14 px-8 rounded-2xl border-2 border-accent/20 text-accent font-black uppercase text-[10px] tracking-widest"
+                 >
+                   <Plus className="w-4 h-4 mr-2" /> Snel Toevoegen
+                 </Button>
                </div>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
               {artLoading ? (
                 Array(12).fill(0).map((_, i) => <div key={i} className="aspect-[4/5] bg-black/5 animate-pulse rounded-3xl" />)
+              ) : filteredArtworks.length === 0 ? (
+                <div className="col-span-full py-32 text-center space-y-6 bg-black/5 rounded-[3rem] border-2 border-dashed border-black/10">
+                   <Library className="w-12 h-12 mx-auto opacity-10" />
+                   <p className="font-headline text-2xl italic opacity-30">Geen resultaten gevonden...</p>
+                   <Button onClick={handleOpenNewArtwork} className="rounded-full h-12 px-8">Maak eerste kunstwerk</Button>
+                </div>
               ) : filteredArtworks.map((art: any) => (
                 <Card 
                   key={art.id} 
@@ -493,7 +527,7 @@ export default function AdminPage() {
       </main>
 
       <Dialog open={isArtworkDialogOpen} onOpenChange={setIsArtworkDialogOpen}>
-        <DialogContent className="max-w-3xl rounded-[3rem] p-12 overflow-y-auto max-h-[90vh]">
+        <DialogContent className="max-w-3xl rounded-[3rem] p-8 md:p-12 overflow-y-auto max-h-[90vh]">
           <DialogHeader>
             <DialogTitle className="font-headline text-3xl italic">{editingArtwork ? 'Kunstwerk Bewerken' : 'Nieuw Kunstwerk'}</DialogTitle>
           </DialogHeader>
@@ -520,13 +554,13 @@ export default function AdminPage() {
              </div>
              <div className="space-y-6">
                 <div className="space-y-4">
-                   <Label className="text-[10px] uppercase font-black tracking-widest opacity-40 ml-2">Afbeelding</Label>
+                   <Label className="text-[10px] uppercase font-black tracking-widest opacity-40 ml-2">Afbeelding (Upload of URL)</Label>
                    
                    <div className="flex flex-col gap-4">
                       {/* Upload Area */}
                       <div 
                         onClick={() => fileInputRef.current?.click()}
-                        className="group relative aspect-video rounded-2xl border-2 border-dashed border-black/10 flex flex-col items-center justify-center gap-3 cursor-pointer hover:border-accent/40 hover:bg-accent/5 transition-all overflow-hidden"
+                        className="group relative aspect-video rounded-2xl border-2 border-dashed border-black/10 flex flex-col items-center justify-center gap-3 cursor-pointer hover:border-accent/40 hover:bg-accent/5 transition-all overflow-hidden bg-black/[0.02]"
                       >
                          {selectedFile || artworkForm.image ? (
                            <>
@@ -537,13 +571,13 @@ export default function AdminPage() {
                              />
                              <div className="relative z-10 flex flex-col items-center gap-2">
                                <CheckCircle2 className="w-6 h-6 text-accent" />
-                               <span className="text-[9px] font-black uppercase tracking-widest">Nieuw bestand geselecteerd</span>
+                               <span className="text-[9px] font-black uppercase tracking-widest bg-white/80 px-3 py-1 rounded-full">{selectedFile ? "Nieuw bestand" : "Huidige foto"}</span>
                              </div>
                            </>
                          ) : (
                            <>
                              <Upload className="w-8 h-8 opacity-20 group-hover:text-accent group-hover:opacity-100 transition-all" />
-                             <span className="text-[9px] font-black uppercase tracking-widest opacity-40">Kies bestand vanaf computer</span>
+                             <span className="text-[9px] font-black uppercase tracking-widest opacity-40">Kies bestand van computer</span>
                            </>
                          )}
                          <input 
@@ -578,7 +612,7 @@ export default function AdminPage() {
              <Button 
                 onClick={handleSaveArtwork} 
                 disabled={isUploading}
-                className="w-full h-16 rounded-2xl bg-accent text-white font-black uppercase tracking-widest text-xs"
+                className="w-full h-16 rounded-2xl bg-accent text-white font-black uppercase tracking-widest text-xs shadow-xl hover:scale-[1.02] transition-all"
              >
                 {isUploading ? <Loader2 className="animate-spin mr-2" /> : null}
                 {editingArtwork ? 'Wijzigingen Opslaan' : 'Toevoegen aan Archief'}
@@ -603,7 +637,7 @@ export default function AdminPage() {
              </div>
           </div>
           <DialogFooter className="mt-10">
-             <Button onClick={handleSaveRoom} className="w-full h-16 rounded-2xl bg-primary text-white font-black uppercase tracking-widest text-xs">Zaal Opslaan</Button>
+             <Button onClick={handleSaveRoom} className="w-full h-16 rounded-2xl bg-primary text-white font-black uppercase tracking-widest text-xs shadow-xl">Zaal Opslaan</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
