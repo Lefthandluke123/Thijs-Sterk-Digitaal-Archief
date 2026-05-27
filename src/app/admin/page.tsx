@@ -71,6 +71,8 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { verifyAdminPassword } from '@/lib/admin-actions';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
 export default function AdminPage() {
   const firestore = useFirestore();
@@ -125,15 +127,11 @@ export default function AdminPage() {
 
   const filteredArtworks = useMemo(() => {
     if (!artworks) return [];
-    
-    // 1. Filteren op zoekopdracht
     const filtered = artworks.filter((art: any) => 
       art.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       art.displayTitle?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       art.tags?.some((t: string) => t.toLowerCase().includes(searchQuery.toLowerCase()))
     );
-
-    // 2. Sorteren op Romeins cijfer en nummer
     return [...filtered].sort(sortArtworksByTitle);
   }, [artworks, searchQuery]);
 
@@ -187,18 +185,39 @@ export default function AdminPage() {
         return;
       }
 
+      const cleanTags = typeof artworkForm.tags === 'string' 
+        ? artworkForm.tags.split(',').map((t: string) => t.trim()).filter(Boolean) 
+        : artworkForm.tags;
+
       const data = sanitizeArtwork({
         ...artworkForm,
         image: finalImageUrl,
-        tags: typeof artworkForm.tags === 'string' ? artworkForm.tags.split(',').map((t: string) => t.trim()).filter(Boolean) : artworkForm.tags
+        tags: cleanTags
       });
 
       if (editingArtwork) {
-        await updateDoc(doc(firestore, 'artworks', editingArtwork.id), data);
-        toast({ title: "Bijgewerkt" });
+        const docRef = doc(firestore, 'artworks', editingArtwork.id);
+        updateDoc(docRef, data)
+          .then(() => toast({ title: "Bijgewerkt" }))
+          .catch(async (e) => {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+              path: docRef.path,
+              operation: 'update',
+              requestResourceData: data
+            } satisfies SecurityRuleContext));
+          });
       } else {
-        await addDoc(collection(firestore, 'artworks'), { ...data, createdAt: serverTimestamp() });
-        toast({ title: "Toegevoegd aan archief" });
+        const collRef = collection(firestore, 'artworks');
+        const newData = { ...data, createdAt: serverTimestamp() };
+        addDoc(collRef, newData)
+          .then(() => toast({ title: "Toegevoegd aan archief" }))
+          .catch(async (e) => {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+              path: collRef.path,
+              operation: 'create',
+              requestResourceData: newData
+            } satisfies SecurityRuleContext));
+          });
       }
 
       setIsArtworkDialogOpen(false);
@@ -210,85 +229,126 @@ export default function AdminPage() {
     }
   };
 
-  const handleSaveRoom = async () => {
+  const handleSaveRoom = () => {
     if (!firestore) return;
     const slug = slugify(roomForm.title);
     const data = { ...roomForm, slug, updatedAt: serverTimestamp() };
 
-    try {
-      if (editingRoom) {
-        await updateDoc(doc(firestore, 'rooms', editingRoom.id), data);
-        toast({ title: "Zaal bijgewerkt" });
-      } else {
-        await addDoc(collection(firestore, 'rooms'), { ...data, createdAt: serverTimestamp(), isPublic: true });
-        toast({ title: "Zaal aangemaakt" });
-      }
-      setIsRoomDialogOpen(false);
-    } catch (e) { toast({ variant: "destructive", title: "Fout bij opslaan" }); }
+    if (editingRoom) {
+      const docRef = doc(firestore, 'rooms', editingRoom.id);
+      updateDoc(docRef, data)
+        .then(() => toast({ title: "Zaal bijgewerkt" }))
+        .catch(async (e) => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: docRef.path,
+            operation: 'update',
+            requestResourceData: data
+          } satisfies SecurityRuleContext));
+        });
+    } else {
+      const collRef = collection(firestore, 'rooms');
+      const newData = { ...data, createdAt: serverTimestamp(), isPublic: true };
+      addDoc(collRef, newData)
+        .then(() => toast({ title: "Zaal aangemaakt" }))
+        .catch(async (e) => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: collRef.path,
+            operation: 'create',
+            requestResourceData: newData
+          } satisfies SecurityRuleContext));
+        });
+    }
+    setIsRoomDialogOpen(false);
   };
 
-  const handleDeleteRoom = async (room: any) => {
+  const handleDeleteRoom = (room: any) => {
     if (!firestore || !confirm(`Weet u zeker dat u '${room.title}' wilt verwijderen? De schilderijen blijven behouden.`)) return;
-    try {
-      const associated = artworks?.filter((a: any) => a.roomIds?.includes(room.id)) || [];
-      for (const art of associated) {
-        await updateDoc(doc(firestore, 'artworks', art.id), {
-          roomIds: arrayRemove(room.id)
-        });
-      }
-      await deleteDoc(doc(firestore, 'rooms', room.id));
-      toast({ title: "Zaal verwijderd", description: `${associated.length} koppelingen opgeschoond.` });
-    } catch (e) { toast({ variant: "destructive", title: "Verwijderen mislukt" }); }
+    
+    const associated = artworks?.filter((a: any) => a.roomIds?.includes(room.id)) || [];
+    associated.forEach(art => {
+      updateDoc(doc(firestore, 'artworks', art.id), {
+        roomIds: arrayRemove(room.id)
+      });
+    });
+
+    const docRef = doc(firestore, 'rooms', room.id);
+    deleteDoc(docRef)
+      .then(() => toast({ title: "Zaal verwijderd" }))
+      .catch(async (e) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: docRef.path,
+          operation: 'delete'
+        } satisfies SecurityRuleContext));
+      });
   };
 
   const toggleSelection = (id: string) => {
     setSelectedItems(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
   };
 
-  const bulkAddToRoom = async (roomId: string, roomTitle: string) => {
+  const bulkAddToRoom = (roomId: string, roomTitle: string) => {
     if (!firestore || selectedArtworks.length === 0) return;
-    try {
-      for (const id of selectedArtworks) {
-        await updateDoc(doc(firestore, 'artworks', id), {
-          roomIds: arrayUnion(roomId)
+    selectedArtworks.forEach(id => {
+      const docRef = doc(firestore, 'artworks', id);
+      updateDoc(docRef, { roomIds: arrayUnion(roomId) })
+        .catch(async () => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: docRef.path,
+            operation: 'update',
+            requestResourceData: { roomIds: arrayUnion(roomId) }
+          } satisfies SecurityRuleContext));
         });
-      }
-      toast({ title: "Bulk update voltooid", description: `${selectedArtworks.length} items toegevoegd aan '${roomTitle}'` });
-      setSelectedItems([]);
-    } catch (e) { toast({ variant: "destructive", title: "Bulk update mislukt" }); }
+    });
+    toast({ title: "Bulk update gestart", description: `${selectedArtworks.length} items worden toegevoegd aan '${roomTitle}'` });
+    setSelectedItems([]);
   };
 
-  const applyBulkTags = async () => {
-    if (!firestore || selectedArtworks.length === 0 || tempBulkTags.length === 0) return;
+  const applyBulkTags = () => {
+    if (!firestore || selectedArtworks.length === 0) return;
     setIsUploading(true);
-    try {
-      for (const id of selectedArtworks) {
-        await updateDoc(doc(firestore, 'artworks', id), {
-          tags: arrayUnion(...tempBulkTags)
+    
+    const isSingleEdit = selectedArtworks.length === 1;
+
+    selectedArtworks.forEach(id => {
+      const docRef = doc(firestore, 'artworks', id);
+      const updateData = isSingleEdit ? { tags: tempBulkTags } : { tags: arrayUnion(...tempBulkTags) };
+      
+      updateDoc(docRef, updateData)
+        .catch(async () => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: docRef.path,
+            operation: 'update',
+            requestResourceData: updateData
+          } satisfies SecurityRuleContext));
         });
-      }
-      toast({ title: "Tags toegevoegd", description: `${tempBulkTags.length} tags toegevoegd aan ${selectedArtworks.length} items.` });
-      setIsBulkTagDialogOpen(false);
-      setTempBulkTags([]);
-      setSelectedItems([]);
-    } catch (e) {
-      toast({ variant: "destructive", title: "Fout bij bulk taggen" });
-    } finally {
-      setIsUploading(false);
-    }
+    });
+
+    toast({ 
+      title: isSingleEdit ? "Tags bijgewerkt" : "Tags toegevoegd", 
+      description: isSingleEdit ? "De tags voor dit werk zijn aangepast." : `${tempBulkTags.length} tags toegevoegd aan ${selectedArtworks.length} items.` 
+    });
+    
+    setIsBulkTagDialogOpen(false);
+    setTempBulkTags([]);
+    setSelectedItems([]);
+    setIsUploading(false);
   };
 
-  const bulkRemoveFromRoom = async (roomId: string, roomTitle: string) => {
+  const bulkRemoveFromRoom = (roomId: string, roomTitle: string) => {
     if (!firestore || selectedArtworks.length === 0) return;
-    try {
-      for (const id of selectedArtworks) {
-        await updateDoc(doc(firestore, 'artworks', id), {
-          roomIds: arrayRemove(roomId)
+    selectedArtworks.forEach(id => {
+      const docRef = doc(firestore, 'artworks', id);
+      updateDoc(docRef, { roomIds: arrayRemove(roomId) })
+        .catch(async () => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: docRef.path,
+            operation: 'update',
+            requestResourceData: { roomIds: arrayRemove(roomId) }
+          } satisfies SecurityRuleContext));
         });
-      }
-      toast({ title: "Verwijderd uit zaal", description: `${selectedArtworks.length} items verwijderd uit '${roomTitle}'` });
-      setSelectedItems([]);
-    } catch (e) { toast({ variant: "destructive", title: "Bewerking mislukt" }); }
+    });
+    toast({ title: "Verwijderd uit zaal", description: `${selectedArtworks.length} items verwijderd uit '${roomTitle}'` });
+    setSelectedItems([]);
   };
 
   if (!isAuthorized) {
@@ -682,7 +742,7 @@ export default function AdminPage() {
           <DialogHeader>
             <DialogTitle className="font-headline text-3xl italic">Tags Bewerken</DialogTitle>
             <DialogDescription className="text-[10px] font-black uppercase tracking-widest opacity-40">
-              Voeg tags toe aan {selectedArtworks.length} geselecteerde items
+              {selectedArtworks.length === 1 ? 'Pas tags aan voor dit werk' : `Voeg tags toe aan ${selectedArtworks.length} geselecteerde items`}
             </DialogDescription>
           </DialogHeader>
           
@@ -697,7 +757,7 @@ export default function AdminPage() {
                       }}>
                         <Checkbox 
                           checked={tempBulkTags.includes(tag)} 
-                          onCheckedChange={() => {}} // Handled by div click
+                          onCheckedChange={() => {}} 
                           className="rounded-md border-black/10 data-[state=checked]:bg-accent data-[state=checked]:border-accent"
                         />
                         <span className="text-xs font-bold uppercase tracking-wider text-foreground/60 group-hover:text-foreground transition-colors">{tag}</span>
@@ -758,7 +818,6 @@ export default function AdminPage() {
                    <Label className="text-[10px] uppercase font-black tracking-widest opacity-40 ml-2">Afbeelding (Upload of URL)</Label>
                    
                    <div className="flex flex-col gap-4">
-                      {/* Upload Area */}
                       <div 
                         onClick={() => fileInputRef.current?.click()}
                         className="group relative aspect-video rounded-2xl border-2 border-dashed border-black/10 flex flex-col items-center justify-center gap-3 cursor-pointer hover:border-accent/40 hover:bg-accent/5 transition-all overflow-hidden bg-black/[0.02]"
