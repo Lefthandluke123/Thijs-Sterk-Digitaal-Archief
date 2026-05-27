@@ -22,9 +22,11 @@ import {
   BarChart3,
   TrendingUp,
   PieChart as PieChartIcon,
-  Users
+  Users,
+  MapPin,
+  Globe
 } from 'lucide-react';
-import { format, startOfHour, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { nl } from 'date-fns/locale';
 import { 
   LineChart, 
@@ -38,12 +40,9 @@ import {
   Bar,
   PieChart,
   Pie,
-  Cell,
   Cell as RechartsCell
 } from 'recharts';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-
-const COLORS = ['#142 30% 25%', '#201 45% 10%', '#f43f5e', '#3b82f6', '#8b5cf6'];
+import { ChartTooltipContent } from '@/components/ui/chart';
 
 export default function ActivityMonitorPage() {
   const firestore = useFirestore();
@@ -57,7 +56,6 @@ export default function ActivityMonitorPage() {
     }
   }, []);
 
-  // We halen een grotere set op voor de rapportage (500 logs)
   const logsQuery = useMemo(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'activity_logs'), orderBy('timestamp', 'desc'), limit(500));
@@ -65,38 +63,37 @@ export default function ActivityMonitorPage() {
 
   const { data: logs, loading } = useCollection(logsQuery);
 
-  // Data Aggregatie voor rapportage
   const stats = useMemo(() => {
     if (!logs) return null;
 
     const typeCounts: Record<string, number> = {};
     const artworkCounts: Record<string, number> = {};
+    const countryCounts: Record<string, number> = {};
     const hourlyActivity: Record<string, number> = {};
     const sessions = new Set();
     let loggedInCount = 0;
 
     logs.forEach((log: any) => {
-      // Types
       typeCounts[log.type] = (typeCounts[log.type] || 0) + 1;
       
-      // Artworks
       if (log.type === 'artwork_view' && log.targetTitle) {
         artworkCounts[log.targetTitle] = (artworkCounts[log.targetTitle] || 0) + 1;
       }
 
-      // Time (Hourly)
+      if (log.country) {
+        countryCounts[log.country] = (countryCounts[log.country] || 0) + 1;
+      }
+
       if (log.timestamp) {
         const date = log.timestamp.toDate();
         const hourKey = format(date, 'HH:00');
         hourlyActivity[hourKey] = (hourlyActivity[hourKey] || 0) + 1;
       }
 
-      // Users
       if (log.sessionId) sessions.add(log.sessionId);
       if (log.userId) loggedInCount++;
     });
 
-    // Format for Recharts
     const trendData = Object.entries(hourlyActivity)
       .map(([hour, count]) => ({ hour, count }))
       .sort((a, b) => a.hour.localeCompare(b.hour));
@@ -111,13 +108,19 @@ export default function ActivityMonitorPage() {
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
 
+    const countryData = Object.entries(countryCounts)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+
     return {
       total: logs.length,
       uniqueSessions: sessions.size,
       loggedInPercentage: Math.round((loggedInCount / logs.length) * 100),
       trendData,
       typeData,
-      popularArtworks
+      popularArtworks,
+      countryData
     };
   }, [logs]);
 
@@ -180,10 +183,10 @@ export default function ActivityMonitorPage() {
                </Card>
                <Card className="p-8 rounded-[2rem] bg-white shadow-lg space-y-4">
                   <div className="flex items-center gap-3 opacity-40">
-                     <Activity className="w-4 h-4" />
-                     <span className="text-[10px] font-black uppercase tracking-widest">Systeem Status</span>
+                     <Globe className="w-4 h-4" />
+                     <span className="text-[10px] font-black uppercase tracking-widest">Top Land</span>
                   </div>
-                  <p className="text-3xl font-headline italic text-green-600">Live</p>
+                  <p className="text-3xl font-headline italic truncate">{stats?.countryData?.[0]?.name || 'NL'}</p>
                </Card>
             </div>
 
@@ -212,12 +215,18 @@ export default function ActivityMonitorPage() {
                                  log.type === 'artwork_view' ? `Bekeek: ${log.targetTitle || 'Onbekend werk'}` :
                                  log.type === 'interaction' ? `Interactie: ${log.action}` : 'Systeem actie'}
                              </p>
+                             {(log.country || log.city) && (
+                               <div className="flex items-center gap-2 text-[9px] font-bold opacity-30 uppercase tracking-wider">
+                                  <MapPin className="w-2.5 h-2.5" />
+                                  {log.city}, {log.country}
+                               </div>
+                             )}
                           </div>
                        </div>
                        <div className="text-right">
                           <div className="flex items-center gap-2 text-[10px] font-black uppercase text-primary/60">
                              <User className="w-3 h-3" />
-                             {log.userName || `Anoniem (${log.sessionId.substring(0,4)})`}
+                             {log.userName || `Anoniem (${log.sessionId?.substring(0,4)})`}
                           </div>
                        </div>
                     </div>
@@ -278,10 +287,31 @@ export default function ActivityMonitorPage() {
                 </div>
               </Card>
 
-              {/* Distribution Card */}
+              {/* Geography Card */}
               <Card className="p-8 rounded-[3rem] bg-white shadow-xl border-none">
                 <CardHeader className="px-0 pt-0">
                   <div className="flex items-center gap-3 mb-2">
+                    <Globe className="w-5 h-5 text-accent" />
+                    <CardTitle className="font-headline text-2xl italic">Geografische Spreiding</CardTitle>
+                  </div>
+                  <CardDescription className="text-[10px] font-black uppercase tracking-widest opacity-40">Bezoekersherkomst per land</CardDescription>
+                </CardHeader>
+                <div className="h-[300px] w-full pt-8">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={stats?.countryData} layout="vertical">
+                      <XAxis type="number" hide />
+                      <YAxis dataKey="name" type="category" width={100} axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 'bold' }} />
+                      <RechartsTooltip cursor={{ fill: 'rgba(0,0,0,0.02)' }} />
+                      <Bar dataKey="count" fill="hsl(var(--primary))" radius={[0, 10, 10, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </Card>
+
+              {/* Distribution Card */}
+              <Card className="p-8 rounded-[3rem] bg-white shadow-xl border-none col-span-full">
+                <CardHeader className="px-0 pt-0 text-center">
+                  <div className="flex items-center justify-center gap-3 mb-2">
                     <PieChartIcon className="w-5 h-5 text-accent" />
                     <CardTitle className="font-headline text-2xl italic">Interactie Patroon</CardTitle>
                   </div>

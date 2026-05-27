@@ -40,7 +40,7 @@
     },
     "ActivityLog": {
       "title": "ActivityLog",
-      "description": "Onzichtbare registratie van gebruikersacties.",
+      "description": "Onzichtbare registratie van gebruikersacties inclusief geografische data.",
       "type": "object",
       "properties": {
         "type": { "type": "string", "enum": ["page_view", "artwork_view", "interaction", "auth"] },
@@ -50,6 +50,8 @@
         "userId": { "type": "string" },
         "userName": { "type": "string" },
         "sessionId": { "type": "string" },
+        "country": { "type": "string" },
+        "city": { "type": "string" },
         "timestamp": { "type": "string", "format": "date-time" }
       }
     }
@@ -60,6 +62,7 @@
     "/artworks/{artworkId}": { "schema": "Artwork", "description": "Kunstwerken" },
     "/forum/{postId}": { "schema": "ForumPost", "description": "Community berichten" },
     "/activity_logs/{logId}": { "schema": "ActivityLog", "description": "Gedetailleerde gebruikers-tracking" },
-    "/settings/site": { "schema": "Settings", "description": "Website configuratie" }
+    "/settings/site": { "schema": "Settings", "description": "Website configuratie" },
+    "/users/{userId}": { "schema": "UserProfile", "description": "Gebruikersprofielen voor Vrienden" }
   }
 }
