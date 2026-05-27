@@ -44,7 +44,10 @@ import {
   ExternalLink,
   Tag as TagIcon,
   Save,
-  Wand2
+  Wand2,
+  Type,
+  Calendar,
+  Hammer
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -69,7 +72,6 @@ import { cn } from '@/lib/utils';
 import { normalizeArtwork, sanitizeArtwork, MUSEUM_TAGS, slugify, sortArtworksByTitle } from '@/lib/museum-utils';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { verifyAdminPassword } from '@/lib/admin-actions';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
@@ -126,7 +128,6 @@ export default function AdminPage() {
   const { data: dbArtworks, loading: artLoading } = useCollection(artworksQuery);
   const { data: rooms, loading: roomsLoading } = useCollection(roomsQuery);
 
-  // Geforceerde normalisatie bij inladen
   const artworks = useMemo(() => {
     if (!dbArtworks) return [];
     return dbArtworks.map(art => normalizeArtwork(art.id, art));
@@ -434,7 +435,7 @@ export default function AdminPage() {
                <Zap className="w-4 h-4" />
                <span className="text-[10px] font-black uppercase tracking-widest">Team Hub</span>
             </Link>
-            <Link href="/admin/translate" className="flex items-center gap-2 px-4 py-2 rounded-full bg-black/5 text-black hover:bg-black hover:text-white transition-all shrink-0">
+            <Link href="/admin/translate" className="flex items-center gap-2 px-4 py-2 rounded-full bg-black/5 text-black hover:bg-black/white transition-all shrink-0">
                <Languages className="w-4 h-4" />
                <span className="text-[10px] font-black uppercase tracking-widest">DTP & Teksten</span>
             </Link>
@@ -603,111 +604,19 @@ export default function AdminPage() {
                   ))}
               </div>
             ) : (
-              <Card className="rounded-[2.5rem] border-none shadow-xl overflow-hidden bg-white/60 backdrop-blur-xl">
-                <Table>
-                  <TableHeader className="bg-black/5">
-                    <TableRow className="border-none hover:bg-transparent h-16">
-                      <TableHead className="w-20 pl-8"></TableHead>
-                      <TableHead className="text-[10px] font-black uppercase tracking-widest">Thumbnail</TableHead>
-                      <TableHead className="text-[10px] font-black uppercase tracking-widest">Titel / Archiefnaam</TableHead>
-                      <TableHead className="text-[10px] font-black uppercase tracking-widest">Jaar & Techniek</TableHead>
-                      <TableHead className="text-[10px] font-black uppercase tracking-widest">Tags</TableHead>
-                      <TableHead className="text-right pr-8 text-[10px] font-black uppercase tracking-widest">Acties</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredArtworks.map((art: any) => {
-                      const isSelected = selectedArtworks.includes(art.id);
-                      return (
-                        <TableRow 
-                          key={art.id} 
-                          className={cn(
-                            "group cursor-pointer h-24 transition-colors", 
-                            isSelected ? "bg-accent/5" : "hover:bg-black/[0.02]"
-                          )}
-                          onClick={() => toggleSelection(art.id)}
-                        >
-                          <TableCell className="pl-8">
-                            <div className={cn(
-                              "w-5 h-5 rounded border-2 flex items-center justify-center transition-all",
-                              isSelected ? "bg-accent border-accent text-white" : "border-black/10"
-                            )}>
-                              {isSelected && <CheckCircle2 className="w-3 h-3" />}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="w-16 h-16 rounded-xl overflow-hidden bg-black/5 border border-black/5 shadow-sm">
-                              {art.image ? (
-                                <img src={art.image} className="w-full h-full object-cover" alt="" />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center opacity-10"><ImageIcon className="w-4 h-4" /></div>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="space-y-0.5">
-                              <p className="font-bold text-sm">{art.displayTitle || art.title}</p>
-                              <p className="text-[10px] font-mono opacity-30">{art.title}</p>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                             <div className="flex flex-col">
-                               <span className="text-sm font-medium opacity-80">{art.year || '-'}</span>
-                               <span className="text-[10px] opacity-40 uppercase font-black">{art.medium || '-'}</span>
-                             </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex flex-wrap gap-1 max-w-[240px]">
-                              {(art.tags || []).map((t: string) => (
-                                <Badge key={t} variant="outline" className="text-[8px] px-2 py-0 h-4 bg-black/5 border-none font-bold uppercase tracking-wider">{t}</Badge>
-                              ))}
-                              {(art.tags || []).length === 0 && <span className="text-[10px] italic opacity-20">Geen tags</span>}
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-right pr-8">
-                             <div className="flex justify-end gap-2">
-                                <Button 
-                                  variant="ghost" 
-                                  size="icon" 
-                                  onClick={(e) => { e.stopPropagation(); handleEditArtwork(art); }} 
-                                  className="w-10 h-10 rounded-full hover:bg-accent/10 hover:text-accent"
-                                  title="Volledig dossier"
-                                >
-                                  <Edit3 className="w-4 h-4" />
-                                </Button>
-                                <Button 
-                                  variant="ghost" 
-                                  size="icon" 
-                                  onClick={(e) => { 
-                                    e.stopPropagation(); 
-                                    setSelectedItems([art.id]); 
-                                    setTempBulkTags(art.tags || []);
-                                    setIsBulkTagDialogOpen(true); 
-                                  }} 
-                                  className="w-10 h-10 rounded-full hover:bg-accent/10 hover:text-accent"
-                                  title="Tags aanpassen"
-                                >
-                                  <TagIcon className="w-4 h-4" />
-                                </Button>
-                                <Button 
-                                  variant="ghost" 
-                                  size="icon" 
-                                  asChild
-                                  className="w-10 h-10 rounded-full hover:bg-black/5"
-                                  title="Bekijk op site"
-                                >
-                                  <Link href={`/art/${art.slug || art.id}`} target="_blank">
-                                    <ExternalLink className="w-4 h-4" />
-                                  </Link>
-                                </Button>
-                             </div>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </Card>
+              <div className="space-y-8">
+                 {filteredArtworks.map((art: any) => (
+                   <ArtworkEditorCard 
+                    key={art.id} 
+                    artwork={art} 
+                    isSelected={selectedArtworks.includes(art.id)}
+                    onToggleSelect={() => toggleSelection(art.id)}
+                   />
+                 ))}
+                 {filteredArtworks.length === 0 && !artLoading && (
+                   <div className="py-32 text-center opacity-20 italic">Geen resultaten gevonden...</div>
+                 )}
+              </div>
             )}
           </TabsContent>
 
@@ -773,6 +682,7 @@ export default function AdminPage() {
         </Tabs>
       </main>
 
+      {/* Global Dialogs remain same */}
       <Dialog open={isBulkTagDialogOpen} onOpenChange={setIsBulkTagDialogOpen}>
         <DialogContent className="max-w-4xl rounded-[3rem] p-10">
           <DialogHeader>
@@ -938,5 +848,177 @@ export default function AdminPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+/**
+ * Inline Editor Card component for List View
+ */
+function ArtworkEditorCard({ artwork, isSelected, onToggleSelect }: { artwork: any, isSelected: boolean, onToggleSelect: () => void }) {
+  const firestore = useFirestore();
+  const [isSaving, setIsSaving] = useState(false);
+  const [localData, setLocalData] = useState(artwork);
+
+  useEffect(() => {
+    setLocalData(artwork);
+  }, [artwork]);
+
+  const handleSave = async () => {
+    if (!firestore) return;
+    setIsSaving(true);
+    
+    // Gebruik de centrale sanitization logica (filtert jaartal 2026, slugify, etc)
+    const sanitized = sanitizeArtwork({
+      ...localData,
+      // Behoud tags als array
+      tags: localData.tags
+    });
+
+    const docRef = doc(firestore, 'artworks', artwork.id);
+    
+    updateDoc(docRef, {
+      ...sanitized,
+      updatedAt: serverTimestamp()
+    })
+    .then(() => {
+      toast({ title: "Wijzigingen opgeslagen" });
+    })
+    .catch((e) => {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: docRef.path,
+        operation: 'update',
+        requestResourceData: sanitized
+      } satisfies SecurityRuleContext));
+    })
+    .finally(() => {
+      setIsSaving(false);
+    });
+  };
+
+  return (
+    <Card 
+      className={cn(
+        "relative p-8 md:p-10 rounded-[2.5rem] bg-white/70 backdrop-blur-xl border-none shadow-xl transition-all group overflow-hidden",
+        isSelected && "ring-4 ring-accent ring-offset-4"
+      )}
+    >
+      <div className="flex flex-col lg:flex-row gap-10 items-start">
+        {/* Left: Checkbox & Preview */}
+        <div className="flex flex-row lg:flex-col gap-6 items-center shrink-0">
+          <div 
+            onClick={onToggleSelect}
+            className={cn(
+              "w-8 h-8 rounded-xl border-2 flex items-center justify-center cursor-pointer transition-all",
+              isSelected ? "bg-accent border-accent text-white" : "border-black/10 hover:border-accent/40"
+            )}
+          >
+            {isSelected && <CheckCircle2 className="w-5 h-5" />}
+          </div>
+          
+          <div className="w-32 h-40 rounded-2xl overflow-hidden bg-black/5 shadow-inner border border-black/5">
+            {localData.image ? (
+              <img src={localData.image} className="w-full h-full object-cover group-hover:scale-105 transition-transform" alt="" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center opacity-10"><ImageIcon className="w-8 h-8" /></div>
+            )}
+          </div>
+          
+          <Link href={`/art/${artwork.slug || artwork.id}`} target="_blank" className="p-3 rounded-full hover:bg-black/5 transition-colors opacity-40 hover:opacity-100">
+            <ExternalLink className="w-5 h-5" />
+          </Link>
+        </div>
+
+        {/* Middle: Content Editing */}
+        <div className="flex-1 w-full space-y-6">
+          <div className="space-y-4">
+            <div className="flex flex-col gap-2">
+               <Label className="text-[10px] font-black uppercase tracking-widest opacity-30 flex items-center gap-2">
+                 <Type className="w-3 h-3" /> Titel (Archief & Publicatie)
+               </Label>
+               <div className="grid md:grid-cols-2 gap-4">
+                  <Input 
+                    value={localData.title} 
+                    onChange={e => setLocalData({...localData, title: e.target.value})}
+                    placeholder="Archiefnaam..."
+                    className="h-12 rounded-xl bg-black/[0.03] border-none font-mono text-xs"
+                  />
+                  <Input 
+                    value={localData.displayTitle} 
+                    onChange={e => setLocalData({...localData, displayTitle: e.target.value})}
+                    placeholder="Publieke titel..."
+                    className="h-12 rounded-xl bg-accent/5 border-none font-bold text-lg text-accent"
+                  />
+               </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6">
+               <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest opacity-30 flex items-center gap-2">
+                    <Calendar className="w-3 h-3" /> Jaartal
+                  </Label>
+                  <Input 
+                    value={localData.year} 
+                    onChange={e => setLocalData({...localData, year: e.target.value})}
+                    className="h-12 rounded-xl bg-black/[0.03] border-none font-medium"
+                  />
+               </div>
+               <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest opacity-30 flex items-center gap-2">
+                    <Hammer className="w-3 h-3" /> Techniek
+                  </Label>
+                  <Input 
+                    value={localData.medium} 
+                    onChange={e => setLocalData({...localData, medium: e.target.value})}
+                    className="h-12 rounded-xl bg-black/[0.03] border-none font-medium"
+                  />
+               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase tracking-widest opacity-30">Beschrijving</Label>
+              <Textarea 
+                value={localData.description} 
+                onChange={e => setLocalData({...localData, description: e.target.value})}
+                className="min-h-[100px] rounded-2xl bg-black/[0.03] border-none p-4 text-sm leading-relaxed"
+              />
+            </div>
+
+            <div className="flex flex-wrap gap-2 pt-2">
+              {localData.tags?.map((t: string) => (
+                <Badge key={t} variant="outline" className="rounded-full px-3 py-1 bg-white text-[9px] font-black uppercase tracking-widest border-black/5 text-accent/60">
+                  {t}
+                </Badge>
+              ))}
+              {localData.tags?.length === 0 && <span className="text-[10px] italic opacity-20">Geen tags... gebruik de actiebalk voor bulk tagging.</span>}
+            </div>
+          </div>
+        </div>
+
+        {/* Right: Save / Actions */}
+        <div className="flex flex-row lg:flex-col gap-3 w-full lg:w-48 shrink-0 border-t lg:border-t-0 lg:border-l pt-6 lg:pt-0 lg:pl-10">
+          <Button 
+            onClick={handleSave} 
+            disabled={isSaving}
+            className="flex-1 lg:w-full h-16 rounded-2xl bg-accent text-white font-black uppercase tracking-widest text-[10px] shadow-lg group-hover:scale-[1.02] transition-all"
+          >
+            {isSaving ? <Loader2 className="animate-spin w-4 h-4" /> : <Save className="w-4 h-4 mr-2" />}
+            Opslaan
+          </Button>
+          
+          <Button 
+            variant="ghost" 
+            className="w-16 h-16 lg:w-full rounded-2xl text-destructive hover:bg-destructive/10"
+            onClick={() => {
+              if(confirm("Wilt u dit dossier definitief uit het archief verwijderen?")) {
+                deleteDoc(doc(firestore, 'artworks', artwork.id));
+                toast({ title: "Geadresseerd voor verwijdering" });
+              }
+            }}
+          >
+            <Trash2 className="w-5 h-5" />
+          </Button>
+        </div>
+      </div>
+    </Card>
   );
 }
