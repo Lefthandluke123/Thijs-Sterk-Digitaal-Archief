@@ -1,4 +1,3 @@
-
 import { firebaseConfig } from '@/firebase/config';
 import { slugify } from './museum-utils';
 
@@ -47,6 +46,12 @@ const mapDocument = (doc: any) => {
     data.image = finalUrl;
     data.imageUrl = finalUrl; 
   }
+
+  // Verscherpte jaar-filtering (verwijder 2026)
+  if (data.year && typeof data.year === 'string') {
+    data.year = data.year.replace(/2026/g, '').replace(/\s+/g, ' ').trim();
+  }
+
   return data;
 };
 

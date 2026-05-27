@@ -124,10 +124,10 @@ export function ArtworkClientPage({ artwork }: { artwork: any }) {
             {artwork.year && (
               <>
                 <span>{artwork.year}</span>
-                <span className="w-1 h-1 rounded-full bg-accent/30" />
+                {artwork.medium && <span className="w-1 h-1 rounded-full bg-accent/30" />}
               </>
             )}
-            <span>{artwork.medium || 'Olieverf op doek'}</span>
+            {artwork.medium && <span>{artwork.medium}</span>}
           </div>
 
           <p className="text-sm md:text-base text-muted-foreground font-light leading-relaxed max-w-2xl mx-auto">

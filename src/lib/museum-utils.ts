@@ -53,7 +53,7 @@ export function normalizeArtwork(id: string, data: any) {
     image: cleanString(data.image || data.imageUrl || data.url) || null,
     description: cleanString(data.description) || "",
     year: filteredYear,
-    medium: cleanString(data.medium) || "Schilderij",
+    medium: cleanString(data.medium) || "",
     tags: cleanArray(data.tags),
     roomIds: cleanArray(data.roomIds),
     featured: Boolean(data.featured),

@@ -209,7 +209,7 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
                     {item.displayTitle || item.title}
                   </h3>
                   <p className="text-[10px] font-black uppercase tracking-widest opacity-40">
-                    {item.year || '-'} &bull; {item.medium}
+                    {item.year || '-'} {item.medium ? `• ${item.medium}` : ''}
                   </p>
                 </div>
               </div>
@@ -295,7 +295,7 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
                 </div>
                 <div className="text-center">
                   <p className="text-[8px] font-black uppercase tracking-widest text-accent opacity-50">Techniek</p>
-                  <p className="text-sm font-medium">{activeItem.medium || 'Olieverf op doek'}</p>
+                  <p className="text-sm font-medium">{activeItem.medium || '-'}</p>
                 </div>
               </div>
 
