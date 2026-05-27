@@ -1,7 +1,6 @@
-
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useUser, useAuth } from '@/firebase';
 import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { ArchiveClient } from './archive-client';
@@ -12,11 +11,9 @@ import {
   Lock, 
   Loader2, 
   UserPlus, 
-  ArrowRight,
-  Sparkles
+  ArrowRight
 } from 'lucide-react';
 import { AuthModal } from '@/components/auth-modal';
-import Head from 'next/head';
 
 /**
  * @fileOverview Privé-Archief Toegangspoort.
@@ -96,12 +93,6 @@ export default function PrivateArchivePage() {
                    <span className="text-[9px] font-black uppercase tracking-[0.2em] opacity-30">Veilig verbonden via de Erven Thijs Sterk</span>
                 </div>
              </Card>
-
-             <div className="pt-12 animate-pulse">
-                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-accent opacity-20 italic">
-                   Verstilde herinneringen achter de schermen
-                </p>
-             </div>
           </div>
 
           <AuthModal 

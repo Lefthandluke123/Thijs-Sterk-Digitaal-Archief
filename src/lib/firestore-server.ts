@@ -3,7 +3,7 @@ import { slugify } from './museum-utils';
 
 /**
  * @fileOverview Server-side Firestore data fetching via REST API.
- * Geoptimaliseerd voor multi-room architecture en maximale betrouwbaarheid.
+ * Geoptimaliseerd voor data-consistentie (geen 2026) en betrouwbaarheid.
  */
 
 const PROJECT_ID = firebaseConfig.projectId;
@@ -47,7 +47,7 @@ const mapDocument = (doc: any) => {
     data.imageUrl = finalUrl; 
   }
 
-  // Verscherpte jaar-filtering (verwijder 2026)
+  // Agressieve 2026-filtering op server-niveau
   if (data.year && typeof data.year === 'string') {
     data.year = data.year.replace(/2026/g, '').replace(/\s+/g, ' ').trim();
   }
@@ -57,7 +57,6 @@ const mapDocument = (doc: any) => {
 
 export async function getRoomsServer() {
   try {
-    // Forceer revalidate: 0 voor onmiddellijke updates na wijzigingen in admin
     const res = await fetch(`${BASE_URL}/rooms`, { next: { revalidate: 0 } });
     if (!res.ok) return [];
     const json = await res.json();
@@ -68,35 +67,17 @@ export async function getRoomsServer() {
   } catch (e) { return []; }
 }
 
-/**
- * Bulletproof lookup voor zalen.
- * Zoekt in het geheugen naar slugs, titels of IDs om 404s te voorkomen.
- */
 export async function getRoomBySlugServer(slug: string) {
   if (!slug) return null;
   const targetSlug = slugify(slug);
 
   try {
     const rooms = await getRoomsServer();
-    
-    // 1. Zoek op directe slug match
     let room = rooms.find((r: any) => r.slug === slug || r.slug === targetSlug);
-    
-    // 2. Zoek op geslugificeerde titel (fallback voor handmatige URL invoer)
-    if (!room) {
-      room = rooms.find((r: any) => slugify(r.title || "") === targetSlug);
-    }
-    
-    // 3. Fallback: Zoek op document ID match
-    if (!room) {
-      room = rooms.find((r: any) => r.id === slug);
-    }
-
+    if (!room) room = rooms.find((r: any) => slugify(r.title || "") === targetSlug);
+    if (!room) room = rooms.find((r: any) => r.id === slug);
     return room || null;
-  } catch (e) {
-    console.error("[Firestore Server] Error fetching room by slug:", e);
-    return null;
-  }
+  } catch (e) { return null; }
 }
 
 export async function getArtworksByRoomIdServer(roomId: string) {
@@ -124,10 +105,7 @@ export async function getArtworksByRoomIdServer(roomId: string) {
     return results
       .filter((r: any) => r.document)
       .map((r: any) => mapDocument(r.document));
-  } catch (e) { 
-    console.error("[Firestore Server] Error fetching artworks for room:", e);
-    return []; 
-  }
+  } catch (e) { return []; }
 }
 
 export async function getArtworkBySlugServer(slug: string) {
@@ -156,14 +134,9 @@ export async function getArtworkBySlugServer(slug: string) {
     });
     const results = await res.json();
     const docResult = results?.[0]?.document;
-    
     if (docResult) return mapDocument(docResult);
-
-    // Fallback op ID
     return await getArtworkServer(slug);
-  } catch (e) { 
-    return null; 
-  }
+  } catch (e) { return null; }
 }
 
 export async function getArtworkServer(id: string) {

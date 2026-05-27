@@ -1,7 +1,6 @@
-
 /**
  * @fileOverview Museum Utilities voor sorteren en data-verwerking.
- * Inclusief Hardening Layer voor Firestore data integriteit.
+ * Inclusief Hardening Layer voor Firestore data integriteit en Romeinse sortering.
  */
 
 import { serverTimestamp } from 'firebase/firestore';
@@ -13,7 +12,7 @@ export const ROMAN_VALUES: Record<string, number> = {
 
 export const MUSEUM_TAGS = {
   "Periode": ["Vroeg werk", "45-50", "50-60", "60-70", "70-82"],
-  "Techniek": ["Olieverf", "Aquarel", "Gouache", "Litho", "Pentekening"],
+  "Techniek": ["Olieverf", "Aquarel", "Gouache", "Litho", "Pentekening", "Gemengde techniek", "Glas in lood", "Houtskool", "Ets", "Zeefdruk"],
   "Monumentaal": ["Monumentaal", "Glas in lood"],
   "Plaats": ["Groet", "Schoorl", "Hargen", "Camperduin", "Holland", "Amsterdam", "Frankrijk", "Bretagne", "Griekenland"],
   "Onderwerp": ["Havens", "Stillevens", "Bloemen", "Dieren", "Water", "Mensen", "Polder"]
@@ -48,9 +47,11 @@ export function slugify(text: string): string {
 
 /**
  * Normaliseert Firestore data voor veilig gebruik in de UI.
+ * Verwijdert expliciet 2026 en voorkomt ongewenste fallbacks.
  */
 export function normalizeArtwork(id: string, data: any) {
   const rawYear = cleanString(data.year) || "";
+  // Agressieve 2026 filtering
   const filteredYear = rawYear.replace(/2026/g, '').replace(/\s+/g, ' ').trim();
 
   return {
@@ -61,7 +62,7 @@ export function normalizeArtwork(id: string, data: any) {
     image: cleanString(data.image || data.imageUrl || data.url) || null,
     description: cleanString(data.description) || "",
     year: filteredYear,
-    medium: cleanString(data.medium) || "",
+    medium: cleanString(data.medium) || "", // Geen fallback naar "Olieverf" meer
     tags: cleanArray(data.tags),
     roomIds: cleanArray(data.roomIds),
     featured: Boolean(data.featured),
@@ -94,12 +95,16 @@ export function normalizePrivatePhoto(id: string, data: any) {
   };
 }
 
+/**
+ * Maakt data klaar voor opslag. Verwijdert 2026 definitief.
+ */
 export function sanitizeArtwork(input: any) {
   const baseTitle = cleanString(input.displayTitle) || cleanString(input.title) || "Ongetiteld";
   const finalSlug = slugify(cleanString(input.slug) || baseTitle);
   
   let finalYear = "";
   if (input.year !== undefined && input.year !== null) {
+    // Verwijder 2026 uit invoer
     finalYear = String(input.year).replace(/2026/g, '').replace(/\s+/g, ' ').trim();
   }
 
@@ -134,12 +139,14 @@ export function cleanArray(arr?: any[]): string[] {
 }
 
 export const parseTitleForSort = (title: string) => {
-  if (!title) return { romanVal: 999, num: 999, suffix: '' };
+  if (!title) return { romanVal: 999, num: 999, original: '' };
   
+  // Zoek naar Romeinse cijfers aan het einde van woorden
   const romanPattern = /\b(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII|XIV|XV|XVI|XVII|XVIII|XIX|XX)\b/gi;
   const matches = Array.from(title.matchAll(romanPattern));
   const lastRoman = matches.length > 0 ? matches[matches.length - 1][0] : null;
   
+  // Zoek naar normale nummers
   const numMatch = title.match(/(\d+)/);
   
   return {
