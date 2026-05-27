@@ -40,9 +40,9 @@ export function slugify(text: string): string {
  * Normaliseert Firestore data voor veilig gebruik in de UI.
  */
 export function normalizeArtwork(id: string, data: any) {
-  // Verwijder "2026" uit het jaar voor weergave
+  // Verwijder "2026" uit het jaar voor weergave (fallback)
   const rawYear = cleanString(data.year) || "";
-  const filteredYear = rawYear.replace(/2026/g, '').trim() || "Onbekend";
+  const filteredYear = rawYear.replace(/2026/g, '').trim() || "";
 
   return {
     id,
@@ -65,15 +65,17 @@ export function normalizeArtwork(id: string, data: any) {
 
 /**
  * Centraal sanitization filter voor Artwork data (Writes).
- * Verwijdert expliciet het jaartal 2026.
+ * Voorkomt expliciet corruptie van jaartallen en slugs.
  */
 export function sanitizeArtwork(input: any) {
   const baseTitle = cleanString(input.displayTitle) || cleanString(input.title) || "Ongetiteld";
   const finalSlug = slugify(cleanString(input.slug) || baseTitle);
   
-  // Verwijder "2026" uit het jaar bij opslaan
-  const rawYear = cleanString(input.year) || "";
-  const filteredYear = rawYear.replace(/2026/g, '').trim();
+  // Strikte jaar validatie: verwijder 2026 en voorkom automatische fallbacks naar huidig jaar
+  let finalYear = "";
+  if (input.year !== undefined && input.year !== null) {
+    finalYear = String(input.year).replace(/2026/g, '').trim();
+  }
 
   return {
     title: cleanString(input.title) || "Ongetiteld",
@@ -81,7 +83,7 @@ export function sanitizeArtwork(input: any) {
     slug: finalSlug,
     image: cleanString(input.image) || null,
     description: cleanString(input.description) || "",
-    year: filteredYear,
+    year: finalYear,
     medium: cleanString(input.medium) || "",
     tags: cleanArray(input.tags),
     roomIds: cleanArray(input.roomIds),
@@ -111,12 +113,10 @@ export function cleanArray(arr?: any[]): string[] {
 export const parseTitleForSort = (title: string) => {
   if (!title) return { romanVal: 999, num: 999, suffix: '' };
   
-  // Zoek naar Romeinse cijfers (I t/m XX) die als losse woorden voorkomen
   const romanPattern = /\b(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII|XIV|XV|XVI|XVII|XVIII|XIX|XX)\b/gi;
   const matches = Array.from(title.matchAll(romanPattern));
   const lastRoman = matches.length > 0 ? matches[matches.length - 1][0] : null;
   
-  // Zoek naar het eerste reguliere getal
   const numMatch = title.match(/(\d+)/);
   
   return {
@@ -136,16 +136,13 @@ export const sortArtworksByTitle = (a: any, b: any) => {
   const pA = parseTitleForSort(titleA);
   const pB = parseTitleForSort(titleB);
   
-  // 1. Sorteer op Romeins cijfer (bijv. alle 'I' eerst)
   if (pA.romanVal !== pB.romanVal) {
     return pA.romanVal - pB.romanVal;
   }
   
-  // 2. Sorteer op nummer (bijv. '18 I' voor '31 I')
   if (pA.num !== pB.num) {
     return pA.num - pB.num;
   }
   
-  // 3. Fallback op volledige alfabetische vergelijking
   return pA.original.localeCompare(pB.original);
 };

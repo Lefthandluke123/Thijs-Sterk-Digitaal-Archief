@@ -231,21 +231,26 @@ export default function AdminPage() {
   };
 
   const handleCleanupYears = async () => {
-    if (!firestore || !artworks || !confirm("Wilt u alle jaartallen '2026' definitief uit de database verwijderen voor alle kunstwerken?")) return;
+    if (!firestore || !artworks || !confirm("Wilt u alle foutieve jaartallen '2026' definitief uit de database verwijderen voor alle kunstwerken? Dit herstelt de data-integriteit.")) return;
     
     setIsCleaning(true);
     let count = 0;
     
     try {
       for (const art of artworks) {
-        if (art.year && art.year.includes('2026')) {
-          const newYear = art.year.replace(/2026/g, '').trim();
+        if (art.year && String(art.year).includes('2026')) {
+          // Gebruik de robuuste regex om alle voorkomens te verwijderen
+          const newYear = String(art.year).replace(/2026/g, '').trim();
           const docRef = doc(firestore, 'artworks', art.id);
-          await updateDoc(docRef, { year: newYear, updatedAt: serverTimestamp() });
+          
+          await updateDoc(docRef, { 
+            year: newYear, 
+            updatedAt: serverTimestamp() 
+          });
           count++;
         }
       }
-      toast({ title: "Database opgeschoond", description: `${count} kunstwerken bijgewerkt.` });
+      toast({ title: "Database opgeschoond", description: `${count} kunstwerken gecorrigeerd.` });
     } catch (e) {
       toast({ variant: "destructive", title: "Schoonmaak mislukt" });
     } finally {
