@@ -49,7 +49,11 @@ import {
   Calendar,
   Hammer,
   Camera,
-  Activity
+  Activity,
+  ShieldCheck,
+  Download,
+  Database,
+  Github
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -119,6 +123,7 @@ export default function AdminPage() {
   const [isArtworkDialogOpen, setIsArtworkDialogOpen] = useState(false);
   const [isRoomDialogOpen, setIsRoomDialogOpen] = useState(false);
   const [isBulkTagDialogOpen, setIsBulkTagDialogOpen] = useState(false);
+  const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
   
   const [editingArtwork, setEditingArtwork] = useState<any>(null);
   const [editingRoom, setEditingRoom] = useState<any>(null);
@@ -463,6 +468,14 @@ export default function AdminPage() {
         <div className="flex items-center gap-3 shrink-0">
            <Button 
              variant="ghost"
+             onClick={() => setIsExportDialogOpen(true)}
+             className="h-12 rounded-full text-blue-600 font-black uppercase tracking-widest text-[9px] hover:bg-blue-50"
+           >
+             <ShieldCheck className="w-4 h-4 mr-2" />
+             Systeem Backup
+           </Button>
+           <Button 
+             variant="ghost"
              onClick={handleCleanupYears}
              disabled={isCleaning}
              className="h-12 rounded-full text-accent font-black uppercase tracking-widest text-[9px] hover:bg-accent/5"
@@ -699,6 +712,58 @@ export default function AdminPage() {
           </TabsContent>
         </Tabs>
       </main>
+
+      {/* Export & Backup Dialog */}
+      <Dialog open={isExportDialogOpen} onOpenChange={setIsExportDialogOpen}>
+        <DialogContent className="max-w-2xl rounded-[3rem] p-10 bg-white/95 backdrop-blur-2xl">
+          <DialogHeader>
+            <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600 mb-4">
+               <ShieldCheck className="w-8 h-8" />
+            </div>
+            <DialogTitle className="font-headline text-3xl italic">Systeem Backup & Export</DialogTitle>
+            <DialogDescription className="text-sm font-light leading-relaxed pt-2">
+               Volg deze instructies om uw archief veilig te stellen. De code en database worden gescheiden bewaard voor maximale veiligheid.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-8 py-6">
+             <div className="p-6 rounded-2xl bg-black/[0.03] border border-black/5 space-y-4">
+                <div className="flex items-center gap-3">
+                   <Download className="w-5 h-5 text-accent" />
+                   <h4 className="text-[10px] font-black uppercase tracking-widest">Broncode Exporteren</h4>
+                </div>
+                <p className="text-xs opacity-60">Kopieer en plak dit commando in de <strong>Terminal</strong> (onderaan) om een ZIP-bestand van de code te maken:</p>
+                <div className="bg-black text-white p-4 rounded-xl font-mono text-[10px] break-all">
+                   zip -r retrospectief_backup_$(date +%F).zip . -x "node_modules/*" ".next/*" ".git/*"
+                </div>
+                <p className="text-[9px] italic opacity-40">Na uitvoering verschijnt het ZIP-bestand in de zijbalk. Klik met rechts en kies 'Download'.</p>
+             </div>
+
+             <div className="grid md:grid-cols-2 gap-6">
+                <div className="p-6 rounded-2xl bg-black/[0.03] border border-black/5 space-y-3">
+                   <div className="flex items-center gap-3">
+                      <Database className="w-4 h-4 text-orange-600" />
+                      <h4 className="text-[10px] font-black uppercase tracking-widest">Database</h4>
+                   </div>
+                   <p className="text-[10px] opacity-60 leading-relaxed">Ga naar de Firebase Console onder 'Firestore' > 'Import/Export' om alle schilderij-data en logs te exporteren.</p>
+                </div>
+                <div className="p-6 rounded-2xl bg-black/[0.03] border border-black/5 space-y-3">
+                   <div className="flex items-center gap-3">
+                      <Github className="w-4 h-4 text-black" />
+                      <h4 className="text-[10px] font-black uppercase tracking-widest">Version Control</h4>
+                   </div>
+                   <p className="text-[10px] opacity-60 leading-relaxed">Het is sterk aanbevolen de code periodiek naar een (privé) GitHub repository te pushen als extra ankerpunt.</p>
+                </div>
+             </div>
+          </div>
+
+          <DialogFooter>
+             <Button onClick={() => setIsExportDialogOpen(false)} className="w-full h-14 rounded-2xl bg-primary text-white font-black uppercase tracking-widest text-[10px]">
+                Ik heb de instructies begrepen
+             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={isBulkTagDialogOpen} onOpenChange={setIsBulkTagDialogOpen}>
         <DialogContent className="max-w-4xl rounded-[3rem] p-10">
