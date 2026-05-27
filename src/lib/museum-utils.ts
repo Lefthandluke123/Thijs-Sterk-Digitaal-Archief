@@ -38,11 +38,12 @@ export function slugify(text: string): string {
 
 /**
  * Normaliseert Firestore data voor veilig gebruik in de UI.
+ * Filtert ALTIJD jaartallen zoals 2026 eruit.
  */
 export function normalizeArtwork(id: string, data: any) {
-  // Verwijder "2026" uit het jaar voor weergave (fallback)
   const rawYear = cleanString(data.year) || "";
-  const filteredYear = rawYear.replace(/2026/g, '').trim() || "";
+  // Verwijder agressief 2026 uit alle strings
+  const filteredYear = rawYear.replace(/2026/g, '').replace(/\s+/g, ' ').trim();
 
   return {
     id,
@@ -58,6 +59,7 @@ export function normalizeArtwork(id: string, data: any) {
     featured: Boolean(data.featured),
     inShop: Boolean(data.inShop),
     brightness: typeof data.brightness === 'number' ? data.brightness : 1,
+    audioUrls: data.audioUrls || {},
     createdAt: data.createdAt || null,
     updatedAt: data.updatedAt || null,
   };
@@ -71,10 +73,10 @@ export function sanitizeArtwork(input: any) {
   const baseTitle = cleanString(input.displayTitle) || cleanString(input.title) || "Ongetiteld";
   const finalSlug = slugify(cleanString(input.slug) || baseTitle);
   
-  // Strikte jaar validatie: verwijder 2026 en voorkom automatische fallbacks naar huidig jaar
+  // Strikte jaar validatie: verwijder 2026 voor opslag
   let finalYear = "";
   if (input.year !== undefined && input.year !== null) {
-    finalYear = String(input.year).replace(/2026/g, '').trim();
+    finalYear = String(input.year).replace(/2026/g, '').replace(/\s+/g, ' ').trim();
   }
 
   return {

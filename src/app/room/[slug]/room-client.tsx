@@ -17,7 +17,7 @@ import {
   Move
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { sortArtworksByTitle, cleanString } from '@/lib/museum-utils';
+import { sortArtworksByTitle, cleanString, normalizeArtwork } from '@/lib/museum-utils';
 import { Button } from '@/components/ui/button';
 
 const DeepZoomViewer = dynamic(() => import('@/components/deep-zoom-viewer').then(mod => mod.DeepZoomViewer), { 
@@ -47,9 +47,12 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
   const [clickCount, setClickCount] = useState(0);
   const lastClickRef = useRef(0);
   
+  // Geforceerde normalisatie
   const artworks = useMemo(() => {
     if (!dbArtworks) return [];
-    return [...dbArtworks].sort(sortArtworksByTitle);
+    return dbArtworks
+      .map(art => normalizeArtwork(art.id, art))
+      .sort(sortArtworksByTitle);
   }, [dbArtworks]);
 
   const activeItem = artworks[currentIndex];
@@ -97,7 +100,7 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
       
       if (newCount >= 4) {
         setClickCount(0);
-        const colors = await extractColors(cleanString(activeItem.image || activeItem.imageUrl));
+        const colors = await extractColors(cleanString(activeItem.image));
         window.dispatchEvent(new CustomEvent('trigger-simulation', { detail: { colors } }));
         setViewMode('grid'); // Keer terug naar grid om de matrix te zien
       }
@@ -187,12 +190,14 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
                 onClick={() => enterViewer(idx)}
               >
                 <div className="relative aspect-[4/5] overflow-hidden rounded-[2.5rem] bg-black/[0.03] shadow-md group-hover:shadow-2xl transition-all duration-1500 flex items-center justify-center p-4 border border-black/5">
-                  <img 
-                    src={item.image || item.imageUrl} 
-                    className="max-w-full max-h-full object-contain transition-transform duration-1500 group-hover:scale-110" 
-                    style={{ filter: `brightness(${item.brightness || 1})` }}
-                    alt={item.displayTitle || item.title}
-                  />
+                  {item.image && (
+                    <img 
+                      src={item.image} 
+                      className="max-w-full max-h-full object-contain transition-transform duration-1500 group-hover:scale-110" 
+                      style={{ filter: `brightness(${item.brightness || 1})` }}
+                      alt={item.displayTitle || item.title}
+                    />
+                  )}
                   <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-500">
                     <div className="p-4 rounded-full bg-white/30 backdrop-blur-xl scale-90 group-hover:scale-100 transition-transform duration-500">
                       <Maximize2 className="text-white w-6 h-6" />
@@ -204,7 +209,7 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
                     {item.displayTitle || item.title}
                   </h3>
                   <p className="text-[10px] font-black uppercase tracking-widest opacity-40">
-                    {item.year} &bull; {item.medium}
+                    {item.year || '-'} &bull; {item.medium}
                   </p>
                 </div>
               </div>
@@ -221,11 +226,13 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
             onClick={handleArtworkClick}
           >
             <div className="w-full h-full max-w-[95vw] max-h-[85vh]">
-              <DeepZoomViewer 
-                key={`${activeItem.id}-${currentIndex}`} 
-                imageUrl={activeItem.image || activeItem.imageUrl} 
-                brightness={activeItem.brightness || 1}
-              />
+              {activeItem.image && (
+                <DeepZoomViewer 
+                  key={`${activeItem.id}-${currentIndex}`} 
+                  imageUrl={activeItem.image} 
+                  brightness={activeItem.brightness || 1}
+                />
+              )}
             </div>
           </div>
 
@@ -284,7 +291,7 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
               <div className="flex gap-8 justify-center items-center py-3 border-y border-black/5">
                 <div className="text-center">
                   <p className="text-[8px] font-black uppercase tracking-widest text-accent opacity-50">Periode</p>
-                  <p className="text-sm font-medium">{activeItem.year || 'Interactief'}</p>
+                  <p className="text-sm font-medium">{activeItem.year || '-'}</p>
                 </div>
                 <div className="text-center">
                   <p className="text-[8px] font-black uppercase tracking-widest text-accent opacity-50">Techniek</p>

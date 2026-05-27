@@ -7,7 +7,7 @@ import { collection, query, where, orderBy } from 'firebase/firestore';
 import { ArtworkViewer } from '@/components/artwork-viewer';
 import { Loader2, ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { sortArtworksByTitle } from '@/lib/museum-utils';
+import { sortArtworksByTitle, normalizeArtwork } from '@/lib/museum-utils';
 
 function ExhibitionContent() {
   const searchParams = useSearchParams();
@@ -38,9 +38,12 @@ function ExhibitionContent() {
   }, [firestore, activeRoom]);
   const { data: dbArtworks, loading } = useCollection(artworksQuery);
 
+  // Geforceerde normalisatie
   const artworks = useMemo(() => {
     if (!dbArtworks) return [];
-    return [...dbArtworks].sort(sortArtworksByTitle);
+    return dbArtworks
+      .map(art => normalizeArtwork(art.id, art))
+      .sort(sortArtworksByTitle);
   }, [dbArtworks]);
 
   useEffect(() => {
@@ -107,16 +110,18 @@ function ExhibitionContent() {
                 <div key={art.id} className="relative group shrink-0 flex items-center justify-center" onClick={() => setSelectedArtwork(art)}>
                   <div className="relative flex flex-col bg-white shadow-2xl border border-black/[0.03] cursor-pointer transition-all duration-700 hover:scale-[1.01] items-center justify-center overflow-hidden">
                      <div className="p-8 pb-4 flex items-center justify-center bg-gray-50/30 w-full">
-                        <img 
-                          src={art.image || art.imageUrl} 
-                          className="relative block max-h-[50vh] max-w-[40vw] w-auto h-auto object-contain mx-auto" 
-                          style={{ filter: `brightness(${art.brightness || 1})` }}
-                          alt={art.displayTitle || art.title} 
-                        />
+                        {art.image && (
+                          <img 
+                            src={art.image} 
+                            className="relative block max-h-[50vh] max-w-[40vw] w-auto h-auto object-contain mx-auto" 
+                            style={{ filter: `brightness(${art.brightness || 1})` }}
+                            alt={art.displayTitle || art.title} 
+                          />
+                        )}
                      </div>
                      <div className="w-full px-8 py-6 border-t border-black/[0.03] bg-white text-center">
                         <h3 className="text-black text-[11px] font-bold uppercase tracking-[0.2em] mb-1 truncate">{art.displayTitle || art.title}</h3>
-                        <p className="text-accent text-[8px] font-bold uppercase tracking-widest">{art.year} &bull; {art.medium}</p>
+                        <p className="text-accent text-[8px] font-bold uppercase tracking-widest">{art.year || '-'} &bull; {art.medium}</p>
                      </div>
                   </div>
                 </div>

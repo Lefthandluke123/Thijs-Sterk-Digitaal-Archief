@@ -8,7 +8,7 @@ import { ArtworkViewer } from '@/components/artwork-viewer';
 import { Maximize2, Loader2, LayoutGrid } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/components/language-provider';
-import { sortArtworksByTitle } from '@/lib/museum-utils';
+import { sortArtworksByTitle, normalizeArtwork } from '@/lib/museum-utils';
 
 export function GalleryClient({ initialRoomSlug }: { initialRoomSlug: string | null }) {
   const searchParams = useSearchParams();
@@ -46,9 +46,12 @@ export function GalleryClient({ initialRoomSlug }: { initialRoomSlug: string | n
 
   const { data: dbArtworks, loading: artLoading } = useCollection(artworksQuery);
 
+  // Geforceerde normalisatie
   const artworks = useMemo(() => {
     if (!dbArtworks) return [];
-    return [...dbArtworks].sort(sortArtworksByTitle);
+    return dbArtworks
+      .map(art => normalizeArtwork(art.id, art))
+      .sort(sortArtworksByTitle);
   }, [dbArtworks]);
 
   const navigateArtwork = useCallback((direction: 'next' | 'prev') => {
@@ -111,7 +114,7 @@ export function GalleryClient({ initialRoomSlug }: { initialRoomSlug: string | n
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8">
             {artworks.map((item: any) => {
-              const displayImage = item.image || item.imageUrl;
+              const displayImage = item.image;
               return (
                 <article 
                   key={item.id} 

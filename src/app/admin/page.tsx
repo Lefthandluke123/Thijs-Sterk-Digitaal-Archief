@@ -66,7 +66,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { sanitizeArtwork, MUSEUM_TAGS, slugify, sortArtworksByTitle } from '@/lib/museum-utils';
+import { normalizeArtwork, sanitizeArtwork, MUSEUM_TAGS, slugify, sortArtworksByTitle } from '@/lib/museum-utils';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { verifyAdminPassword } from '@/lib/admin-actions';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -123,8 +123,14 @@ export default function AdminPage() {
     return query(collection(firestore, 'rooms'), orderBy('order', 'asc'));
   }, [firestore]);
 
-  const { data: artworks, loading: artLoading } = useCollection(artworksQuery);
+  const { data: dbArtworks, loading: artLoading } = useCollection(artworksQuery);
   const { data: rooms, loading: roomsLoading } = useCollection(roomsQuery);
+
+  // Geforceerde normalisatie bij inladen
+  const artworks = useMemo(() => {
+    if (!dbArtworks) return [];
+    return dbArtworks.map(art => normalizeArtwork(art.id, art));
+  }, [dbArtworks]);
 
   const filteredArtworks = useMemo(() => {
     if (!artworks) return [];
@@ -161,7 +167,6 @@ export default function AdminPage() {
     setSelectedFile(null);
     setArtworkForm({ 
       ...art, 
-      image: art.image || art.imageUrl || '',
       tags: Array.isArray(art.tags) ? art.tags.join(', ') : (art.tags || '')
     }); 
     setIsArtworkDialogOpen(true); 
@@ -231,16 +236,16 @@ export default function AdminPage() {
   };
 
   const handleCleanupYears = async () => {
-    if (!firestore || !artworks || !confirm("Wilt u alle foutieve jaartallen '2026' definitief uit de database verwijderen voor alle kunstwerken? Dit herstelt de data-integriteit.")) return;
+    if (!firestore || !dbArtworks || !confirm("Wilt u alle foutieve jaartallen '2026' definitief uit de database verwijderen voor alle kunstwerken?")) return;
     
     setIsCleaning(true);
     let count = 0;
     
     try {
-      for (const art of artworks) {
-        if (art.year && String(art.year).includes('2026')) {
-          // Gebruik de robuuste regex om alle voorkomens te verwijderen
-          const newYear = String(art.year).replace(/2026/g, '').trim();
+      for (const art of dbArtworks) {
+        const rawYear = String(art.year || "");
+        if (rawYear.includes('2026')) {
+          const newYear = rawYear.replace(/2026/g, '').replace(/\s+/g, ' ').trim();
           const docRef = doc(firestore, 'artworks', art.id);
           
           await updateDoc(docRef, { 
@@ -553,9 +558,7 @@ export default function AdminPage() {
                     <Library className="w-12 h-12 mx-auto opacity-10" />
                     <p className="font-headline text-2xl italic opacity-30">Geen resultaten gevonden...</p>
                   </div>
-                ) : filteredArtworks.map((art: any) => {
-                  const displayImage = art.image || art.imageUrl;
-                  return (
+                ) : filteredArtworks.map((art: any) => (
                     <Card 
                       key={art.id} 
                       className={cn(
@@ -564,9 +567,9 @@ export default function AdminPage() {
                       )}
                       onClick={() => toggleSelection(art.id)}
                     >
-                      {displayImage && (
+                      {art.image && (
                         <img 
-                          src={displayImage} 
+                          src={art.image} 
                           className="w-full h-full object-cover transition-transform group-hover:scale-110" 
                           style={{ filter: `brightness(0.9)` }}
                           alt="" 
@@ -575,7 +578,7 @@ export default function AdminPage() {
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60 group-hover:opacity-100 transition-opacity" />
                       <div className="absolute bottom-4 left-4 right-4 text-white">
                           <h3 className="font-bold text-xs truncate px-1">{art.displayTitle || art.title}</h3>
-                          <p className="text-[8px] font-black uppercase tracking-widest opacity-60 mt-1">{art.year}</p>
+                          <p className="text-[8px] font-black uppercase tracking-widest opacity-60 mt-1">{art.year || '-'}</p>
                       </div>
                       
                       <div className="absolute top-4 right-4 flex flex-col gap-2">
@@ -597,8 +600,7 @@ export default function AdminPage() {
                           )}
                       </div>
                     </Card>
-                  );
-                })}
+                  ))}
               </div>
             ) : (
               <Card className="rounded-[2.5rem] border-none shadow-xl overflow-hidden bg-white/60 backdrop-blur-xl">
@@ -615,7 +617,6 @@ export default function AdminPage() {
                   </TableHeader>
                   <TableBody>
                     {filteredArtworks.map((art: any) => {
-                      const displayImage = art.image || art.imageUrl;
                       const isSelected = selectedArtworks.includes(art.id);
                       return (
                         <TableRow 
@@ -636,8 +637,8 @@ export default function AdminPage() {
                           </TableCell>
                           <TableCell>
                             <div className="w-16 h-16 rounded-xl overflow-hidden bg-black/5 border border-black/5 shadow-sm">
-                              {displayImage ? (
-                                <img src={displayImage} className="w-full h-full object-cover" alt="" />
+                              {art.image ? (
+                                <img src={art.image} className="w-full h-full object-cover" alt="" />
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center opacity-10"><ImageIcon className="w-4 h-4" /></div>
                               )}
@@ -745,11 +746,9 @@ export default function AdminPage() {
 
                       <AccordionContent className="px-10 pb-10">
                          <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-10 gap-4 pt-4 border-t">
-                            {roomArtworks.map((art: any) => {
-                               const displayImage = art.image || art.imageUrl;
-                               return (
+                            {roomArtworks.map((art: any) => (
                                 <div key={art.id} className="group relative aspect-square rounded-xl overflow-hidden bg-black/5">
-                                    {displayImage && <img src={displayImage} className="w-full h-full object-cover" alt="" />}
+                                    {art.image && <img src={art.image} className="w-full h-full object-cover" alt="" />}
                                     <button 
                                       onClick={() => {
                                         setSelectedItems([art.id]);
@@ -760,8 +759,7 @@ export default function AdminPage() {
                                       <X className="w-5 h-5" />
                                     </button>
                                 </div>
-                               );
-                            })}
+                               ))}
                             {roomArtworks.length === 0 && (
                               <div className="col-span-full py-12 text-center opacity-20 italic">Geen schilderijen in deze zaal. Selecteer items in het archief om ze hieraan toe te voegen.</div>
                             )}
