@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
@@ -745,7 +744,7 @@ export default function AdminPage() {
                       <Database className="w-4 h-4 text-orange-600" />
                       <h4 className="text-[10px] font-black uppercase tracking-widest">Database</h4>
                    </div>
-                   <p className="text-[10px] opacity-60 leading-relaxed">Ga naar de Firebase Console onder 'Firestore' > 'Import/Export' om alle schilderij-data en logs te exporteren.</p>
+                   <p className="text-[10px] opacity-60 leading-relaxed">Ga naar de Firebase Console onder 'Firestore' &gt; 'Import/Export' om alle schilderij-data en logs te exporteren.</p>
                 </div>
                 <div className="p-6 rounded-2xl bg-black/[0.03] border border-black/5 space-y-3">
                    <div className="flex items-center gap-3">
