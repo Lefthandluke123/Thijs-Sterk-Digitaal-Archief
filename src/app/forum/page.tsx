@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from 'react';
-import { useFirestore, useCollection, useAuth } from '@/firebase';
+import { useFirestore, useCollection, useAuth, useUser } from '@/firebase';
 import { collection, query, where, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
 import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
@@ -30,7 +30,7 @@ import { nl } from 'date-fns/locale';
 export default function ForumPage() {
   const firestore = useFirestore();
   const auth = useAuth();
-  const [user, setUser] = useState<any>(null);
+  const { user, loading: authLoading } = useUser();
   const [isPostingOpen, setIsPostingOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string>('Alle');
@@ -41,19 +41,18 @@ export default function ForumPage() {
     category: 'Verhaal'
   });
 
-  React.useEffect(() => {
-    if (!auth) return;
-    return auth.onAuthStateChanged(u => setUser(u));
-  }, [auth]);
-
   const handleLogin = async () => {
     if (!auth) return;
     try {
       const provider = new GoogleAuthProvider();
+      // Forceer een schone provider-instantie
+      provider.setCustomParameters({ prompt: 'select_account' });
       await signInWithPopup(auth, provider);
       toast({ title: "Welkom Vriend!", description: "U bent nu ingelogd en kunt bijdragen aan het forum." });
-    } catch (e) {
-      toast({ variant: "destructive", title: "Inloggen mislukt" });
+    } catch (e: any) {
+      if (e.code !== 'auth/popup-closed-by-user') {
+        toast({ variant: "destructive", title: "Inloggen mislukt", description: "Controleer of uw browser pop-ups toestaat." });
+      }
     }
   };
 
@@ -121,7 +120,9 @@ export default function ForumPage() {
           </div>
 
           <div className="flex items-center gap-4">
-            {user ? (
+            {authLoading ? (
+              <div className="h-16 w-48 bg-black/5 animate-pulse rounded-full" />
+            ) : user ? (
               <Dialog open={isPostingOpen} onOpenChange={setIsPostingOpen}>
                 <DialogTrigger asChild>
                    <Button className="h-16 px-10 rounded-full bg-primary text-white font-black uppercase tracking-widest text-[11px] shadow-2xl hover:scale-105 transition-all">
