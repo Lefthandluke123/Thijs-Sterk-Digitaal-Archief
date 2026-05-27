@@ -38,7 +38,11 @@ import {
   Sparkles,
   Zap,
   Upload,
-  Image as ImageIcon
+  Image as ImageIcon,
+  LayoutGrid,
+  List as ListIcon,
+  MoreVertical,
+  ExternalLink
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -62,6 +66,7 @@ import { cn } from '@/lib/utils';
 import { sanitizeArtwork, MUSEUM_TAGS, slugify } from '@/lib/museum-utils';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { verifyAdminPassword } from '@/lib/admin-actions';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 export default function AdminPage() {
   const firestore = useFirestore();
@@ -72,6 +77,7 @@ export default function AdminPage() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('archive');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedArtworks, setSelectedItems] = useState<string[]>([]);
   
   const [isArtworkDialogOpen, setIsArtworkDialogOpen] = useState(false);
@@ -138,6 +144,17 @@ export default function AdminPage() {
     setIsArtworkDialogOpen(true);
   };
 
+  const handleEditArtwork = (art: any) => {
+    setEditingArtwork(art); 
+    setSelectedFile(null);
+    setArtworkForm({ 
+      ...art, 
+      image: art.image || art.imageUrl || '',
+      tags: Array.isArray(art.tags) ? art.tags.join(', ') : (art.tags || '')
+    }); 
+    setIsArtworkDialogOpen(true); 
+  };
+
   const handleSaveArtwork = async () => {
     if (!firestore) return;
 
@@ -145,7 +162,6 @@ export default function AdminPage() {
     setIsUploading(true);
 
     try {
-      // 1. Check if we need to upload a file first
       if (selectedFile && storage) {
         const storageRef = ref(storage, `artworks/${Date.now()}_${selectedFile.name}`);
         const uploadResult = await uploadBytes(storageRef, selectedFile);
@@ -158,14 +174,12 @@ export default function AdminPage() {
         return;
       }
 
-      // 2. Prepare data
       const data = sanitizeArtwork({
         ...artworkForm,
         image: finalImageUrl,
         tags: typeof artworkForm.tags === 'string' ? artworkForm.tags.split(',').map((t: string) => t.trim()).filter(Boolean) : artworkForm.tags
       });
 
-      // 3. Save to Firestore
       if (editingArtwork) {
         await updateDoc(doc(firestore, 'artworks', editingArtwork.id), data);
         toast({ title: "Bijgewerkt" });
@@ -392,76 +406,168 @@ export default function AdminPage() {
                  />
                </div>
                
-               <div className="flex items-center gap-6">
-                 <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest opacity-40">
-                    <Library className="w-4 h-4" /> {artworks?.length || 0} items totaal
+               <div className="flex items-center gap-4">
+                 <div className="bg-black/5 p-1 rounded-xl flex gap-1">
+                    <Button 
+                      variant={viewMode === 'grid' ? 'secondary' : 'ghost'} 
+                      size="sm" 
+                      onClick={() => setViewMode('grid')}
+                      className="rounded-lg px-3 h-10"
+                    >
+                      <LayoutGrid className="w-4 h-4" />
+                    </Button>
+                    <Button 
+                      variant={viewMode === 'list' ? 'secondary' : 'ghost'} 
+                      size="sm" 
+                      onClick={() => setViewMode('list')}
+                      className="rounded-lg px-3 h-10"
+                    >
+                      <ListIcon className="w-4 h-4" />
+                    </Button>
                  </div>
-                 <Button 
-                   onClick={handleOpenNewArtwork}
-                   variant="outline" 
-                   className="h-14 px-8 rounded-2xl border-2 border-accent/20 text-accent font-black uppercase text-[10px] tracking-widest"
-                 >
-                   <Plus className="w-4 h-4 mr-2" /> Snel Toevoegen
-                 </Button>
+                 <div className="h-8 w-px bg-black/10 mx-2" />
+                 <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest opacity-40">
+                    <Library className="w-4 h-4" /> {artworks?.length || 0} items
+                 </div>
                </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
-              {artLoading ? (
-                Array(12).fill(0).map((_, i) => <div key={i} className="aspect-[4/5] bg-black/5 animate-pulse rounded-3xl" />)
-              ) : filteredArtworks.length === 0 ? (
-                <div className="col-span-full py-32 text-center space-y-6 bg-black/5 rounded-[3rem] border-2 border-dashed border-black/10">
-                   <Library className="w-12 h-12 mx-auto opacity-10" />
-                   <p className="font-headline text-2xl italic opacity-30">Geen resultaten gevonden...</p>
-                   <Button onClick={handleOpenNewArtwork} className="rounded-full h-12 px-8">Maak eerste kunstwerk</Button>
-                </div>
-              ) : filteredArtworks.map((art: any) => (
-                <Card 
-                  key={art.id} 
-                  className={cn(
-                    "group relative aspect-[4/5] rounded-[2rem] overflow-hidden border-none shadow-md transition-all cursor-pointer",
-                    selectedArtworks.includes(art.id) ? "ring-4 ring-accent ring-offset-4 scale-95" : "hover:shadow-2xl"
-                  )}
-                  onClick={() => toggleSelection(art.id)}
-                >
-                   {art.image && (
-                     <img 
-                      src={art.image} 
-                      className="w-full h-full object-cover transition-transform group-hover:scale-110" 
-                      style={{ filter: `brightness(${art.brightness || 1})` }}
-                      alt="" 
-                     />
-                   )}
-                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60 group-hover:opacity-100 transition-opacity" />
-                   <div className="absolute bottom-4 left-4 right-4 text-white">
-                      <h3 className="font-bold text-xs truncate px-1">{art.displayTitle || art.title}</h3>
-                      <p className="text-[8px] font-black uppercase tracking-widest opacity-60 mt-1">{art.year}</p>
-                   </div>
-                   
-                   <div className="absolute top-4 right-4 flex flex-col gap-2">
-                      <Button 
-                        size="icon" 
-                        variant="ghost" 
-                        onClick={(e) => { 
-                          e.stopPropagation();
-                          setEditingArtwork(art); 
-                          setSelectedFile(null);
-                          setArtworkForm({ ...art, tags: (art.tags || []).join(', ') }); 
-                          setIsArtworkDialogOpen(true); 
-                        }} 
-                        className="rounded-full bg-white text-black hover:bg-white/80 w-10 h-10 shadow-xl"
-                      >
-                        <Edit3 className="w-4 h-4" />
-                      </Button>
-                      {selectedArtworks.includes(art.id) && (
-                        <div className="w-10 h-10 rounded-full bg-accent text-white flex items-center justify-center shadow-xl animate-in zoom-in">
-                           <CheckCircle2 className="w-5 h-5" />
-                        </div>
+            {viewMode === 'grid' ? (
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
+                {artLoading ? (
+                  Array(12).fill(0).map((_, i) => <div key={i} className="aspect-[4/5] bg-black/5 animate-pulse rounded-3xl" />)
+                ) : filteredArtworks.length === 0 ? (
+                  <div className="col-span-full py-32 text-center space-y-6 bg-black/5 rounded-[3rem] border-2 border-dashed border-black/10">
+                    <Library className="w-12 h-12 mx-auto opacity-10" />
+                    <p className="font-headline text-2xl italic opacity-30">Geen resultaten gevonden...</p>
+                  </div>
+                ) : filteredArtworks.map((art: any) => {
+                  const displayImage = art.image || art.imageUrl;
+                  return (
+                    <Card 
+                      key={art.id} 
+                      className={cn(
+                        "group relative aspect-[4/5] rounded-[2rem] overflow-hidden border-none shadow-md transition-all cursor-pointer",
+                        selectedArtworks.includes(art.id) ? "ring-4 ring-accent ring-offset-4 scale-95" : "hover:shadow-2xl"
                       )}
-                   </div>
-                </Card>
-              ))}
-            </div>
+                      onClick={() => toggleSelection(art.id)}
+                    >
+                      {displayImage && (
+                        <img 
+                          src={displayImage} 
+                          className="w-full h-full object-cover transition-transform group-hover:scale-110" 
+                          style={{ filter: `brightness(0.9)` }}
+                          alt="" 
+                        />
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60 group-hover:opacity-100 transition-opacity" />
+                      <div className="absolute bottom-4 left-4 right-4 text-white">
+                          <h3 className="font-bold text-xs truncate px-1">{art.displayTitle || art.title}</h3>
+                          <p className="text-[8px] font-black uppercase tracking-widest opacity-60 mt-1">{art.year}</p>
+                      </div>
+                      
+                      <div className="absolute top-4 right-4 flex flex-col gap-2">
+                          <Button 
+                            size="icon" 
+                            variant="ghost" 
+                            onClick={(e) => { 
+                              e.stopPropagation();
+                              handleEditArtwork(art);
+                            }} 
+                            className="rounded-full bg-white text-black hover:bg-white/80 w-10 h-10 shadow-xl"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </Button>
+                          {selectedArtworks.includes(art.id) && (
+                            <div className="w-10 h-10 rounded-full bg-accent text-white flex items-center justify-center shadow-xl animate-in zoom-in">
+                              <CheckCircle2 className="w-5 h-5" />
+                            </div>
+                          )}
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            ) : (
+              <Card className="rounded-[2.5rem] border-none shadow-xl overflow-hidden bg-white/60 backdrop-blur-xl">
+                <Table>
+                  <TableHeader className="bg-black/5">
+                    <TableRow className="border-none hover:bg-transparent h-16">
+                      <TableHead className="w-20 pl-8"></TableHead>
+                      <TableHead className="text-[10px] font-black uppercase tracking-widest">Thumbnail</TableHead>
+                      <TableHead className="text-[10px] font-black uppercase tracking-widest">Titel / Archiefnaam</TableHead>
+                      <TableHead className="text-[10px] font-black uppercase tracking-widest">Jaar</TableHead>
+                      <TableHead className="text-[10px] font-black uppercase tracking-widest">Techniek</TableHead>
+                      <TableHead className="text-right pr-8 text-[10px] font-black uppercase tracking-widest">Acties</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredArtworks.map((art: any) => {
+                      const displayImage = art.image || art.imageUrl;
+                      const isSelected = selectedArtworks.includes(art.id);
+                      return (
+                        <TableRow 
+                          key={art.id} 
+                          className={cn(
+                            "group cursor-pointer h-24 transition-colors", 
+                            isSelected ? "bg-accent/5" : "hover:bg-black/[0.02]"
+                          )}
+                          onClick={() => toggleSelection(art.id)}
+                        >
+                          <TableCell className="pl-8">
+                            <div className={cn(
+                              "w-5 h-5 rounded border-2 flex items-center justify-center transition-all",
+                              isSelected ? "bg-accent border-accent text-white" : "border-black/10"
+                            )}>
+                              {isSelected && <CheckCircle2 className="w-3 h-3" />}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="w-16 h-16 rounded-xl overflow-hidden bg-black/5 border border-black/5 shadow-sm">
+                              {displayImage ? (
+                                <img src={displayImage} className="w-full h-full object-cover" alt="" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center opacity-10"><ImageIcon className="w-4 h-4" /></div>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="space-y-0.5">
+                              <p className="font-bold text-sm">{art.displayTitle || art.title}</p>
+                              <p className="text-[10px] font-mono opacity-30">{art.title}</p>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-sm font-medium opacity-60">{art.year || '-'}</TableCell>
+                          <TableCell className="text-sm font-medium opacity-60">{art.medium || '-'}</TableCell>
+                          <TableCell className="text-right pr-8">
+                             <div className="flex justify-end gap-2">
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  onClick={(e) => { e.stopPropagation(); handleEditArtwork(art); }} 
+                                  className="w-10 h-10 rounded-full hover:bg-accent/10 hover:text-accent"
+                                >
+                                  <Edit3 className="w-4 h-4" />
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  asChild
+                                  className="w-10 h-10 rounded-full hover:bg-black/5"
+                                >
+                                  <Link href={`/art/${art.slug || art.id}`} target="_blank">
+                                    <ExternalLink className="w-4 h-4" />
+                                  </Link>
+                                </Button>
+                             </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </Card>
+            )}
           </TabsContent>
 
           <TabsContent value="rooms" className="space-y-8 mt-0">
@@ -499,20 +605,23 @@ export default function AdminPage() {
 
                       <AccordionContent className="px-10 pb-10">
                          <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-10 gap-4 pt-4 border-t">
-                            {roomArtworks.map((art: any) => (
-                              <div key={art.id} className="group relative aspect-square rounded-xl overflow-hidden bg-black/5">
-                                 <img src={art.image} className="w-full h-full object-cover" alt="" />
-                                 <button 
-                                  onClick={() => {
-                                    setSelectedItems([art.id]);
-                                    bulkRemoveFromRoom(room.id, room.title);
-                                  }}
-                                  className="absolute inset-0 bg-destructive/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white"
-                                 >
-                                   <X className="w-5 h-5" />
-                                 </button>
-                              </div>
-                            ))}
+                            {roomArtworks.map((art: any) => {
+                               const displayImage = art.image || art.imageUrl;
+                               return (
+                                <div key={art.id} className="group relative aspect-square rounded-xl overflow-hidden bg-black/5">
+                                    {displayImage && <img src={displayImage} className="w-full h-full object-cover" alt="" />}
+                                    <button 
+                                      onClick={() => {
+                                        setSelectedItems([art.id]);
+                                        bulkRemoveFromRoom(room.id, room.title);
+                                      }}
+                                      className="absolute inset-0 bg-destructive/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white"
+                                    >
+                                      <X className="w-5 h-5" />
+                                    </button>
+                                </div>
+                               );
+                            })}
                             {roomArtworks.length === 0 && (
                               <div className="col-span-full py-12 text-center opacity-20 italic">Geen schilderijen in deze zaal. Selecteer items in het archief om ze hieraan toe te voegen.</div>
                             )}
