@@ -1,6 +1,7 @@
+
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { useFirestore, useCollection, useAuth, useUser } from '@/firebase';
 import { collection, query, where, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
 import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
@@ -10,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { 
@@ -20,21 +21,25 @@ import {
   HelpCircle, 
   ArrowRightLeft,
   Loader2,
-  Lock,
   Clock
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { nl } from 'date-fns/locale';
+import { AuthModal } from '@/components/auth-modal';
 
 export default function ForumPage() {
   const firestore = useFirestore();
   const auth = useAuth();
   const { user, loading: authLoading } = useUser();
+  
   const [isPostingOpen, setIsPostingOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string>('Alle');
+  
+  const pendingActionRef = useRef<null | (() => void)>(null);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -42,33 +47,53 @@ export default function ForumPage() {
     category: 'Verhaal'
   });
 
-  const handleLogin = async () => {
+  const requireFriend = (action: () => void) => {
+    if (user) {
+      action();
+      return;
+    }
+    pendingActionRef.current = action;
+    setAuthModalOpen(true);
+  };
+
+  const handleGoogleLogin = async () => {
     if (!auth || isLoggingIn) return;
 
     try {
       setIsLoggingIn(true);
       const provider = new GoogleAuthProvider();
-      // Forceer een schone provider-instantie met accountselectie
       provider.setCustomParameters({ prompt: 'select_account' });
       
       await signInWithPopup(auth, provider);
       
+      setAuthModalOpen(false);
       toast({ 
         title: "Welkom Vriend!", 
-        description: "U bent nu ingelogd en kunt bijdragen aan het forum." 
+        description: "U kunt nu bijdragen aan het forum." 
       });
+
+      if (pendingActionRef.current) {
+        pendingActionRef.current();
+        pendingActionRef.current = null;
+      }
     } catch (e: any) {
       console.error("Login error:", e);
       if (e.code !== 'auth/popup-closed-by-user') {
         toast({ 
           variant: "destructive", 
           title: "Inloggen mislukt", 
-          description: "Controleer of uw browser pop-ups toestaat of probeer het later opnieuw." 
+          description: "Controleer of uw browser pop-ups toestaat." 
         });
       }
     } finally {
       setIsLoggingIn(false);
     }
+  };
+
+  const handleOpenPost = () => {
+    requireFriend(() => {
+      setIsPostingOpen(true);
+    });
   };
 
   const forumQuery = useMemo(() => {
@@ -100,7 +125,7 @@ export default function ForumPage() {
       await addDoc(collection(firestore, 'forum'), postData);
       toast({ 
         title: "Bericht ingediend", 
-        description: "Uw bericht wordt eerst gecontroleerd door een beheerder voordat het zichtbaar wordt." 
+        description: "Uw bericht wordt gecontroleerd voordat het zichtbaar wordt." 
       });
       setIsPostingOpen(false);
       setFormData({ title: '', content: '', category: 'Verhaal' });
@@ -135,91 +160,12 @@ export default function ForumPage() {
           </div>
 
           <div className="flex items-center gap-4">
-            {authLoading || isLoggingIn ? (
-              <div className="flex items-center gap-3 px-10 h-16 rounded-full bg-black/5 animate-pulse">
-                <Loader2 className="w-4 h-4 animate-spin opacity-40" />
-                <span className="text-[10px] font-black uppercase tracking-widest opacity-40">Laden...</span>
-              </div>
-            ) : user ? (
-              <Dialog open={isPostingOpen} onOpenChange={setIsPostingOpen}>
-                <DialogTrigger asChild>
-                   <Button className="h-16 px-10 rounded-full bg-primary text-white font-black uppercase tracking-widest text-[11px] shadow-2xl hover:scale-105 transition-all">
-                      <Plus className="w-4 h-4 mr-3" /> Bericht Plaatsen
-                   </Button>
-                </DialogTrigger>
-                <DialogContent className="rounded-[2.5rem] p-10 max-w-2xl">
-                   <DialogHeader>
-                      <DialogTitle className="font-headline text-3xl italic">Nieuwe Bijdrage</DialogTitle>
-                      <DialogDescription className="text-xs uppercase font-black tracking-widest opacity-40 pt-2">
-                        Uw bericht wordt gecontroleerd op kwaliteit en relevantie.
-                      </DialogDescription>
-                   </DialogHeader>
-                   <form onSubmit={handleSubmit} className="space-y-6 pt-6">
-                      <div className="grid grid-cols-2 gap-4">
-                         <div className="space-y-2">
-                            <Label className="text-[10px] uppercase font-black opacity-40 ml-2">Categorie</Label>
-                            <Select value={formData.category} onValueChange={(v) => setFormData({...formData, category: v})}>
-                               <SelectTrigger className="h-14 rounded-2xl bg-black/5 border-none">
-                                  <SelectValue />
-                               </SelectTrigger>
-                               <SelectContent>
-                                  <SelectItem value="Verhaal">Verhaal</SelectItem>
-                                  <SelectItem value="Vraag">Vraag</SelectItem>
-                                  <SelectItem value="Ruil/Koop">Ruil / Koop / Verkoop</SelectItem>
-                               </SelectContent>
-                            </Select>
-                         </div>
-                         <div className="space-y-2">
-                            <Label className="text-[10px] uppercase font-black opacity-40 ml-2">Titel</Label>
-                            <Input 
-                              value={formData.title} 
-                              onChange={e => setFormData({...formData, title: e.target.value})} 
-                              className="h-14 rounded-2xl bg-black/5 border-none"
-                              required
-                            />
-                         </div>
-                      </div>
-                      <div className="space-y-2">
-                         <Label className="text-[10px] uppercase font-black opacity-40 ml-2">Uw Bericht</Label>
-                         <Textarea 
-                            value={formData.content} 
-                            onChange={e => setFormData({...formData, content: e.target.value})} 
-                            className="min-h-[200px] rounded-[1.5rem] bg-black/5 border-none p-6"
-                            required
-                         />
-                      </div>
-                      <div className="bg-accent/5 p-6 rounded-2xl flex items-start gap-4">
-                         <Clock className="w-5 h-5 text-accent mt-0.5" />
-                         <p className="text-xs italic text-accent/80 leading-relaxed">
-                            <strong>Moderatie:</strong> Na verzending controleert onze conservator uw bericht.
-                         </p>
-                      </div>
-                      <Button type="submit" disabled={isSubmitting} className="w-full h-16 rounded-2xl bg-primary text-white font-black uppercase tracking-widest">
-                         {isSubmitting ? <Loader2 className="animate-spin" /> : "Indienen voor controle"}
-                      </Button>
-                   </form>
-                </DialogContent>
-              </Dialog>
-            ) : (
-              <Button 
-                onClick={handleLogin} 
-                disabled={isLoggingIn}
-                variant="outline" 
-                className="h-16 px-10 rounded-full border-2 font-black uppercase tracking-widest text-[11px] hover:bg-black/5"
-              >
-                {isLoggingIn ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-3 animate-spin" />
-                    Verbinden...
-                  </>
-                ) : (
-                  <>
-                    <Lock className="w-4 h-4 mr-3" />
-                    Word Vriend om te posten
-                  </>
-                )}
-              </Button>
-            )}
+             <Button 
+               onClick={handleOpenPost}
+               className="h-16 px-10 rounded-full bg-primary text-white font-black uppercase tracking-widest text-[11px] shadow-2xl hover:scale-105 active:scale-95 transition-all"
+             >
+                <Plus className="w-4 h-4 mr-3" /> Bericht Plaatsen
+             </Button>
           </div>
         </header>
 
@@ -291,6 +237,70 @@ export default function ForumPage() {
            )}
         </div>
       </div>
+
+      {/* Posting Modal */}
+      <Dialog open={isPostingOpen} onOpenChange={setIsPostingOpen}>
+        <DialogContent className="rounded-[2.5rem] p-10 max-w-2xl border-none bg-white/95 backdrop-blur-3xl shadow-2xl">
+           <DialogHeader>
+              <DialogTitle className="font-headline text-3xl italic">Nieuwe Bijdrage</DialogTitle>
+              <DialogDescription className="text-xs uppercase font-black tracking-widest opacity-40 pt-2">
+                Uw bericht wordt gecontroleerd op kwaliteit en relevantie.
+              </DialogDescription>
+           </DialogHeader>
+           <form onSubmit={handleSubmit} className="space-y-6 pt-6">
+              <div className="grid grid-cols-2 gap-4">
+                 <div className="space-y-2">
+                    <Label className="text-[10px] uppercase font-black opacity-40 ml-2">Categorie</Label>
+                    <Select value={formData.category} onValueChange={(v) => setFormData({...formData, category: v})}>
+                       <SelectTrigger className="h-14 rounded-2xl bg-black/5 border-none text-xs font-bold uppercase tracking-widest">
+                          <SelectValue />
+                       </SelectTrigger>
+                       <SelectContent className="rounded-2xl shadow-xl border-none">
+                          <SelectItem value="Verhaal" className="rounded-xl p-3 text-xs uppercase font-bold">Verhaal</SelectItem>
+                          <SelectItem value="Vraag" className="rounded-xl p-3 text-xs uppercase font-bold">Vraag</SelectItem>
+                          <SelectItem value="Ruil/Koop" className="rounded-xl p-3 text-xs uppercase font-bold">Ruil / Koop / Verkoop</SelectItem>
+                       </SelectContent>
+                    </Select>
+                 </div>
+                 <div className="space-y-2">
+                    <Label className="text-[10px] uppercase font-black opacity-40 ml-2">Titel</Label>
+                    <Input 
+                      value={formData.title} 
+                      onChange={e => setFormData({...formData, title: e.target.value})} 
+                      className="h-14 rounded-2xl bg-black/5 border-none px-6 text-base"
+                      required
+                    />
+                 </div>
+              </div>
+              <div className="space-y-2">
+                 <Label className="text-[10px] uppercase font-black opacity-40 ml-2">Uw Bericht</Label>
+                 <Textarea 
+                    value={formData.content} 
+                    onChange={e => setFormData({...formData, content: e.target.value})} 
+                    className="min-h-[200px] rounded-[1.5rem] bg-black/5 border-none p-6 text-base"
+                    required
+                 />
+              </div>
+              <div className="bg-accent/5 p-6 rounded-2xl flex items-start gap-4">
+                 <Clock className="w-5 h-5 text-accent mt-0.5" />
+                 <p className="text-xs italic text-accent/80 leading-relaxed">
+                    <strong>Moderatie:</strong> Na verzending controleert onze conservator uw bericht.
+                 </p>
+              </div>
+              <Button type="submit" disabled={isSubmitting} className="w-full h-16 rounded-2xl bg-primary text-white font-black uppercase tracking-widest">
+                 {isSubmitting ? <Loader2 className="animate-spin" /> : "Indienen voor controle"}
+              </Button>
+           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Centrale Auth Modal */}
+      <AuthModal 
+        isOpen={authModalOpen} 
+        onOpenChange={setAuthModalOpen} 
+        onLogin={handleGoogleLogin} 
+        isLoggingIn={isLoggingIn}
+      />
     </main>
   );
 }

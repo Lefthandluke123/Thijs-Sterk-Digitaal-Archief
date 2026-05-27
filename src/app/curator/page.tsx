@@ -1,8 +1,10 @@
+
 "use client";
 
 import React, { useState, useMemo, useCallback, useRef } from 'react';
-import { useCollection, useFirestore } from '@/firebase';
+import { useCollection, useFirestore, useAuth, useUser } from '@/firebase';
 import { collection, doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import { Loader2, Maximize2, Play, Eraser, Share2, Copy, Filter, CheckCircle2, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -15,19 +17,26 @@ import { Label } from '@/components/ui/label';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { MUSEUM_TAGS, normalizeArtwork } from '@/lib/museum-utils';
+import { AuthModal } from '@/components/auth-modal';
 
 export default function CuratorPage() {
+  const firestore = useFirestore();
+  const auth = useAuth();
+  const { user } = useUser();
+  const { t, language } = useLanguage();
+
   const [activeTags, setActiveTags] = useState<string[]>([]);
   const [showResults, setShowResults] = useState(false);
   const [selectedArtwork, setSelectedArtwork] = useState<any | null>(null);
   const [isSharing, setIsSharing] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
   const [shareDialog, setShareDialog] = useState<string | null>(null);
   const [roomTitle, setRoomTitle] = useState("");
   const [flashingTag, setFlashingTag] = useState<string | null>(null);
   
   const resultsRef = useRef<HTMLDivElement>(null);
-  const firestore = useFirestore();
-  const { t, language } = useLanguage();
+  const pendingActionRef = useRef<null | (() => void)>(null);
   
   const artworksQuery = useMemo(() => {
     if (!firestore) return null;
@@ -51,6 +60,40 @@ export default function CuratorPage() {
   }, [artworks, activeTags]);
 
   const resultCount = filteredArtworks.length;
+
+  const requireFriend = (action: () => void) => {
+    if (user) {
+      action();
+      return;
+    }
+    pendingActionRef.current = action;
+    setAuthModalOpen(true);
+  };
+
+  const handleGoogleLogin = async () => {
+    if (!auth || isLoggingIn) return;
+    try {
+      setIsLoggingIn(true);
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
+      await signInWithPopup(auth, provider);
+      setAuthModalOpen(false);
+      if (pendingActionRef.current) {
+        pendingActionRef.current();
+        pendingActionRef.current = null;
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
+  const handleOpenShare = () => {
+    requireFriend(() => {
+      setShareDialog("");
+    });
+  };
 
   const navigateArtwork = useCallback((direction: 'next' | 'prev') => {
     if (!selectedArtwork || filteredArtworks.length === 0) return;
@@ -117,20 +160,24 @@ export default function CuratorPage() {
       description: `Een samengestelde selectie door een bezoeker van Het Digitale Retrospectief.`,
       artworkIds: filteredArtworks.map(a => a.id),
       createdAt: serverTimestamp(),
-      lang: language
+      lang: language,
+      authorId: user?.uid || null
     };
 
     setDoc(newRoomRef, roomData)
+      .then(() => {
+        setShareDialog(url);
+      })
       .catch(async () => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
           path: newRoomRef.path,
           operation: 'create',
           requestResourceData: roomData
         }));
+      })
+      .finally(() => {
+        setIsSharing(false);
       });
-
-    setShareDialog(url);
-    setIsSharing(false);
   };
 
   const copyToClipboard = (text: string) => {
@@ -184,7 +231,7 @@ export default function CuratorPage() {
               ))}
 
               <div className="col-span-full pt-6 flex justify-center">
-                 <Button onClick={() => setShareDialog("")} className="rounded-full h-14 md:h-16 px-10 md:px-12 bg-accent text-accent-foreground uppercase font-black text-[10px] md:text-[11px] tracking-widest shadow-xl animate-in zoom-in duration-500">
+                 <Button onClick={handleOpenShare} className="rounded-full h-14 md:h-16 px-10 md:px-12 bg-accent text-accent-foreground uppercase font-black text-[10px] md:text-[11px] tracking-widest shadow-xl animate-in zoom-in duration-500 hover:scale-105 active:scale-95 transition-all">
                     <Share2 className="w-4 h-4 mr-3" /> {t('curator_link_ready') || 'Deel Selectie'}
                  </Button>
               </div>
@@ -292,7 +339,7 @@ export default function CuratorPage() {
       </div>
 
       <Dialog open={shareDialog !== null} onOpenChange={(open) => !open && setShareDialog(null)}>
-        <DialogContent className="max-w-md rounded-[2.5rem] p-8 md:p-12 border-none shadow-2xl glass-panel">
+        <DialogContent className="max-w-md rounded-[2.5rem] p-8 md:p-12 border-none shadow-2xl glass-panel bg-white/95">
           <DialogHeader>
             <DialogTitle className="font-headline text-3xl italic text-accent">Collectie Delen</DialogTitle>
             <DialogDescription className="text-[10px] uppercase tracking-[0.25em] font-black opacity-40 pt-2">
@@ -341,6 +388,13 @@ export default function CuratorPage() {
         onClose={() => setSelectedArtwork(null)} 
         onNext={() => navigateArtwork('next')}
         onPrev={() => navigateArtwork('prev')}
+      />
+
+      <AuthModal 
+        isOpen={authModalOpen} 
+        onOpenChange={setAuthModalOpen} 
+        onLogin={handleGoogleLogin} 
+        isLoggingIn={isLoggingIn}
       />
     </main>
   );
