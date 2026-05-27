@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -7,8 +6,7 @@ import {
   onSnapshot, 
   QuerySnapshot, 
   DocumentData,
-  FirestoreError,
-  CollectionReference
+  FirestoreError
 } from 'firebase/firestore';
 import { errorEmitter } from '../error-emitter';
 import { FirestorePermissionError } from '../errors';
@@ -40,10 +38,8 @@ export function useCollection<T = DocumentData>(collectionQuery: Query<T> | null
       },
       async (serverError: FirestoreError) => {
         if (serverError.code === 'permission-denied') {
-          // Probeer het pad te achterhalen via de query metadata
-          const path = (collectionQuery as any)._query?.path?.segments?.join('/') || 'collection';
           const permissionError = new FirestorePermissionError({
-            path: `/${path}`,
+            path: 'collection',
             operation: 'list',
           });
           errorEmitter.emit('permission-error', permissionError);

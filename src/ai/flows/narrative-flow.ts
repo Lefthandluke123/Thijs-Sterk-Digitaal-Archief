@@ -2,8 +2,6 @@
 /**
  * @fileOverview AI Narratief Flow voor het Thijs Sterk Museum.
  * Genereert een poëtische audio-vertelling gebaseerd op het kunstwerk.
- * 
- * - generateNarrative - De hoofdactie voor tekst en spraak generatie.
  */
 
 import { ai } from '@/ai/genkit';
@@ -49,17 +47,15 @@ const narrativeFlow = ai.defineFlow(
     outputSchema: NarrativeOutputSchema,
   },
   async input => {
-    // 1. Genereer de tekst
     const { text } = await prompt(input);
     
-    // 2. Genereer Audio (TTS) via Gemini
     const { media } = await ai.generate({
-      model: googleAI.model('gemini-2.5-flash-preview-tts'),
+      model: 'googleai/gemini-2.5-flash-preview-tts',
       config: {
         responseModalities: ['AUDIO'],
         speechConfig: {
           voiceConfig: {
-            prebuiltVoiceConfig: { voiceName: 'Algenib' }, // Rustige, heldere stem
+            prebuiltVoiceConfig: { voiceName: 'Algenib' },
           },
         },
       },
