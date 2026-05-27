@@ -1,3 +1,4 @@
+
 /**
  * @fileOverview Museum Utilities voor sorteren en data-verwerking.
  * Inclusief Hardening Layer voor Firestore data integriteit.
@@ -17,6 +18,15 @@ export const MUSEUM_TAGS = {
   "Plaats": ["Groet", "Schoorl", "Hargen", "Camperduin", "Holland", "Amsterdam", "Frankrijk", "Bretagne", "Griekenland"],
   "Onderwerp": ["Havens", "Stillevens", "Bloemen", "Dieren", "Water", "Mensen", "Polder"]
 };
+
+export const PRIVATE_ALBUMS = [
+  "Familie",
+  "Reizen",
+  "Atelier",
+  "Achter de schermen",
+  "Muzikanten",
+  "Persoonlijke momenten"
+];
 
 /**
  * Maakt een string URL-vriendelijk (kebab-case).
@@ -38,11 +48,9 @@ export function slugify(text: string): string {
 
 /**
  * Normaliseert Firestore data voor veilig gebruik in de UI.
- * Filtert ALTIJD jaartallen zoals 2026 eruit.
  */
 export function normalizeArtwork(id: string, data: any) {
   const rawYear = cleanString(data.year) || "";
-  // Verwijder agressief 2026 uit alle strings
   const filteredYear = rawYear.replace(/2026/g, '').replace(/\s+/g, ' ').trim();
 
   return {
@@ -66,14 +74,30 @@ export function normalizeArtwork(id: string, data: any) {
 }
 
 /**
- * Centraal sanitization filter voor Artwork data (Writes).
- * Voorkomt expliciet corruptie van jaartallen en slugs.
+ * Normaliseert privéfoto data.
  */
+export function normalizePrivatePhoto(id: string, data: any) {
+  return {
+    id,
+    title: data.title || "Zonder titel",
+    description: data.description || "",
+    imageUrl: data.imageUrl || data.image || "",
+    thumbnailUrl: data.thumbnailUrl || data.imageUrl || "",
+    year: data.year || null,
+    tags: cleanArray(data.tags),
+    people: cleanArray(data.people),
+    album: data.album || "Ongecategoriseerd",
+    visibility: data.visibility || "friends",
+    featured: Boolean(data.featured),
+    createdAt: data.createdAt || null,
+    updatedAt: data.updatedAt || null,
+  };
+}
+
 export function sanitizeArtwork(input: any) {
   const baseTitle = cleanString(input.displayTitle) || cleanString(input.title) || "Ongetiteld";
   const finalSlug = slugify(cleanString(input.slug) || baseTitle);
   
-  // Strikte jaar validatie: verwijder 2026 voor opslag
   let finalYear = "";
   if (input.year !== undefined && input.year !== null) {
     finalYear = String(input.year).replace(/2026/g, '').replace(/\s+/g, ' ').trim();
@@ -109,9 +133,6 @@ export function cleanArray(arr?: any[]): string[] {
     .filter(v => v.length > 0 && v !== "undefined" && v !== "null");
 }
 
-/**
- * Analyseert een titel voor geavanceerde sortering (Romeins > Nummer > Alfabet).
- */
 export const parseTitleForSort = (title: string) => {
   if (!title) return { romanVal: 999, num: 999, suffix: '' };
   
@@ -128,9 +149,6 @@ export const parseTitleForSort = (title: string) => {
   };
 };
 
-/**
- * Hoofd-sorteerfunctie voor kunstwerken.
- */
 export const sortArtworksByTitle = (a: any, b: any) => {
   const titleA = a.displayTitle || a.title || '';
   const titleB = b.displayTitle || b.title || '';

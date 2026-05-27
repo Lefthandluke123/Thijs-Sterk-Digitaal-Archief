@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
@@ -46,7 +47,8 @@ import {
   Wand2,
   Type,
   Calendar,
-  Hammer
+  Hammer,
+  Camera
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -441,6 +443,10 @@ export default function AdminPage() {
             <Link href="/admin/forum" className="flex items-center gap-2 px-4 py-2 rounded-full bg-accent/5 text-accent hover:bg-accent hover:text-white transition-all shrink-0">
                <Users className="w-4 h-4" />
                <span className="text-[10px] font-black uppercase tracking-widest">Forum</span>
+            </Link>
+            <Link href="/admin/private" className="flex items-center gap-2 px-4 py-2 rounded-full bg-orange-500/5 text-orange-600 hover:bg-orange-500 hover:text-white transition-all shrink-0">
+               <Camera className="w-4 h-4" />
+               <span className="text-[10px] font-black uppercase tracking-widest">Privé Archief</span>
             </Link>
             <Link href="/admin/team" className="flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/5 text-blue-600 hover:bg-blue-500 hover:text-white transition-all shrink-0">
                <Zap className="w-4 h-4" />

@@ -8,6 +8,10 @@ service cloud.firestore {
       // Voor dit prototype gaan we uit van admin-toegang via de beheerpagina
       return true; 
     }
+    
+    function isFriend() {
+      return request.auth != null;
+    }
 
     match /rooms/{roomId} {
       allow read: if resource.data.isPublic == true || isAdmin();
@@ -19,12 +23,15 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    match /privatePhotos/{photoId} {
+      // Alleen voor ingelogde vrienden of admins
+      allow read: if isFriend() || isAdmin();
+      allow write: if isAdmin();
+    }
+
     match /forum/{postId} {
-      // Publiek kan alleen goedgekeurde posts zien
       allow read: if resource.data.status == 'approved' || isAdmin() || (request.auth != null && request.auth.uid == resource.data.authorId);
-      // Ingelogde gebruikers kunnen posts aanmaken (worden standaard pending)
       allow create: if request.auth != null;
-      // Alleen admin kan status wijzigen
       allow update, delete: if isAdmin();
     }
 
@@ -40,6 +47,12 @@ service cloud.firestore {
     
     match /mail/{mailId} {
       allow create: if true;
+    }
+
+    match /shared_rooms/{roomId} {
+      allow read: if true;
+      allow create: if true;
+      allow update, delete: if isAdmin();
     }
   }
 }
