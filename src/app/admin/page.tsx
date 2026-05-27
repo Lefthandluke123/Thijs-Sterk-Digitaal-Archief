@@ -27,7 +27,6 @@ import {
   Layers,
   Edit3,
   Search,
-  Settings,
   Languages,
   X,
   CheckCircle2,
@@ -74,6 +73,11 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
+import { 
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { normalizeArtwork, sanitizeArtwork, MUSEUM_TAGS, slugify, sortArtworksByTitle } from '@/lib/museum-utils';
@@ -116,7 +120,6 @@ export default function AdminPage() {
   const [editingArtwork, setEditingArtwork] = useState<any>(null);
   const [editingRoom, setEditingRoom] = useState<any>(null);
   
-  // Upload states
   const [isUploading, setIsUploading] = useState(false);
   const [isCleaning, setIsCleaning] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -182,7 +185,7 @@ export default function AdminPage() {
     setEditingArtwork(null);
     setSelectedFile(null);
     setShowCustomMedium(false);
-    setArtworkForm({ title: '', displayTitle: '', slug: '', image: '', year: '', medium: 'Olieverf', description: '', tags: '', featured: false, inShop: false });
+    setArtworkForm({ title: '', displayTitle: '', slug: '', image: '', year: '', medium: 'Olieverf', description: '', tags: [], featured: false, inShop: false });
     setIsArtworkDialogOpen(true);
   };
 
@@ -193,7 +196,7 @@ export default function AdminPage() {
     setShowCustomMedium(isCustom);
     setArtworkForm({ 
       ...art, 
-      tags: Array.isArray(art.tags) ? art.tags.join(', ') : (art.tags || '')
+      tags: Array.isArray(art.tags) ? art.tags : []
     }); 
     setIsArtworkDialogOpen(true); 
   };
@@ -217,14 +220,9 @@ export default function AdminPage() {
         return;
       }
 
-      const cleanTags = typeof artworkForm.tags === 'string' 
-        ? artworkForm.tags.split(',').map((t: string) => t.trim()).filter(Boolean) 
-        : artworkForm.tags;
-
       const data = sanitizeArtwork({
         ...artworkForm,
-        image: finalImageUrl,
-        tags: cleanTags
+        image: finalImageUrl
       });
 
       if (editingArtwork) {
@@ -363,15 +361,23 @@ export default function AdminPage() {
     setSelectedItems([]);
   };
 
+  const bulkRemoveFromRoom = (roomId: string, roomTitle: string) => {
+    if (!firestore || selectedArtworks.length === 0) return;
+    selectedArtworks.forEach(id => {
+      const docRef = doc(firestore, 'artworks', id);
+      updateDoc(docRef, { roomIds: arrayRemove(roomId) });
+    });
+    toast({ title: "Verwijderd uit zaal", description: `${selectedArtworks.length} items verwijderd uit '${roomTitle}'` });
+    setSelectedItems([]);
+  };
+
   const applyBulkTags = () => {
     if (!firestore || selectedArtworks.length === 0) return;
     setIsUploading(true);
     
-    const isSingleEdit = selectedArtworks.length === 1;
-
     selectedArtworks.forEach(id => {
       const docRef = doc(firestore, 'artworks', id);
-      const updateData = isSingleEdit ? { tags: tempBulkTags } : { tags: arrayUnion(...tempBulkTags) };
+      const updateData = { tags: arrayUnion(...tempBulkTags) };
       
       updateDoc(docRef, updateData)
         .catch(async () => {
@@ -384,8 +390,8 @@ export default function AdminPage() {
     });
 
     toast({ 
-      title: isSingleEdit ? "Tags bijgewerkt" : "Tags toegevoegd", 
-      description: isSingleEdit ? "De tags voor dit werk zijn aangepast." : `${tempBulkTags.length} tags toegevoegd aan ${selectedArtworks.length} items.` 
+      title: "Tags toegevoegd", 
+      description: `${tempBulkTags.length} tags toegevoegd aan ${selectedArtworks.length} items.` 
     });
     
     setIsBulkTagDialogOpen(false);
@@ -393,6 +399,34 @@ export default function AdminPage() {
     setSelectedItems([]);
     setIsUploading(false);
   };
+
+  if (!isAuthorized) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
+        <Card className="max-w-md w-full p-12 rounded-[3rem] shadow-2xl space-y-8 animate-in fade-in zoom-in duration-500">
+           <div className="text-center space-y-4">
+              <div className="w-20 h-20 bg-accent/10 rounded-full flex items-center justify-center mx-auto text-accent">
+                 <Zap className="w-10 h-10" />
+              </div>
+              <h1 className="font-headline text-3xl italic">Museum <span className="text-accent">Beheer</span></h1>
+           </div>
+           <form onSubmit={handleLogin} className="space-y-6">
+              <Input 
+                type="password" 
+                value={password} 
+                onChange={(e) => setPassword(e.target.value)} 
+                className="h-14 rounded-2xl text-center bg-black/5 border-none text-xl" 
+                placeholder="••••••"
+                autoFocus
+              />
+              <Button type="submit" disabled={isVerifying} className="w-full h-14 rounded-2xl bg-primary text-white font-black uppercase tracking-widest text-[11px]">
+                 {isVerifying ? <Loader2 className="animate-spin" /> : "Ontgrendel Archief"}
+              </Button>
+           </form>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen pt-32 px-8 bg-transparent">
@@ -659,13 +693,12 @@ export default function AdminPage() {
         </Tabs>
       </main>
 
-      {/* Global Dialogs remain same */}
       <Dialog open={isBulkTagDialogOpen} onOpenChange={setIsBulkTagDialogOpen}>
         <DialogContent className="max-w-4xl rounded-[3rem] p-10">
           <DialogHeader>
-            <DialogTitle className="font-headline text-3xl italic">Tags Bewerken</DialogTitle>
+            <DialogTitle className="font-headline text-3xl italic">Bulk Taggen</DialogTitle>
             <DialogDescription className="text-[10px] font-black uppercase tracking-widest opacity-40">
-              {selectedArtworks.length === 1 ? 'Pas tags aan voor dit werk' : `Voeg tags toe aan ${selectedArtworks.length} geselecteerde items`}
+              Selecteer de tags die u wilt toevoegen aan {selectedArtworks.length} geselecteerde items
             </DialogDescription>
           </DialogHeader>
           
@@ -702,7 +735,7 @@ export default function AdminPage() {
                     className="rounded-full bg-accent text-white px-10 h-14 uppercase font-black text-[10px] tracking-widest shadow-xl"
                    >
                      {isUploading ? <Loader2 className="animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-                     Opslaan
+                     Toepassen
                    </Button>
                 </div>
              </div>
@@ -878,10 +911,8 @@ function ArtworkEditorCard({ artwork, isSelected, onToggleSelect }: { artwork: a
     if (!firestore) return;
     setIsSaving(true);
     
-    // Gebruik de centrale sanitization logica (filtert jaartal 2026, slugify, etc)
     const sanitized = sanitizeArtwork({
       ...localData,
-      // Behoud tags als array
       tags: localData.tags
     });
 
@@ -904,6 +935,15 @@ function ArtworkEditorCard({ artwork, isSelected, onToggleSelect }: { artwork: a
     .finally(() => {
       setIsSaving(false);
     });
+  };
+
+  const toggleTag = (tag: string) => {
+    const currentTags = Array.isArray(localData.tags) ? localData.tags : [];
+    const newTags = currentTags.includes(tag) 
+      ? currentTags.filter(t => t !== tag) 
+      : [...currentTags, tag];
+    
+    setLocalData({ ...localData, tags: newTags });
   };
 
   return (
@@ -1022,13 +1062,51 @@ function ArtworkEditorCard({ artwork, isSelected, onToggleSelect }: { artwork: a
               />
             </div>
 
-            <div className="flex flex-wrap gap-2 pt-2">
-              {localData.tags?.map((t: string) => (
-                <Badge key={t} variant="outline" className="rounded-full px-3 py-1 bg-white text-[9px] font-black uppercase tracking-widest border-black/5 text-accent/60">
-                  {t}
-                </Badge>
-              ))}
-              {localData.tags?.length === 0 && <span className="text-[10px] italic opacity-20">Geen tags... gebruik de actiebalk voor bulk tagging.</span>}
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase tracking-widest opacity-30">Tags</Label>
+              <div className="flex flex-wrap gap-2 pt-1 items-center">
+                {localData.tags?.map((t: string) => (
+                  <Badge key={t} variant="secondary" className="rounded-full px-3 py-1 bg-accent/5 text-[9px] font-black uppercase tracking-widest border-accent/10 text-accent">
+                    {t}
+                  </Badge>
+                ))}
+                
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-7 w-7 rounded-full border-dashed border-black/20 p-0 text-black/40 hover:bg-accent/10 hover:text-accent">
+                      <Plus className="w-3.5 h-3.5" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80 p-4 rounded-3xl shadow-2xl border-none bg-white/95 backdrop-blur-3xl" align="start">
+                    <div className="space-y-6 max-h-[400px] overflow-y-auto pr-2 no-scrollbar">
+                      {Object.entries(MUSEUM_TAGS).map(([category, tags]) => (
+                        <div key={category} className="space-y-3">
+                          <h4 className="text-[9px] font-black uppercase tracking-widest opacity-40 border-b border-black/5 pb-1">{category}</h4>
+                          <div className="flex flex-wrap gap-1.5">
+                            {tags.map(tag => {
+                              const active = localData.tags?.includes(tag);
+                              return (
+                                <button
+                                  key={tag}
+                                  onClick={() => toggleTag(tag)}
+                                  className={cn(
+                                    "px-2.5 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-wide transition-all border",
+                                    active 
+                                      ? "bg-accent text-white border-accent shadow-md" 
+                                      : "bg-black/5 border-transparent text-black/40 hover:bg-black/10"
+                                  )}
+                                >
+                                  {tag}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
           </div>
         </div>
