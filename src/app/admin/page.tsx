@@ -41,8 +41,8 @@ import {
   Image as ImageIcon,
   LayoutGrid,
   List as ListIcon,
-  MoreVertical,
-  ExternalLink
+  ExternalLink,
+  Tag as TagIcon
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -53,7 +53,8 @@ import {
   DialogContent, 
   DialogTitle, 
   DialogHeader, 
-  DialogFooter
+  DialogFooter,
+  DialogDescription
 } from '@/components/ui/dialog';
 import { 
   DropdownMenu,
@@ -67,6 +68,7 @@ import { sanitizeArtwork, MUSEUM_TAGS, slugify } from '@/lib/museum-utils';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { verifyAdminPassword } from '@/lib/admin-actions';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export default function AdminPage() {
   const firestore = useFirestore();
@@ -82,6 +84,8 @@ export default function AdminPage() {
   
   const [isArtworkDialogOpen, setIsArtworkDialogOpen] = useState(false);
   const [isRoomDialogOpen, setIsRoomDialogOpen] = useState(false);
+  const [isBulkTagDialogOpen, setIsBulkTagDialogOpen] = useState(false);
+  
   const [editingArtwork, setEditingArtwork] = useState<any>(null);
   const [editingRoom, setEditingRoom] = useState<any>(null);
   
@@ -95,6 +99,7 @@ export default function AdminPage() {
   });
   
   const [roomForm, setRoomForm] = useState({ title: '', description: '', order: 0 });
+  const [tempBulkTags, setTempBulkTags] = useState<string[]>([]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -120,7 +125,8 @@ export default function AdminPage() {
     if (!artworks) return [];
     return artworks.filter((art: any) => 
       art.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      art.displayTitle?.toLowerCase().includes(searchQuery.toLowerCase())
+      art.displayTitle?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      art.tags?.some((t: string) => t.toLowerCase().includes(searchQuery.toLowerCase()))
     );
   }, [artworks, searchQuery]);
 
@@ -245,29 +251,24 @@ export default function AdminPage() {
     } catch (e) { toast({ variant: "destructive", title: "Bulk update mislukt" }); }
   };
 
-  const bulkRemoveFromRoom = async (roomId: string, roomTitle: string) => {
-    if (!firestore || selectedArtworks.length === 0) return;
+  const applyBulkTags = async () => {
+    if (!firestore || selectedArtworks.length === 0 || tempBulkTags.length === 0) return;
+    setIsUploading(true);
     try {
       for (const id of selectedArtworks) {
         await updateDoc(doc(firestore, 'artworks', id), {
-          roomIds: arrayRemove(roomId)
+          tags: arrayUnion(...tempBulkTags)
         });
       }
-      toast({ title: "Items verwijderd", description: `${selectedArtworks.length} items verwijderd uit '${roomTitle}'` });
+      toast({ title: "Tags toegevoegd", description: `${tempBulkTags.length} tags toegevoegd aan ${selectedArtworks.length} items.` });
+      setIsBulkTagDialogOpen(false);
+      setTempBulkTags([]);
       setSelectedItems([]);
-    } catch (e) { toast({ variant: "destructive", title: "Fout bij verwijderen" }); }
-  };
-
-  const bulkAddTag = async (tag: string) => {
-    if (!firestore || selectedArtworks.length === 0) return;
-    try {
-      for (const id of selectedArtworks) {
-        await updateDoc(doc(firestore, 'artworks', id), {
-          tags: arrayUnion(tag)
-        });
-      }
-      toast({ title: "Tag toegevoegd", description: `'${tag}' toegevoegd aan selectie.` });
-    } catch (e) { toast({ variant: "destructive", title: "Fout bij taggen" }); }
+    } catch (e) {
+      toast({ variant: "destructive", title: "Fout bij bulk taggen" });
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   if (!isAuthorized) {
@@ -361,20 +362,13 @@ export default function AdminPage() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="h-10 px-5 rounded-full hover:bg-white/10 text-[10px] font-black uppercase tracking-widest">
-                    <Sparkles className="w-4 h-4 mr-2" /> Tag toevoegen <ChevronDown className="w-3 h-3 ml-2 opacity-40" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="rounded-2xl p-2 min-w-[200px] max-h-[300px] overflow-y-auto">
-                   {Object.values(MUSEUM_TAGS).flat().map(tag => (
-                     <DropdownMenuItem key={tag} onClick={() => bulkAddTag(tag)} className="rounded-xl p-3 text-[10px] font-bold uppercase tracking-widest">
-                       {tag}
-                     </DropdownMenuItem>
-                   ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <Button 
+                variant="ghost" 
+                onClick={() => { setTempBulkTags([]); setIsBulkTagDialogOpen(true); }}
+                className="h-10 px-5 rounded-full hover:bg-white/10 text-[10px] font-black uppercase tracking-widest"
+              >
+                <TagIcon className="w-4 h-4 mr-2" /> Bulk Taggen
+              </Button>
 
               <Button variant="ghost" onClick={() => setSelectedItems([])} className="h-10 w-10 rounded-full hover:bg-destructive hover:text-white p-0">
                 <X className="w-4 h-4" />
@@ -399,7 +393,7 @@ export default function AdminPage() {
                <div className="relative flex-1 w-full max-w-md">
                  <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 opacity-30" />
                  <Input 
-                   placeholder="Zoek in archief..." 
+                   placeholder="Zoek op titel of tags..." 
                    value={searchQuery}
                    onChange={e => setSearchQuery(e.target.value)}
                    className="h-14 pl-14 rounded-2xl bg-white border-none shadow-inner"
@@ -496,8 +490,8 @@ export default function AdminPage() {
                       <TableHead className="w-20 pl-8"></TableHead>
                       <TableHead className="text-[10px] font-black uppercase tracking-widest">Thumbnail</TableHead>
                       <TableHead className="text-[10px] font-black uppercase tracking-widest">Titel / Archiefnaam</TableHead>
-                      <TableHead className="text-[10px] font-black uppercase tracking-widest">Jaar</TableHead>
-                      <TableHead className="text-[10px] font-black uppercase tracking-widest">Techniek</TableHead>
+                      <TableHead className="text-[10px] font-black uppercase tracking-widest">Jaar & Techniek</TableHead>
+                      <TableHead className="text-[10px] font-black uppercase tracking-widest">Tags</TableHead>
                       <TableHead className="text-right pr-8 text-[10px] font-black uppercase tracking-widest">Acties</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -537,8 +531,20 @@ export default function AdminPage() {
                               <p className="text-[10px] font-mono opacity-30">{art.title}</p>
                             </div>
                           </TableCell>
-                          <TableCell className="text-sm font-medium opacity-60">{art.year || '-'}</TableCell>
-                          <TableCell className="text-sm font-medium opacity-60">{art.medium || '-'}</TableCell>
+                          <TableCell>
+                             <div className="flex flex-col">
+                               <span className="text-sm font-medium opacity-80">{art.year || '-'}</span>
+                               <span className="text-[10px] opacity-40 uppercase font-black">{art.medium || '-'}</span>
+                             </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap gap-1 max-w-[240px]">
+                              {(art.tags || []).map((t: string) => (
+                                <Badge key={t} variant="outline" className="text-[8px] px-2 py-0 h-4 bg-black/5 border-none font-bold uppercase tracking-wider">{t}</Badge>
+                              ))}
+                              {(art.tags || []).length === 0 && <span className="text-[10px] italic opacity-20">Geen tags</span>}
+                            </div>
+                          </TableCell>
                           <TableCell className="text-right pr-8">
                              <div className="flex justify-end gap-2">
                                 <Button 
@@ -574,7 +580,7 @@ export default function AdminPage() {
             <div className="flex justify-between items-center bg-white/50 backdrop-blur-md p-6 rounded-[2.5rem] border border-white/60">
                <div>
                   <h2 className="font-headline text-3xl italic">Interactieve Zalen</h2>
-                  <p className="text-[10px] font-black uppercase tracking-widest opacity-40 mt-1">Schilderijen in zalen slepen is uitgeschakeld. Gebruik het snelmenu.</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest opacity-40 mt-1">Selecteer schilderijen in het archief om ze aan zalen toe te voegen.</p>
                </div>
                <Button onClick={() => { setEditingRoom(null); setRoomForm({ title: '', description: '', order: (rooms?.length || 0) + 1 }); setIsRoomDialogOpen(true); }} className="h-12 rounded-full border-2 bg-white text-black hover:bg-black/5 px-8 font-black uppercase tracking-widest text-[10px]">
                  <Plus className="w-4 h-4 mr-2" /> Nieuwe Zaal
@@ -634,6 +640,56 @@ export default function AdminPage() {
           </TabsContent>
         </Tabs>
       </main>
+
+      <Dialog open={isBulkTagDialogOpen} onOpenChange={setIsBulkTagDialogOpen}>
+        <DialogContent className="max-w-4xl rounded-[3rem] p-10">
+          <DialogHeader>
+            <DialogTitle className="font-headline text-3xl italic">Bulk Taggen</DialogTitle>
+            <DialogDescription className="text-[10px] font-black uppercase tracking-widest opacity-40">
+              Voeg meerdere tags tegelijk toe aan {selectedArtworks.length} geselecteerde items
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 py-8">
+             {Object.entries(MUSEUM_TAGS).map(([cat, tags]) => (
+               <div key={cat} className="space-y-4">
+                  <h4 className="text-[11px] font-black uppercase tracking-widest text-accent border-b border-black/5 pb-2">{cat}</h4>
+                  <div className="grid gap-2">
+                    {tags.map(tag => (
+                      <div key={tag} className="flex items-center space-x-3 group cursor-pointer" onClick={() => {
+                        setTempBulkTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
+                      }}>
+                        <Checkbox 
+                          checked={tempBulkTags.includes(tag)} 
+                          onCheckedChange={() => {}} // Handled by div click
+                          className="rounded-md border-black/10 data-[state=checked]:bg-accent data-[state=checked]:border-accent"
+                        />
+                        <span className="text-xs font-bold uppercase tracking-wider text-foreground/60 group-hover:text-foreground transition-colors">{tag}</span>
+                      </div>
+                    ))}
+                  </div>
+               </div>
+             ))}
+          </div>
+
+          <DialogFooter className="pt-6 border-t">
+             <div className="flex items-center justify-between w-full">
+                <span className="text-[10px] font-black uppercase tracking-widest opacity-40">{tempBulkTags.length} tags geselecteerd</span>
+                <div className="flex gap-3">
+                   <Button variant="ghost" onClick={() => setIsBulkTagDialogOpen(false)} className="rounded-full px-8 uppercase font-black text-[10px] tracking-widest">Annuleren</Button>
+                   <Button 
+                    onClick={applyBulkTags} 
+                    disabled={tempBulkTags.length === 0 || isUploading}
+                    className="rounded-full bg-accent text-white px-10 h-14 uppercase font-black text-[10px] tracking-widest shadow-xl"
+                   >
+                     {isUploading ? <Loader2 className="animate-spin mr-2" /> : <TagIcon className="w-4 h-4 mr-2" />}
+                     Tags Toepassen
+                   </Button>
+                </div>
+             </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={isArtworkDialogOpen} onOpenChange={setIsArtworkDialogOpen}>
         <DialogContent className="max-w-3xl rounded-[3rem] p-8 md:p-12 overflow-y-auto max-h-[90vh]">
