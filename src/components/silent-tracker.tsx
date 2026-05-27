@@ -9,6 +9,7 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 /**
  * @fileOverview SilentTracker: Legt onzichtbaar elke actie van de bezoeker vast.
  * Inclusief sessie-ID, geografische data en IP-adres voor administratieve doeleinden.
+ * Uitgebreid voor Curator Intelligence: Zoom events & interaction bursts.
  */
 export function SilentTracker() {
   const pathname = usePathname();
@@ -56,6 +57,7 @@ export function SilentTracker() {
         city: locationRef.current?.city || null,
         ip: locationRef.current?.ip || null,
         timestamp: serverTimestamp(),
+        deviceType: window.innerWidth < 768 ? 'mobile' : 'desktop',
         ...data
       });
     } catch (e) {
@@ -65,14 +67,13 @@ export function SilentTracker() {
 
   // Log paginabezoeken
   useEffect(() => {
-    // Geef de locatie-fetch een klein moment om te voltooien indien mogelijk
     const timeout = setTimeout(() => {
       logEvent('page_view');
     }, 500);
     return () => clearTimeout(timeout);
   }, [pathname, firestore]);
 
-  // Luister naar custom events vanuit de app (zoals artwork views)
+  // Luister naar custom events vanuit de app
   useEffect(() => {
     const handleArtworkView = (e: any) => {
       logEvent('artwork_view', { 
@@ -97,5 +98,5 @@ export function SilentTracker() {
     };
   }, [pathname, firestore, user]);
 
-  return null; // Volledig onzichtbaar
+  return null;
 }

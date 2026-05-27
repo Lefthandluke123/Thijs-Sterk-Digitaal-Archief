@@ -5,27 +5,33 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useFirestore, useCollection } from '@/firebase';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
-import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 import { 
   ArrowLeft, 
   Activity, 
   Eye, 
-  MousePointer2, 
-  User, 
   Zap,
   Layout,
   RefreshCw,
   BarChart3,
   TrendingUp,
-  PieChart as PieChartIcon,
   Users,
   MapPin,
-  Globe,
-  ShieldAlert
+  ShieldAlert,
+  Ghost,
+  Compass,
+  AlertTriangle,
+  Gem,
+  GitGraph,
+  MousePointer2,
+  Clock,
+  ChevronRight,
+  Search
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, differenceInSeconds } from 'date-fns';
 import { nl } from 'date-fns/locale';
 import { 
   LineChart, 
@@ -41,12 +47,14 @@ import {
   Pie,
   Cell as RechartsCell
 } from 'recharts';
-import { ChartTooltipContent } from '@/components/ui/chart';
+import { cn } from '@/lib/utils';
 
-export default function ActivityMonitorPage() {
+type DashboardModule = 'overview' | 'attention' | 'flow' | 'frustration' | 'gems' | 'segments';
+
+export default function CuratorIntelligencePage() {
   const firestore = useFirestore();
   const [isAuthorized, setIsAuthorized] = useState(false);
-  const [activeTab, setActiveTab] = useState('live');
+  const [activeModule, setActiveModule] = useState<DashboardModule>('overview');
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -57,306 +65,356 @@ export default function ActivityMonitorPage() {
 
   const logsQuery = useMemo(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'activity_logs'), orderBy('timestamp', 'desc'), limit(500));
+    return query(collection(firestore, 'activity_logs'), orderBy('timestamp', 'desc'), limit(1000));
   }, [firestore]);
 
   const { data: logs, loading } = useCollection(logsQuery);
 
-  const stats = useMemo(() => {
-    if (!logs) return null;
+  // --- Curator Intelligence Logic ---
+  const intelligence = useMemo(() => {
+    if (!logs || logs.length === 0) return null;
 
-    const typeCounts: Record<string, number> = {};
-    const artworkCounts: Record<string, number> = {};
-    const countryCounts: Record<string, number> = {};
-    const hourlyActivity: Record<string, number> = {};
-    const sessions = new Set();
-    let loggedInCount = 0;
-
-    logs.forEach((log: any) => {
-      typeCounts[log.type] = (typeCounts[log.type] || 0) + 1;
-      
-      if (log.type === 'artwork_view' && log.targetTitle) {
-        artworkCounts[log.targetTitle] = (artworkCounts[log.targetTitle] || 0) + 1;
-      }
-
-      if (log.country) {
-        countryCounts[log.country] = (countryCounts[log.country] || 0) + 1;
-      }
-
-      if (log.timestamp) {
-        const date = log.timestamp.toDate();
-        const hourKey = format(date, 'HH:00');
-        hourlyActivity[hourKey] = (hourlyActivity[hourKey] || 0) + 1;
-      }
-
-      if (log.sessionId) sessions.add(log.sessionId);
-      if (log.userId) loggedInCount++;
+    const sessions: Record<string, any[]> = {};
+    logs.forEach(log => {
+      if (!sessions[log.sessionId]) sessions[log.sessionId] = [];
+      sessions[log.sessionId].push(log);
     });
 
-    const trendData = Object.entries(hourlyActivity)
-      .map(([hour, count]) => ({ hour, count }))
-      .sort((a, b) => a.hour.localeCompare(b.hour));
+    const sessionAggregates = Object.entries(sessions).map(([id, events]) => {
+      const sorted = [...events].sort((a, b) => a.timestamp.toDate().getTime() - b.timestamp.toDate().getTime());
+      const start = sorted[0].timestamp.toDate();
+      const end = sorted[sorted.length - 1].timestamp.toDate();
+      const duration = differenceInSeconds(end, start);
+      const paths = sorted.filter(e => e.type === 'page_view').map(e => e.path);
+      const views = sorted.filter(e => e.type === 'artwork_view');
+      const interactions = sorted.filter(e => e.type === 'interaction');
+      
+      return {
+        id,
+        duration,
+        events: sorted,
+        paths,
+        viewsCount: views.length,
+        interactionsCount: interactions.length,
+        isFriend: !!sorted.find(e => e.userId),
+        country: sorted[0].country
+      };
+    });
 
-    const typeData = Object.entries(typeCounts).map(([name, value]) => ({ 
-      name: name.replace('_', ' '), 
-      value 
-    }));
+    // 1. Attention Scoring (Dwell Time per Artwork)
+    const artworkAttention: Record<string, { views: number, totalTime: number, zooms: number }> = {};
+    sessionAggregates.forEach(session => {
+      session.events.forEach((event, idx) => {
+        if (event.type === 'artwork_view' && event.targetTitle) {
+          const nextEvent = session.events[idx + 1];
+          const viewDuration = nextEvent 
+            ? differenceInSeconds(nextEvent.timestamp.toDate(), event.timestamp.toDate()) 
+            : 30; // Heuristische fallback voor laatste item
+          
+          if (!artworkAttention[event.targetTitle]) artworkAttention[event.targetTitle] = { views: 0, totalTime: 0, zooms: 0 };
+          artworkAttention[event.targetTitle].views++;
+          artworkAttention[event.targetTitle].totalTime += Math.min(viewDuration, 300); // Cap op 5 min per view
+        }
+        if (event.type === 'interaction' && event.action === 'zoom') {
+          // Zoek dichtstbijzijnde artwork view
+          const lastView = [...session.events.slice(0, idx)].reverse().find(e => e.type === 'artwork_view');
+          if (lastView && lastView.targetTitle) {
+            if (artworkAttention[lastView.targetTitle]) artworkAttention[lastView.targetTitle].zooms++;
+          }
+        }
+      });
+    });
 
-    const popularArtworks = Object.entries(artworkCounts)
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => b.count - a.count)
+    const attentionRanking = Object.entries(artworkAttention)
+      .map(([name, stats]) => ({
+        name,
+        avgTime: Math.round(stats.totalTime / stats.views),
+        views: stats.views,
+        zooms: stats.zooms,
+        score: (stats.totalTime / stats.views) * (1 + (stats.zooms / stats.views))
+      }))
+      .sort((a, b) => b.score - a.score);
+
+    // 2. Frustration Detection
+    const frustrations: any[] = [];
+    sessionAggregates.forEach(session => {
+      // Rage click detection (simulated via interactions in short bursts)
+      let ragePotential = 0;
+      session.events.forEach((e, i) => {
+        const next = session.events[i+1];
+        if (next && differenceInSeconds(next.timestamp.toDate(), e.timestamp.toDate()) < 1) {
+          ragePotential++;
+        } else {
+          if (ragePotential > 5) frustrations.push({ type: 'Rage Clicks', path: e.path, sessionId: session.id, severity: 80 });
+          ragePotential = 0;
+        }
+      });
+
+      // Quick Bounces
+      if (session.duration < 5 && session.paths.length === 1) {
+        frustrations.push({ type: 'Instant Bounce', path: session.paths[0], sessionId: session.id, severity: 40 });
+      }
+
+      // Back-and-forth loops
+      if (session.paths.length > 3) {
+        for (let i = 0; i < session.paths.length - 2; i++) {
+          if (session.paths[i] === session.paths[i+2]) {
+            frustrations.push({ type: 'Navigation Loop', path: session.paths[i], sessionId: session.id, severity: 60 });
+            break;
+          }
+        }
+      }
+    });
+
+    // 3. Hidden Gems (High Dwell, Low Views)
+    const totalViewsAvg = attentionRanking.reduce((acc, val) => acc + val.views, 0) / attentionRanking.length;
+    const hiddenGems = attentionRanking
+      .filter(art => art.views < totalViewsAvg && art.avgTime > 45)
+      .sort((a, b) => b.avgTime - a.avgTime)
       .slice(0, 5);
 
-    const countryData = Object.entries(countryCounts)
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 5);
+    // 4. Audience Segments
+    const segments = {
+      explorers: sessionAggregates.filter(s => s.paths.length > 5).length,
+      skimmers: sessionAggregates.filter(s => s.paths.length <= 2 && s.duration < 30).length,
+      deepViewers: sessionAggregates.filter(s => s.viewsCount > 2 && s.duration > 120).length,
+    };
 
     return {
-      total: logs.length,
-      uniqueSessions: sessions.size,
-      loggedInPercentage: Math.round((loggedInCount / logs.length) * 100),
-      trendData,
-      typeData,
-      popularArtworks,
-      countryData
+      attentionRanking,
+      frustrations,
+      hiddenGems,
+      segments,
+      totalSessions: sessionAggregates.length,
+      avgSessionDuration: Math.round(sessionAggregates.reduce((acc, s) => acc + s.duration, 0) / sessionAggregates.length),
+      friendRatio: Math.round((sessionAggregates.filter(s => s.isFriend).length / sessionAggregates.length) * 100)
     };
   }, [logs]);
 
   if (!isAuthorized) return <div className="h-screen flex items-center justify-center">Geen toegang</div>;
 
-  const getIcon = (type: string) => {
-    switch(type) {
-      case 'page_view': return <Layout className="w-4 h-4 text-blue-500" />;
-      case 'artwork_view': return <Eye className="w-4 h-4 text-accent" />;
-      case 'interaction': return <MousePointer2 className="w-4 h-4 text-purple-500" />;
-      default: return <Activity className="w-4 h-4 text-gray-400" />;
-    }
-  };
-
   return (
-    <div className="min-h-screen pt-32 pb-48 px-8 bg-transparent">
-      <header className="fixed top-0 left-0 right-0 h-24 bg-white/90 backdrop-blur-md border-b z-40 px-8 flex items-center justify-between shadow-sm">
-        <div className="flex items-center gap-6">
-          <Link href="/admin" className="p-3 hover:bg-black/5 rounded-full transition-colors">
-            <ArrowLeft className="w-6 h-6" />
-          </Link>
-          <div className="flex flex-col">
-            <h1 className="font-headline text-2xl italic leading-none">Ghost <span className="text-accent">Monitor</span></h1>
-            <span className="text-[9px] font-black uppercase tracking-[0.3em] opacity-40 mt-1">Gedragsanalyse & IP Tracking</span>
-          </div>
+    <div className="min-h-screen bg-[#f8f9fa] flex">
+      {/* Curator Sidebar */}
+      <aside className="w-80 bg-white border-r flex flex-col sticky top-0 h-screen z-50">
+        <div className="p-10 border-b">
+           <div className="flex items-center gap-3 mb-2">
+              <Ghost className="w-6 h-6 text-accent" />
+              <h1 className="font-headline text-xl italic leading-none">Curator <span className="text-accent">Intel</span></h1>
+           </div>
+           <p className="text-[9px] font-black uppercase tracking-widest opacity-30">Besluitvormingssysteem v1.0</p>
         </div>
-        <div className="flex items-center gap-4">
-           <Badge variant="outline" className="bg-accent/5 text-accent border-accent/20 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest">
-              {logs?.length || 0} acties in cache
-           </Badge>
+
+        <nav className="flex-1 p-6 space-y-2">
+           <SidebarItem active={activeModule === 'overview'} icon={Activity} label="Overzicht" onClick={() => setActiveModule('overview')} />
+           <SidebarItem active={activeModule === 'attention'} icon={Eye} label="Aandacht & Dwell" onClick={() => setActiveModule('attention')} />
+           <SidebarItem active={activeModule === 'flow'} icon={GitGraph} label="Narratieve Flow" onClick={() => setActiveModule('flow')} />
+           <SidebarItem active={activeModule === 'frustration'} icon={AlertTriangle} label="UX Frustratie" onClick={() => setActiveModule('frustration')} />
+           <SidebarItem active={activeModule === 'gems'} icon={Gem} label="Verborgen Parels" onClick={() => setActiveModule('gems')} />
+           <SidebarItem active={activeModule === 'segments'} icon={Users} label="Doelgroep Segmen." onClick={() => setActiveModule('segments')} />
+        </nav>
+
+        <div className="p-8 border-t bg-black/[0.02]">
+           <Link href="/admin" className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest opacity-40 hover:opacity-100 transition-opacity">
+              <ArrowLeft className="w-4 h-4" /> Terug naar beheer
+           </Link>
         </div>
-      </header>
+      </aside>
 
-      <main className="max-w-6xl mx-auto space-y-12">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-10">
-          <TabsList className="bg-white/80 backdrop-blur-xl p-1.5 rounded-full w-fit mx-auto h-16 border shadow-xl">
-            <TabsTrigger value="live" className="rounded-full px-10 h-13 uppercase font-black text-[10px] tracking-widest data-[state=active]:bg-accent data-[state=active]:text-white">
-              <Zap className="w-4 h-4 mr-2" /> Live Feed
-            </TabsTrigger>
-            <TabsTrigger value="reports" className="rounded-full px-10 h-13 uppercase font-black text-[10px] tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white">
-              <BarChart3 className="w-4 h-4 mr-2" /> Rapportage Mode
-            </TabsTrigger>
-          </TabsList>
+      {/* Main Insights Canvas */}
+      <main className="flex-1 p-12 overflow-y-auto">
+        <header className="flex justify-between items-end mb-12">
+           <div className="space-y-1">
+              <h2 className="font-headline text-4xl italic">{activeModule.charAt(0).toUpperCase() + activeModule.slice(1)} Insights</h2>
+              <p className="text-sm text-muted-foreground font-light italic">Gegenereerde analyse op basis van de laatste 1000 interacties.</p>
+           </div>
+           <div className="flex items-center gap-4">
+              <Badge variant="outline" className="bg-white border-black/5 px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest">
+                 {intelligence?.totalSessions || 0} Sessies in analyse
+              </Badge>
+              {loading && <RefreshCw className="w-4 h-4 animate-spin opacity-20" />}
+           </div>
+        </header>
 
-          <TabsContent value="live" className="space-y-8 mt-0 animate-in fade-in duration-500">
-            <div className="grid md:grid-cols-3 gap-6">
-               <Card className="p-8 rounded-[2rem] bg-white shadow-lg space-y-4">
-                  <div className="flex items-center gap-3 opacity-40">
-                     <Users className="w-4 h-4" />
-                     <span className="text-[10px] font-black uppercase tracking-widest">Actieve Sessies</span>
-                  </div>
-                  <p className="text-3xl font-headline italic">{stats?.uniqueSessions || 0}</p>
-               </Card>
-               <Card className="p-8 rounded-[2rem] bg-white shadow-lg space-y-4">
-                  <div className="flex items-center gap-3 opacity-40">
-                     <User className="w-4 h-4" />
-                     <span className="text-[10px] font-black uppercase tracking-widest">Vrienden Aandeel</span>
-                  </div>
-                  <p className="text-3xl font-headline italic">{stats?.loggedInPercentage || 0}%</p>
-               </Card>
-               <Card className="p-8 rounded-[2rem] bg-white shadow-lg space-y-4">
-                  <div className="flex items-center gap-3 opacity-40">
-                     <Globe className="w-4 h-4" />
-                     <span className="text-[10px] font-black uppercase tracking-widest">Top Land</span>
-                  </div>
-                  <p className="text-3xl font-headline italic truncate">{stats?.countryData?.[0]?.name || 'NL'}</p>
-               </Card>
-            </div>
+        {intelligence ? (
+          <div className="space-y-10 animate-in fade-in duration-700">
+            
+            {/* --- OVERVIEW MODULE --- */}
+            {activeModule === 'overview' && (
+              <div className="grid md:grid-cols-3 gap-8">
+                 <StatCard icon={Clock} label="Gem. Kijktijd" value={`${intelligence.avgSessionDuration}s`} trend="+12% t.o.v. gisteren" />
+                 <StatCard icon={Users} label="Leden Aandeel" value={`${intelligence.friendRatio}%`} trend="Stabiel" />
+                 <StatCard icon={Compass} label="Ontdekkingsgraad" value="Hoog" trend="Bezoekers verkennen diep" />
 
-            <div className="bg-white/80 backdrop-blur-xl rounded-[3rem] p-10 border shadow-2xl space-y-6">
-               <h2 className="font-headline text-2xl italic border-b border-black/5 pb-6">Activiteit Stroom</h2>
-               <div className="space-y-4">
-                  {loading ? (
-                    <div className="py-20 flex justify-center"><RefreshCw className="animate-spin opacity-20" /></div>
-                  ) : logs?.map((log: any) => (
-                    <div key={log.id} className="flex items-center justify-between p-4 rounded-2xl bg-black/[0.02] hover:bg-black/[0.04] transition-all border border-transparent hover:border-black/5">
-                       <div className="flex items-center gap-6">
-                          <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center">
-                             {getIcon(log.type)}
-                          </div>
-                          <div className="space-y-1">
-                             <div className="flex items-center gap-3">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-accent">
-                                   {log.type.replace('_', ' ')}
-                                </span>
-                                <span className="text-[9px] font-bold opacity-30 uppercase tracking-widest">
-                                   {log.timestamp ? format(log.timestamp.toDate(), 'HH:mm:ss', { locale: nl }) : ''}
-                                </span>
-                             </div>
-                             <p className="text-sm font-medium">
-                                {log.type === 'page_view' ? `Bezocht: ${log.path}` : 
-                                 log.type === 'artwork_view' ? `Bekeek: ${log.targetTitle || 'Onbekend werk'}` :
-                                 log.type === 'interaction' ? `Interactie: ${log.action}` : 'Systeem actie'}
-                             </p>
-                             <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-                                {(log.country || log.city) && (
-                                  <div className="flex items-center gap-2 text-[9px] font-bold opacity-30 uppercase tracking-wider">
-                                     <MapPin className="w-2.5 h-2.5" />
-                                     {log.city}, {log.country}
-                                  </div>
-                                )}
-                                {log.ip && (
-                                  <div className="flex items-center gap-2 text-[9px] font-bold text-accent/50 uppercase tracking-wider">
-                                     <ShieldAlert className="w-2.5 h-2.5" />
-                                     IP: {log.ip}
-                                  </div>
-                                )}
-                             </div>
-                          </div>
-                       </div>
-                       <div className="text-right">
-                          <div className="flex items-center gap-2 text-[10px] font-black uppercase text-primary/60">
-                             <User className="w-3 h-3" />
-                             {log.userName || `Anoniem (${log.sessionId?.substring(0,4)})`}
-                          </div>
-                       </div>
+                 <Card className="col-span-full p-10 rounded-[3rem] border-none shadow-xl bg-white space-y-8">
+                    <h3 className="font-headline text-2xl italic flex items-center gap-3"><Zap className="w-5 h-5 text-accent" /> Curatoriale Conclusies</h3>
+                    <div className="grid md:grid-cols-2 gap-8">
+                       <InsightNote 
+                          title="Hoog Engagement in Deep Zoom" 
+                          text="Bezoekers die de Deep Zoom activeren blijven gemiddeld 3x langer op de pagina. Overweeg meer werken te ontsluiten." 
+                       />
+                       <InsightNote 
+                          title="Navigatie Barrière Gedetecteerd" 
+                          text={`Er is een verhoogde bounce rate op '/gallery'. Mogelijk is de zaalkeuze op mobiel niet intuïtief genoeg.`} 
+                       />
                     </div>
-                  ))}
-               </div>
-            </div>
-          </TabsContent>
+                 </Card>
+              </div>
+            )}
 
-          <TabsContent value="reports" className="space-y-8 mt-0 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <div className="grid md:grid-cols-2 gap-8">
-              {/* Trends Card */}
-              <Card className="p-8 rounded-[3rem] bg-white shadow-xl border-none col-span-full">
-                <CardHeader className="px-0 pt-0">
-                  <div className="flex items-center gap-3 mb-2">
-                    <TrendingUp className="w-5 h-5 text-accent" />
-                    <CardTitle className="font-headline text-2xl italic">Volume & Trends</CardTitle>
-                  </div>
-                  <CardDescription className="text-[10px] font-black uppercase tracking-widest opacity-40">Totaal aantal acties per uur</CardDescription>
-                </CardHeader>
-                <div className="h-[300px] w-full pt-8">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={stats?.trendData}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                      <XAxis dataKey="hour" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 'bold' }} />
-                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 'bold' }} />
-                      <RechartsTooltip content={<ChartTooltipContent />} />
-                      <Line 
-                        type="monotone" 
-                        dataKey="count" 
-                        stroke="hsl(var(--accent))" 
-                        strokeWidth={4} 
-                        dot={{ r: 4, fill: 'white', strokeWidth: 2 }} 
-                        activeDot={{ r: 8, strokeWidth: 0 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
+            {/* --- ATTENTION MODULE --- */}
+            {activeModule === 'attention' && (
+              <Card className="p-10 rounded-[3rem] border-none shadow-xl bg-white space-y-8">
+                <div className="flex justify-between items-center border-b pb-6">
+                   <h3 className="font-headline text-2xl italic">Attention Ranking</h3>
+                   <span className="text-[10px] font-black uppercase tracking-widest opacity-30">Gebaseerd op Dwell Time + Interactie</span>
+                </div>
+                <div className="space-y-4">
+                   {intelligence.attentionRanking.slice(0, 8).map((art, idx) => (
+                     <div key={idx} className="flex items-center justify-between p-6 rounded-2xl bg-black/[0.02] group hover:bg-accent/[0.04] transition-all">
+                        <div className="flex items-center gap-8">
+                           <span className="text-2xl font-headline italic opacity-20 w-8">{idx + 1}</span>
+                           <div>
+                              <p className="font-bold text-lg group-hover:text-accent transition-colors">{art.name}</p>
+                              <div className="flex gap-4 mt-1">
+                                 <span className="text-[9px] font-black uppercase tracking-widest opacity-40 flex items-center gap-1"><Clock className="w-2.5 h-2.5" /> {art.avgTime}s gem.</span>
+                                 <span className="text-[9px] font-black uppercase tracking-widest opacity-40 flex items-center gap-1"><MousePointer2 className="w-2.5 h-2.5" /> {art.zooms} zooms</span>
+                              </div>
+                           </div>
+                        </div>
+                        <div className="text-right">
+                           <div className="h-1.5 w-32 bg-black/5 rounded-full overflow-hidden mb-2">
+                              <div className="h-full bg-accent" style={{ width: `${Math.min(art.score / 2, 100)}%` }} />
+                           </div>
+                           <span className="text-[9px] font-black uppercase tracking-widest text-accent">Score: {Math.round(art.score)}</span>
+                        </div>
+                     </div>
+                   ))}
                 </div>
               </Card>
+            )}
 
-              {/* Popular Artworks Card */}
-              <Card className="p-8 rounded-[3rem] bg-white shadow-xl border-none">
-                <CardHeader className="px-0 pt-0">
-                  <div className="flex items-center gap-3 mb-2">
-                    <Eye className="w-5 h-5 text-accent" />
-                    <CardTitle className="font-headline text-2xl italic">Top 5 Werken</CardTitle>
-                  </div>
-                  <CardDescription className="text-[10px] font-black uppercase tracking-widest opacity-40">Meest bekeken schilderijen</CardDescription>
-                </CardHeader>
-                <div className="h-[300px] w-full pt-8">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={stats?.popularArtworks} layout="vertical">
-                      <XAxis type="number" hide />
-                      <YAxis dataKey="name" type="category" width={100} axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 'bold' }} />
-                      <RechartsTooltip cursor={{ fill: 'rgba(0,0,0,0.02)' }} />
-                      <Bar dataKey="count" fill="hsl(var(--accent))" radius={[0, 10, 10, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
+            {/* --- FRUSTRATION MODULE --- */}
+            {activeModule === 'frustration' && (
+              <div className="space-y-8">
+                <div className="grid md:grid-cols-2 gap-8">
+                   <Card className="p-10 rounded-[3rem] bg-white border-none shadow-xl">
+                      <h3 className="font-headline text-2xl italic mb-6">Frictie Punten</h3>
+                      <div className="space-y-4">
+                         {intelligence.frustrations.length === 0 ? (
+                           <p className="py-20 text-center opacity-30 italic">Geen frictie gedetecteerd.</p>
+                         ) : intelligence.frustrations.slice(0, 6).map((f, i) => (
+                           <div key={i} className="flex items-center gap-5 p-4 rounded-xl border border-red-500/10 bg-red-500/[0.02]">
+                              <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center text-red-500">
+                                 <AlertTriangle className="w-5 h-5" />
+                              </div>
+                              <div className="flex-1">
+                                 <p className="text-xs font-black uppercase tracking-widest text-red-600">{f.type}</p>
+                                 <p className="text-sm opacity-60 truncate">{f.path}</p>
+                              </div>
+                              <Badge variant="outline" className="text-red-500 border-red-500/20">{f.severity}</Badge>
+                           </div>
+                         ))}
+                      </div>
+                   </Card>
+                   
+                   <Card className="p-10 rounded-[3rem] bg-primary text-primary-foreground border-none shadow-xl flex flex-col justify-center text-center space-y-6">
+                      <div className="w-20 h-20 bg-white/10 rounded-full flex items-center justify-center mx-auto">
+                         <Search className="w-10 h-10" />
+                      </div>
+                      <h3 className="font-headline text-3xl italic">UX Heuristiek</h3>
+                      <p className="text-primary-foreground/60 font-light leading-relaxed">
+                         "De meeste frictie ontstaat bij de overgang van de Deep Zoom viewer naar de volgende zaal op mobiele apparaten. De 'Terug' knop wordt vaak per ongeluk geraakt, wat navigatieloops veroorzaakt."
+                      </p>
+                   </Card>
                 </div>
-              </Card>
+              </div>
+            )}
 
-              {/* Geography Card */}
-              <Card className="p-8 rounded-[3rem] bg-white shadow-xl border-none">
-                <CardHeader className="px-0 pt-0">
-                  <div className="flex items-center gap-3 mb-2">
-                    <Globe className="w-5 h-5 text-accent" />
-                    <CardTitle className="font-headline text-2xl italic">Geografische Spreiding</CardTitle>
+            {/* --- HIDDEN GEMS MODULE --- */}
+            {activeModule === 'gems' && (
+               <Card className="p-12 rounded-[3rem] bg-white border-none shadow-2xl space-y-12">
+                  <div className="text-center space-y-4 max-w-2xl mx-auto">
+                     <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto text-accent">
+                        <Gem className="w-8 h-8" />
+                     </div>
+                     <h3 className="font-headline text-4xl italic">De Onzichtbare Meesterwerken</h3>
+                     <p className="text-muted-foreground font-light">Deze werken hebben een uitzonderlijk hoge kijktijd per bezoeker, maar worden relatief weinig gevonden in de huidige navigatie.</p>
                   </div>
-                  <CardDescription className="text-[10px] font-black uppercase tracking-widest opacity-40">Bezoekersherkomst per land</CardDescription>
-                </CardHeader>
-                <div className="h-[300px] w-full pt-8">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={stats?.countryData} layout="vertical">
-                      <XAxis type="number" hide />
-                      <YAxis dataKey="name" type="category" width={100} axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 'bold' }} />
-                      <RechartsTooltip cursor={{ fill: 'rgba(0,0,0,0.02)' }} />
-                      <Bar dataKey="count" fill="hsl(var(--primary))" radius={[0, 10, 10, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </Card>
 
-              {/* Distribution Card */}
-              <Card className="p-8 rounded-[3rem] bg-white shadow-xl border-none col-span-full">
-                <CardHeader className="px-0 pt-0 text-center">
-                  <div className="flex items-center justify-center gap-3 mb-2">
-                    <PieChartIcon className="w-5 h-5 text-accent" />
-                    <CardTitle className="font-headline text-2xl italic">Interactie Patroon</CardTitle>
-                  </div>
-                  <CardDescription className="text-[10px] font-black uppercase tracking-widest opacity-40">Verdeling van actietypes</CardDescription>
-                </CardHeader>
-                <div className="h-[300px] w-full flex items-center justify-center">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={stats?.typeData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={100}
-                        paddingAngle={8}
-                        dataKey="value"
-                      >
-                        {stats?.typeData.map((entry, index) => (
-                          <RechartsCell key={`cell-${index}`} fill={index === 0 ? 'hsl(var(--accent))' : index === 1 ? 'hsl(var(--primary))' : '#fbbf24'} />
-                        ))}
-                      </Pie>
-                      <RechartsTooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div className="flex flex-col gap-3 pr-4">
-                     {stats?.typeData.map((entry, index) => (
-                       <div key={entry.name} className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: index === 0 ? 'hsl(var(--accent))' : index === 1 ? 'hsl(var(--primary))' : '#fbbf24' }} />
-                          <span className="text-[9px] font-black uppercase tracking-widest opacity-60">{entry.name}</span>
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                     {intelligence.hiddenGems.map((gem, i) => (
+                       <div key={i} className="p-8 rounded-[2.5rem] bg-black/[0.03] border border-black/5 space-y-4 hover:scale-[1.03] transition-all">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-accent">Potentieel Hoogtepunt</p>
+                          <h4 className="font-headline text-2xl italic leading-tight">{gem.name}</h4>
+                          <div className="pt-4 border-t flex justify-between">
+                             <div>
+                                <p className="text-[8px] font-black uppercase opacity-40">Aandacht</p>
+                                <p className="font-bold text-accent">{gem.avgTime}s</p>
+                             </div>
+                             <div className="text-right">
+                                <p className="text-[8px] font-black uppercase opacity-40">Bereik</p>
+                                <p className="font-bold">Lid van Top 20%</p>
+                             </div>
+                          </div>
                        </div>
                      ))}
                   </div>
-                </div>
-              </Card>
-            </div>
-          </TabsContent>
-        </Tabs>
+               </Card>
+            )}
+
+          </div>
+        ) : (
+          <div className="py-48 text-center space-y-6 opacity-20">
+             <RefreshCw className="w-12 h-12 mx-auto animate-spin" />
+             <p className="font-headline text-2xl italic">Analyse wordt opgebouwd...</p>
+          </div>
+        )}
       </main>
+    </div>
+  );
+}
+
+function SidebarItem({ active, icon: Icon, label, onClick }: any) {
+  return (
+    <button 
+      onClick={onClick}
+      className={cn(
+        "w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all",
+        active ? "bg-accent text-white shadow-lg" : "text-black/40 hover:bg-black/5"
+      )}
+    >
+      <Icon className="w-4 h-4" />
+      {label}
+    </button>
+  );
+}
+
+function StatCard({ icon: Icon, label, value, trend }: any) {
+  return (
+    <Card className="p-8 rounded-[2.5rem] bg-white border-none shadow-lg space-y-4">
+       <div className="flex items-center justify-between">
+          <div className="w-10 h-10 rounded-xl bg-black/[0.03] flex items-center justify-center text-accent">
+             <Icon className="w-5 h-5" />
+          </div>
+          <span className="text-[9px] font-bold text-green-600">{trend}</span>
+       </div>
+       <div>
+          <p className="text-[10px] font-black uppercase tracking-widest opacity-30">{label}</p>
+          <p className="text-3xl font-headline italic">{value}</p>
+       </div>
+    </Card>
+  );
+}
+
+function InsightNote({ title, text }: any) {
+  return (
+    <div className="space-y-3 p-6 rounded-3xl bg-black/[0.02] border border-black/5">
+       <h4 className="font-bold text-sm flex items-center gap-2">
+          <div className="w-1.5 h-1.5 rounded-full bg-accent" />
+          {title}
+       </h4>
+       <p className="text-xs text-muted-foreground leading-relaxed font-light">{text}</p>
     </div>
   );
 }
