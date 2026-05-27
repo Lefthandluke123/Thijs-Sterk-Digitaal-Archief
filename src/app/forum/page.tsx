@@ -33,6 +33,7 @@ export default function ForumPage() {
   const { user, loading: authLoading } = useUser();
   const [isPostingOpen, setIsPostingOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string>('Alle');
 
   const [formData, setFormData] = useState({
@@ -42,17 +43,31 @@ export default function ForumPage() {
   });
 
   const handleLogin = async () => {
-    if (!auth) return;
+    if (!auth || isLoggingIn) return;
+
     try {
+      setIsLoggingIn(true);
       const provider = new GoogleAuthProvider();
-      // Forceer een schone provider-instantie
+      // Forceer een schone provider-instantie met accountselectie
       provider.setCustomParameters({ prompt: 'select_account' });
+      
       await signInWithPopup(auth, provider);
-      toast({ title: "Welkom Vriend!", description: "U bent nu ingelogd en kunt bijdragen aan het forum." });
+      
+      toast({ 
+        title: "Welkom Vriend!", 
+        description: "U bent nu ingelogd en kunt bijdragen aan het forum." 
+      });
     } catch (e: any) {
+      console.error("Login error:", e);
       if (e.code !== 'auth/popup-closed-by-user') {
-        toast({ variant: "destructive", title: "Inloggen mislukt", description: "Controleer of uw browser pop-ups toestaat." });
+        toast({ 
+          variant: "destructive", 
+          title: "Inloggen mislukt", 
+          description: "Controleer of uw browser pop-ups toestaat of probeer het later opnieuw." 
+        });
       }
+    } finally {
+      setIsLoggingIn(false);
     }
   };
 
@@ -120,8 +135,11 @@ export default function ForumPage() {
           </div>
 
           <div className="flex items-center gap-4">
-            {authLoading ? (
-              <div className="h-16 w-48 bg-black/5 animate-pulse rounded-full" />
+            {authLoading || isLoggingIn ? (
+              <div className="flex items-center gap-3 px-10 h-16 rounded-full bg-black/5 animate-pulse">
+                <Loader2 className="w-4 h-4 animate-spin opacity-40" />
+                <span className="text-[10px] font-black uppercase tracking-widest opacity-40">Laden...</span>
+              </div>
             ) : user ? (
               <Dialog open={isPostingOpen} onOpenChange={setIsPostingOpen}>
                 <DialogTrigger asChild>
@@ -183,8 +201,23 @@ export default function ForumPage() {
                 </DialogContent>
               </Dialog>
             ) : (
-              <Button onClick={handleLogin} variant="outline" className="h-16 px-10 rounded-full border-2 font-black uppercase tracking-widest text-[11px] hover:bg-black/5">
-                <Lock className="w-4 h-4 mr-3" /> Word Vriend om te posten
+              <Button 
+                onClick={handleLogin} 
+                disabled={isLoggingIn}
+                variant="outline" 
+                className="h-16 px-10 rounded-full border-2 font-black uppercase tracking-widest text-[11px] hover:bg-black/5"
+              >
+                {isLoggingIn ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-3 animate-spin" />
+                    Verbinden...
+                  </>
+                ) : (
+                  <>
+                    <Lock className="w-4 h-4 mr-3" />
+                    Word Vriend om te posten
+                  </>
+                )}
               </Button>
             )}
           </div>
