@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
@@ -44,7 +43,8 @@ import {
   List as ListIcon,
   ExternalLink,
   Tag as TagIcon,
-  Save
+  Save,
+  Wand2
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -95,6 +95,7 @@ export default function AdminPage() {
   
   // Upload states
   const [isUploading, setIsUploading] = useState(false);
+  const [isCleaning, setIsCleaning] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -226,6 +227,29 @@ export default function AdminPage() {
       toast({ variant: "destructive", title: "Fout bij opslaan", description: e.message }); 
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const handleCleanupYears = async () => {
+    if (!firestore || !artworks || !confirm("Wilt u alle jaartallen '2026' definitief uit de database verwijderen voor alle kunstwerken?")) return;
+    
+    setIsCleaning(true);
+    let count = 0;
+    
+    try {
+      for (const art of artworks) {
+        if (art.year && art.year.includes('2026')) {
+          const newYear = art.year.replace(/2026/g, '').trim();
+          const docRef = doc(firestore, 'artworks', art.id);
+          await updateDoc(docRef, { year: newYear, updatedAt: serverTimestamp() });
+          count++;
+        }
+      }
+      toast({ title: "Database opgeschoond", description: `${count} kunstwerken bijgewerkt.` });
+    } catch (e) {
+      toast({ variant: "destructive", title: "Schoonmaak mislukt" });
+    } finally {
+      setIsCleaning(false);
     }
   };
 
@@ -408,6 +432,15 @@ export default function AdminPage() {
         </div>
         
         <div className="flex items-center gap-3 shrink-0">
+           <Button 
+             variant="ghost"
+             onClick={handleCleanupYears}
+             disabled={isCleaning}
+             className="h-12 rounded-full text-accent font-black uppercase tracking-widest text-[9px] hover:bg-accent/5"
+           >
+             {isCleaning ? <Loader2 className="animate-spin w-4 h-4" /> : <Wand2 className="w-4 h-4 mr-2" />}
+             Schoonmaak
+           </Button>
            <Button 
              onClick={handleOpenNewArtwork} 
              className="h-12 rounded-full bg-accent text-white px-6 md:px-8 font-black uppercase tracking-widest text-[10px] shadow-lg hover:scale-105 active:scale-95 transition-all"

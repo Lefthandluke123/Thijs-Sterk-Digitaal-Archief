@@ -1,4 +1,3 @@
-
 /**
  * @fileOverview Museum Utilities voor sorteren en data-verwerking.
  * Inclusief Hardening Layer voor Firestore data integriteit.
@@ -66,6 +65,7 @@ export function normalizeArtwork(id: string, data: any) {
 
 /**
  * Centraal sanitization filter voor Artwork data (Writes).
+ * Verwijdert expliciet het jaartal 2026.
  */
 export function sanitizeArtwork(input: any) {
   const baseTitle = cleanString(input.displayTitle) || cleanString(input.title) || "Ongetiteld";
