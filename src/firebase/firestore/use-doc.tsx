@@ -12,6 +12,9 @@ import {
 import { errorEmitter } from '../error-emitter';
 import { FirestorePermissionError } from '../errors';
 
+/**
+ * @fileOverview Hook voor het realtime ophalen van een document met verbeterde foutafhandeling.
+ */
 export function useDoc<T = DocumentData>(docRef: DocumentReference<T> | null) {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(!!docRef);
@@ -35,6 +38,7 @@ export function useDoc<T = DocumentData>(docRef: DocumentReference<T> | null) {
       },
       async (serverError: FirestoreError) => {
         if (serverError.code === 'permission-denied') {
+          console.error(`[Firestore] Permission Denied: get operation failed on path: ${docRef.path}`);
           const permissionError = new FirestorePermissionError({
             path: docRef.path,
             operation: 'get',
@@ -42,9 +46,9 @@ export function useDoc<T = DocumentData>(docRef: DocumentReference<T> | null) {
           errorEmitter.emit('permission-error', permissionError);
           setError(permissionError);
         } else {
-          console.warn('Firestore non-critical error:', serverError.code, serverError.message);
-          setLoading(false);
+          console.warn('[Firestore] Non-critical error fetching document:', serverError.code, serverError.message);
         }
+        setLoading(false);
       }
     );
 

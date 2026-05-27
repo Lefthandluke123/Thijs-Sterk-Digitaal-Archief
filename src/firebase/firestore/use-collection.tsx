@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -11,6 +12,9 @@ import {
 import { errorEmitter } from '../error-emitter';
 import { FirestorePermissionError } from '../errors';
 
+/**
+ * @fileOverview Hook voor het realtime ophalen van een collectie met verbeterde foutafhandeling.
+ */
 export function useCollection<T = DocumentData>(collectionQuery: Query<T> | null) {
   const [data, setData] = useState<T[] | null>(null);
   const [loading, setLoading] = useState(!!collectionQuery);
@@ -38,16 +42,17 @@ export function useCollection<T = DocumentData>(collectionQuery: Query<T> | null
       },
       async (serverError: FirestoreError) => {
         if (serverError.code === 'permission-denied') {
+          console.error('[Firestore] Permission Denied: list operation failed.');
           const permissionError = new FirestorePermissionError({
-            path: 'collection',
+            path: 'collection_query',
             operation: 'list',
           });
           errorEmitter.emit('permission-error', permissionError);
           setError(permissionError);
         } else {
-          console.warn('Firestore error:', serverError.code);
-          setLoading(false);
+          console.warn('[Firestore] Error fetching collection:', serverError.code, serverError.message);
         }
+        setLoading(false);
       }
     );
 

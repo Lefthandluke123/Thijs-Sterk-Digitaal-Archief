@@ -4,8 +4,7 @@ service cloud.firestore {
   match /databases/{database}/documents {
     // Helper functies
     function isAdmin() {
-      // In een productie-omgeving zou je hier controleren op custom claims
-      // Voor dit prototype gaan we uit van admin-toegang via de beheerpagina
+      // In dit prototype gaan we uit van admin-toegang via de beheeromgeving (geen server-side claims nodig voor preview)
       return true; 
     }
     
@@ -13,8 +12,9 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    // Publieke collecties: allow read (get + list) moet true zijn voor listings
     match /rooms/{roomId} {
-      allow read: if resource.data.isPublic == true || isAdmin();
+      allow read: if true;
       allow write: if isAdmin();
     }
     
@@ -23,14 +23,15 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Beschermde collectie: Alleen voor ingelogde vrienden of admins
     match /privatePhotos/{photoId} {
-      // Alleen voor ingelogde vrienden of admins
       allow read: if isFriend() || isAdmin();
       allow write: if isAdmin();
     }
 
+    // Forum: Publiek leesbaar, maar aanmaken vereist inlog
     match /forum/{postId} {
-      allow read: if resource.data.status == 'approved' || isAdmin() || (request.auth != null && request.auth.uid == resource.data.authorId);
+      allow read: if true;
       allow create: if request.auth != null;
       allow update, delete: if isAdmin();
     }
@@ -47,12 +48,18 @@ service cloud.firestore {
     
     match /mail/{mailId} {
       allow create: if true;
+      allow read: if isAdmin();
     }
 
     match /shared_rooms/{roomId} {
       allow read: if true;
       allow create: if true;
       allow update, delete: if isAdmin();
+    }
+
+    match /orders/{orderId} {
+      allow create: if true;
+      allow read, write: if isAdmin();
     }
   }
 }
