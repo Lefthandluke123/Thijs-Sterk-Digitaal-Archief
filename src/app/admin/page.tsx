@@ -42,7 +42,8 @@ import {
   LayoutGrid,
   List as ListIcon,
   ExternalLink,
-  Tag as TagIcon
+  Tag as TagIcon,
+  Save
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -79,7 +80,7 @@ export default function AdminPage() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('archive');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [selectedArtworks, setSelectedItems] = useState<string[]>([]);
   
   const [isArtworkDialogOpen, setIsArtworkDialogOpen] = useState(false);
@@ -269,6 +270,19 @@ export default function AdminPage() {
     } finally {
       setIsUploading(false);
     }
+  };
+
+  const bulkRemoveFromRoom = async (roomId: string, roomTitle: string) => {
+    if (!firestore || selectedArtworks.length === 0) return;
+    try {
+      for (const id of selectedArtworks) {
+        await updateDoc(doc(firestore, 'artworks', id), {
+          roomIds: arrayRemove(roomId)
+        });
+      }
+      toast({ title: "Verwijderd uit zaal", description: `${selectedArtworks.length} items verwijderd uit '${roomTitle}'` });
+      setSelectedItems([]);
+    } catch (e) { toast({ variant: "destructive", title: "Bewerking mislukt" }); }
   };
 
   if (!isAuthorized) {
@@ -552,14 +566,30 @@ export default function AdminPage() {
                                   size="icon" 
                                   onClick={(e) => { e.stopPropagation(); handleEditArtwork(art); }} 
                                   className="w-10 h-10 rounded-full hover:bg-accent/10 hover:text-accent"
+                                  title="Volledig dossier"
                                 >
                                   <Edit3 className="w-4 h-4" />
                                 </Button>
                                 <Button 
                                   variant="ghost" 
                                   size="icon" 
+                                  onClick={(e) => { 
+                                    e.stopPropagation(); 
+                                    setSelectedItems([art.id]); 
+                                    setTempBulkTags(art.tags || []);
+                                    setIsBulkTagDialogOpen(true); 
+                                  }} 
+                                  className="w-10 h-10 rounded-full hover:bg-accent/10 hover:text-accent"
+                                  title="Tags aanpassen"
+                                >
+                                  <TagIcon className="w-4 h-4" />
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
                                   asChild
                                   className="w-10 h-10 rounded-full hover:bg-black/5"
+                                  title="Bekijk op site"
                                 >
                                   <Link href={`/art/${art.slug || art.id}`} target="_blank">
                                     <ExternalLink className="w-4 h-4" />
@@ -644,13 +674,13 @@ export default function AdminPage() {
       <Dialog open={isBulkTagDialogOpen} onOpenChange={setIsBulkTagDialogOpen}>
         <DialogContent className="max-w-4xl rounded-[3rem] p-10">
           <DialogHeader>
-            <DialogTitle className="font-headline text-3xl italic">Bulk Taggen</DialogTitle>
+            <DialogTitle className="font-headline text-3xl italic">Tags Bewerken</DialogTitle>
             <DialogDescription className="text-[10px] font-black uppercase tracking-widest opacity-40">
-              Voeg meerdere tags tegelijk toe aan {selectedArtworks.length} geselecteerde items
+              Voeg tags toe aan {selectedArtworks.length} geselecteerde items
             </DialogDescription>
           </DialogHeader>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 py-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 py-8 overflow-y-auto max-h-[60vh]">
              {Object.entries(MUSEUM_TAGS).map(([cat, tags]) => (
                <div key={cat} className="space-y-4">
                   <h4 className="text-[11px] font-black uppercase tracking-widest text-accent border-b border-black/5 pb-2">{cat}</h4>
@@ -676,14 +706,14 @@ export default function AdminPage() {
              <div className="flex items-center justify-between w-full">
                 <span className="text-[10px] font-black uppercase tracking-widest opacity-40">{tempBulkTags.length} tags geselecteerd</span>
                 <div className="flex gap-3">
-                   <Button variant="ghost" onClick={() => setIsBulkTagDialogOpen(false)} className="rounded-full px-8 uppercase font-black text-[10px] tracking-widest">Annuleren</Button>
+                   <Button variant="ghost" onClick={() => { setIsBulkTagDialogOpen(false); setSelectedItems([]); }} className="rounded-full px-8 uppercase font-black text-[10px] tracking-widest">Annuleren</Button>
                    <Button 
                     onClick={applyBulkTags} 
-                    disabled={tempBulkTags.length === 0 || isUploading}
+                    disabled={isUploading}
                     className="rounded-full bg-accent text-white px-10 h-14 uppercase font-black text-[10px] tracking-widest shadow-xl"
                    >
-                     {isUploading ? <Loader2 className="animate-spin mr-2" /> : <TagIcon className="w-4 h-4 mr-2" />}
-                     Tags Toepassen
+                     {isUploading ? <Loader2 className="animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                     Opslaan
                    </Button>
                 </div>
              </div>
@@ -779,7 +809,7 @@ export default function AdminPage() {
                 disabled={isUploading}
                 className="w-full h-16 rounded-2xl bg-accent text-white font-black uppercase tracking-widest text-xs shadow-xl hover:scale-[1.02] transition-all"
              >
-                {isUploading ? <Loader2 className="animate-spin mr-2" /> : null}
+                {isUploading ? <Loader2 className="animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
                 {editingArtwork ? 'Wijzigingen Opslaan' : 'Toevoegen aan Archief'}
              </Button>
           </DialogFooter>
