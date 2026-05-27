@@ -2,8 +2,6 @@
 /**
  * @fileOverview Museum Utilities voor sorteren en data-verwerking.
  * Inclusief Hardening Layer voor Firestore data integriteit.
- * 
- * UPDATE: Soft-normalization toegevoegd om dataverlies in de UI te voorkomen.
  */
 
 import { serverTimestamp } from 'firebase/firestore';
@@ -23,26 +21,24 @@ export const MUSEUM_TAGS = {
 
 /**
  * Maakt een string URL-vriendelijk (kebab-case).
- * Verbetert: verwijdert accenten en zorgt voor strikte lowercase.
  */
 export function slugify(text: string): string {
   if (!text) return "";
   return text
     .toString()
-    .normalize('NFD')                   // Splits accenten van letters
-    .replace(/[\u0300-\u036f]/g, '')    // Verwijder accenten
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     .trim()
-    .replace(/\s+/g, '-')               // Vervang spaties door -
-    .replace(/[^\w\-]+/g, '')           // Verwijder alle niet-woord karakters
-    .replace(/\-\-+/g, '-')             // Vervang dubbele -- door enkele -
-    .replace(/^-+/, '')                 // Trim - aan het begin
-    .replace(/-+$/, '');                // Trim - aan het einde
+    .replace(/\s+/g, '-')
+    .replace(/[^\w\-]+/g, '')
+    .replace(/\-\-+/g, '-')
+    .replace(/^-+/, '')
+    .replace(/-+$/, '');
 }
 
 /**
  * Normaliseert Firestore data voor veilig gebruik in de UI.
- * Verbergt NOOIT data, maar geeft fallbacks voor lege velden.
  */
 export function normalizeArtwork(id: string, data: any) {
   return {
@@ -66,7 +62,6 @@ export function normalizeArtwork(id: string, data: any) {
 
 /**
  * Centraal sanitization filter voor Artwork data (Writes).
- * Voorkomt empty strings en corrupte types in Firestore.
  */
 export function sanitizeArtwork(input: any) {
   const baseTitle = cleanString(input.displayTitle) || cleanString(input.title) || "Ongetiteld";
@@ -102,24 +97,47 @@ export function cleanArray(arr?: any[]): string[] {
     .filter(v => v.length > 0 && v !== "undefined" && v !== "null");
 }
 
+/**
+ * Analyseert een titel voor geavanceerde sortering (Romeins > Nummer > Alfabet).
+ */
 export const parseTitleForSort = (title: string) => {
   if (!title) return { romanVal: 999, num: 999, suffix: '' };
+  
+  // Zoek naar Romeinse cijfers (I t/m XX) die als losse woorden voorkomen
   const romanPattern = /\b(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII|XIV|XV|XVI|XVII|XVIII|XIX|XX)\b/gi;
   const matches = Array.from(title.matchAll(romanPattern));
   const lastRoman = matches.length > 0 ? matches[matches.length - 1][0] : null;
-  const numMatch = title.match(/(\d+)([a-z]*)?/i);
+  
+  // Zoek naar het eerste reguliere getal
+  const numMatch = title.match(/(\d+)/);
   
   return {
     romanVal: lastRoman ? (ROMAN_VALUES[lastRoman.toUpperCase()] || 999) : 999,
     num: numMatch ? parseInt(numMatch[1], 10) : 999,
-    suffix: numMatch ? (numMatch[2] || '').toLowerCase() : ''
+    original: title.toLowerCase()
   };
 };
 
+/**
+ * Hoofd-sorteerfunctie voor kunstwerken.
+ */
 export const sortArtworksByTitle = (a: any, b: any) => {
-  const pA = parseTitleForSort(a.title || '');
-  const pB = parseTitleForSort(b.title || '');
-  if (pA.romanVal !== pB.romanVal) return pA.romanVal - pB.romanVal;
-  if (pA.num !== pB.num) return pA.num - pB.num;
-  return pA.suffix.localeCompare(pB.suffix);
+  const titleA = a.displayTitle || a.title || '';
+  const titleB = b.displayTitle || b.title || '';
+  
+  const pA = parseTitleForSort(titleA);
+  const pB = parseTitleForSort(titleB);
+  
+  // 1. Sorteer op Romeins cijfer (bijv. alle 'I' eerst)
+  if (pA.romanVal !== pB.romanVal) {
+    return pA.romanVal - pB.romanVal;
+  }
+  
+  // 2. Sorteer op nummer (bijv. '18 I' voor '31 I')
+  if (pA.num !== pB.num) {
+    return pA.num - pB.num;
+  }
+  
+  // 3. Fallback op volledige alfabetische vergelijking
+  return pA.original.localeCompare(pB.original);
 };

@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
@@ -65,7 +66,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { sanitizeArtwork, MUSEUM_TAGS, slugify } from '@/lib/museum-utils';
+import { sanitizeArtwork, MUSEUM_TAGS, slugify, sortArtworksByTitle } from '@/lib/museum-utils';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { verifyAdminPassword } from '@/lib/admin-actions';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -111,7 +112,7 @@ export default function AdminPage() {
 
   const artworksQuery = useMemo(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'artworks'), orderBy('title', 'asc'));
+    return query(collection(firestore, 'artworks'));
   }, [firestore]);
 
   const roomsQuery = useMemo(() => {
@@ -124,11 +125,16 @@ export default function AdminPage() {
 
   const filteredArtworks = useMemo(() => {
     if (!artworks) return [];
-    return artworks.filter((art: any) => 
+    
+    // 1. Filteren op zoekopdracht
+    const filtered = artworks.filter((art: any) => 
       art.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       art.displayTitle?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       art.tags?.some((t: string) => t.toLowerCase().includes(searchQuery.toLowerCase()))
     );
+
+    // 2. Sorteren op Romeins cijfer en nummer
+    return [...filtered].sort(sortArtworksByTitle);
   }, [artworks, searchQuery]);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -435,7 +441,7 @@ export default function AdminPage() {
                  </div>
                  <div className="h-8 w-px bg-black/10 mx-2" />
                  <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest opacity-40">
-                    <Library className="w-4 h-4" /> {artworks?.length || 0} items
+                    <Library className="w-4 h-4" /> {filteredArtworks.length} items
                  </div>
                </div>
             </div>
