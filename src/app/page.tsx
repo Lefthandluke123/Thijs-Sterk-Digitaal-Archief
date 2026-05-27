@@ -10,23 +10,29 @@ import { Toaster } from '@/components/ui/toaster';
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 import Link from 'next/link';
-import { ChevronRight, Layers } from 'lucide-react';
+import { ChevronRight, Layers, AlertCircle } from 'lucide-react';
 import { useLanguage } from '@/components/language-provider';
 
 /**
  * @fileOverview Homepage van Thijs Sterk Retrospectief.
- * Geoptimaliseerd voor stabiele rendering en robuuste navigatie.
+ * Geoptimaliseerd voor stabiliteit, foutafhandeling en hydration.
  */
 export default function Home() {
   const firestore = useFirestore();
   const { t } = useLanguage();
 
+  // Stabiele query definitie
   const roomsQuery = useMemo(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'rooms'), orderBy('order', 'asc'));
+    try {
+      return query(collection(firestore, 'rooms'), orderBy('order', 'asc'));
+    } catch (e) {
+      console.error("Fout bij aanmaken van rooms query:", e);
+      return null;
+    }
   }, [firestore]);
 
-  const { data: rooms, loading } = useCollection(roomsQuery);
+  const { data: rooms, loading, error } = useCollection(roomsQuery);
 
   return (
     <main className="min-h-screen bg-transparent pt-16 md:pt-32 relative">
@@ -66,6 +72,16 @@ export default function Home() {
                     <div className="h-3 w-24 bg-black/5 rounded-full" />
                   </div>
                 ))}
+              </div>
+            ) : error ? (
+              <div className="py-20 flex flex-col items-center justify-center text-center space-y-4 bg-red-500/5 rounded-[3rem] border border-red-500/10">
+                 <AlertCircle className="w-12 h-12 text-red-500 opacity-40" />
+                 <p className="text-sm font-medium text-red-600/60 uppercase tracking-widest">
+                    Zalen konden niet worden geladen wegens serverbeperkingen.
+                 </p>
+                 <button onClick={() => window.location.reload()} className="text-[10px] font-black underline uppercase tracking-widest opacity-40 hover:opacity-100">
+                    Probeer opnieuw
+                 </button>
               </div>
             ) : rooms && rooms.length > 0 ? (
               <div className="grid md:grid-cols-3 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">

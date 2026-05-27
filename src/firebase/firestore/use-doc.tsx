@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -11,14 +10,17 @@ import {
 } from 'firebase/firestore';
 import { errorEmitter } from '../error-emitter';
 import { FirestorePermissionError } from '../errors';
+import { useAuth } from '../provider';
 
 /**
  * @fileOverview Hook voor het realtime ophalen van een document met verbeterde foutafhandeling.
+ * Voorkomt runtime crashes bij permissiefouten.
  */
 export function useDoc<T = DocumentData>(docRef: DocumentReference<T> | null) {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(!!docRef);
   const [error, setError] = useState<Error | null>(null);
+  const auth = useAuth();
 
   useEffect(() => {
     if (!docRef) {
@@ -36,9 +38,14 @@ export function useDoc<T = DocumentData>(docRef: DocumentReference<T> | null) {
         setLoading(false);
         setError(null);
       },
-      async (serverError: FirestoreError) => {
+      (serverError: FirestoreError) => {
+        console.group('🔥 Firestore Document Error');
+        console.error('Path:', docRef.path);
+        console.error('Message:', serverError.message);
+        console.info('Auth State:', auth?.currentUser ? `Logged in as ${auth.currentUser.uid}` : 'Anonymous');
+        console.groupEnd();
+
         if (serverError.code === 'permission-denied') {
-          console.error(`[Firestore] Permission Denied: get operation failed on path: ${docRef.path}`);
           const permissionError = new FirestorePermissionError({
             path: docRef.path,
             operation: 'get',
@@ -46,14 +53,15 @@ export function useDoc<T = DocumentData>(docRef: DocumentReference<T> | null) {
           errorEmitter.emit('permission-error', permissionError);
           setError(permissionError);
         } else {
-          console.warn('[Firestore] Non-critical error fetching document:', serverError.code, serverError.message);
+          setError(new Error(serverError.message));
         }
+        
         setLoading(false);
       }
     );
 
     return () => unsubscribe();
-  }, [docRef]);
+  }, [docRef, auth]);
 
   return { data, loading, error };
 }
