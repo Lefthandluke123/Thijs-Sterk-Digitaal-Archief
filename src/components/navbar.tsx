@@ -140,7 +140,7 @@ function NavbarContent() {
                 <img 
                   src={siteSettings?.logoUrl || "/logo.png"} 
                   alt="Logo" 
-                  className="h-10 md:h-20 w-auto object-contain transition-all duration-1000 group-hover:scale-110 flex-shrink-0 animate-logo-float" 
+                  className="h-10 md:h-20 w-auto object-contain transition-all duration-1000 group-hover:scale-110 flex-shrink-0 group-hover:animate-logo-float" 
                 />
               </Link>
               <div className="hidden sm:flex flex-col leading-tight border-l-2 border-accent/10 pl-4 md:pl-6 min-w-0">
