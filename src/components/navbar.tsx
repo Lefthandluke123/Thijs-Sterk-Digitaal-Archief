@@ -17,8 +17,7 @@ import {
   BookOpen,
   Menu,
   LayoutDashboard,
-  Users,
-  History
+  Users
 } from 'lucide-react';
 import { useCollection, useFirestore, useDoc } from '@/firebase';
 import { collection, query, doc, orderBy } from 'firebase/firestore';
@@ -80,13 +79,6 @@ function NavbarContent() {
     setMobileMenuOpen(false);
   }, [pathname]);
 
-  const teamPages = [
-    { id: 'leo-duppen', label: 'Leo Duppen (Leraar)', href: '/leo-duppen' },
-    { id: 'beatrijs', label: 'Beatrijs Sterk', href: '/beatrijs' },
-    { id: 'hanneke', label: 'Hanneke Sterk', href: '/hanneke' },
-    { id: 'peter-bes', label: 'Peter Bes (Leerling)', href: '/peter-bes' },
-  ];
-
   const handleLogoClick = async () => {
     const newCount = logoClicks + 1;
     setLogoClicks(newCount);
@@ -140,7 +132,7 @@ function NavbarContent() {
                 <img 
                   src={siteSettings?.logoUrl || "/logo.png"} 
                   alt="Logo" 
-                  className="h-10 md:h-20 w-auto object-contain transition-all duration-1000 group-hover:scale-110 flex-shrink-0 group-hover:animate-logo-float" 
+                  className="h-10 md:h-20 w-auto object-contain transition-all duration-1000 hover:scale-110 flex-shrink-0 hover:animate-logo-float" 
                 />
               </Link>
               <div className="hidden sm:flex flex-col leading-tight border-l-2 border-accent/10 pl-4 md:pl-6 min-w-0">
@@ -173,26 +165,6 @@ function NavbarContent() {
                   {rooms?.map((r: any) => (
                     <DropdownMenuItem key={r.id} asChild className="text-[10px] uppercase font-bold tracking-wider focus:bg-accent focus:text-accent-foreground rounded-2xl cursor-pointer p-4">
                       <Link href={`/room/${r.slug || r.id}`} className="flex w-full items-center">{r.title}</Link>
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className={cn(
-                    "px-5 py-2.5 rounded-full text-[10px] font-black tracking-[0.2em] uppercase transition-all flex items-center gap-1 outline-none nav-item-style",
-                    teamPages.some(p => pathname === p.href)
-                      ? "bg-accent text-accent-foreground shadow-lg scale-105" 
-                      : "text-foreground/60 hover:bg-accent/5"
-                  )}>
-                    <History className="w-3 h-3 mr-1" /> Nalatenschap <ChevronDown className="w-3 h-3 opacity-30" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="center" className="bg-white/95 backdrop-blur-2xl border-black/5 rounded-3xl min-w-[240px] p-2 shadow-2xl mt-4">
-                  {teamPages.map((p) => (
-                    <DropdownMenuItem key={p.id} asChild className="text-[10px] uppercase font-bold tracking-wider focus:bg-accent focus:text-accent-foreground rounded-2xl cursor-pointer p-4">
-                      <Link href={p.href} className="flex w-full items-center">{p.label}</Link>
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>
