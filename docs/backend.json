@@ -40,7 +40,7 @@
     },
     "ActivityLog": {
       "title": "ActivityLog",
-      "description": "Onzichtbare registratie van gebruikersacties inclusief geografische data.",
+      "description": "Onzichtbare registratie van gebruikersacties inclusief geografische data en IP.",
       "type": "object",
       "properties": {
         "type": { "type": "string", "enum": ["page_view", "artwork_view", "interaction", "auth"] },
@@ -52,6 +52,7 @@
         "sessionId": { "type": "string" },
         "country": { "type": "string" },
         "city": { "type": "string" },
+        "ip": { "type": "string" },
         "timestamp": { "type": "string", "format": "date-time" }
       }
     }

@@ -8,14 +8,14 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 /**
  * @fileOverview SilentTracker: Legt onzichtbaar elke actie van de bezoeker vast.
- * Inclusief sessie-ID en geografische data via IP-lookup.
+ * Inclusief sessie-ID, geografische data en IP-adres voor administratieve doeleinden.
  */
 export function SilentTracker() {
   const pathname = usePathname();
   const firestore = useFirestore();
   const { user } = useUser();
   const sessionIdRef = useRef<string>("");
-  const locationRef = useRef<{ country: string; city: string } | null>(null);
+  const locationRef = useRef<{ country: string; city: string; ip: string } | null>(null);
 
   useEffect(() => {
     // Genereer een eenmalige sessie-ID voor deze bezoeker
@@ -23,15 +23,16 @@ export function SilentTracker() {
       sessionIdRef.current = Math.random().toString(36).substring(2, 15);
     }
 
-    // Haal geografische data op (eenmalig per sessie)
+    // Haal geografische data en IP op (eenmalig per sessie)
     const fetchLocation = async () => {
       try {
         const res = await fetch('https://ipapi.co/json/');
         const data = await res.json();
-        if (data.country_name) {
+        if (data.ip) {
           locationRef.current = {
-            country: data.country_name,
-            city: data.city || "Onbekend"
+            country: data.country_name || "Onbekend",
+            city: data.city || "Onbekend",
+            ip: data.ip
           };
         }
       } catch (e) {
@@ -53,6 +54,7 @@ export function SilentTracker() {
         userName: user?.displayName || null,
         country: locationRef.current?.country || null,
         city: locationRef.current?.city || null,
+        ip: locationRef.current?.ip || null,
         timestamp: serverTimestamp(),
         ...data
       });

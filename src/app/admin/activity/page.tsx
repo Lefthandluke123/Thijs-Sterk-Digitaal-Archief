@@ -5,8 +5,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useFirestore, useCollection } from '@/firebase';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
@@ -15,7 +14,6 @@ import {
   Eye, 
   MousePointer2, 
   User, 
-  Clock, 
   Zap,
   Layout,
   RefreshCw,
@@ -24,7 +22,8 @@ import {
   PieChart as PieChartIcon,
   Users,
   MapPin,
-  Globe
+  Globe,
+  ShieldAlert
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { nl } from 'date-fns/locale';
@@ -144,7 +143,7 @@ export default function ActivityMonitorPage() {
           </Link>
           <div className="flex flex-col">
             <h1 className="font-headline text-2xl italic leading-none">Ghost <span className="text-accent">Monitor</span></h1>
-            <span className="text-[9px] font-black uppercase tracking-[0.3em] opacity-40 mt-1">Gedragsanalyse & Live Feed</span>
+            <span className="text-[9px] font-black uppercase tracking-[0.3em] opacity-40 mt-1">Gedragsanalyse & IP Tracking</span>
           </div>
         </div>
         <div className="flex items-center gap-4">
@@ -215,12 +214,20 @@ export default function ActivityMonitorPage() {
                                  log.type === 'artwork_view' ? `Bekeek: ${log.targetTitle || 'Onbekend werk'}` :
                                  log.type === 'interaction' ? `Interactie: ${log.action}` : 'Systeem actie'}
                              </p>
-                             {(log.country || log.city) && (
-                               <div className="flex items-center gap-2 text-[9px] font-bold opacity-30 uppercase tracking-wider">
-                                  <MapPin className="w-2.5 h-2.5" />
-                                  {log.city}, {log.country}
-                               </div>
-                             )}
+                             <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                                {(log.country || log.city) && (
+                                  <div className="flex items-center gap-2 text-[9px] font-bold opacity-30 uppercase tracking-wider">
+                                     <MapPin className="w-2.5 h-2.5" />
+                                     {log.city}, {log.country}
+                                  </div>
+                                )}
+                                {log.ip && (
+                                  <div className="flex items-center gap-2 text-[9px] font-bold text-accent/50 uppercase tracking-wider">
+                                     <ShieldAlert className="w-2.5 h-2.5" />
+                                     IP: {log.ip}
+                                  </div>
+                                )}
+                             </div>
                           </div>
                        </div>
                        <div className="text-right">
