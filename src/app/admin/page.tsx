@@ -391,21 +391,20 @@ export default function AdminPage() {
                 ))}
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {filteredArtworks.map((art: any) => (
                   <Card key={art.id} className={cn(
-                    "p-4 rounded-2xl flex items-center gap-6 cursor-pointer hover:shadow-lg transition-all border-2",
+                    "p-6 rounded-[2rem] flex items-center gap-8 cursor-pointer hover:shadow-lg transition-all border-2",
                     selectedIds.includes(art.id) ? "border-accent bg-accent/5" : "border-transparent"
                   )} onClick={() => handleEditArtwork(art)}>
                     <Checkbox checked={selectedIds.includes(art.id)} onCheckedChange={() => handleToggleSelect(art.id)} onClick={e => e.stopPropagation()} />
-                    <img src={art.image} className="w-16 h-16 object-cover rounded-xl" alt="" />
+                    <img src={art.image} className="w-40 h-40 object-cover rounded-2xl shadow-sm" alt="" />
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-bold truncate">{art.title}</h3>
-                      <p className="text-[10px] font-black uppercase tracking-widest opacity-40">{art.year} • {art.medium}</p>
-                    </div>
-                    <div className="flex items-center gap-2 overflow-hidden">
-                       {art.tags?.slice(0, 3).map((t: string) => <Badge key={t} variant="outline" className="text-[8px] uppercase tracking-widest">{t}</Badge>)}
-                       {art.tags?.length > 3 && <span className="text-[9px] opacity-30">+{art.tags.length - 3}</span>}
+                      <h3 className="font-bold text-xl mb-1 truncate">{art.title}</h3>
+                      <p className="text-xs font-black uppercase tracking-widest opacity-40">{art.year} • {art.medium}</p>
+                      <div className="flex flex-wrap gap-2 mt-4">
+                         {art.tags?.map((t: string) => <Badge key={t} variant="secondary" className="text-[9px] font-bold uppercase px-2 py-0.5 rounded-lg bg-black/5">{t}</Badge>)}
+                      </div>
                     </div>
                   </Card>
                 ))}
