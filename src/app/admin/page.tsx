@@ -395,6 +395,7 @@ export default function AdminPage() {
                     )}
                   >
                     <button 
+                      type="button"
                       onClick={(e) => handleToggleSelect(art.id, e)}
                       className={cn(
                         "absolute top-4 left-4 z-10 p-2 rounded-full backdrop-blur-md border transition-all",
@@ -578,7 +579,7 @@ export default function AdminPage() {
                   <div className="relative group w-full aspect-square rounded-[2rem] overflow-hidden shadow-2xl">
                      <img src={artworkForm.image} className="w-full h-full object-cover" alt="" />
                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                        <Button onClick={() => fileInputRef.current?.click()} variant="secondary" className="rounded-full h-12 px-6">Vervangen</Button>
+                        <Button type="button" onClick={() => fileInputRef.current?.click()} variant="secondary" className="rounded-full h-12 px-6">Vervangen</Button>
                      </div>
                   </div>
                 ) : (
@@ -655,6 +656,7 @@ export default function AdminPage() {
                                 {tags.map(tag => (
                                   <button 
                                     key={tag} 
+                                    type="button"
                                     onClick={() => toggleTag(tag)}
                                     className={cn(
                                       "px-3 py-1 rounded-lg text-[9px] font-bold border transition-all",
@@ -680,6 +682,7 @@ export default function AdminPage() {
                          {rooms?.map((room: any) => (
                            <button 
                              key={room.id}
+                             type="button"
                              onClick={() => toggleRoom(room.id)}
                              className={cn(
                                "flex items-center gap-3 p-4 rounded-xl border transition-all text-left",
