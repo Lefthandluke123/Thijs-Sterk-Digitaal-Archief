@@ -57,7 +57,8 @@ import {
   Tags,
   FolderInput,
   GripHorizontal,
-  MousePointer2
+  MousePointer2,
+  Database
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -218,6 +219,25 @@ export default function AdminPage() {
     }
   };
 
+  // One-time migration function
+  const resetOlieverf = async () => {
+    if (!firestore) return;
+    try {
+      const batch = writeBatch(firestore);
+      let count = 0;
+      artworks.forEach((art: any) => {
+        if (art.medium === 'Olieverf') {
+          batch.update(doc(firestore, 'artworks', art.id), { medium: '' });
+          count++;
+        }
+      });
+      await batch.commit();
+      toast({ title: "Opschoning voltooid", description: `${count} items gereset.` });
+    } catch (e) {
+      toast({ variant: "destructive", title: "Fout bij reset" });
+    }
+  };
+
   // Dragging Logic
   const handleDragStart = (e: React.MouseEvent) => {
     setIsDragging(true);
@@ -250,7 +270,7 @@ export default function AdminPage() {
   const handleOpenNewArtwork = () => {
     setEditingArtwork(null);
     setArtworkForm({ 
-      title: '', displayTitle: '', slug: '', image: '', year: '', medium: 'Olieverf', description: '', tags: [], roomIds: [], featured: false, inShop: false 
+      title: '', displayTitle: '', slug: '', image: '', year: '', medium: '', description: '', tags: [], roomIds: [], featured: false, inShop: false 
     });
     setIsArtworkDialogOpen(true);
   };
@@ -346,6 +366,9 @@ export default function AdminPage() {
           <div className="flex items-center gap-4">
             <Archive className="w-6 h-6 text-accent" />
             <h1 className="font-headline text-2xl italic leading-none">Museum Archief</h1>
+            <Button variant="ghost" size="icon" onClick={resetOlieverf} className="w-6 h-6 p-0 opacity-0 hover:opacity-10 transition-opacity ml-2" title="Reset Olieverf">
+               <Database className="w-3 h-3" />
+            </Button>
           </div>
         </div>
         
@@ -432,7 +455,7 @@ export default function AdminPage() {
                     <img src={art.image} className="w-40 h-40 object-cover rounded-2xl shadow-sm" alt="" />
                     <div className="flex-1 min-w-0">
                       <h3 className="font-bold text-xl mb-1 truncate">{art.title}</h3>
-                      <p className="text-xs font-black uppercase tracking-widest opacity-40">{art.year} • {art.medium}</p>
+                      <p className="text-xs font-black uppercase tracking-widest opacity-40">{art.year} • {art.medium || 'Geen techniek'}</p>
                       <div className="flex flex-wrap gap-2 mt-4">
                          {art.tags?.map((t: string) => <Badge key={t} variant="secondary" className="text-[9px] font-bold uppercase px-2 py-0.5 rounded-lg bg-black/5">{t}</Badge>)}
                       </div>
@@ -627,7 +650,7 @@ export default function AdminPage() {
                                <Label className="text-[9px] font-black uppercase ml-2 opacity-40">Techniek</Label>
                                <Select value={artworkForm.medium} onValueChange={v => setArtworkForm({...artworkForm, medium: v})}>
                                   <SelectTrigger className="h-12 rounded-xl bg-black/5 border-none">
-                                     <SelectValue />
+                                     <SelectValue placeholder="Selecteer techniek..." />
                                   </SelectTrigger>
                                   <SelectContent className="rounded-xl shadow-xl border-none">
                                      {ART_TECHNIQUES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
