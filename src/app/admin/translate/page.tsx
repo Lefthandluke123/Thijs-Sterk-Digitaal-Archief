@@ -19,7 +19,8 @@ import {
   Type,
   LayoutTemplate,
   Monitor,
-  ArrowRight
+  ArrowRight,
+  LogOut
 } from 'lucide-react';
 import { translateMuseumText } from '@/ai/flows/translate-flow';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -52,9 +53,6 @@ const PRESET_PAGES = [
   { id: 'leo-duppen', label: 'Leo Duppen' },
 ];
 
-/**
- * @fileOverview Content & Layout Dashboard met handmatige inlog.
- */
 export default function TranslateStationPage() {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [password, setPassword] = useState('');
@@ -67,16 +65,25 @@ export default function TranslateStationPage() {
   const [storyNodes, setStoryNodes] = useState<StoryNode[]>([]);
   const [formData, setFormData] = useState<Record<string, string>>({});
 
-  useEffect(() => {}, []);
+  useEffect(() => {
+    if (sessionStorage.getItem('admin_auth') === 'true') {
+      setIsAuthorized(true);
+    }
+  }, []);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (password === '1527') {
       setIsAuthorized(true);
-      // sessionStorage line removed
+      sessionStorage.setItem('admin_auth', 'true');
     } else {
       toast({ variant: "destructive", title: "Wachtwoord onjuist" });
     }
+  };
+
+  const handleLogout = () => {
+    sessionStorage.removeItem('admin_auth');
+    window.location.reload();
   };
 
   const settingsRef = useMemo(() => {
@@ -185,10 +192,15 @@ export default function TranslateStationPage() {
             <span className="text-[9px] font-black uppercase tracking-[0.3em] opacity-40 mt-1">DTP Designer Mode Active</span>
           </div>
         </div>
-        <Button onClick={handleSave} disabled={isSaving} className="h-14 px-10 rounded-2xl bg-primary shadow-xl hover:scale-[1.02] transition-all">
-          {isSaving ? <Loader2 className="animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-          Alle Wijzigingen Opslaan
-        </Button>
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" onClick={handleLogout} className="rounded-full text-xs font-black uppercase tracking-widest opacity-40 hover:opacity-100">
+            <LogOut className="w-4 h-4 mr-2" /> Uitloggen
+          </Button>
+          <Button onClick={handleSave} disabled={isSaving} className="h-14 px-10 rounded-2xl bg-primary shadow-xl hover:scale-[1.02] transition-all text-white font-black uppercase tracking-widest text-[10px]">
+            {isSaving ? <Loader2 className="animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+            Opslaan
+          </Button>
+        </div>
       </header>
 
       <main className="max-w-[1600px] mx-auto px-8 pb-32">
