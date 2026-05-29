@@ -451,7 +451,7 @@ export default function AdminPage() {
         </Tabs>
       </main>
 
-      {/* FLOATING DRAGGABLE BULK PANEL */}
+      {/* FLOATING DRAGGABLE BULK PANEL WITH INTERNAL SCROLLING */}
       {selectedIds.length > 0 && (
         <div 
           className="fixed z-[1000] shadow-2xl transition-shadow"
@@ -473,6 +473,7 @@ export default function AdminPage() {
                 </Button>
               </div>
 
+              {/* Scrollable Content Area */}
               <ScrollArea className="flex-1 p-8">
                  <div className="space-y-10">
                     <div className="space-y-4">
@@ -511,6 +512,8 @@ export default function AdminPage() {
                     </div>
                  </div>
               </ScrollArea>
+
+              {/* Helper Footer */}
               <div className="p-4 bg-black/5 border-t text-center">
                  <p className="text-[8px] font-bold uppercase opacity-30 tracking-[0.2em]">Pak de bovenbalk vast om dit paneel te verplaatsen</p>
               </div>
