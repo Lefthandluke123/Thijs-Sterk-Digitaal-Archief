@@ -21,7 +21,6 @@ import {
   Monitor
 } from 'lucide-react';
 import { translateMuseumText } from '@/ai/flows/translate-flow';
-import { verifyAdminPassword } from '@/lib/admin-actions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { StoryEditor, StoryNode } from '@/components/story-editor';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -41,9 +40,7 @@ const CONTENT_FIELDS = [
   { id: 'homeBioTitle', label: 'Biografie Titel', type: 'input', category: 'Homepage' },
   { id: 'homeBio', label: 'Biografie Tekst', type: 'textarea', category: 'Homepage' },
   { id: 'gallery_title', label: 'Zalen Overzicht Titel', type: 'input', category: 'Zalen' },
-  { id: 'gallery_select', label: 'Zalen Selectie Instructie', type: 'input', category: 'Zalen' },
   { id: 'curator_title', label: 'Curator Titel', type: 'input', category: 'Uw Zaal' },
-  { id: 'curator_subtitle', label: 'Curator Ondertitel', type: 'input', category: 'Uw Zaal' },
   { id: 'shopIntro', label: 'Winkel Introductie', type: 'textarea', category: 'Winkel' },
 ];
 
@@ -54,11 +51,12 @@ const PRESET_PAGES = [
   { id: 'leo-duppen', label: 'Leo Duppen' },
 ];
 
+/**
+ * @fileOverview Content & Layout Dashboard.
+ * De authenticatie wordt nu volledig afgehandeld door de Middleware.
+ */
 export default function TranslateStationPage() {
   const firestore = useFirestore();
-  const [isAuthorized, setIsAuthorized] = useState(true);
-  const [password, setPassword] = useState('');
-  const [isVerifying, setIsVerifying] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [translatingField, setTranslatingField] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('translations');
@@ -92,18 +90,6 @@ export default function TranslateStationPage() {
     }
   }, [storyData]);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsVerifying(true);
-    if (await verifyAdminPassword(password)) {
-      setIsAuthorized(true);
-      sessionStorage.setItem('admin_auth', 'true');
-    } else {
-      toast({ variant: "destructive", title: "Fout", description: "Onjuist wachtwoord." });
-    }
-    setIsVerifying(false);
-  };
-
   const handleTranslateField = async (fieldId: string) => {
     const sourceText = formData[fieldId];
     if (!sourceText) return toast({ variant: "destructive", title: "Leeg veld" });
@@ -123,7 +109,7 @@ export default function TranslateStationPage() {
       setFormData(newTranslations);
       toast({ title: "Vertaling voltooid" });
     } catch (error: any) {
-      toast({ variant: "destructive", title: "AI Fout", description: error.message });
+      toast({ variant: "destructive", title: "AI Fout" });
     } finally {
       setTranslatingField(null);
     }
@@ -145,20 +131,6 @@ export default function TranslateStationPage() {
       setIsSaving(false);
     }
   };
-
-  if (!isAuthorized) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
-        <Card className="max-w-md w-full p-12 rounded-[2.5rem] shadow-2xl space-y-8">
-           <h1 className="font-headline text-3xl text-center italic">Content <span className="text-accent">Hub</span></h1>
-           <form onSubmit={handleLogin} className="space-y-6">
-              <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="h-14 rounded-2xl text-center" placeholder="Wachtwoord" />
-              <Button type="submit" disabled={isVerifying} className="w-full h-14 rounded-2xl bg-primary">Ontgrendelen</Button>
-           </form>
-        </Card>
-      </div>
-    );
-  }
 
   const categories = Array.from(new Set(CONTENT_FIELDS.map(f => f.category)));
 

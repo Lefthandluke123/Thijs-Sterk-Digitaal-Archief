@@ -1,7 +1,6 @@
-
 "use client";
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { useFirestore, useCollection, useStorage } from '@/firebase';
 import { 
@@ -23,17 +22,12 @@ import {
   Loader2, 
   Plus,
   ArrowLeft,
-  Camera,
   Edit3,
   Upload,
-  Image as ImageIcon,
   Save,
-  X,
   CheckCircle2,
   Lock,
-  Eye,
-  Type,
-  Tag as TagIcon
+  Eye
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -54,18 +48,14 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { normalizePrivatePhoto, PRIVATE_ALBUMS } from '@/lib/museum-utils';
-import { verifyAdminPassword } from '@/lib/admin-actions';
 
 /**
  * @fileOverview Beheerpagina voor het Privé-Archief.
- * Focus op uploaden en categoriseren van persoonlijke documentatie.
+ * De authenticatie wordt nu volledig afgehandeld door de Middleware.
  */
 export default function AdminPrivatePage() {
   const firestore = useFirestore();
   const storage = useStorage();
-  const [isAuthorized, setIsAuthorized] = useState(false);
-  const [password, setPassword] = useState('');
-  const [isVerifying, setIsVerifying] = useState(false);
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingPhoto, setEditingPhoto] = useState<any>(null);
@@ -77,13 +67,6 @@ export default function AdminPrivatePage() {
     title: '', description: '', album: 'Familie', year: '', visibility: 'friends'
   });
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const auth = sessionStorage.getItem('admin_auth');
-      if (auth === 'true') setIsAuthorized(true);
-    }
-  }, []);
-
   const photosQuery = useMemo(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'privatePhotos'), orderBy('createdAt', 'desc'));
@@ -91,18 +74,6 @@ export default function AdminPrivatePage() {
 
   const { data: dbPhotos, loading } = useCollection(photosQuery);
   const photos = useMemo(() => dbPhotos?.map(p => normalizePrivatePhoto(p.id, p)) || [], [dbPhotos]);
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsVerifying(true);
-    if (await verifyAdminPassword(password)) {
-      setIsAuthorized(true);
-      sessionStorage.setItem('admin_auth', 'true');
-    } else {
-      toast({ variant: "destructive", title: "Onjuist wachtwoord" });
-    }
-    setIsVerifying(false);
-  };
 
   const openNew = () => {
     setEditingPhoto(null);
@@ -156,7 +127,7 @@ export default function AdminPrivatePage() {
 
       setIsDialogOpen(false);
     } catch (e: any) {
-      toast({ variant: "destructive", title: "Opslaan mislukt", description: e.message });
+      toast({ variant: "destructive", title: "Opslaan mislukt" });
     } finally {
       setIsUploading(false);
     }
@@ -167,20 +138,6 @@ export default function AdminPrivatePage() {
     await deleteDoc(doc(firestore, 'privatePhotos', id));
     toast({ title: "Verwijderd" });
   };
-
-  if (!isAuthorized) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-[#f4f4f2]">
-        <Card className="p-12 rounded-[3rem] shadow-2xl max-w-md w-full space-y-8">
-           <h1 className="font-headline text-3xl text-center italic">Beheer <span className="text-accent">Privé Depot</span></h1>
-           <form onSubmit={handleLogin} className="space-y-6">
-              <Input type="password" value={password} onChange={e => setPassword(e.target.value)} className="h-14 rounded-2xl text-center" placeholder="••••••" />
-              <Button type="submit" disabled={isVerifying} className="w-full h-14 rounded-2xl bg-primary">Toegang</Button>
-           </form>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen pt-32 pb-48 px-8 bg-transparent">

@@ -1,67 +1,40 @@
-
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useFirestore, useCollection } from '@/firebase';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { 
   ArrowLeft, 
   Activity, 
   Eye, 
   Zap,
-  Layout,
   RefreshCw,
-  BarChart3,
-  TrendingUp,
   Users,
-  MapPin,
-  ShieldAlert,
-  Ghost,
   Compass,
   AlertTriangle,
   Gem,
   GitGraph,
   MousePointer2,
   Clock,
-  ChevronRight,
-  Search
+  Search,
+  Ghost
 } from 'lucide-react';
-import { format, differenceInSeconds } from 'date-fns';
-import { nl } from 'date-fns/locale';
-import { 
-  LineChart, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip as RechartsTooltip, 
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell as RechartsCell
-} from 'recharts';
+import { differenceInSeconds } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 type DashboardModule = 'overview' | 'attention' | 'flow' | 'frustration' | 'gems' | 'segments';
 
+/**
+ * @fileOverview Curator Intelligence / Ghost Monitor.
+ * De authenticatie wordt nu volledig afgehandeld door de Middleware.
+ */
 export default function CuratorIntelligencePage() {
   const firestore = useFirestore();
-  const [isAuthorized, setIsAuthorized] = useState(false);
   const [activeModule, setActiveModule] = useState<DashboardModule>('overview');
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const auth = sessionStorage.getItem('admin_auth');
-      if (auth === 'true') setIsAuthorized(true);
-    }
-  }, []);
 
   const logsQuery = useMemo(() => {
     if (!firestore) return null;
@@ -70,7 +43,6 @@ export default function CuratorIntelligencePage() {
 
   const { data: logs, loading } = useCollection(logsQuery);
 
-  // --- Curator Intelligence Logic ---
   const intelligence = useMemo(() => {
     if (!logs || logs.length === 0) return null;
 
@@ -81,9 +53,9 @@ export default function CuratorIntelligencePage() {
     });
 
     const sessionAggregates = Object.entries(sessions).map(([id, events]) => {
-      const sorted = [...events].sort((a, b) => a.timestamp.toDate().getTime() - b.timestamp.toDate().getTime());
-      const start = sorted[0].timestamp.toDate();
-      const end = sorted[sorted.length - 1].timestamp.toDate();
+      const sorted = [...events].sort((a, b) => (a.timestamp?.toDate().getTime() || 0) - (b.timestamp?.toDate().getTime() || 0));
+      const start = sorted[0].timestamp?.toDate() || new Date();
+      const end = sorted[sorted.length - 1].timestamp?.toDate() || new Date();
       const duration = differenceInSeconds(end, start);
       const paths = sorted.filter(e => e.type === 'page_view').map(e => e.path);
       const views = sorted.filter(e => e.type === 'artwork_view');
@@ -101,7 +73,6 @@ export default function CuratorIntelligencePage() {
       };
     });
 
-    // 1. Attention Scoring (Dwell Time per Artwork)
     const artworkAttention: Record<string, { views: number, totalTime: number, zooms: number }> = {};
     sessionAggregates.forEach(session => {
       session.events.forEach((event, idx) => {
@@ -109,14 +80,13 @@ export default function CuratorIntelligencePage() {
           const nextEvent = session.events[idx + 1];
           const viewDuration = nextEvent 
             ? differenceInSeconds(nextEvent.timestamp.toDate(), event.timestamp.toDate()) 
-            : 30; // Heuristische fallback voor laatste item
+            : 30;
           
           if (!artworkAttention[event.targetTitle]) artworkAttention[event.targetTitle] = { views: 0, totalTime: 0, zooms: 0 };
           artworkAttention[event.targetTitle].views++;
-          artworkAttention[event.targetTitle].totalTime += Math.min(viewDuration, 300); // Cap op 5 min per view
+          artworkAttention[event.targetTitle].totalTime += Math.min(viewDuration, 300);
         }
         if (event.type === 'interaction' && event.action === 'zoom') {
-          // Zoek dichtstbijzijnde artwork view
           const lastView = [...session.events.slice(0, idx)].reverse().find(e => e.type === 'artwork_view');
           if (lastView && lastView.targetTitle) {
             if (artworkAttention[lastView.targetTitle]) artworkAttention[lastView.targetTitle].zooms++;
@@ -135,10 +105,8 @@ export default function CuratorIntelligencePage() {
       }))
       .sort((a, b) => b.score - a.score);
 
-    // 2. Frustration Detection
     const frustrations: any[] = [];
     sessionAggregates.forEach(session => {
-      // Rage click detection (simulated via interactions in short bursts)
       let ragePotential = 0;
       session.events.forEach((e, i) => {
         const next = session.events[i+1];
@@ -150,30 +118,17 @@ export default function CuratorIntelligencePage() {
         }
       });
 
-      // Quick Bounces
       if (session.duration < 5 && session.paths.length === 1) {
         frustrations.push({ type: 'Instant Bounce', path: session.paths[0], sessionId: session.id, severity: 40 });
       }
-
-      // Back-and-forth loops
-      if (session.paths.length > 3) {
-        for (let i = 0; i < session.paths.length - 2; i++) {
-          if (session.paths[i] === session.paths[i+2]) {
-            frustrations.push({ type: 'Navigation Loop', path: session.paths[i], sessionId: session.id, severity: 60 });
-            break;
-          }
-        }
-      }
     });
 
-    // 3. Hidden Gems (High Dwell, Low Views)
     const totalViewsAvg = attentionRanking.reduce((acc, val) => acc + val.views, 0) / attentionRanking.length;
     const hiddenGems = attentionRanking
       .filter(art => art.views < totalViewsAvg && art.avgTime > 45)
       .sort((a, b) => b.avgTime - a.avgTime)
       .slice(0, 5);
 
-    // 4. Audience Segments
     const segments = {
       explorers: sessionAggregates.filter(s => s.paths.length > 5).length,
       skimmers: sessionAggregates.filter(s => s.paths.length <= 2 && s.duration < 30).length,
@@ -191,8 +146,6 @@ export default function CuratorIntelligencePage() {
     };
   }, [logs]);
 
-  if (!isAuthorized) return <div className="h-screen flex items-center justify-center">Geen toegang</div>;
-
   return (
     <div className="min-h-screen bg-[#f8f9fa] flex">
       {/* Curator Sidebar */}
@@ -202,7 +155,7 @@ export default function CuratorIntelligencePage() {
               <Ghost className="w-6 h-6 text-accent" />
               <h1 className="font-headline text-xl italic leading-none">Curator <span className="text-accent">Intel</span></h1>
            </div>
-           <p className="text-[9px] font-black uppercase tracking-widest opacity-30">Besluitvormingssysteem v1.0</p>
+           <p className="text-[9px] font-black uppercase tracking-widest opacity-30">Ghost Monitor Active</p>
         </div>
 
         <nav className="flex-1 p-6 space-y-2">
@@ -226,7 +179,7 @@ export default function CuratorIntelligencePage() {
         <header className="flex justify-between items-end mb-12">
            <div className="space-y-1">
               <h2 className="font-headline text-4xl italic">{activeModule.charAt(0).toUpperCase() + activeModule.slice(1)} Insights</h2>
-              <p className="text-sm text-muted-foreground font-light italic">Gegenereerde analyse op basis van de laatste 1000 interacties.</p>
+              <p className="text-sm text-muted-foreground font-light italic">Geanonimiseerde analyse op basis van bezoekersgedrag.</p>
            </div>
            <div className="flex items-center gap-4">
               <Badge variant="outline" className="bg-white border-black/5 px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest">
@@ -238,8 +191,6 @@ export default function CuratorIntelligencePage() {
 
         {intelligence ? (
           <div className="space-y-10 animate-in fade-in duration-700">
-            
-            {/* --- OVERVIEW MODULE --- */}
             {activeModule === 'overview' && (
               <div className="grid md:grid-cols-3 gap-8">
                  <StatCard icon={Clock} label="Gem. Kijktijd" value={`${intelligence.avgSessionDuration}s`} trend="+12% t.o.v. gisteren" />
@@ -262,7 +213,6 @@ export default function CuratorIntelligencePage() {
               </div>
             )}
 
-            {/* --- ATTENTION MODULE --- */}
             {activeModule === 'attention' && (
               <Card className="p-10 rounded-[3rem] border-none shadow-xl bg-white space-y-8">
                 <div className="flex justify-between items-center border-b pb-6">
@@ -294,7 +244,6 @@ export default function CuratorIntelligencePage() {
               </Card>
             )}
 
-            {/* --- FRUSTRATION MODULE --- */}
             {activeModule === 'frustration' && (
               <div className="space-y-8">
                 <div className="grid md:grid-cols-2 gap-8">
@@ -324,14 +273,13 @@ export default function CuratorIntelligencePage() {
                       </div>
                       <h3 className="font-headline text-3xl italic">UX Heuristiek</h3>
                       <p className="text-primary-foreground/60 font-light leading-relaxed">
-                         "De meeste frictie ontstaat bij de overgang van de Deep Zoom viewer naar de volgende zaal op mobiele apparaten. De 'Terug' knop wordt vaak per ongeluk geraakt, wat navigatieloops veroorzaakt."
+                         "De meeste frictie ontstaat bij de overgang van de Deep Zoom viewer naar de volgende zaal op mobiele apparaten. De 'Terug' knop wordt vaak per ongeluk geraakt."
                       </p>
                    </Card>
                 </div>
               </div>
             )}
 
-            {/* --- HIDDEN GEMS MODULE --- */}
             {activeModule === 'gems' && (
                <Card className="p-12 rounded-[3rem] bg-white border-none shadow-2xl space-y-12">
                   <div className="text-center space-y-4 max-w-2xl mx-auto">
@@ -339,7 +287,7 @@ export default function CuratorIntelligencePage() {
                         <Gem className="w-8 h-8" />
                      </div>
                      <h3 className="font-headline text-4xl italic">De Onzichtbare Meesterwerken</h3>
-                     <p className="text-muted-foreground font-light">Deze werken hebben een uitzonderlijk hoge kijktijd per bezoeker, maar worden relatief weinig gevonden in de huidige navigatie.</p>
+                     <p className="text-muted-foreground font-light">Deze werken hebben een uitzonderlijk hoge kijktijd per bezoeker, maar worden relatief weinig gevonden.</p>
                   </div>
 
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -353,8 +301,8 @@ export default function CuratorIntelligencePage() {
                                 <p className="font-bold text-accent">{gem.avgTime}s</p>
                              </div>
                              <div className="text-right">
-                                <p className="text-[8px] font-black uppercase opacity-40">Bereik</p>
-                                <p className="font-bold">Lid van Top 20%</p>
+                                <p className="text-[8px] font-black uppercase opacity-40">Sessies</p>
+                                <p className="font-bold">{gem.views}</p>
                              </div>
                           </div>
                        </div>
@@ -362,7 +310,6 @@ export default function CuratorIntelligencePage() {
                   </div>
                </Card>
             )}
-
           </div>
         ) : (
           <div className="py-48 text-center space-y-6 opacity-20">

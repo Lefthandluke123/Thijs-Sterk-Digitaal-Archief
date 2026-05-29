@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/request';
 
 /**
  * @fileOverview Middleware voor de beveiliging van het archiefbeheer.
- * Controleert op de aanwezigheid van een geldige admin_session cookie.
+ * De Middleware is de enige poortwachter. Hij controleert op de cookie 'admin_session'.
  */
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;

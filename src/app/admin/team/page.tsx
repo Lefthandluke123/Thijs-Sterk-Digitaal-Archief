@@ -1,7 +1,6 @@
-
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -14,18 +13,12 @@ import {
   Heart, 
   BookOpen, 
   TrendingUp, 
-  Lock,
-  Loader2,
   CheckCircle2,
   Zap,
   MessageSquare,
-  Sparkles,
   Waves,
   Users
 } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { toast } from '@/hooks/use-toast';
-import { verifyAdminPassword } from '@/lib/admin-actions';
 import { cn } from '@/lib/utils';
 
 const TEAM_MEMBERS = [
@@ -38,7 +31,7 @@ const TEAM_MEMBERS = [
     color: 'bg-blue-600',
     avatar: 'https://picsum.photos/seed/simon/200',
     status: "Identiteitssprong naar 'Retrospectief' voltooid",
-    tasks: ['Bewaken internationale allure', 'Monitoring merkconsistentie', 'Strategische partner-deals']
+    tasks: ['Bewaken internationale allure', 'Strategische partner-deals']
   },
   {
     id: 'bob',
@@ -49,7 +42,7 @@ const TEAM_MEMBERS = [
     color: 'bg-orange-500',
     avatar: 'https://picsum.photos/seed/bob/200',
     status: 'Optimaliseert immersieve interactie',
-    tasks: ['Deep Zoom stabiliteit', 'Firebase data-integriteit', 'UI Architectuur borgen']
+    tasks: ['Deep Zoom stabiliteit', 'Firebase data-integriteit']
   },
   {
     id: 'clara',
@@ -60,7 +53,7 @@ const TEAM_MEMBERS = [
     color: 'bg-rose-500',
     avatar: 'https://picsum.photos/seed/clara/200',
     status: 'Bewaakt Licht, Ruimte en Water essentie',
-    tasks: ['Sfeer-matching collecties', 'Narratief over horizon en licht', 'Curatie van retrospectief']
+    tasks: ['Sfeer-matching collecties', 'Narratief over horizon']
   },
   {
     id: 'leo',
@@ -71,7 +64,7 @@ const TEAM_MEMBERS = [
     color: 'bg-emerald-600',
     avatar: 'https://picsum.photos/seed/leo/200',
     status: 'Valideert educatieve ontsluiting',
-    tasks: ['Historische feitencontrole', 'Contextuele duiding monumentaal werk', 'Archief-validatie']
+    tasks: ['Historische feitencontrole', 'Archief-validatie']
   },
   {
     id: 'mark',
@@ -82,7 +75,7 @@ const TEAM_MEMBERS = [
     color: 'bg-purple-600',
     avatar: 'https://picsum.photos/seed/mark/200',
     status: 'Optimaliseert social impact & shop',
-    tasks: ['Facebook Ads strategie', 'SEO voor het archief', 'Shop-optimalisatie prints']
+    tasks: ['SEO voor het archief', 'Shop-optimalisatie prints']
   },
   {
     id: 'soof',
@@ -92,64 +85,16 @@ const TEAM_MEMBERS = [
     icon: Users,
     color: 'bg-yellow-500',
     avatar: 'https://picsum.photos/seed/soof/200',
-    status: "Beheert de 'Vrienden' community en het Forum",
-    tasks: ['Moderatie van forum-verhalen', 'VIP relatiebeheer', 'Influencer outreach kunstsector']
+    status: "Beheert de 'Vrienden' community",
+    tasks: ['Moderatie van verhalen', 'VIP relatiebeheer']
   }
 ];
 
+/**
+ * @fileOverview Team Dashboard.
+ * De authenticatie wordt nu volledig afgehandeld door de Middleware.
+ */
 export default function TeamDashboardPage() {
-  const [isAuthorized, setIsAuthorized] = useState(false);
-  const [password, setPassword] = useState('');
-  const [isVerifying, setIsVerifying] = useState(false);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const auth = sessionStorage.getItem('admin_auth');
-      if (auth === 'true') setIsAuthorized(true);
-    }
-  }, []);
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsVerifying(true);
-    const isValid = await verifyAdminPassword(password);
-    if (isValid) {
-      setIsAuthorized(true);
-      sessionStorage.setItem('admin_auth', 'true');
-    } else {
-      toast({ variant: "destructive", title: "Fout", description: "Wachtwoord onjuist." });
-    }
-    setIsVerifying(false);
-  };
-
-  if (!isAuthorized) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
-        <Card className="max-w-md w-full p-12 rounded-[3rem] shadow-2xl space-y-8 animate-in fade-in zoom-in duration-500">
-           <div className="text-center space-y-4">
-              <div className="w-20 h-20 bg-accent/10 rounded-full flex items-center justify-center mx-auto text-accent">
-                 <Lock className="w-10 h-10" />
-              </div>
-              <h1 className="font-headline text-3xl italic">Team Hub <span className="text-accent">Toegang</span></h1>
-           </div>
-           <form onSubmit={handleLogin} className="space-y-6">
-              <Input 
-                type="password" 
-                value={password} 
-                onChange={(e) => setPassword(e.target.value)} 
-                className="h-14 rounded-2xl text-center bg-black/5 border-none text-xl" 
-                placeholder="••••••"
-                autoFocus
-              />
-              <Button type="submit" disabled={isVerifying} className="w-full h-14 rounded-2xl bg-primary text-white font-black uppercase tracking-widest text-[11px]">
-                 {isVerifying ? <Loader2 className="animate-spin" /> : "Ontgrendel Hub"}
-              </Button>
-           </form>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-transparent pt-32 pb-48">
       <header className="fixed top-0 left-0 right-0 h-24 bg-white/80 backdrop-blur-md border-b border-black/5 z-50 px-8 flex items-center justify-between">
@@ -228,7 +173,6 @@ export default function TeamDashboardPage() {
             </Card>
           ))}
 
-          {/* Project Overall Status */}
           <Card className="md:col-span-1 lg:col-span-1 border-2 border-dashed border-accent/20 bg-accent/5 backdrop-blur-md flex flex-col items-center justify-center p-12 text-center space-y-6 rounded-[2.5rem]">
              <div className="w-20 h-20 rounded-full bg-white shadow-lg flex items-center justify-center">
                 <Waves className="w-10 h-10 text-accent animate-pulse" />
@@ -246,15 +190,6 @@ export default function TeamDashboardPage() {
                     </div>
                     <div className="h-1.5 w-full bg-black/5 rounded-full overflow-hidden">
                        <div className="h-full w-full bg-green-500" />
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between items-center mb-2">
-                       <span className="text-[9px] font-black uppercase tracking-widest opacity-40">Atmosfeer-sync</span>
-                       <span className="text-[9px] font-bold text-accent">98%</span>
-                    </div>
-                    <div className="h-1.5 w-full bg-black/5 rounded-full overflow-hidden">
-                       <div className="h-full w-[98%] bg-accent" />
                     </div>
                   </div>
                 </div>

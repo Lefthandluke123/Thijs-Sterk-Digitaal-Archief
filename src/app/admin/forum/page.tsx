@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useFirestore, useCollection } from '@/firebase';
 import { 
@@ -28,16 +28,12 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { nl } from 'date-fns/locale';
 
+/**
+ * @fileOverview Forum Moderatie.
+ * De authenticatie wordt nu volledig afgehandeld door de Middleware.
+ */
 export default function ForumModerationPage() {
   const firestore = useFirestore();
-  const [isAuthorized, setIsAuthorized] = useState(false);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const auth = sessionStorage.getItem('admin_auth');
-      if (auth === 'true') setIsAuthorized(true);
-    }
-  }, []);
 
   const forumQuery = useMemo(() => {
     if (!firestore) return null;
@@ -55,7 +51,6 @@ export default function ForumModerationPage() {
       });
       toast({ 
         title: status === 'approved' ? "Post goedgekeurd" : "Post afgewezen",
-        description: status === 'approved' ? "Bericht is nu zichtbaar in het forum." : "Bericht is verborgen."
       });
     } catch (e) {
       toast({ variant: "destructive", title: "Fout bij bijwerken" });
@@ -71,10 +66,6 @@ export default function ForumModerationPage() {
       toast({ variant: "destructive", title: "Verwijderen mislukt" });
     }
   };
-
-  if (!isAuthorized) {
-    return <div className="h-screen flex items-center justify-center">Geen toegang</div>;
-  }
 
   const pendingPosts = allPosts?.filter(p => (p as any).status === 'pending') || [];
   const approvedPosts = allPosts?.filter(p => (p as any).status === 'approved') || [];
@@ -93,10 +84,6 @@ export default function ForumModerationPage() {
           </div>
         </div>
         <div className="flex items-center gap-4">
-           <div className="flex items-center gap-2 bg-yellow-500/10 text-yellow-700 px-4 py-2 rounded-full border border-yellow-500/20">
-              <Users className="w-4 h-4" />
-              <span className="text-[10px] font-black uppercase tracking-widest">Soof is online</span>
-           </div>
            <Badge className="bg-accent/10 text-accent border-accent/20 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest">
               {pendingPosts.length} berichten te beoordelen
            </Badge>
@@ -119,7 +106,9 @@ export default function ForumModerationPage() {
 
           <div className="bg-white/40 backdrop-blur-3xl rounded-[3rem] p-10 border border-white/60 shadow-2xl">
             <TabsContent value="pending" className="space-y-6 mt-0">
-               {pendingPosts.length === 0 ? (
+               {loading ? (
+                 <div className="py-32 text-center opacity-20 italic">Laden...</div>
+               ) : pendingPosts.length === 0 ? (
                  <div className="py-32 text-center opacity-20 italic">Geen berichten in de wachtrij.</div>
                ) : (
                  pendingPosts.map((post: any) => (
