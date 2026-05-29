@@ -14,7 +14,8 @@ import {
   serverTimestamp, 
   orderBy,
   arrayUnion,
-  arrayRemove
+  arrayRemove,
+  writeBatch
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Button } from '@/components/ui/button';
@@ -49,11 +50,12 @@ import {
   Camera,
   Activity,
   ShieldCheck,
-  Download,
-  Database,
-  Github,
   Lock,
-  ArrowRight
+  ArrowRight,
+  CheckSquare,
+  Square,
+  Tags,
+  FolderInput
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -80,18 +82,10 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
-import { 
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { normalizeArtwork, sanitizeArtwork, MUSEUM_TAGS, slugify, sortArtworksByTitle } from '@/lib/museum-utils';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Checkbox } from '@/components/ui/checkbox';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
 const ART_TECHNIQUES = [
   "Olieverf",
@@ -131,29 +125,26 @@ export default function AdminPage() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('archive');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
-  const [selectedArtworks, setSelectedItems] = useState<string[]>([]);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   
   const [isArtworkDialogOpen, setIsArtworkDialogOpen] = useState(false);
   const [isRoomDialogOpen, setIsRoomDialogOpen] = useState(false);
-  const [isBulkTagDialogOpen, setIsBulkTagDialogOpen] = useState(false);
-  const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
+  const [isBulkUpdateOpen, setIsBulkUpdateOpen] = useState(false);
   
   const [editingArtwork, setEditingArtwork] = useState<any>(null);
   const [editingRoom, setEditingRoom] = useState<any>(null);
   
   const [isUploading, setIsUploading] = useState(false);
-  const [isCleaning, setIsCleaning] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [artworkForm, setArtworkForm] = useState<any>({
-    title: '', displayTitle: '', slug: '', image: '', year: '', medium: '', description: '', tags: '', featured: false, inShop: false
+    title: '', displayTitle: '', slug: '', image: '', year: '', medium: '', description: '', tags: [], roomIds: [], featured: false, inShop: false
   });
   
   const [roomForm, setRoomForm] = useState({ title: '', description: '', order: 0 });
-  const [tempBulkTags, setTempBulkTags] = useState<string[]>([]);
-  const [showCustomMedium, setShowCustomMedium] = useState(false);
+  const [newTag, setNewTag] = useState("");
 
   const artworksQuery = useMemo(() => {
     if (!firestore) return null;
@@ -166,7 +157,7 @@ export default function AdminPage() {
   }, [firestore]);
 
   const { data: dbArtworks, loading: artLoading } = useCollection(artworksQuery);
-  const { data: rooms, loading: roomsLoading } = useCollection(roomsQuery);
+  const { data: rooms } = useCollection(roomsQuery);
 
   const artworks = useMemo(() => {
     if (!dbArtworks) return [];
@@ -183,58 +174,67 @@ export default function AdminPage() {
     return [...filtered].sort(sortArtworksByTitle);
   }, [artworks, searchQuery]);
 
-  if (!isAuthorized) {
-    return (
-      <main className="min-h-screen flex flex-col items-center justify-center p-6 bg-[#f4f4f2]">
-        <Card className="max-w-md w-full p-12 rounded-[3rem] shadow-2xl border-none space-y-8 text-center">
-          <div className="w-20 h-20 bg-accent/5 rounded-full flex items-center justify-center mx-auto">
-            <Lock className="w-8 h-8 text-accent/40" />
-          </div>
-          <h1 className="font-headline text-3xl italic">Archief <span className="text-accent">Beheer</span></h1>
-          <form onSubmit={handleLogin} className="space-y-6">
-            <Input 
-              type="password" 
-              value={password} 
-              onChange={e => setPassword(e.target.value)} 
-              placeholder="Wachtwoord" 
-              className="h-16 rounded-2xl text-center text-xl tracking-widest bg-black/5 border-none"
-            />
-            <Button type="submit" className="w-full h-16 rounded-2xl bg-primary text-white font-black uppercase tracking-widest text-[11px]">
-              Ontgrendelen <ArrowRight className="ml-2 w-4 h-4" />
-            </Button>
-          </form>
-        </Card>
-      </main>
+  const handleToggleSelect = (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     );
-  }
+  };
+
+  const handleSelectAll = () => {
+    if (selectedIds.length === filteredArtworks.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filteredArtworks.map(a => a.id));
+    }
+  };
+
+  const handleBulkUpdate = async (type: 'add_tag' | 'remove_tag' | 'add_room' | 'remove_room', value: string) => {
+    if (!firestore || selectedIds.length === 0) return;
+    const batch = writeBatch(firestore);
+    
+    selectedIds.forEach(id => {
+      const artRef = doc(firestore, 'artworks', id);
+      if (type === 'add_tag') batch.update(artRef, { tags: arrayUnion(value) });
+      if (type === 'remove_tag') batch.update(artRef, { tags: arrayRemove(value) });
+      if (type === 'add_room') batch.update(artRef, { roomIds: arrayUnion(value) });
+      if (type === 'remove_room') batch.update(artRef, { roomIds: arrayRemove(value) });
+    });
+
+    try {
+      await batch.commit();
+      toast({ title: `Bulk update voltooid voor ${selectedIds.length} items.` });
+      setSelectedIds([]);
+      setIsBulkUpdateOpen(false);
+    } catch (e) {
+      toast({ variant: "destructive", title: "Fout bij bulk update" });
+    }
+  };
 
   const handleOpenNewArtwork = () => {
     setEditingArtwork(null);
-    setSelectedFile(null);
-    setShowCustomMedium(false);
-    setArtworkForm({ title: '', displayTitle: '', slug: '', image: '', year: '', medium: 'Olieverf', description: '', tags: [], featured: false, inShop: false });
+    setArtworkForm({ 
+      title: '', displayTitle: '', slug: '', image: '', year: '', medium: 'Olieverf', description: '', tags: [], roomIds: [], featured: false, inShop: false 
+    });
     setIsArtworkDialogOpen(true);
   };
 
   const handleEditArtwork = (art: any) => {
     setEditingArtwork(art); 
-    setSelectedFile(null);
-    const isCustom = art.medium && !ART_TECHNIQUES.includes(art.medium);
-    setShowCustomMedium(isCustom);
     setArtworkForm({ 
       ...art, 
-      tags: Array.isArray(art.tags) ? art.tags : []
+      tags: Array.isArray(art.tags) ? art.tags : [],
+      roomIds: Array.isArray(art.roomIds) ? art.roomIds : []
     }); 
     setIsArtworkDialogOpen(true); 
   };
 
   const handleSaveArtwork = async () => {
     if (!firestore) return;
-
-    let finalImageUrl = artworkForm.image;
     setIsUploading(true);
 
     try {
+      let finalImageUrl = artworkForm.image;
       if (selectedFile && storage) {
         const storageRef = ref(storage, `artworks/${Date.now()}_${selectedFile.name}`);
         const uploadResult = await uploadBytes(storageRef, selectedFile);
@@ -263,70 +263,64 @@ export default function AdminPage() {
     }
   };
 
-  const handleCleanupYears = async () => {
-    if (!firestore || !dbArtworks || !confirm("Corrigeer alle jaartallen?")) return;
-    setIsCleaning(true);
-    try {
-      for (const art of dbArtworks) {
-        const rawYear = String(art.year || "");
-        if (rawYear.includes('2026')) {
-          const newYear = rawYear.replace(/2026/g, '').replace(/\s+/g, ' ').trim();
-          await updateDoc(doc(firestore, 'artworks', art.id), { year: newYear });
-        }
-      }
-      toast({ title: "Gecorrigeerd" });
-    } catch (e) { toast({ variant: "destructive", title: "Schoonmaak mislukt" }); }
-    finally { setIsCleaning(false); }
+  const toggleTag = (tag: string) => {
+    const tags = artworkForm.tags || [];
+    if (tags.includes(tag)) {
+      setArtworkForm({ ...artworkForm, tags: tags.filter((t: string) => t !== tag) });
+    } else {
+      setArtworkForm({ ...artworkForm, tags: [...tags, tag] });
+    }
   };
 
-  const handleSaveRoom = async () => {
-    if (!firestore) return;
-    const slug = slugify(roomForm.title);
-    const data = { ...roomForm, slug, updatedAt: serverTimestamp() };
-    if (editingRoom) {
-      await updateDoc(doc(firestore, 'rooms', editingRoom.id), data);
-      toast({ title: "Zaal bijgewerkt" });
+  const toggleRoom = (roomId: string) => {
+    const roomIds = artworkForm.roomIds || [];
+    if (roomIds.includes(roomId)) {
+      setArtworkForm({ ...artworkForm, roomIds: roomIds.filter((id: string) => id !== roomId) });
     } else {
-      await addDoc(collection(firestore, 'rooms'), { ...data, createdAt: serverTimestamp(), isPublic: true });
-      toast({ title: "Zaal aangemaakt" });
+      setArtworkForm({ ...artworkForm, roomIds: [...roomIds, roomId] });
     }
-    setIsRoomDialogOpen(false);
   };
+
+  if (!isAuthorized) {
+    return (
+      <main className="min-h-screen flex flex-col items-center justify-center p-6 bg-[#f4f4f2]">
+        <Card className="max-w-md w-full p-12 rounded-[3rem] shadow-2xl border-none space-y-8 text-center">
+          <div className="w-20 h-20 bg-accent/5 rounded-full flex items-center justify-center mx-auto text-accent">
+            <Lock className="w-8 h-8" />
+          </div>
+          <h1 className="font-headline text-3xl italic">Archief <span className="text-accent">Beheer</span></h1>
+          <form onSubmit={handleLogin} className="space-y-6">
+            <Input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Wachtwoord" className="h-16 rounded-2xl text-center text-xl bg-black/5 border-none" />
+            <Button type="submit" className="w-full h-16 rounded-2xl bg-primary text-white font-black uppercase tracking-widest">Ontgrendelen</Button>
+          </form>
+        </Card>
+      </main>
+    );
+  }
 
   return (
     <div className="min-h-screen pt-32 px-8 bg-transparent">
       <header className="fixed top-0 left-0 right-0 h-24 bg-white/95 backdrop-blur-md border-b z-50 px-8 flex items-center justify-between shadow-sm">
-        <div className="flex items-center gap-6 overflow-hidden">
-          <div className="flex items-center gap-4 shrink-0">
-            <LayoutDashboard className="w-6 h-6 text-accent" />
-            <h1 className="font-headline text-2xl italic hidden sm:block">Museum Beheer</h1>
-          </div>
-          <div className="h-8 w-px bg-black/10 mx-2 hidden md:block" />
-          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-            <Link href="/admin/forum" className="flex items-center gap-2 px-4 py-2 rounded-full bg-accent/5 text-accent hover:bg-accent hover:text-white transition-all shrink-0">
-               <Users className="w-4 h-4" />
-               <span className="text-[10px] font-black uppercase tracking-widest">Forum</span>
-            </Link>
-            <Link href="/admin/activity" className="flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/5 text-blue-600 hover:bg-blue-500 hover:text-white transition-all shrink-0">
-               <Activity className="w-4 h-4" />
-               <span className="text-[10px] font-black uppercase tracking-widest">Ghost Monitor</span>
-            </Link>
-            <Link href="/admin/private" className="flex items-center gap-2 px-4 py-2 rounded-full bg-orange-500/5 text-orange-600 hover:bg-orange-500 hover:text-white transition-all shrink-0">
-               <Camera className="w-4 h-4" />
-               <span className="text-[10px] font-black uppercase tracking-widest">Privé Archief</span>
-            </Link>
-            <Link href="/admin/team" className="flex items-center gap-2 px-4 py-2 rounded-full bg-green-500/5 text-green-600 hover:bg-green-500 hover:text-white transition-all shrink-0">
-               <Zap className="w-4 h-4" />
-               <span className="text-[10px] font-black uppercase tracking-widest">Team Hub</span>
-            </Link>
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4">
+            <Archive className="w-6 h-6 text-accent" />
+            <h1 className="font-headline text-2xl italic leading-none">Museum Archief</h1>
           </div>
         </div>
         
-        <div className="flex items-center gap-3 shrink-0">
-           <Button variant="ghost" onClick={() => setIsExportDialogOpen(true)} className="h-12 rounded-full text-blue-600 font-black uppercase tracking-widest text-[9px]">
-             <ShieldCheck className="w-4 h-4 mr-2" /> Systeem Backup
-           </Button>
-           <Button onClick={handleOpenNewArtwork} className="h-12 rounded-full bg-accent text-white px-8 font-black uppercase tracking-widest text-[10px] shadow-lg">
+        <div className="flex items-center gap-3">
+           {selectedIds.length > 0 && (
+             <div className="flex items-center gap-2 mr-6 animate-in slide-in-from-right-4">
+                <span className="text-[10px] font-black uppercase text-accent/60 mr-2">{selectedIds.length} geselecteerd</span>
+                <Button onClick={() => setIsBulkUpdateOpen(true)} variant="secondary" className="h-10 rounded-full px-6 font-black uppercase text-[9px] tracking-widest bg-accent/10 text-accent hover:bg-accent hover:text-white">
+                  Bulk Acties
+                </Button>
+                <Button onClick={() => setSelectedIds([])} variant="ghost" className="h-10 w-10 rounded-full p-0">
+                  <X className="w-4 h-4" />
+                </Button>
+             </div>
+           )}
+           <Button onClick={handleOpenNewArtwork} className="h-12 rounded-full bg-accent text-white px-8 font-black uppercase tracking-widest text-[10px] shadow-lg hover:scale-105 transition-all">
              <Plus className="w-4 h-4 mr-2" /> Nieuw Kunstwerk
            </Button>
         </div>
@@ -336,7 +330,7 @@ export default function AdminPage() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-12">
           <TabsList className="bg-white/80 backdrop-blur-xl p-1.5 rounded-full w-fit mx-auto h-16 border shadow-lg">
             <TabsTrigger value="archive" className="rounded-full px-12 h-13 uppercase font-black text-[10px] tracking-widest">
-              <Archive className="w-4 h-4 mr-2" /> Volledig Archief
+              <Archive className="w-4 h-4 mr-2" /> Alle Werken
             </TabsTrigger>
             <TabsTrigger value="rooms" className="rounded-full px-12 h-13 uppercase font-black text-[10px] tracking-widest">
               <Layers className="w-4 h-4 mr-2" /> Zalen & Curatie
@@ -355,6 +349,9 @@ export default function AdminPage() {
                  />
                </div>
                <div className="flex items-center gap-4">
+                 <Button onClick={handleSelectAll} variant="ghost" className="text-[10px] font-black uppercase tracking-widest opacity-40 hover:opacity-100">
+                    {selectedIds.length === filteredArtworks.length ? 'Deselecteer Alles' : 'Selecteer Alles'}
+                 </Button>
                  <div className="bg-black/5 p-1 rounded-xl flex gap-1">
                     <Button variant={viewMode === 'grid' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('grid')} className="rounded-lg px-3 h-10"><LayoutGrid className="w-4 h-4" /></Button>
                     <Button variant={viewMode === 'list' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('list')} className="rounded-lg px-3 h-10"><ListIcon className="w-4 h-4" /></Button>
@@ -362,44 +359,254 @@ export default function AdminPage() {
                </div>
             </div>
 
-            <div className={cn(viewMode === 'grid' ? "grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6" : "space-y-6")}>
-              {filteredArtworks.map((art: any) => (
-                <div key={art.id} onClick={() => handleEditArtwork(art)} className="cursor-pointer group">
-                  <Card className="p-4 rounded-3xl overflow-hidden shadow-md group-hover:shadow-xl transition-all">
-                    <img src={art.image} className="aspect-square object-cover rounded-2xl mb-4" alt="" />
-                    <h3 className="font-bold text-sm truncate">{art.displayTitle || art.title}</h3>
+            {viewMode === 'grid' ? (
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+                {filteredArtworks.map((art: any) => (
+                  <div 
+                    key={art.id} 
+                    onClick={() => handleEditArtwork(art)}
+                    className={cn(
+                      "cursor-pointer group relative",
+                      selectedIds.includes(art.id) && "scale-95"
+                    )}
+                  >
+                    <button 
+                      onClick={(e) => handleToggleSelect(art.id, e)}
+                      className={cn(
+                        "absolute top-4 left-4 z-10 p-2 rounded-full backdrop-blur-md border transition-all",
+                        selectedIds.includes(art.id) ? "bg-accent text-white border-accent" : "bg-white/20 border-white/40 opacity-0 group-hover:opacity-100"
+                      )}
+                    >
+                      {selectedIds.includes(art.id) ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
+                    </button>
+                    <Card className={cn(
+                      "p-4 rounded-3xl overflow-hidden shadow-md group-hover:shadow-xl transition-all border-2",
+                      selectedIds.includes(art.id) ? "border-accent bg-accent/5" : "border-transparent"
+                    )}>
+                      <img src={art.image} className="aspect-square object-cover rounded-2xl mb-4" alt="" />
+                      <h3 className="font-bold text-sm truncate">{art.displayTitle || art.title}</h3>
+                      <p className="text-[9px] font-black uppercase opacity-30 mt-1">{art.year || '-'}</p>
+                    </Card>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredArtworks.map((art: any) => (
+                  <Card key={art.id} className={cn(
+                    "p-4 rounded-2xl flex items-center gap-6 cursor-pointer hover:shadow-lg transition-all border-2",
+                    selectedIds.includes(art.id) ? "border-accent bg-accent/5" : "border-transparent"
+                  )} onClick={() => handleEditArtwork(art)}>
+                    <Checkbox checked={selectedIds.includes(art.id)} onCheckedChange={() => handleToggleSelect(art.id)} onClick={e => e.stopPropagation()} />
+                    <img src={art.image} className="w-16 h-16 object-cover rounded-xl" alt="" />
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-bold truncate">{art.title}</h3>
+                      <p className="text-[10px] font-black uppercase tracking-widest opacity-40">{art.year} • {art.medium}</p>
+                    </div>
+                    <div className="flex items-center gap-2 overflow-hidden">
+                       {art.tags?.slice(0, 3).map((t: string) => <Badge key={t} variant="outline" className="text-[8px] uppercase tracking-widest">{t}</Badge>)}
+                       {art.tags?.length > 3 && <span className="text-[9px] opacity-30">+{art.tags.length - 3}</span>}
+                    </div>
                   </Card>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="rooms" className="space-y-8 mt-0">
-            <div className="grid gap-6">
-              {rooms?.map((room: any) => (
-                <Card key={room.id} className="p-8 rounded-[2.5rem] bg-white flex justify-between items-center shadow-lg">
-                   <div>
-                      <h3 className="font-headline text-2xl italic">{room.title}</h3>
-                      <p className="text-xs opacity-40 uppercase font-black tracking-widest">Zaal {room.order}</p>
-                   </div>
-                   <Button variant="ghost" onClick={() => { setEditingRoom(room); setRoomForm({...room}); setIsRoomDialogOpen(true); }} className="rounded-full h-12 w-12"><Edit3 className="w-4 h-4" /></Button>
-                </Card>
-              ))}
-            </div>
+             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {rooms?.map((room: any) => (
+                  <Card key={room.id} className="p-8 rounded-[2.5rem] bg-white border-none shadow-lg space-y-4">
+                     <div className="flex justify-between items-start">
+                        <Badge className="bg-accent/10 text-accent uppercase text-[9px] tracking-widest font-black">Zaal {room.order}</Badge>
+                        <Button variant="ghost" size="icon" onClick={() => { setEditingRoom(room); setRoomForm({...room}); setIsRoomDialogOpen(true); }}><Edit3 className="w-4 h-4" /></Button>
+                     </div>
+                     <h3 className="font-headline text-3xl italic">{room.title}</h3>
+                     <p className="text-sm text-muted-foreground line-clamp-2 italic">{room.description}</p>
+                  </Card>
+                ))}
+             </div>
           </TabsContent>
         </Tabs>
       </main>
 
+      {/* ARTWORK EDITOR DIALOG */}
       <Dialog open={isArtworkDialogOpen} onOpenChange={setIsArtworkDialogOpen}>
-        <DialogContent className="max-w-3xl rounded-[3rem] p-10 overflow-y-auto max-h-[90vh]">
-          <DialogHeader><DialogTitle className="font-headline text-3xl italic">{editingArtwork ? 'Bewerken' : 'Nieuw'}</DialogTitle></DialogHeader>
-          <div className="space-y-6 pt-6">
-             <div className="space-y-2"><Label>Titel</Label><Input value={artworkForm.title} onChange={e => setArtworkForm({...artworkForm, title: e.target.value})} className="h-14 rounded-2xl bg-black/5" /></div>
-             <div className="space-y-2"><Label>Beeld URL</Label><Input value={artworkForm.image} onChange={e => setArtworkForm({...artworkForm, image: e.target.value})} className="h-14 rounded-2xl bg-black/5" /></div>
-             <div className="space-y-2"><Label>Beschrijving</Label><Textarea value={artworkForm.description} onChange={e => setArtworkForm({...artworkForm, description: e.target.value})} className="min-h-[140px] rounded-2xl bg-black/5" /></div>
-             <Button onClick={handleSaveArtwork} disabled={isUploading} className="w-full h-16 rounded-2xl bg-accent text-white font-black uppercase">{isUploading ? 'Laden...' : 'Opslaan'}</Button>
+        <DialogContent className="max-w-4xl rounded-[3rem] p-0 overflow-hidden bg-background">
+          <div className="flex h-[85vh]">
+             {/* Linkerkant: Media Preview */}
+             <div className="w-1/2 bg-black/5 flex flex-col items-center justify-center p-12 border-r">
+                {artworkForm.image ? (
+                  <div className="relative group w-full aspect-square rounded-[2rem] overflow-hidden shadow-2xl">
+                     <img src={artworkForm.image} className="w-full h-full object-cover" alt="" />
+                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                        <Button onClick={() => fileInputRef.current?.click()} variant="secondary" className="rounded-full h-12 px-6">Vervangen</Button>
+                     </div>
+                  </div>
+                ) : (
+                  <div onClick={() => fileInputRef.current?.click()} className="w-full aspect-square rounded-[2rem] border-4 border-dashed flex flex-col items-center justify-center gap-4 cursor-pointer hover:bg-black/5 transition-all">
+                     <Upload className="w-10 h-10 opacity-20" />
+                     <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Upload Afbeelding</p>
+                  </div>
+                )}
+                <input type="file" ref={fileInputRef} className="hidden" onChange={e => setSelectedFile(e.target.files?.[0] || null)} />
+             </div>
+
+             {/* Rechterkant: Formulier */}
+             <div className="w-1/2 flex flex-col h-full">
+                <DialogHeader className="p-8 border-b">
+                   <DialogTitle className="font-headline text-3xl italic">
+                     {editingArtwork ? 'Werk Bewerken' : 'Nieuw Kunstwerk'}
+                   </DialogTitle>
+                </DialogHeader>
+                
+                <div className="flex-1 overflow-y-auto p-8 space-y-10 custom-scrollbar">
+                   {/* Namen Sectie */}
+                   <section className="space-y-6">
+                      <div className="flex items-center gap-3 border-l-4 border-accent pl-4">
+                         <Type className="w-4 h-4 text-accent" />
+                         <h4 className="text-[10px] font-black uppercase tracking-widest opacity-60">Identiteit</h4>
+                      </div>
+                      <div className="space-y-4">
+                         <div className="space-y-1.5">
+                            <Label className="text-[9px] font-black uppercase ml-2 opacity-40">Interne Titel</Label>
+                            <Input value={artworkForm.title} onChange={e => setArtworkForm({...artworkForm, title: e.target.value})} className="h-12 rounded-xl bg-black/5 border-none px-4" />
+                         </div>
+                         <div className="space-y-1.5">
+                            <Label className="text-[9px] font-black uppercase ml-2 opacity-40">Weergavetitel (Gallerie)</Label>
+                            <Input value={artworkForm.displayTitle} onChange={e => setArtworkForm({...artworkForm, displayTitle: e.target.value})} className="h-12 rounded-xl bg-black/5 border-none px-4" />
+                         </div>
+                         <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1.5">
+                               <Label className="text-[9px] font-black uppercase ml-2 opacity-40">Jaar</Label>
+                               <Input value={artworkForm.year} onChange={e => setArtworkForm({...artworkForm, year: e.target.value})} className="h-12 rounded-xl bg-black/5 border-none px-4" />
+                            </div>
+                            <div className="space-y-1.5">
+                               <Label className="text-[9px] font-black uppercase ml-2 opacity-40">Techniek</Label>
+                               <Select value={artworkForm.medium} onValueChange={v => setArtworkForm({...artworkForm, medium: v})}>
+                                  <SelectTrigger className="h-12 rounded-xl bg-black/5 border-none">
+                                     <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent className="rounded-xl shadow-xl border-none">
+                                     {ART_TECHNIQUES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                                  </SelectContent>
+                               </Select>
+                            </div>
+                         </div>
+                      </div>
+                   </section>
+
+                   {/* Tags Sectie */}
+                   <section className="space-y-6">
+                      <div className="flex items-center gap-3 border-l-4 border-accent pl-4">
+                         <TagIcon className="w-4 h-4 text-accent" />
+                         <h4 className="text-[10px] font-black uppercase tracking-widest opacity-60">Tags & Kenmerken</h4>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {artworkForm.tags?.map((t: string) => (
+                          <Badge key={t} className="bg-accent text-white rounded-full px-3 py-1 flex items-center gap-2">
+                             {t} <X className="w-3 h-3 cursor-pointer" onClick={() => toggleTag(t)} />
+                          </Badge>
+                        ))}
+                      </div>
+                      <div className="space-y-4">
+                        {Object.entries(MUSEUM_TAGS).map(([cat, tags]) => (
+                          <div key={cat} className="space-y-2">
+                             <p className="text-[8px] font-black uppercase opacity-30">{cat}</p>
+                             <div className="flex flex-wrap gap-1.5">
+                                {tags.map(tag => (
+                                  <button 
+                                    key={tag} 
+                                    onClick={() => toggleTag(tag)}
+                                    className={cn(
+                                      "px-3 py-1 rounded-lg text-[9px] font-bold border transition-all",
+                                      artworkForm.tags?.includes(tag) ? "bg-accent/10 border-accent text-accent" : "bg-white border-black/5 text-black/40 hover:border-black/20"
+                                    )}
+                                  >
+                                    {tag}
+                                  </button>
+                                ))}
+                             </div>
+                          </div>
+                        ))}
+                      </div>
+                   </section>
+
+                   {/* Zalen Sectie */}
+                   <section className="space-y-6">
+                      <div className="flex items-center gap-3 border-l-4 border-accent pl-4">
+                         <FolderInput className="w-4 h-4 text-accent" />
+                         <h4 className="text-[10px] font-black uppercase tracking-widest opacity-60">Zaal Toewijzing</h4>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                         {rooms?.map((room: any) => (
+                           <button 
+                             key={room.id}
+                             onClick={() => toggleRoom(room.id)}
+                             className={cn(
+                               "flex items-center gap-3 p-4 rounded-xl border transition-all text-left",
+                               artworkForm.roomIds?.includes(room.id) ? "bg-accent/5 border-accent text-accent" : "bg-white border-black/5 text-black/40"
+                             )}
+                           >
+                              {artworkForm.roomIds?.includes(room.id) ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
+                              <span className="text-[10px] font-black uppercase tracking-widest">{room.title}</span>
+                           </button>
+                         ))}
+                      </div>
+                   </section>
+
+                   <section className="space-y-6">
+                      <div className="flex items-center gap-3 border-l-4 border-accent pl-4">
+                         <Edit3 className="w-4 h-4 text-accent" />
+                         <h4 className="text-[10px] font-black uppercase tracking-widest opacity-60">Beschrijving</h4>
+                      </div>
+                      <Textarea value={artworkForm.description} onChange={e => setArtworkForm({...artworkForm, description: e.target.value})} className="min-h-[140px] rounded-2xl bg-black/5 border-none p-6" />
+                   </section>
+                </div>
+
+                <div className="p-8 bg-black/5 flex items-center gap-4">
+                   <Button onClick={handleSaveArtwork} disabled={isUploading} className="flex-1 h-16 rounded-2xl bg-accent text-white font-black uppercase tracking-widest shadow-xl">
+                      {isUploading ? <Loader2 className="animate-spin" /> : "Wijzigingen Opslaan"}
+                   </Button>
+                </div>
+             </div>
           </div>
         </DialogContent>
+      </Dialog>
+
+      {/* BULK UPDATE DIALOG */}
+      <Dialog open={isBulkUpdateOpen} onOpenChange={setIsBulkUpdateOpen}>
+         <DialogContent className="max-w-md rounded-[2.5rem] p-10 bg-white">
+            <DialogHeader>
+               <DialogTitle className="font-headline text-2xl italic">Bulk Update</DialogTitle>
+               <DialogDescription className="text-[10px] uppercase font-black tracking-widest opacity-40">
+                  Pas {selectedIds.length} items tegelijk aan
+               </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-8 pt-6">
+               <div className="space-y-4">
+                  <Label className="text-[10px] font-black uppercase opacity-60">Toevoegen aan Zaal</Label>
+                  <div className="grid gap-2">
+                     {rooms?.map((room: any) => (
+                       <Button key={room.id} variant="outline" onClick={() => handleBulkUpdate('add_room', room.id)} className="justify-start h-12 rounded-xl text-[10px] font-black uppercase tracking-widest">
+                          <Plus className="w-4 h-4 mr-3 opacity-30" /> {room.title}
+                       </Button>
+                     ))}
+                  </div>
+               </div>
+               
+               <div className="space-y-4">
+                  <Label className="text-[10px] font-black uppercase opacity-60">Tag Toevoegen</Label>
+                  <div className="flex flex-wrap gap-1.5">
+                     {MUSEUM_TAGS.Techniek.map(tag => (
+                       <Button key={tag} size="sm" variant="secondary" onClick={() => handleBulkUpdate('add_tag', tag)} className="h-8 rounded-lg text-[9px] font-black uppercase tracking-widest">
+                          {tag}
+                       </Button>
+                     ))}
+                  </div>
+               </div>
+            </div>
+         </DialogContent>
       </Dialog>
     </div>
   );
