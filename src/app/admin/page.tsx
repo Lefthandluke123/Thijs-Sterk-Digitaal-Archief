@@ -144,6 +144,7 @@ export default function AdminPage() {
   // Floating Panel State
   const [panelPos, setPanelPos] = useState({ x: 100, y: 150 });
   const [isDragging, setIsDragging] = useState(false);
+  const [bulkExpanded, setBulkExpanded] = useState({ rooms: true, tags: true });
   const dragStartRef = useRef({ x: 0, y: 0 });
 
   const [artworkForm, setArtworkForm] = useState<any>({
@@ -316,6 +317,11 @@ export default function AdminPage() {
     }
   };
 
+  // Helper for bulk panel toggle states
+  const selectedArts = useMemo(() => artworks.filter(a => selectedIds.includes(a.id)), [artworks, selectedIds]);
+  const isTagAssignedToSelection = (tag: string) => selectedArts.some(a => a.tags?.includes(tag));
+  const isRoomAssignedToSelection = (roomId: string) => selectedArts.some(a => a.roomIds?.includes(roomId));
+
   if (!isAuthorized) {
     return (
       <main className="min-h-screen flex flex-col items-center justify-center p-6 bg-[#f4f4f2]">
@@ -477,107 +483,90 @@ export default function AdminPage() {
               </div>
 
               {/* Scrollable Content Area */}
-              <div className="flex-1 overflow-y-auto p-8 min-h-0 custom-scrollbar bg-white">
-                 <div className="space-y-12 pb-8">
+              <div className="flex-1 overflow-y-auto p-6 min-h-0 custom-scrollbar bg-white">
+                 <div className="space-y-4 pb-8">
                     {/* ROOMS SECTIONS */}
-                    <div className="space-y-8">
-                       <div className="space-y-4">
-                          <Label className="text-[10px] font-black uppercase text-accent border-l-4 border-accent pl-3">Toevoegen aan Zaal</Label>
-                          <div className="grid grid-cols-1 gap-2">
-                             {rooms?.map((room: any) => (
-                               <Button 
-                                 type="button"
-                                 key={room.id} 
-                                 variant="outline" 
-                                 onClick={(e) => { e.stopPropagation(); handleBulkUpdate('add_room', room.id); }} 
-                                 className="justify-start h-10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-accent/5"
-                               >
-                                  <Plus className="w-4 h-4 mr-3 opacity-30" /> {room.title}
-                               </Button>
-                             ))}
-                          </div>
-                       </div>
+                    <div className="space-y-2">
+                       <button 
+                         type="button"
+                         onClick={() => setBulkExpanded(p => ({ ...p, rooms: !p.rooms }))}
+                         className="flex items-center justify-between w-full p-2 hover:bg-black/5 rounded-lg transition-colors group"
+                       >
+                          <Label className="text-[10px] font-black uppercase text-accent border-l-4 border-accent pl-3 cursor-pointer">Zaal Toewijzing</Label>
+                          <ChevronDown className={cn("w-4 h-4 text-accent transition-transform duration-300", !bulkExpanded.rooms && "-rotate-90")} />
+                       </button>
                        
-                       <div className="space-y-4">
-                          <Label className="text-[10px] font-black uppercase text-destructive border-l-4 border-destructive pl-3">Verwijderen uit Zaal</Label>
-                          <div className="grid grid-cols-1 gap-2">
-                             {rooms?.map((room: any) => (
-                               <Button 
-                                 type="button"
-                                 key={room.id} 
-                                 variant="outline" 
-                                 onClick={(e) => { e.stopPropagation(); handleBulkUpdate('remove_room', room.id); }} 
-                                 className="justify-start h-10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-destructive/5 hover:text-destructive border-destructive/20"
-                               >
-                                  <Minus className="w-4 h-4 mr-3 opacity-30" /> {room.title}
-                               </Button>
-                             ))}
-                          </div>
-                       </div>
+                       {bulkExpanded.rooms && (
+                         <div className="grid grid-cols-1 gap-2 pt-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                            {rooms?.map((room: any) => {
+                              const isActive = isRoomAssignedToSelection(room.id);
+                              return (
+                                <button 
+                                  type="button"
+                                  key={room.id} 
+                                  onClick={(e) => { e.stopPropagation(); handleBulkUpdate(isActive ? 'remove_room' : 'add_room', room.id); }} 
+                                  className={cn(
+                                    "flex items-center gap-3 p-4 rounded-xl border transition-all text-left",
+                                    isActive ? "bg-accent/5 border-accent text-accent" : "bg-white border-black/5 text-black/40"
+                                  )}
+                                >
+                                   {isActive ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
+                                   <span className="text-[10px] font-black uppercase tracking-widest">{room.title}</span>
+                                </button>
+                              );
+                            })}
+                         </div>
+                       )}
                     </div>
 
                     <Separator className="bg-black/5" />
                     
                     {/* TAGS SECTIONS */}
-                    <div className="space-y-10">
-                       <div className="space-y-6">
-                          <Label className="text-[10px] font-black uppercase text-accent border-l-4 border-accent pl-3">Tag Toevoegen</Label>
-                          <div className="space-y-8">
-                             {Object.entries(MUSEUM_TAGS).map(([category, tags]) => (
+                    <div className="space-y-2">
+                       <button 
+                         type="button"
+                         onClick={() => setBulkExpanded(p => ({ ...p, tags: !p.tags }))}
+                         className="flex items-center justify-between w-full p-2 hover:bg-black/5 rounded-lg transition-colors group"
+                       >
+                          <Label className="text-[10px] font-black uppercase text-accent border-l-4 border-accent pl-3 cursor-pointer">Tags & Kenmerken</Label>
+                          <ChevronDown className={cn("w-4 h-4 text-accent transition-transform duration-300", !bulkExpanded.tags && "-rotate-90")} />
+                       </button>
+
+                       {bulkExpanded.tags && (
+                         <div className="space-y-6 pt-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                            {Object.entries(MUSEUM_TAGS).map(([category, tags]) => (
                                <div key={category} className="space-y-3">
                                   <p className="text-[8px] font-black uppercase opacity-30 tracking-widest">{category}</p>
                                   <div className="flex flex-wrap gap-1.5">
-                                     {tags.map(tag => (
-                                       <Button 
-                                         type="button"
-                                         key={tag} 
-                                         size="sm" 
-                                         variant="secondary" 
-                                         onClick={(e) => { e.stopPropagation(); handleBulkUpdate('add_tag', tag); }} 
-                                         className="h-8 rounded-lg text-[9px] font-black uppercase tracking-widest bg-black/5 hover:bg-accent hover:text-white transition-all"
-                                       >
-                                         {tag}
-                                       </Button>
-                                     ))}
+                                     {tags.map(tag => {
+                                       const isActive = isTagAssignedToSelection(tag);
+                                       return (
+                                         <button 
+                                           type="button"
+                                           key={tag} 
+                                           onClick={(e) => { e.stopPropagation(); handleBulkUpdate(isActive ? 'remove_tag' : 'add_tag', tag); }} 
+                                           className={cn(
+                                             "px-3 py-1.5 rounded-lg text-[9px] font-bold border transition-all flex items-center gap-2",
+                                             isActive ? "bg-accent/10 border-accent text-accent" : "bg-white border-black/5 text-black/40 hover:border-black/20"
+                                           )}
+                                         >
+                                           {isActive ? <CheckSquare className="w-3 h-3" /> : <Square className="w-3 h-3" />}
+                                           {tag}
+                                         </button>
+                                       );
+                                     })}
                                   </div>
                                </div>
-                             ))}
-                          </div>
-                       </div>
-
-                       <Separator className="bg-black/5" />
-
-                       <div className="space-y-6">
-                          <Label className="text-[10px] font-black uppercase text-destructive border-l-4 border-destructive pl-3">Tag Verwijderen</Label>
-                          <div className="space-y-8">
-                             {Object.entries(MUSEUM_TAGS).map(([category, tags]) => (
-                               <div key={category} className="space-y-3">
-                                  <p className="text-[8px] font-black uppercase opacity-30 tracking-widest">{category}</p>
-                                  <div className="flex flex-wrap gap-1.5">
-                                     {tags.map(tag => (
-                                       <Button 
-                                         type="button"
-                                         key={tag} 
-                                         size="sm" 
-                                         variant="outline" 
-                                         onClick={(e) => { e.stopPropagation(); handleBulkUpdate('remove_tag', tag); }} 
-                                         className="h-8 rounded-lg text-[9px] font-black uppercase tracking-widest border-destructive/20 hover:bg-destructive hover:text-white transition-all"
-                                       >
-                                         {tag}
-                                       </Button>
-                                     ))}
-                                  </div>
-                               </div>
-                             ))}
-                          </div>
-                       </div>
+                            ))}
+                         </div>
+                       )}
                     </div>
                  </div>
               </div>
 
               {/* Helper Footer */}
               <div className="p-4 bg-black/5 border-t text-center shrink-0">
-                 <p className="text-[8px] font-bold uppercase opacity-30 tracking-[0.2em]">Slepen via de bovenbalk • Scrollen binnenin</p>
+                 <p className="text-[8px] font-bold uppercase opacity-30 tracking-[0.2em]">Slepen via de bovenbalk • Toggles werken direct</p>
               </div>
            </Card>
         </div>
