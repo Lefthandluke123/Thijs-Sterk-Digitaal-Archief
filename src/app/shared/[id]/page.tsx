@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -88,10 +89,10 @@ export default function SharedRoomPage() {
         )}
       </div>
 
-      <div className="flex-1 relative flex items-center justify-center p-12 md:p-32">
+      <div className="flex-1 relative flex items-center justify-center p-8 md:p-20">
         <div className="absolute inset-x-10 top-1/2 -translate-y-1/2 flex justify-between pointer-events-none z-50">
-          <button onClick={() => setCurrentIndex(p => Math.max(0, p - 1))} disabled={currentIndex === 0} className={cn("p-8 rounded-full bg-white/20 backdrop-blur-md border border-black/5 pointer-events-auto transition-all disabled:opacity-0 shadow-xl hover:bg-accent hover:text-accent-foreground", currentIndex > 0 && "active:scale-90")}><ArrowLeft className="w-10 h-10 opacity-40" /></button>
-          <button onClick={() => setCurrentIndex(p => Math.min(sortedArtworks.length - 1, p + 1))} disabled={currentIndex === sortedArtworks.length - 1} className={cn("p-8 rounded-full bg-white/20 backdrop-blur-md border border-black/5 pointer-events-auto transition-all disabled:opacity-0 shadow-xl hover:bg-accent hover:text-accent-foreground", currentIndex < sortedArtworks.length - 1 && "active:scale-90")}><ArrowRight className="w-10 h-10 opacity-40" /></button>
+          <button onClick={() => setCurrentIndex(p => Math.max(0, p - 1))} disabled={currentIndex === 0} className={cn("p-6 rounded-full bg-white/20 backdrop-blur-md border border-black/5 pointer-events-auto transition-all disabled:opacity-0 shadow-xl hover:bg-accent hover:text-accent-foreground", currentIndex > 0 && "active:scale-90")}><ArrowLeft className="w-8 h-8 opacity-40" /></button>
+          <button onClick={() => setCurrentIndex(p => Math.min(sortedArtworks.length - 1, p + 1))} disabled={currentIndex === sortedArtworks.length - 1} className={cn("p-6 rounded-full bg-white/20 backdrop-blur-md border border-black/5 pointer-events-auto transition-all disabled:opacity-0 shadow-xl hover:bg-accent hover:text-accent-foreground", currentIndex < sortedArtworks.length - 1 && "active:scale-90")}><ArrowRight className="w-8 h-8 opacity-40" /></button>
         </div>
 
         {activeArtwork && (
@@ -101,39 +102,41 @@ export default function SharedRoomPage() {
                   key={activeArtwork.id}
                   src={activeArtwork.image || activeArtwork.imageUrl}
                   alt={activeArtwork.title}
-                  className="max-w-full max-h-full object-contain shadow-[0_60px_120px_-20px_rgba(0,0,0,0.45)] transition-all duration-1000 animate-in fade-in zoom-in-95 select-none"
+                  className="max-w-[90%] max-h-[70vh] object-contain shadow-[0_60px_120px_-20px_rgba(0,0,0,0.45)] transition-all duration-1000 animate-in fade-in zoom-in-95 select-none"
                   style={{ filter: `brightness(${activeArtwork.brightness || 1})` }}
                />
              ) : (
                <Palette className="w-20 h-20 opacity-10" />
              )}
              
-             <div className="absolute bottom-[-15vh] left-0 right-0 text-center space-y-2 pointer-events-none">
-               <h2 className="text-3xl md:text-5xl font-headline font-light italic text-foreground">{activeArtwork.displayTitle || activeArtwork.title}</h2>
-               <p className="text-[10px] font-black uppercase tracking-[0.4em] text-accent opacity-60">{activeArtwork.year} &bull; {activeArtwork.medium}</p>
+             <div className="absolute bottom-[-10vh] left-0 right-0 text-center space-y-2 pointer-events-none">
+               <h2 className="text-2xl md:text-4xl font-headline font-light italic text-foreground">{activeArtwork.displayTitle || activeArtwork.title}</h2>
+               <p className="text-[9px] font-black uppercase tracking-[0.4em] text-accent opacity-60">{activeArtwork.year} &bull; {activeArtwork.medium}</p>
              </div>
           </div>
         )}
       </div>
 
-      <div className="h-28 bg-white/80 backdrop-blur-2xl border-t border-black/5 px-10 flex items-center justify-between shrink-0">
-        <div className="flex flex-col gap-1">
-           <p className="text-[9px] font-black uppercase tracking-[0.4em] text-black/40">Expositie Voortgang</p>
-           <p className="text-[11px] font-bold uppercase tracking-widest text-accent">{currentIndex + 1} / {sortedArtworks.length}</p>
+      <div className="h-24 bg-white/80 backdrop-blur-2xl border-t border-black/5 px-8 flex items-center justify-between shrink-0">
+        <div className="flex flex-col gap-1 w-32">
+           <p className="text-[8px] font-black uppercase tracking-[0.4em] text-black/40">Voortgang</p>
+           <p className="text-[10px] font-bold uppercase tracking-widest text-accent">{currentIndex + 1} / {sortedArtworks.length}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 max-w-md overflow-x-auto py-2 no-scrollbar">
           {sortedArtworks.map((_, i) => (
             <button 
               key={i} 
               onClick={() => setCurrentIndex(i)}
-              className={cn("h-1.5 rounded-full transition-all duration-700", i === currentIndex ? "w-16 bg-accent" : "w-4 bg-black/10 hover:bg-black/20")} 
+              className={cn("h-1 rounded-full transition-all duration-700 shrink-0", i === currentIndex ? "w-10 bg-accent" : "w-3 bg-black/10 hover:bg-black/20")} 
             />
           ))}
         </div>
-        <Link href="/" className="group flex items-center gap-3 bg-accent text-accent-foreground transition-all px-8 py-4 rounded-full shadow-2xl hover:scale-105 active:scale-95">
-           <span className="text-[10px] font-black uppercase tracking-widest">Volledig Museum</span>
-           <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-        </Link>
+        <div className="w-48 flex justify-end">
+          <Link href="/" className="group flex items-center gap-3 bg-accent text-accent-foreground transition-all px-6 py-3 rounded-full shadow-xl hover:scale-105 active:scale-95">
+             <span className="text-[9px] font-black uppercase tracking-widest">Museum Exit</span>
+             <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+          </Link>
+        </div>
       </div>
     </main>
   );
