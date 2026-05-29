@@ -197,20 +197,22 @@ export default function AdminPage() {
 
   const handleBulkUpdate = async (type: 'add_tag' | 'remove_tag' | 'add_room' | 'remove_room', value: string) => {
     if (!firestore || selectedIds.length === 0) return;
-    const batch = writeBatch(firestore);
     
-    selectedIds.forEach(id => {
-      const artRef = doc(firestore, 'artworks', id);
-      if (type === 'add_tag') batch.update(artRef, { tags: arrayUnion(value) });
-      if (type === 'remove_tag') batch.update(artRef, { tags: arrayRemove(value) });
-      if (type === 'add_room') batch.update(artRef, { roomIds: arrayUnion(value) });
-      if (type === 'remove_room') batch.update(artRef, { roomIds: arrayRemove(value) });
-    });
-
     try {
+      const batch = writeBatch(firestore);
+      
+      selectedIds.forEach(id => {
+        const artRef = doc(firestore, 'artworks', id);
+        if (type === 'add_tag') batch.update(artRef, { tags: arrayUnion(value) });
+        if (type === 'remove_tag') batch.update(artRef, { tags: arrayRemove(value) });
+        if (type === 'add_room') batch.update(artRef, { roomIds: arrayUnion(value) });
+        if (type === 'remove_room') batch.update(artRef, { roomIds: arrayRemove(value) });
+      });
+
       await batch.commit();
-      toast({ title: `Bulk update voltooid voor ${selectedIds.length} items.` });
+      toast({ title: "Bijgewerkt", description: `${selectedIds.length} items succesvol aangepast.` });
     } catch (e) {
+      console.error("Bulk update error:", e);
       toast({ variant: "destructive", title: "Fout bij bulk update" });
     }
   };
