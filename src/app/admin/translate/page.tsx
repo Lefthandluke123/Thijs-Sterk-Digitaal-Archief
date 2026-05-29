@@ -18,7 +18,8 @@ import {
   Save,
   Type,
   LayoutTemplate,
-  Monitor
+  Monitor,
+  ArrowRight
 } from 'lucide-react';
 import { translateMuseumText } from '@/ai/flows/translate-flow';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -52,10 +53,11 @@ const PRESET_PAGES = [
 ];
 
 /**
- * @fileOverview Content & Layout Dashboard.
- * De authenticatie wordt nu volledig afgehandeld door de Middleware.
+ * @fileOverview Content & Layout Dashboard met handmatige inlog.
  */
 export default function TranslateStationPage() {
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [password, setPassword] = useState('');
   const firestore = useFirestore();
   const [isSaving, setIsSaving] = useState(false);
   const [translatingField, setTranslatingField] = useState<string | null>(null);
@@ -64,6 +66,18 @@ export default function TranslateStationPage() {
   const [selectedStoryId, setSelectedStoryId] = useState<string>('beatrijs');
   const [storyNodes, setStoryNodes] = useState<StoryNode[]>([]);
   const [formData, setFormData] = useState<Record<string, string>>({});
+
+  useEffect(() => {}, []);
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password === '1527') {
+      setIsAuthorized(true);
+      // sessionStorage line removed
+    } else {
+      toast({ variant: "destructive", title: "Wachtwoord onjuist" });
+    }
+  };
 
   const settingsRef = useMemo(() => {
     if (!firestore) return null;
@@ -131,6 +145,31 @@ export default function TranslateStationPage() {
       setIsSaving(false);
     }
   };
+
+  if (!isAuthorized) {
+    return (
+      <main className="min-h-screen flex items-center justify-center p-6 bg-[#f4f4f2]">
+        <Card className="max-w-md w-full p-12 rounded-[3rem] shadow-2xl border-none space-y-8 text-center">
+          <div className="w-20 h-20 bg-accent/5 rounded-full flex items-center justify-center mx-auto text-accent">
+            <Languages className="w-8 h-8" />
+          </div>
+          <h1 className="font-headline text-3xl italic">Vertaal <span className="text-accent">Beheer</span></h1>
+          <form onSubmit={handleLogin} className="space-y-6">
+            <Input 
+              type="password" 
+              value={password} 
+              onChange={e => setPassword(e.target.value)} 
+              placeholder="Wachtwoord" 
+              className="h-16 rounded-2xl text-center text-xl bg-black/5 border-none" 
+            />
+            <Button type="submit" className="w-full h-16 rounded-2xl bg-primary text-white font-black uppercase tracking-widest">
+              Inloggen <ArrowRight className="ml-2 w-4 h-4" />
+            </Button>
+          </form>
+        </Card>
+      </main>
+    );
+  }
 
   const categories = Array.from(new Set(CONTENT_FIELDS.map(f => f.category)));
 
