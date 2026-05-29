@@ -123,7 +123,7 @@ function NavbarContent() {
   return (
     <>
       <nav className="fixed top-0 left-0 right-0 z-50 h-24 md:h-28 px-4 md:px-6 flex items-center justify-center pointer-events-none">
-        <div className="container max-w-6xl h-16 md:h-20 glass-panel rounded-full flex flex-nowrap items-center justify-between px-4 md:px-6 pointer-events-auto border-white/60 shadow-2xl">
+        <div className="container max-w-[1400px] h-16 md:h-20 glass-panel rounded-full flex flex-nowrap items-center justify-between px-4 md:px-8 pointer-events-auto border-white/60 shadow-2xl">
           
           <div className="flex-shrink-0 min-w-0">
             <div className="flex items-center gap-2 md:gap-4 group cursor-pointer" onClick={handleLogoClick}>
