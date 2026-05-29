@@ -55,7 +55,9 @@ import {
   CheckSquare,
   Square,
   Tags,
-  FolderInput
+  FolderInput,
+  GripHorizontal,
+  MousePointer2
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -131,7 +133,6 @@ export default function AdminPage() {
   
   const [isArtworkDialogOpen, setIsArtworkDialogOpen] = useState(false);
   const [isRoomDialogOpen, setIsRoomDialogOpen] = useState(false);
-  const [isBulkUpdateOpen, setIsBulkUpdateOpen] = useState(false);
   
   const [editingArtwork, setEditingArtwork] = useState<any>(null);
   const [editingRoom, setEditingRoom] = useState<any>(null);
@@ -140,12 +141,16 @@ export default function AdminPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
+  // Floating Panel State
+  const [panelPos, setPanelPos] = useState({ x: 100, y: 150 });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartRef = useRef({ x: 0, y: 0 });
+
   const [artworkForm, setArtworkForm] = useState<any>({
     title: '', displayTitle: '', slug: '', image: '', year: '', medium: '', description: '', tags: [], roomIds: [], featured: false, inShop: false
   });
   
   const [roomForm, setRoomForm] = useState({ title: '', description: '', order: 0 });
-  const [newTag, setNewTag] = useState("");
 
   const artworksQuery = useMemo(() => {
     if (!firestore) return null;
@@ -205,12 +210,39 @@ export default function AdminPage() {
     try {
       await batch.commit();
       toast({ title: `Bulk update voltooid voor ${selectedIds.length} items.` });
-      setSelectedIds([]);
-      setIsBulkUpdateOpen(false);
     } catch (e) {
       toast({ variant: "destructive", title: "Fout bij bulk update" });
     }
   };
+
+  // Dragging Logic
+  const handleDragStart = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    dragStartRef.current = {
+      x: e.clientX - panelPos.x,
+      y: e.clientY - panelPos.y
+    };
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return;
+      setPanelPos({
+        x: e.clientX - dragStartRef.current.x,
+        y: e.clientY - dragStartRef.current.y
+      });
+    };
+    const handleMouseUp = () => setIsDragging(false);
+
+    if (isDragging) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    }
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging]);
 
   const handleOpenNewArtwork = () => {
     setEditingArtwork(null);
@@ -310,17 +342,6 @@ export default function AdminPage() {
         </div>
         
         <div className="flex items-center gap-3">
-           {selectedIds.length > 0 && (
-             <div className="flex items-center gap-2 mr-6 animate-in slide-in-from-right-4">
-                <span className="text-[10px] font-black uppercase text-accent/60 mr-2">{selectedIds.length} geselecteerd</span>
-                <Button onClick={() => setIsBulkUpdateOpen(true)} variant="secondary" className="h-10 rounded-full px-6 font-black uppercase text-[9px] tracking-widest bg-accent/10 text-accent hover:bg-accent hover:text-white">
-                  Bulk Acties
-                </Button>
-                <Button onClick={() => setSelectedIds([])} variant="ghost" className="h-10 w-10 rounded-full p-0">
-                  <X className="w-4 h-4" />
-                </Button>
-             </div>
-           )}
            <Button onClick={handleOpenNewArtwork} className="h-12 rounded-full bg-accent text-white px-8 font-black uppercase tracking-widest text-[10px] shadow-lg hover:scale-105 transition-all">
              <Plus className="w-4 h-4 mr-2" /> Nieuw Kunstwerk
            </Button>
@@ -429,6 +450,73 @@ export default function AdminPage() {
           </TabsContent>
         </Tabs>
       </main>
+
+      {/* FLOATING DRAGGABLE BULK PANEL */}
+      {selectedIds.length > 0 && (
+        <div 
+          className="fixed z-[1000] shadow-2xl transition-shadow"
+          style={{ left: panelPos.x, top: panelPos.y, width: '420px' }}
+        >
+           <Card className="rounded-[2.5rem] bg-white border-4 border-accent overflow-hidden flex flex-col max-h-[70vh]">
+              {/* Header / Handle */}
+              <div 
+                onMouseDown={handleDragStart}
+                className="p-6 bg-accent text-white cursor-grab active:cursor-grabbing flex items-center justify-between"
+              >
+                <div className="flex items-center gap-3">
+                  <GripHorizontal className="w-5 h-5 opacity-40" />
+                  <span className="font-headline text-lg italic">Bulk Beheer</span>
+                  <Badge variant="outline" className="bg-white/10 border-white/20 text-white text-[9px] font-black">{selectedIds.length} items</Badge>
+                </div>
+                <Button onClick={() => setSelectedIds([])} variant="ghost" className="h-8 w-8 rounded-full p-0 text-white hover:bg-white/10">
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+
+              <ScrollArea className="flex-1 p-8">
+                 <div className="space-y-10">
+                    <div className="space-y-4">
+                       <Label className="text-[10px] font-black uppercase opacity-60 border-l-4 border-accent pl-3">Toevoegen aan Zaal</Label>
+                       <div className="grid grid-cols-1 gap-2">
+                          {rooms?.map((room: any) => (
+                            <Button key={room.id} variant="outline" onClick={() => handleBulkUpdate('add_room', room.id)} className="justify-start h-10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-accent/5">
+                               <Plus className="w-4 h-4 mr-3 opacity-30" /> {room.title}
+                            </Button>
+                          ))}
+                       </div>
+                    </div>
+                    
+                    <div className="space-y-6">
+                       <Label className="text-[10px] font-black uppercase opacity-60 border-l-4 border-accent pl-3">Tag Toevoegen</Label>
+                       <div className="space-y-8">
+                          {Object.entries(MUSEUM_TAGS).map(([category, tags]) => (
+                            <div key={category} className="space-y-3">
+                               <p className="text-[8px] font-black uppercase opacity-30 tracking-widest">{category}</p>
+                               <div className="flex flex-wrap gap-1.5">
+                                  {tags.map(tag => (
+                                    <Button 
+                                      key={tag} 
+                                      size="sm" 
+                                      variant="secondary" 
+                                      onClick={() => handleBulkUpdate('add_tag', tag)} 
+                                      className="h-8 rounded-lg text-[9px] font-black uppercase tracking-widest bg-black/5 hover:bg-accent hover:text-white transition-all"
+                                    >
+                                      {tag}
+                                    </Button>
+                                  ))}
+                               </div>
+                            </div>
+                          ))}
+                       </div>
+                    </div>
+                 </div>
+              </ScrollArea>
+              <div className="p-4 bg-black/5 border-t text-center">
+                 <p className="text-[8px] font-bold uppercase opacity-30 tracking-[0.2em]">Pak de bovenbalk vast om dit paneel te verplaatsen</p>
+              </div>
+           </Card>
+        </div>
+      )}
 
       {/* ARTWORK EDITOR DIALOG */}
       <Dialog open={isArtworkDialogOpen} onOpenChange={setIsArtworkDialogOpen}>
@@ -572,61 +660,6 @@ export default function AdminPage() {
              </div>
           </div>
         </DialogContent>
-      </Dialog>
-
-      {/* BULK UPDATE DIALOG */}
-      <Dialog open={isBulkUpdateOpen} onOpenChange={setIsBulkUpdateOpen}>
-         <DialogContent className="max-w-2xl rounded-[2.5rem] p-0 bg-white overflow-hidden">
-            <DialogHeader className="p-10 border-b">
-               <DialogTitle className="font-headline text-2xl italic">Bulk Update</DialogTitle>
-               <DialogDescription className="text-[10px] uppercase font-black tracking-widest opacity-40">
-                  Pas {selectedIds.length} items tegelijk aan
-               </DialogDescription>
-            </DialogHeader>
-            <ScrollArea className="max-h-[60vh] p-10">
-               <div className="space-y-12">
-                  {/* Zalen Sectie */}
-                  <div className="space-y-4">
-                     <Label className="text-[10px] font-black uppercase opacity-60 border-l-4 border-accent pl-3">Toevoegen aan Zaal</Label>
-                     <div className="grid grid-cols-2 gap-3">
-                        {rooms?.map((room: any) => (
-                          <Button key={room.id} variant="outline" onClick={() => handleBulkUpdate('add_room', room.id)} className="justify-start h-12 rounded-xl text-[10px] font-black uppercase tracking-widest">
-                             <Plus className="w-4 h-4 mr-3 opacity-30" /> {room.title}
-                          </Button>
-                        ))}
-                     </div>
-                  </div>
-                  
-                  {/* Alle Tags Sectie */}
-                  <div className="space-y-6">
-                     <Label className="text-[10px] font-black uppercase opacity-60 border-l-4 border-accent pl-3">Tag Toevoegen (Alle Categorieën)</Label>
-                     <div className="space-y-8">
-                        {Object.entries(MUSEUM_TAGS).map(([category, tags]) => (
-                          <div key={category} className="space-y-3">
-                             <p className="text-[8px] font-black uppercase opacity-30 tracking-widest">{category}</p>
-                             <div className="flex flex-wrap gap-1.5">
-                                {tags.map(tag => (
-                                  <Button 
-                                    key={tag} 
-                                    size="sm" 
-                                    variant="secondary" 
-                                    onClick={() => handleBulkUpdate('add_tag', tag)} 
-                                    className="h-8 rounded-lg text-[9px] font-black uppercase tracking-widest bg-black/5 hover:bg-accent hover:text-white transition-all"
-                                  >
-                                    {tag}
-                                  </Button>
-                                ))}
-                             </div>
-                          </div>
-                        ))}
-                     </div>
-                  </div>
-               </div>
-            </ScrollArea>
-            <div className="p-6 bg-black/5 border-t text-center">
-               <p className="text-[9px] font-bold uppercase opacity-30 tracking-widest">Klik op een knop om de actie direct uit te voeren op de selectie</p>
-            </div>
-         </DialogContent>
       </Dialog>
     </div>
   );
