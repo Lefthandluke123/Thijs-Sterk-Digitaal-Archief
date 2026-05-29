@@ -88,7 +88,6 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { normalizeArtwork, sanitizeArtwork, MUSEUM_TAGS, slugify, sortArtworksByTitle } from '@/lib/museum-utils';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ScrollArea } from '@/components/ui/scroll-area';
 
 const ART_TECHNIQUES = [
   "Olieverf",
@@ -457,11 +456,11 @@ export default function AdminPage() {
           className="fixed z-[1000] shadow-2xl transition-shadow"
           style={{ left: panelPos.x, top: panelPos.y, width: '420px' }}
         >
-           <Card className="rounded-[2.5rem] bg-white border-4 border-accent overflow-hidden flex flex-col max-h-[70vh]">
+           <Card className="rounded-[2.5rem] bg-white border-4 border-accent overflow-hidden flex flex-col max-h-[70vh] min-h-0">
               {/* Header / Handle */}
               <div 
                 onMouseDown={handleDragStart}
-                className="p-6 bg-accent text-white cursor-grab active:cursor-grabbing flex items-center justify-between"
+                className="p-6 bg-accent text-white cursor-grab active:cursor-grabbing flex items-center justify-between shrink-0"
               >
                 <div className="flex items-center gap-3">
                   <GripHorizontal className="w-5 h-5 opacity-40" />
@@ -473,8 +472,8 @@ export default function AdminPage() {
                 </Button>
               </div>
 
-              {/* Scrollable Content Area */}
-              <ScrollArea className="flex-1 p-8">
+              {/* Scrollable Content Area - FIX: Native scroll for better flex stability */}
+              <div className="flex-1 overflow-y-auto p-8 min-h-0 custom-scrollbar">
                  <div className="space-y-10">
                     <div className="space-y-4">
                        <Label className="text-[10px] font-black uppercase opacity-60 border-l-4 border-accent pl-3">Toevoegen aan Zaal</Label>
@@ -511,10 +510,10 @@ export default function AdminPage() {
                        </div>
                     </div>
                  </div>
-              </ScrollArea>
+              </div>
 
               {/* Helper Footer */}
-              <div className="p-4 bg-black/5 border-t text-center">
+              <div className="p-4 bg-black/5 border-t text-center shrink-0">
                  <p className="text-[8px] font-bold uppercase opacity-30 tracking-[0.2em]">Pak de bovenbalk vast om dit paneel te verplaatsen</p>
               </div>
            </Card>
