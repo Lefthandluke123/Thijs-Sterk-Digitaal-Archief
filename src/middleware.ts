@@ -25,5 +25,6 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*'],
+  // Zorg dat de matcher zowel /admin als alle subpaden pakt
+  matcher: ['/admin', '/admin/:path*'],
 };

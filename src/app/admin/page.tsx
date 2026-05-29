@@ -88,7 +88,6 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { normalizeArtwork, sanitizeArtwork, MUSEUM_TAGS, slugify, sortArtworksByTitle } from '@/lib/museum-utils';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { verifyAdminPassword } from '@/lib/admin-actions';
 import { Checkbox } from '@/components/ui/checkbox';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
@@ -110,9 +109,6 @@ const ART_TECHNIQUES = [
 export default function AdminPage() {
   const firestore = useFirestore();
   const storage = useStorage();
-  const [isAuthorized, setIsAuthorized] = useState(false);
-  const [password, setPassword] = useState('');
-  const [isVerifying, setIsVerifying] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('archive');
@@ -139,13 +135,6 @@ export default function AdminPage() {
   const [roomForm, setRoomForm] = useState({ title: '', description: '', order: 0 });
   const [tempBulkTags, setTempBulkTags] = useState<string[]>([]);
   const [showCustomMedium, setShowCustomMedium] = useState(false);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const auth = sessionStorage.getItem('admin_auth');
-      if (auth === 'true') setIsAuthorized(true);
-    }
-  }, []);
 
   const artworksQuery = useMemo(() => {
     if (!firestore) return null;
@@ -174,19 +163,6 @@ export default function AdminPage() {
     );
     return [...filtered].sort(sortArtworksByTitle);
   }, [artworks, searchQuery]);
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsVerifying(true);
-    const isValid = await verifyAdminPassword(password);
-    if (isValid) {
-      setIsAuthorized(true);
-      sessionStorage.setItem('admin_auth', 'true');
-    } else {
-      toast({ variant: "destructive", title: "Fout", description: "Wachtwoord onjuist." });
-    }
-    setIsVerifying(false);
-  };
 
   const handleOpenNewArtwork = () => {
     setEditingArtwork(null);
@@ -406,34 +382,6 @@ export default function AdminPage() {
     setSelectedItems([]);
     setIsUploading(false);
   };
-
-  if (!isAuthorized) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
-        <Card className="max-w-md w-full p-12 rounded-[3rem] shadow-2xl space-y-8 animate-in fade-in zoom-in duration-500">
-           <div className="text-center space-y-4">
-              <div className="w-20 h-20 bg-accent/10 rounded-full flex items-center justify-center mx-auto text-accent">
-                 <Zap className="w-10 h-10" />
-              </div>
-              <h1 className="font-headline text-3xl italic">Museum <span className="text-accent">Beheer</span></h1>
-           </div>
-           <form onSubmit={handleLogin} className="space-y-6">
-              <Input 
-                type="password" 
-                value={password} 
-                onChange={(e) => setPassword(e.target.value)} 
-                className="h-14 rounded-2xl text-center bg-black/5 border-none text-xl" 
-                placeholder="••••••"
-                autoFocus
-              />
-              <Button type="submit" disabled={isVerifying} className="w-full h-14 rounded-2xl bg-primary text-white font-black uppercase tracking-widest text-[11px]">
-                 {isVerifying ? <Loader2 className="animate-spin" /> : "Ontgrendel Archief"}
-              </Button>
-           </form>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen pt-32 px-8 bg-transparent">
