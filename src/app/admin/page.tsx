@@ -443,7 +443,7 @@ export default function AdminPage() {
                   <Card key={room.id} className="p-8 rounded-[2.5rem] bg-white border-none shadow-lg space-y-4">
                      <div className="flex justify-between items-start">
                         <Badge className="bg-accent/10 text-accent uppercase text-[9px] tracking-widest font-black">Zaal {room.order}</Badge>
-                        <Button variant="ghost" size="icon" onClick={() => { setEditingRoom(room); setRoomForm({...room}); setIsRoomDialogOpen(true); }}><Edit3 className="w-4 h-4" /></Button>
+                        <Button type="button" variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setEditingRoom(room); setRoomForm({...room}); setIsRoomDialogOpen(true); }}><Edit3 className="w-4 h-4" /></Button>
                      </div>
                      <h3 className="font-headline text-3xl italic">{room.title}</h3>
                      <p className="text-sm text-muted-foreground line-clamp-2 italic">{room.description}</p>
@@ -471,7 +471,7 @@ export default function AdminPage() {
                   <span className="font-headline text-lg italic">Bulk Beheer</span>
                   <Badge variant="outline" className="bg-white/10 border-white/20 text-white text-[9px] font-black">{selectedIds.length} items</Badge>
                 </div>
-                <Button onClick={() => setSelectedIds([])} variant="ghost" className="h-8 w-8 rounded-full p-0 text-white hover:bg-white/10">
+                <Button type="button" onClick={() => setSelectedIds([])} variant="ghost" className="h-8 w-8 rounded-full p-0 text-white hover:bg-white/10">
                   <X className="w-4 h-4" />
                 </Button>
               </div>
@@ -485,7 +485,13 @@ export default function AdminPage() {
                           <Label className="text-[10px] font-black uppercase text-accent border-l-4 border-accent pl-3">Toevoegen aan Zaal</Label>
                           <div className="grid grid-cols-1 gap-2">
                              {rooms?.map((room: any) => (
-                               <Button key={room.id} variant="outline" onClick={() => handleBulkUpdate('add_room', room.id)} className="justify-start h-10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-accent/5">
+                               <Button 
+                                 type="button"
+                                 key={room.id} 
+                                 variant="outline" 
+                                 onClick={(e) => { e.stopPropagation(); handleBulkUpdate('add_room', room.id); }} 
+                                 className="justify-start h-10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-accent/5"
+                               >
                                   <Plus className="w-4 h-4 mr-3 opacity-30" /> {room.title}
                                </Button>
                              ))}
@@ -496,7 +502,13 @@ export default function AdminPage() {
                           <Label className="text-[10px] font-black uppercase text-destructive border-l-4 border-destructive pl-3">Verwijderen uit Zaal</Label>
                           <div className="grid grid-cols-1 gap-2">
                              {rooms?.map((room: any) => (
-                               <Button key={room.id} variant="outline" onClick={() => handleBulkUpdate('remove_room', room.id)} className="justify-start h-10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-destructive/5 hover:text-destructive border-destructive/20">
+                               <Button 
+                                 type="button"
+                                 key={room.id} 
+                                 variant="outline" 
+                                 onClick={(e) => { e.stopPropagation(); handleBulkUpdate('remove_room', room.id); }} 
+                                 className="justify-start h-10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-destructive/5 hover:text-destructive border-destructive/20"
+                               >
                                   <Minus className="w-4 h-4 mr-3 opacity-30" /> {room.title}
                                </Button>
                              ))}
@@ -517,10 +529,11 @@ export default function AdminPage() {
                                   <div className="flex flex-wrap gap-1.5">
                                      {tags.map(tag => (
                                        <Button 
+                                         type="button"
                                          key={tag} 
                                          size="sm" 
                                          variant="secondary" 
-                                         onClick={() => handleBulkUpdate('add_tag', tag)} 
+                                         onClick={(e) => { e.stopPropagation(); handleBulkUpdate('add_tag', tag); }} 
                                          className="h-8 rounded-lg text-[9px] font-black uppercase tracking-widest bg-black/5 hover:bg-accent hover:text-white transition-all"
                                        >
                                          {tag}
@@ -543,10 +556,11 @@ export default function AdminPage() {
                                   <div className="flex flex-wrap gap-1.5">
                                      {tags.map(tag => (
                                        <Button 
+                                         type="button"
                                          key={tag} 
                                          size="sm" 
                                          variant="outline" 
-                                         onClick={() => handleBulkUpdate('remove_tag', tag)} 
+                                         onClick={(e) => { e.stopPropagation(); handleBulkUpdate('remove_tag', tag); }} 
                                          className="h-8 rounded-lg text-[9px] font-black uppercase tracking-widest border-destructive/20 hover:bg-destructive hover:text-white transition-all"
                                        >
                                          {tag}
@@ -706,7 +720,7 @@ export default function AdminPage() {
                 </div>
 
                 <div className="p-8 bg-black/5 flex items-center gap-4">
-                   <Button onClick={handleSaveArtwork} disabled={isUploading} className="flex-1 h-16 rounded-2xl bg-accent text-white font-black uppercase tracking-widest shadow-xl">
+                   <Button type="button" onClick={handleSaveArtwork} disabled={isUploading} className="flex-1 h-16 rounded-2xl bg-accent text-white font-black uppercase tracking-widest shadow-xl">
                       {isUploading ? <Loader2 className="animate-spin" /> : "Wijzigingen Opslaan"}
                    </Button>
                 </div>
