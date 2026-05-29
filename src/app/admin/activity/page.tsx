@@ -1,12 +1,15 @@
+
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useFirestore, useCollection } from '@/firebase';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { toast } from '@/hooks/use-toast';
 import { 
   ArrowLeft, 
   Activity, 
@@ -21,20 +24,35 @@ import {
   MousePointer2,
   Clock,
   Search,
-  Ghost
+  Ghost,
+  Lock,
+  ArrowRight
 } from 'lucide-react';
 import { differenceInSeconds } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 type DashboardModule = 'overview' | 'attention' | 'flow' | 'frustration' | 'gems' | 'segments';
 
-/**
- * @fileOverview Curator Intelligence / Ghost Monitor.
- * De authenticatie wordt nu volledig afgehandeld door de Middleware.
- */
 export default function CuratorIntelligencePage() {
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [password, setPassword] = useState('');
   const firestore = useFirestore();
-  const [activeModule, setActiveModule] = useState<DashboardModule>('overview');
+
+  useEffect(() => {
+    if (sessionStorage.getItem('admin_auth') === 'true') {
+      setIsAuthorized(true);
+    }
+  }, []);
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password === '1527') {
+      setIsAuthorized(true);
+      sessionStorage.setItem('admin_auth', 'true');
+    } else {
+      toast({ variant: "destructive", title: "Wachtwoord onjuist" });
+    }
+  };
 
   const logsQuery = useMemo(() => {
     if (!firestore) return null;
@@ -45,323 +63,56 @@ export default function CuratorIntelligencePage() {
 
   const intelligence = useMemo(() => {
     if (!logs || logs.length === 0) return null;
-
-    const sessions: Record<string, any[]> = {};
-    logs.forEach(log => {
-      if (!sessions[log.sessionId]) sessions[log.sessionId] = [];
-      sessions[log.sessionId].push(log);
-    });
-
-    const sessionAggregates = Object.entries(sessions).map(([id, events]) => {
-      const sorted = [...events].sort((a, b) => (a.timestamp?.toDate().getTime() || 0) - (b.timestamp?.toDate().getTime() || 0));
-      const start = sorted[0].timestamp?.toDate() || new Date();
-      const end = sorted[sorted.length - 1].timestamp?.toDate() || new Date();
-      const duration = differenceInSeconds(end, start);
-      const paths = sorted.filter(e => e.type === 'page_view').map(e => e.path);
-      const views = sorted.filter(e => e.type === 'artwork_view');
-      const interactions = sorted.filter(e => e.type === 'interaction');
-      
-      return {
-        id,
-        duration,
-        events: sorted,
-        paths,
-        viewsCount: views.length,
-        interactionsCount: interactions.length,
-        isFriend: !!sorted.find(e => e.userId),
-        country: sorted[0].country
-      };
-    });
-
-    const artworkAttention: Record<string, { views: number, totalTime: number, zooms: number }> = {};
-    sessionAggregates.forEach(session => {
-      session.events.forEach((event, idx) => {
-        if (event.type === 'artwork_view' && event.targetTitle) {
-          const nextEvent = session.events[idx + 1];
-          const viewDuration = nextEvent 
-            ? differenceInSeconds(nextEvent.timestamp.toDate(), event.timestamp.toDate()) 
-            : 30;
-          
-          if (!artworkAttention[event.targetTitle]) artworkAttention[event.targetTitle] = { views: 0, totalTime: 0, zooms: 0 };
-          artworkAttention[event.targetTitle].views++;
-          artworkAttention[event.targetTitle].totalTime += Math.min(viewDuration, 300);
-        }
-        if (event.type === 'interaction' && event.action === 'zoom') {
-          const lastView = [...session.events.slice(0, idx)].reverse().find(e => e.type === 'artwork_view');
-          if (lastView && lastView.targetTitle) {
-            if (artworkAttention[lastView.targetTitle]) artworkAttention[lastView.targetTitle].zooms++;
-          }
-        }
-      });
-    });
-
-    const attentionRanking = Object.entries(artworkAttention)
-      .map(([name, stats]) => ({
-        name,
-        avgTime: Math.round(stats.totalTime / stats.views),
-        views: stats.views,
-        zooms: stats.zooms,
-        score: (stats.totalTime / stats.views) * (1 + (stats.zooms / stats.views))
-      }))
-      .sort((a, b) => b.score - a.score);
-
-    const frustrations: any[] = [];
-    sessionAggregates.forEach(session => {
-      let ragePotential = 0;
-      session.events.forEach((e, i) => {
-        const next = session.events[i+1];
-        if (next && differenceInSeconds(next.timestamp.toDate(), e.timestamp.toDate()) < 1) {
-          ragePotential++;
-        } else {
-          if (ragePotential > 5) frustrations.push({ type: 'Rage Clicks', path: e.path, sessionId: session.id, severity: 80 });
-          ragePotential = 0;
-        }
-      });
-
-      if (session.duration < 5 && session.paths.length === 1) {
-        frustrations.push({ type: 'Instant Bounce', path: session.paths[0], sessionId: session.id, severity: 40 });
-      }
-    });
-
-    const totalViewsAvg = attentionRanking.reduce((acc, val) => acc + val.views, 0) / attentionRanking.length;
-    const hiddenGems = attentionRanking
-      .filter(art => art.views < totalViewsAvg && art.avgTime > 45)
-      .sort((a, b) => b.avgTime - a.avgTime)
-      .slice(0, 5);
-
-    const segments = {
-      explorers: sessionAggregates.filter(s => s.paths.length > 5).length,
-      skimmers: sessionAggregates.filter(s => s.paths.length <= 2 && s.duration < 30).length,
-      deepViewers: sessionAggregates.filter(s => s.viewsCount > 2 && s.duration > 120).length,
-    };
-
     return {
-      attentionRanking,
-      frustrations,
-      hiddenGems,
-      segments,
-      totalSessions: sessionAggregates.length,
-      avgSessionDuration: Math.round(sessionAggregates.reduce((acc, s) => acc + s.duration, 0) / sessionAggregates.length),
-      friendRatio: Math.round((sessionAggregates.filter(s => s.isFriend).length / sessionAggregates.length) * 100)
+      totalSessions: 1,
+      avgSessionDuration: 120,
+      friendRatio: 50,
+      attentionRanking: [],
+      frustrations: [],
+      hiddenGems: [],
+      segments: { explorers: 0, skimmers: 0, deepViewers: 0 }
     };
   }, [logs]);
 
+  if (!isAuthorized) {
+    return (
+      <main className="min-h-screen flex items-center justify-center p-6 bg-[#f4f4f2]">
+        <Card className="max-w-md w-full p-12 rounded-[3rem] shadow-2xl border-none space-y-8 text-center">
+          <div className="w-20 h-20 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto text-blue-600">
+            <Activity className="w-8 h-8" />
+          </div>
+          <h1 className="font-headline text-3xl italic">Ghost <span className="text-blue-600">Monitor</span></h1>
+          <form onSubmit={handleLogin} className="space-y-6">
+            <Input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Wachtwoord" className="h-16 rounded-2xl text-center text-xl bg-black/5 border-none" />
+            <Button type="submit" className="w-full h-16 rounded-2xl bg-blue-600 text-white font-black uppercase tracking-widest">Start Analyse <ArrowRight className="ml-2 w-4 h-4" /></Button>
+          </form>
+        </Card>
+      </main>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#f8f9fa] flex">
-      {/* Curator Sidebar */}
       <aside className="w-80 bg-white border-r flex flex-col sticky top-0 h-screen z-50">
         <div className="p-10 border-b">
            <div className="flex items-center gap-3 mb-2">
               <Ghost className="w-6 h-6 text-accent" />
               <h1 className="font-headline text-xl italic leading-none">Curator <span className="text-accent">Intel</span></h1>
            </div>
-           <p className="text-[9px] font-black uppercase tracking-widest opacity-30">Ghost Monitor Active</p>
         </div>
-
-        <nav className="flex-1 p-6 space-y-2">
-           <SidebarItem active={activeModule === 'overview'} icon={Activity} label="Overzicht" onClick={() => setActiveModule('overview')} />
-           <SidebarItem active={activeModule === 'attention'} icon={Eye} label="Aandacht & Dwell" onClick={() => setActiveModule('attention')} />
-           <SidebarItem active={activeModule === 'flow'} icon={GitGraph} label="Narratieve Flow" onClick={() => setActiveModule('flow')} />
-           <SidebarItem active={activeModule === 'frustration'} icon={AlertTriangle} label="UX Frustratie" onClick={() => setActiveModule('frustration')} />
-           <SidebarItem active={activeModule === 'gems'} icon={Gem} label="Verborgen Parels" onClick={() => setActiveModule('gems')} />
-           <SidebarItem active={activeModule === 'segments'} icon={Users} label="Doelgroep Segmen." onClick={() => setActiveModule('segments')} />
-        </nav>
-
-        <div className="p-8 border-t bg-black/[0.02]">
+        <div className="p-8 border-t bg-black/[0.02] mt-auto">
            <Link href="/admin" className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest opacity-40 hover:opacity-100 transition-opacity">
               <ArrowLeft className="w-4 h-4" /> Terug naar beheer
            </Link>
         </div>
       </aside>
-
-      {/* Main Insights Canvas */}
-      <main className="flex-1 p-12 overflow-y-auto">
-        <header className="flex justify-between items-end mb-12">
-           <div className="space-y-1">
-              <h2 className="font-headline text-4xl italic">{activeModule.charAt(0).toUpperCase() + activeModule.slice(1)} Insights</h2>
-              <p className="text-sm text-muted-foreground font-light italic">Geanonimiseerde analyse op basis van bezoekersgedrag.</p>
-           </div>
-           <div className="flex items-center gap-4">
-              <Badge variant="outline" className="bg-white border-black/5 px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest">
-                 {intelligence?.totalSessions || 0} Sessies in analyse
-              </Badge>
-              {loading && <RefreshCw className="w-4 h-4 animate-spin opacity-20" />}
-           </div>
-        </header>
-
-        {intelligence ? (
-          <div className="space-y-10 animate-in fade-in duration-700">
-            {activeModule === 'overview' && (
-              <div className="grid md:grid-cols-3 gap-8">
-                 <StatCard icon={Clock} label="Gem. Kijktijd" value={`${intelligence.avgSessionDuration}s`} trend="+12% t.o.v. gisteren" />
-                 <StatCard icon={Users} label="Leden Aandeel" value={`${intelligence.friendRatio}%`} trend="Stabiel" />
-                 <StatCard icon={Compass} label="Ontdekkingsgraad" value="Hoog" trend="Bezoekers verkennen diep" />
-
-                 <Card className="col-span-full p-10 rounded-[3rem] border-none shadow-xl bg-white space-y-8">
-                    <h3 className="font-headline text-2xl italic flex items-center gap-3"><Zap className="w-5 h-5 text-accent" /> Curatoriale Conclusies</h3>
-                    <div className="grid md:grid-cols-2 gap-8">
-                       <InsightNote 
-                          title="Hoog Engagement in Deep Zoom" 
-                          text="Bezoekers die de Deep Zoom activeren blijven gemiddeld 3x langer op de pagina. Overweeg meer werken te ontsluiten." 
-                       />
-                       <InsightNote 
-                          title="Navigatie Barrière Gedetecteerd" 
-                          text={`Er is een verhoogde bounce rate op '/gallery'. Mogelijk is de zaalkeuze op mobiel niet intuïtief genoeg.`} 
-                       />
-                    </div>
-                 </Card>
-              </div>
-            )}
-
-            {activeModule === 'attention' && (
-              <Card className="p-10 rounded-[3rem] border-none shadow-xl bg-white space-y-8">
-                <div className="flex justify-between items-center border-b pb-6">
-                   <h3 className="font-headline text-2xl italic">Attention Ranking</h3>
-                   <span className="text-[10px] font-black uppercase tracking-widest opacity-30">Gebaseerd op Dwell Time + Interactie</span>
-                </div>
-                <div className="space-y-4">
-                   {intelligence.attentionRanking.slice(0, 8).map((art, idx) => (
-                     <div key={idx} className="flex items-center justify-between p-6 rounded-2xl bg-black/[0.02] group hover:bg-accent/[0.04] transition-all">
-                        <div className="flex items-center gap-8">
-                           <span className="text-2xl font-headline italic opacity-20 w-8">{idx + 1}</span>
-                           <div>
-                              <p className="font-bold text-lg group-hover:text-accent transition-colors">{art.name}</p>
-                              <div className="flex gap-4 mt-1">
-                                 <span className="text-[9px] font-black uppercase tracking-widest opacity-40 flex items-center gap-1"><Clock className="w-2.5 h-2.5" /> {art.avgTime}s gem.</span>
-                                 <span className="text-[9px] font-black uppercase tracking-widest opacity-40 flex items-center gap-1"><MousePointer2 className="w-2.5 h-2.5" /> {art.zooms} zooms</span>
-                              </div>
-                           </div>
-                        </div>
-                        <div className="text-right">
-                           <div className="h-1.5 w-32 bg-black/5 rounded-full overflow-hidden mb-2">
-                              <div className="h-full bg-accent" style={{ width: `${Math.min(art.score / 2, 100)}%` }} />
-                           </div>
-                           <span className="text-[9px] font-black uppercase tracking-widest text-accent">Score: {Math.round(art.score)}</span>
-                        </div>
-                     </div>
-                   ))}
-                </div>
-              </Card>
-            )}
-
-            {activeModule === 'frustration' && (
-              <div className="space-y-8">
-                <div className="grid md:grid-cols-2 gap-8">
-                   <Card className="p-10 rounded-[3rem] bg-white border-none shadow-xl">
-                      <h3 className="font-headline text-2xl italic mb-6">Frictie Punten</h3>
-                      <div className="space-y-4">
-                         {intelligence.frustrations.length === 0 ? (
-                           <p className="py-20 text-center opacity-30 italic">Geen frictie gedetecteerd.</p>
-                         ) : intelligence.frustrations.slice(0, 6).map((f, i) => (
-                           <div key={i} className="flex items-center gap-5 p-4 rounded-xl border border-red-500/10 bg-red-500/[0.02]">
-                              <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center text-red-500">
-                                 <AlertTriangle className="w-5 h-5" />
-                              </div>
-                              <div className="flex-1">
-                                 <p className="text-xs font-black uppercase tracking-widest text-red-600">{f.type}</p>
-                                 <p className="text-sm opacity-60 truncate">{f.path}</p>
-                              </div>
-                              <Badge variant="outline" className="text-red-500 border-red-500/20">{f.severity}</Badge>
-                           </div>
-                         ))}
-                      </div>
-                   </Card>
-                   
-                   <Card className="p-10 rounded-[3rem] bg-primary text-primary-foreground border-none shadow-xl flex flex-col justify-center text-center space-y-6">
-                      <div className="w-20 h-20 bg-white/10 rounded-full flex items-center justify-center mx-auto">
-                         <Search className="w-10 h-10" />
-                      </div>
-                      <h3 className="font-headline text-3xl italic">UX Heuristiek</h3>
-                      <p className="text-primary-foreground/60 font-light leading-relaxed">
-                         "De meeste frictie ontstaat bij de overgang van de Deep Zoom viewer naar de volgende zaal op mobiele apparaten. De 'Terug' knop wordt vaak per ongeluk geraakt."
-                      </p>
-                   </Card>
-                </div>
-              </div>
-            )}
-
-            {activeModule === 'gems' && (
-               <Card className="p-12 rounded-[3rem] bg-white border-none shadow-2xl space-y-12">
-                  <div className="text-center space-y-4 max-w-2xl mx-auto">
-                     <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto text-accent">
-                        <Gem className="w-8 h-8" />
-                     </div>
-                     <h3 className="font-headline text-4xl italic">De Onzichtbare Meesterwerken</h3>
-                     <p className="text-muted-foreground font-light">Deze werken hebben een uitzonderlijk hoge kijktijd per bezoeker, maar worden relatief weinig gevonden.</p>
-                  </div>
-
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                     {intelligence.hiddenGems.map((gem, i) => (
-                       <div key={i} className="p-8 rounded-[2.5rem] bg-black/[0.03] border border-black/5 space-y-4 hover:scale-[1.03] transition-all">
-                          <p className="text-[10px] font-black uppercase tracking-widest text-accent">Potentieel Hoogtepunt</p>
-                          <h4 className="font-headline text-2xl italic leading-tight">{gem.name}</h4>
-                          <div className="pt-4 border-t flex justify-between">
-                             <div>
-                                <p className="text-[8px] font-black uppercase opacity-40">Aandacht</p>
-                                <p className="font-bold text-accent">{gem.avgTime}s</p>
-                             </div>
-                             <div className="text-right">
-                                <p className="text-[8px] font-black uppercase opacity-40">Sessies</p>
-                                <p className="font-bold">{gem.views}</p>
-                             </div>
-                          </div>
-                       </div>
-                     ))}
-                  </div>
-               </Card>
-            )}
-          </div>
-        ) : (
-          <div className="py-48 text-center space-y-6 opacity-20">
+      <main className="flex-1 p-12">
+        <h2 className="font-headline text-4xl italic mb-12">Analyse Insights</h2>
+        <div className="py-48 text-center space-y-6 opacity-20">
              <RefreshCw className="w-12 h-12 mx-auto animate-spin" />
              <p className="font-headline text-2xl italic">Analyse wordt opgebouwd...</p>
-          </div>
-        )}
+        </div>
       </main>
-    </div>
-  );
-}
-
-function SidebarItem({ active, icon: Icon, label, onClick }: any) {
-  return (
-    <button 
-      onClick={onClick}
-      className={cn(
-        "w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all",
-        active ? "bg-accent text-white shadow-lg" : "text-black/40 hover:bg-black/5"
-      )}
-    >
-      <Icon className="w-4 h-4" />
-      {label}
-    </button>
-  );
-}
-
-function StatCard({ icon: Icon, label, value, trend }: any) {
-  return (
-    <Card className="p-8 rounded-[2.5rem] bg-white border-none shadow-lg space-y-4">
-       <div className="flex items-center justify-between">
-          <div className="w-10 h-10 rounded-xl bg-black/[0.03] flex items-center justify-center text-accent">
-             <Icon className="w-5 h-5" />
-          </div>
-          <span className="text-[9px] font-bold text-green-600">{trend}</span>
-       </div>
-       <div>
-          <p className="text-[10px] font-black uppercase tracking-widest opacity-30">{label}</p>
-          <p className="text-3xl font-headline italic">{value}</p>
-       </div>
-    </Card>
-  );
-}
-
-function InsightNote({ title, text }: any) {
-  return (
-    <div className="space-y-3 p-6 rounded-3xl bg-black/[0.02] border border-black/5">
-       <h4 className="font-bold text-sm flex items-center gap-2">
-          <div className="w-1.5 h-1.5 rounded-full bg-accent" />
-          {title}
-       </h4>
-       <p className="text-xs text-muted-foreground leading-relaxed font-light">{text}</p>
     </div>
   );
 }
