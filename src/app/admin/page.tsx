@@ -25,6 +25,7 @@ import {
   Trash2, 
   Loader2, 
   Plus,
+  Minus,
   LayoutDashboard,
   Layers,
   Edit3,
@@ -456,7 +457,7 @@ export default function AdminPage() {
           className="fixed z-[1000] shadow-2xl transition-shadow"
           style={{ left: panelPos.x, top: panelPos.y, width: '420px' }}
         >
-           <Card className="rounded-[2.5rem] bg-white border-4 border-accent overflow-hidden flex flex-col max-h-[70vh] min-h-0">
+           <Card className="rounded-[2.5rem] bg-white border-4 border-accent overflow-hidden flex flex-col max-h-[80vh] min-h-0">
               {/* Header / Handle */}
               <div 
                 onMouseDown={handleDragStart}
@@ -472,41 +473,86 @@ export default function AdminPage() {
                 </Button>
               </div>
 
-              {/* Scrollable Content Area - FIX: Native scroll for better flex stability */}
-              <div className="flex-1 overflow-y-auto p-8 min-h-0 custom-scrollbar">
-                 <div className="space-y-10">
-                    <div className="space-y-4">
-                       <Label className="text-[10px] font-black uppercase opacity-60 border-l-4 border-accent pl-3">Toevoegen aan Zaal</Label>
-                       <div className="grid grid-cols-1 gap-2">
-                          {rooms?.map((room: any) => (
-                            <Button key={room.id} variant="outline" onClick={() => handleBulkUpdate('add_room', room.id)} className="justify-start h-10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-accent/5">
-                               <Plus className="w-4 h-4 mr-3 opacity-30" /> {room.title}
-                            </Button>
-                          ))}
+              {/* Scrollable Content Area */}
+              <div className="flex-1 overflow-y-auto p-8 min-h-0 custom-scrollbar bg-white">
+                 <div className="space-y-12 pb-8">
+                    {/* ROOMS SECTIONS */}
+                    <div className="space-y-8">
+                       <div className="space-y-4">
+                          <Label className="text-[10px] font-black uppercase text-accent border-l-4 border-accent pl-3">Toevoegen aan Zaal</Label>
+                          <div className="grid grid-cols-1 gap-2">
+                             {rooms?.map((room: any) => (
+                               <Button key={room.id} variant="outline" onClick={() => handleBulkUpdate('add_room', room.id)} className="justify-start h-10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-accent/5">
+                                  <Plus className="w-4 h-4 mr-3 opacity-30" /> {room.title}
+                               </Button>
+                             ))}
+                          </div>
+                       </div>
+                       
+                       <div className="space-y-4">
+                          <Label className="text-[10px] font-black uppercase text-destructive border-l-4 border-destructive pl-3">Verwijderen uit Zaal</Label>
+                          <div className="grid grid-cols-1 gap-2">
+                             {rooms?.map((room: any) => (
+                               <Button key={room.id} variant="outline" onClick={() => handleBulkUpdate('remove_room', room.id)} className="justify-start h-10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-destructive/5 hover:text-destructive border-destructive/20">
+                                  <Minus className="w-4 h-4 mr-3 opacity-30" /> {room.title}
+                               </Button>
+                             ))}
+                          </div>
                        </div>
                     </div>
+
+                    <Separator className="bg-black/5" />
                     
-                    <div className="space-y-6">
-                       <Label className="text-[10px] font-black uppercase opacity-60 border-l-4 border-accent pl-3">Tag Toevoegen</Label>
-                       <div className="space-y-8">
-                          {Object.entries(MUSEUM_TAGS).map(([category, tags]) => (
-                            <div key={category} className="space-y-3">
-                               <p className="text-[8px] font-black uppercase opacity-30 tracking-widest">{category}</p>
-                               <div className="flex flex-wrap gap-1.5">
-                                  {tags.map(tag => (
-                                    <Button 
-                                      key={tag} 
-                                      size="sm" 
-                                      variant="secondary" 
-                                      onClick={() => handleBulkUpdate('add_tag', tag)} 
-                                      className="h-8 rounded-lg text-[9px] font-black uppercase tracking-widest bg-black/5 hover:bg-accent hover:text-white transition-all"
-                                    >
-                                      {tag}
-                                    </Button>
-                                  ))}
+                    {/* TAGS SECTIONS */}
+                    <div className="space-y-10">
+                       <div className="space-y-6">
+                          <Label className="text-[10px] font-black uppercase text-accent border-l-4 border-accent pl-3">Tag Toevoegen</Label>
+                          <div className="space-y-8">
+                             {Object.entries(MUSEUM_TAGS).map(([category, tags]) => (
+                               <div key={category} className="space-y-3">
+                                  <p className="text-[8px] font-black uppercase opacity-30 tracking-widest">{category}</p>
+                                  <div className="flex flex-wrap gap-1.5">
+                                     {tags.map(tag => (
+                                       <Button 
+                                         key={tag} 
+                                         size="sm" 
+                                         variant="secondary" 
+                                         onClick={() => handleBulkUpdate('add_tag', tag)} 
+                                         className="h-8 rounded-lg text-[9px] font-black uppercase tracking-widest bg-black/5 hover:bg-accent hover:text-white transition-all"
+                                       >
+                                         {tag}
+                                       </Button>
+                                     ))}
+                                  </div>
                                </div>
-                            </div>
-                          ))}
+                             ))}
+                          </div>
+                       </div>
+
+                       <Separator className="bg-black/5" />
+
+                       <div className="space-y-6">
+                          <Label className="text-[10px] font-black uppercase text-destructive border-l-4 border-destructive pl-3">Tag Verwijderen</Label>
+                          <div className="space-y-8">
+                             {Object.entries(MUSEUM_TAGS).map(([category, tags]) => (
+                               <div key={category} className="space-y-3">
+                                  <p className="text-[8px] font-black uppercase opacity-30 tracking-widest">{category}</p>
+                                  <div className="flex flex-wrap gap-1.5">
+                                     {tags.map(tag => (
+                                       <Button 
+                                         key={tag} 
+                                         size="sm" 
+                                         variant="outline" 
+                                         onClick={() => handleBulkUpdate('remove_tag', tag)} 
+                                         className="h-8 rounded-lg text-[9px] font-black uppercase tracking-widest border-destructive/20 hover:bg-destructive hover:text-white transition-all"
+                                       >
+                                         {tag}
+                                       </Button>
+                                     ))}
+                                  </div>
+                               </div>
+                             ))}
+                          </div>
                        </div>
                     </div>
                  </div>
@@ -514,7 +560,7 @@ export default function AdminPage() {
 
               {/* Helper Footer */}
               <div className="p-4 bg-black/5 border-t text-center shrink-0">
-                 <p className="text-[8px] font-bold uppercase opacity-30 tracking-[0.2em]">Pak de bovenbalk vast om dit paneel te verplaatsen</p>
+                 <p className="text-[8px] font-bold uppercase opacity-30 tracking-[0.2em]">Slepen via de bovenbalk • Scrollen binnenin</p>
               </div>
            </Card>
         </div>
