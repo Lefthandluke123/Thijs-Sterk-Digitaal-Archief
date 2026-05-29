@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, Suspense, useRef, useMemo } from 'react';
@@ -14,14 +13,12 @@ import {
 import { 
   ChevronDown, 
   Loader2, 
-  ShoppingBag, 
   BookOpen,
   Menu,
   LayoutDashboard,
-  Users,
-  Camera
+  Users
 } from 'lucide-react';
-import { useCollection, useFirestore, useDoc, useUser } from '@/firebase';
+import { useCollection, useFirestore, useDoc } from '@/firebase';
 import { collection, query, doc, orderBy } from 'firebase/firestore';
 import { useLanguage } from '@/components/language-provider';
 import { MuseumGuide } from './museum-guide';
@@ -48,7 +45,6 @@ function NavbarContent() {
   const [guideOpen, setGuideOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const firestore = useFirestore();
-  const { user } = useUser();
   const { language, t } = useLanguage();
 
   const [logoClicks, setLogoClicks] = useState(0);
@@ -175,8 +171,6 @@ function NavbarContent() {
 
               <NavLink href="/curator" active={pathname === "/curator"}>{t('your_room')}</NavLink>
               <NavLink href="/forum" active={pathname === "/forum"}><Users className="w-4 h-4" /> Vrienden</NavLink>
-              <NavLink href="/private-archive" active={pathname.startsWith("/private-archive")}><Camera className="w-4 h-4" /> Depot</NavLink>
-              <NavLink href="/shop" active={pathname === "/shop"}><ShoppingBag className="w-4 h-4" /> {t('shop')}</NavLink>
             </div>
 
             <div className="h-6 w-px bg-black/5 mx-2" />
@@ -186,7 +180,7 @@ function NavbarContent() {
                 onClick={() => setGuideOpen(true)} 
                 className="px-3.5 py-2 rounded-full text-[10px] font-black tracking-[0.2em] uppercase transition-all flex items-center gap-2 hover:bg-accent/5 text-accent border border-accent/10 nav-item-style"
               >
-                <BookOpen className="w-4 h-4" /> Gids
+                < BookOpen className="w-4 h-4" /> Gids
               </button>
 
               <Link 
@@ -223,10 +217,6 @@ function NavbarContent() {
                        <Link href="/forum" className="flex items-center gap-4 p-6 rounded-3xl bg-accent/5 text-[13px] font-black uppercase tracking-widest text-accent border border-accent/10 nav-item-style">
                          <Users className="w-6 h-6" /> Forum
                        </Link>
-                       <Link href="/private-archive" className="flex items-center gap-4 p-6 rounded-3xl bg-black/5 text-[13px] font-black uppercase tracking-widest nav-item-style">
-                         <Camera className="w-6 h-6" /> Privé-Archief
-                       </Link>
-                       <Link href="/shop" className="flex items-center gap-4 p-6 rounded-3xl bg-black/5 text-[13px] font-black uppercase tracking-widest nav-item-style">{t('shop')}</Link>
                        <button onClick={() => { setMobileMenuOpen(false); setGuideOpen(true); }} className="flex w-full items-center gap-4 p-6 rounded-3xl bg-black/5 text-[13px] font-black uppercase tracking-widest nav-item-style">
                          <BookOpen className="w-6 h-6" /> Museum Gids
                        </button>
