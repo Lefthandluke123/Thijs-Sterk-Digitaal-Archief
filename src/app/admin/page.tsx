@@ -86,6 +86,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { normalizeArtwork, sanitizeArtwork, MUSEUM_TAGS, slugify, sortArtworksByTitle } from '@/lib/museum-utils';
 import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const ART_TECHNIQUES = [
   "Olieverf",
@@ -575,35 +576,55 @@ export default function AdminPage() {
 
       {/* BULK UPDATE DIALOG */}
       <Dialog open={isBulkUpdateOpen} onOpenChange={setIsBulkUpdateOpen}>
-         <DialogContent className="max-w-md rounded-[2.5rem] p-10 bg-white">
-            <DialogHeader>
+         <DialogContent className="max-w-2xl rounded-[2.5rem] p-0 bg-white overflow-hidden">
+            <DialogHeader className="p-10 border-b">
                <DialogTitle className="font-headline text-2xl italic">Bulk Update</DialogTitle>
                <DialogDescription className="text-[10px] uppercase font-black tracking-widest opacity-40">
                   Pas {selectedIds.length} items tegelijk aan
                </DialogDescription>
             </DialogHeader>
-            <div className="space-y-8 pt-6">
-               <div className="space-y-4">
-                  <Label className="text-[10px] font-black uppercase opacity-60">Toevoegen aan Zaal</Label>
-                  <div className="grid gap-2">
-                     {rooms?.map((room: any) => (
-                       <Button key={room.id} variant="outline" onClick={() => handleBulkUpdate('add_room', room.id)} className="justify-start h-12 rounded-xl text-[10px] font-black uppercase tracking-widest">
-                          <Plus className="w-4 h-4 mr-3 opacity-30" /> {room.title}
-                       </Button>
-                     ))}
+            <ScrollArea className="max-h-[60vh] p-10">
+               <div className="space-y-12">
+                  {/* Zalen Sectie */}
+                  <div className="space-y-4">
+                     <Label className="text-[10px] font-black uppercase opacity-60 border-l-4 border-accent pl-3">Toevoegen aan Zaal</Label>
+                     <div className="grid grid-cols-2 gap-3">
+                        {rooms?.map((room: any) => (
+                          <Button key={room.id} variant="outline" onClick={() => handleBulkUpdate('add_room', room.id)} className="justify-start h-12 rounded-xl text-[10px] font-black uppercase tracking-widest">
+                             <Plus className="w-4 h-4 mr-3 opacity-30" /> {room.title}
+                          </Button>
+                        ))}
+                     </div>
+                  </div>
+                  
+                  {/* Alle Tags Sectie */}
+                  <div className="space-y-6">
+                     <Label className="text-[10px] font-black uppercase opacity-60 border-l-4 border-accent pl-3">Tag Toevoegen (Alle Categorieën)</Label>
+                     <div className="space-y-8">
+                        {Object.entries(MUSEUM_TAGS).map(([category, tags]) => (
+                          <div key={category} className="space-y-3">
+                             <p className="text-[8px] font-black uppercase opacity-30 tracking-widest">{category}</p>
+                             <div className="flex flex-wrap gap-1.5">
+                                {tags.map(tag => (
+                                  <Button 
+                                    key={tag} 
+                                    size="sm" 
+                                    variant="secondary" 
+                                    onClick={() => handleBulkUpdate('add_tag', tag)} 
+                                    className="h-8 rounded-lg text-[9px] font-black uppercase tracking-widest bg-black/5 hover:bg-accent hover:text-white transition-all"
+                                  >
+                                    {tag}
+                                  </Button>
+                                ))}
+                             </div>
+                          </div>
+                        ))}
+                     </div>
                   </div>
                </div>
-               
-               <div className="space-y-4">
-                  <Label className="text-[10px] font-black uppercase opacity-60">Tag Toevoegen</Label>
-                  <div className="flex flex-wrap gap-1.5">
-                     {MUSEUM_TAGS.Techniek.map(tag => (
-                       <Button key={tag} size="sm" variant="secondary" onClick={() => handleBulkUpdate('add_tag', tag)} className="h-8 rounded-lg text-[9px] font-black uppercase tracking-widest">
-                          {tag}
-                       </Button>
-                     ))}
-                  </div>
-               </div>
+            </ScrollArea>
+            <div className="p-6 bg-black/5 border-t text-center">
+               <p className="text-[9px] font-bold uppercase opacity-30 tracking-widest">Klik op een knop om de actie direct uit te voeren op de selectie</p>
             </div>
          </DialogContent>
       </Dialog>
