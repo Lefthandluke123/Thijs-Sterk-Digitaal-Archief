@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useCallback, useMemo } from 'react';
@@ -85,13 +86,13 @@ export function IntroductionGallery() {
 
         <div className="min-h-[400px]">
           {artLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-12">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
               {[1, 2, 3, 4].map(i => (
                 <div key={i} className="aspect-[4/5] rounded-[2.5rem] bg-black/5 animate-pulse" />
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-12 animate-in fade-in duration-700">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 animate-in fade-in duration-700">
               {curatedArtworks.map((item: any) => {
                 const displayImage = cleanString(item.image || item.imageUrl);
                 const title = item.displayTitle || item.title;

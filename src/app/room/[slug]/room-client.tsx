@@ -188,7 +188,7 @@ export function RoomClient({ artworks: dbArtworks, roomTitle }: RoomClientProps)
             </div>
           </header>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-12">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
             {artworks.map((item, idx) => (
               <div 
                 key={item.id} 

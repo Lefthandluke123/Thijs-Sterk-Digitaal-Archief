@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
@@ -102,7 +103,7 @@ function ExhibitionContent() {
           className="relative w-full h-full flex items-center transition-transform duration-1200 ease-out" 
           style={{ transform: `translateX(${-scrollX}px)` }}
         >
-          <div className="flex gap-[40vw] px-[50vw] items-center pt-8">
+          <div className="flex gap-[15vw] px-[25vw] items-center pt-8">
             {artworks?.length === 0 ? (
               <div className="shrink-0 w-[40vw] text-center opacity-20 italic">Geen werken gevonden in deze zaal</div>
             ) : (
@@ -129,7 +130,7 @@ function ExhibitionContent() {
             )}
 
             {nextRoom && (
-              <div className="shrink-0 w-[50vw] flex flex-col items-center justify-center text-center opacity-40 group hover:opacity-100 transition-opacity">
+              <div className="shrink-0 w-[40vw] flex flex-col items-center justify-center text-center opacity-40 group hover:opacity-100 transition-opacity">
                  <h4 className="text-[11px] font-bold uppercase tracking-[0.5em]">Volgende Zaal</h4>
                  <button 
                   onClick={() => {
