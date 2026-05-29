@@ -33,7 +33,7 @@ const NavLink = ({ href, children, active }: { href: string; children: React.Rea
   <Link 
     href={href}
     className={cn(
-      "px-5 py-2.5 rounded-full text-[10px] font-black tracking-[0.2em] uppercase transition-all flex items-center gap-2 nav-item-style",
+      "px-3.5 py-2 rounded-full text-[10px] font-black tracking-[0.2em] uppercase transition-all flex items-center gap-2 nav-item-style",
       active 
         ? "bg-accent text-accent-foreground shadow-lg scale-105" 
         : "text-foreground/60 hover:text-accent hover:bg-accent/5"
@@ -126,37 +126,37 @@ function NavbarContent() {
 
   return (
     <>
-      <nav className="fixed top-0 left-0 right-0 z-50 h-24 md:h-32 px-4 md:px-6 flex items-center justify-center pointer-events-none">
-        <div className="container max-w-7xl h-16 md:h-22 glass-panel rounded-full flex flex-nowrap items-center justify-between px-4 md:px-8 pointer-events-auto border-white/60 shadow-2xl">
+      <nav className="fixed top-0 left-0 right-0 z-50 h-24 md:h-28 px-4 md:px-6 flex items-center justify-center pointer-events-none">
+        <div className="container max-w-6xl h-16 md:h-20 glass-panel rounded-full flex flex-nowrap items-center justify-between px-4 md:px-6 pointer-events-auto border-white/60 shadow-2xl">
           
           <div className="flex-shrink-0 min-w-0">
-            <div className="flex items-center gap-3 md:gap-6 group cursor-pointer" onClick={handleLogoClick}>
+            <div className="flex items-center gap-2 md:gap-4 group cursor-pointer" onClick={handleLogoClick}>
               <Link href="/" className="contents">
                 <img 
                   src={siteSettings?.logoUrl || "/logo.png"} 
                   alt="Logo" 
-                  className="h-10 md:h-20 w-auto object-contain transition-all duration-1000 hover:scale-110 flex-shrink-0 hover:animate-logo-float" 
+                  className="h-10 md:h-16 w-auto object-contain transition-all duration-1000 hover:scale-110 flex-shrink-0 hover:animate-logo-float" 
                 />
               </Link>
-              <div className="hidden sm:flex flex-col leading-tight border-l-2 border-accent/10 pl-4 md:pl-6 min-w-0">
-                 <span className="font-headline font-medium text-lg md:text-2xl tracking-tight text-foreground group-hover:text-accent transition-colors truncate">
+              <div className="hidden sm:flex flex-col leading-tight border-l-2 border-accent/10 pl-3 md:pl-4 min-w-0">
+                 <span className="font-headline font-medium text-lg md:text-xl tracking-tight text-foreground group-hover:text-accent transition-colors truncate">
                    {siteTitle}
                  </span>
-                 <span className="text-[8px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-accent/50 block truncate">
+                 <span className="text-[8px] md:text-[9px] font-bold uppercase tracking-[0.3em] text-accent/50 block truncate">
                    {siteSubtitle}
                  </span>
               </div>
             </div>
           </div>
           
-          <div className="hidden lg:flex items-center gap-2 flex-shrink-0">
-            <div className="flex items-center gap-1">
+          <div className="hidden lg:flex items-center gap-1.5 flex-shrink-0">
+            <div className="flex items-center gap-0.5">
               <NavLink href="/" active={pathname === "/"}>{t('home')}</NavLink>
               
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button className={cn(
-                    "px-5 py-2.5 rounded-full text-[10px] font-black tracking-[0.2em] uppercase transition-all flex items-center gap-1 outline-none nav-item-style",
+                    "px-3.5 py-2 rounded-full text-[10px] font-black tracking-[0.2em] uppercase transition-all flex items-center gap-1 outline-none nav-item-style",
                     pathname.includes('/room') 
                       ? "bg-accent text-accent-foreground shadow-lg scale-105" 
                       : "text-foreground/60 hover:bg-accent/5"
@@ -179,12 +179,12 @@ function NavbarContent() {
               <NavLink href="/shop" active={pathname === "/shop"}><ShoppingBag className="w-4 h-4" /> {t('shop')}</NavLink>
             </div>
 
-            <div className="h-8 w-px bg-black/5 mx-3" />
+            <div className="h-6 w-px bg-black/5 mx-2" />
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <button 
                 onClick={() => setGuideOpen(true)} 
-                className="px-5 py-2.5 rounded-full text-[10px] font-black tracking-[0.2em] uppercase transition-all flex items-center gap-2 hover:bg-accent/5 text-accent border border-accent/10 nav-item-style"
+                className="px-3.5 py-2 rounded-full text-[10px] font-black tracking-[0.2em] uppercase transition-all flex items-center gap-2 hover:bg-accent/5 text-accent border border-accent/10 nav-item-style"
               >
                 <BookOpen className="w-4 h-4" /> Gids
               </button>
@@ -192,7 +192,7 @@ function NavbarContent() {
               <Link 
                 href="/admin" 
                 className={cn(
-                  "px-5 py-2.5 rounded-full text-[10px] font-black tracking-[0.2em] uppercase transition-all flex items-center gap-2 border border-black/10 mr-4 nav-item-style",
+                  "px-3.5 py-2 rounded-full text-[10px] font-black tracking-[0.2em] uppercase transition-all flex items-center gap-2 border border-black/10 nav-item-style",
                   pathname.startsWith('/admin') ? "bg-primary text-primary-foreground" : "text-foreground/40 hover:bg-black/5"
                 )}
               >
@@ -200,7 +200,7 @@ function NavbarContent() {
               </Link>
             </div>
 
-            <LanguageSwitcher />
+            <LanguageSwitcher className="ml-2" />
           </div>
 
           <div className="lg:hidden flex items-center gap-3 flex-shrink-0">
