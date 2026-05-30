@@ -79,12 +79,6 @@ import {
   DialogDescription
 } from '@/components/ui/dialog';
 import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { 
   Select, 
   SelectContent, 
   SelectItem, 
@@ -611,8 +605,8 @@ export default function AdminPage() {
           <TabsContent value="rooms" className="space-y-12 mt-0">
              <div className="flex justify-center">
                 <button 
-                  onClick={handleOpenNewRoom} 
                   type="button"
+                  onClick={handleOpenNewRoom} 
                   className="h-16 px-10 rounded-full bg-accent text-white font-black uppercase tracking-widest text-[11px] shadow-xl hover:scale-105 transition-all flex items-center"
                 >
                   <Plus className="w-5 h-5 mr-3" /> Nieuwe Zaal Aanmaken
@@ -679,6 +673,7 @@ export default function AdminPage() {
                              <span>{artCount} items</span>
                           </div>
                           <Button 
+                             type="button"
                              onClick={() => togglePublishRoom(room)}
                              variant={room.isPublished ? "outline" : "default"}
                              className={cn(
@@ -711,7 +706,7 @@ export default function AdminPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <Button onClick={handleOpenNewProject} className="h-14 rounded-2xl bg-primary text-white px-8 font-black uppercase tracking-widest text-[10px] shrink-0">
+                  <Button type="button" onClick={handleOpenNewProject} className="h-14 rounded-2xl bg-primary text-white px-8 font-black uppercase tracking-widest text-[10px] shrink-0">
                     <Plus className="w-4 h-4 mr-2" /> Nieuw Project
                   </Button>
                 </div>
@@ -753,7 +748,7 @@ export default function AdminPage() {
                 ) : (
                   <div className="space-y-4">
                     {filteredArtworks.map((art: any) => (
-                      <Card key={art.id} className="p-6 rounded-[2rem] flex items-center gap-8 cursor-pointer hover:shadow-lg transition-all" onClick={() => handleEditArtwork(art)}>
+                      <Card key={art.id} className="p-6 rounded-[2rem] flex items-center gap-8 cursor-pointer hover:shadow-lg transition-all border-2 border-transparent" onClick={() => handleEditArtwork(art)}>
                         <img src={art.image} className="w-40 h-40 object-cover rounded-2xl shadow-sm" alt="" />
                         <div className="flex-1 min-w-0">
                           <h3 className="font-bold text-xl mb-1 truncate">{art.title}</h3>
@@ -1055,7 +1050,7 @@ export default function AdminPage() {
             </div>
           </div>
           <div className="px-10 pb-10">
-            <Button onClick={handleSaveRoom} disabled={isSavingRoom} className="w-full h-14 rounded-2xl bg-accent text-white font-black uppercase tracking-widest text-[11px]">
+            <Button type="button" onClick={handleSaveRoom} disabled={isSavingRoom} className="w-full h-14 rounded-2xl bg-accent text-white font-black uppercase tracking-widest text-[11px]">
               {isSavingRoom ? <Loader2 className="animate-spin" /> : editingRoom ? 'Wijzigingen Opslaan' : 'Zaal Aanmaken'}
             </Button>
           </div>
@@ -1081,7 +1076,7 @@ export default function AdminPage() {
             </div>
           </div>
           <div className="px-10 pb-10">
-            <Button onClick={handleSaveProject} disabled={isSavingProject} className="w-full h-14 rounded-2xl bg-primary text-white font-black uppercase tracking-widest text-[10px]">
+            <Button type="button" onClick={handleSaveProject} disabled={isSavingProject} className="w-full h-14 rounded-2xl bg-primary text-white font-black uppercase tracking-widest text-[10px]">
               {isSavingProject ? <Loader2 className="animate-spin" /> : editingProject ? 'Wijzigingen Opslaan' : 'Project Aanmaken'}
             </Button>
           </div>
