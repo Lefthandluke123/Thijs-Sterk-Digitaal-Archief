@@ -1,9 +1,8 @@
-
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
-import { useFirestore, useCollection, useStorage } from '@/firebase';
+import { useFirestore, useCollection, useStorage, useAuth } from '@/firebase';
 import { 
   collection, 
   doc, 
@@ -17,6 +16,7 @@ import {
   arrayRemove,
   writeBatch
 } from 'firebase/firestore';
+import { signInAnonymously } from 'firebase/auth';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -72,7 +72,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
+import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
 const ART_TECHNIQUES = [
   "Olieverf",
@@ -93,6 +93,7 @@ export default function AdminPage() {
   const [password, setPassword] = useState('');
   const firestore = useFirestore();
   const storage = useStorage();
+  const auth = useAuth();
 
   useEffect(() => {
     if (sessionStorage.getItem('admin_auth') === 'true') {
@@ -100,11 +101,21 @@ export default function AdminPage() {
     }
   }, []);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password === '1527') {
-      setIsAuthorized(true);
-      sessionStorage.setItem('admin_auth', 'true');
+      if (auth) {
+        try {
+          await signInAnonymously(auth);
+          setIsAuthorized(true);
+          sessionStorage.setItem('admin_auth', 'true');
+        } catch (err) {
+          toast({ variant: "destructive", title: "Firebase Auth Error", description: "Zorg dat anonieme inlog is ingeschakeld in de console." });
+        }
+      } else {
+        setIsAuthorized(true);
+        sessionStorage.setItem('admin_auth', 'true');
+      }
     } else {
       toast({ variant: "destructive", title: "Toegang geweigerd" });
     }
@@ -131,7 +142,6 @@ export default function AdminPage() {
   
   const [selectedProjectId, setSelectedProjectId] = useState<string>("");
 
-  // Floating Panel State
   const [panelPos, setPanelPos] = useState({ x: 100, y: 150 });
   const [isDragging, setIsDragging] = useState(false);
   const [bulkExpanded, setBulkExpanded] = useState({ rooms: true, tags: true });
@@ -307,7 +317,7 @@ export default function AdminPage() {
                path: artRef.path,
                operation: 'update',
                requestResourceData: data
-             }));
+             } satisfies SecurityRuleContext));
           });
       } else {
         const artCol = collection(firestore, 'artworks');
@@ -318,7 +328,7 @@ export default function AdminPage() {
                path: artCol.path,
                operation: 'create',
                requestResourceData: data
-             }));
+             } satisfies SecurityRuleContext));
           });
       }
 
@@ -348,7 +358,7 @@ export default function AdminPage() {
       updateDoc(roomRef, data)
         .then(() => { toast({ title: "Zaal bijgewerkt" }); setIsRoomDialogOpen(false); })
         .catch(async () => {
-          errorEmitter.emit('permission-error', new FirestorePermissionError({ path: roomRef.path, operation: 'update', requestResourceData: data }));
+          errorEmitter.emit('permission-error', new FirestorePermissionError({ path: roomRef.path, operation: 'update', requestResourceData: data } satisfies SecurityRuleContext));
         })
         .finally(() => setIsSavingRoom(false));
     } else {
@@ -356,7 +366,7 @@ export default function AdminPage() {
       addDoc(roomsCol, { ...data, createdAt: serverTimestamp() })
         .then(() => { toast({ title: "Zaal aangemaakt" }); setIsRoomDialogOpen(false); })
         .catch(async () => {
-          errorEmitter.emit('permission-error', new FirestorePermissionError({ path: roomsCol.path, operation: 'create', requestResourceData: data }));
+          errorEmitter.emit('permission-error', new FirestorePermissionError({ path: roomsCol.path, operation: 'create', requestResourceData: data } satisfies SecurityRuleContext));
         })
         .finally(() => setIsSavingRoom(false));
     }
@@ -379,7 +389,7 @@ export default function AdminPage() {
       updateDoc(projRef, data)
         .then(() => { toast({ title: "Project bijgewerkt" }); setIsProjectDialogOpen(false); })
         .catch(async () => {
-          errorEmitter.emit('permission-error', new FirestorePermissionError({ path: projRef.path, operation: 'update', requestResourceData: data }));
+          errorEmitter.emit('permission-error', new FirestorePermissionError({ path: projRef.path, operation: 'update', requestResourceData: data } satisfies SecurityRuleContext));
         })
         .finally(() => setIsSavingProject(false));
     } else {
@@ -387,7 +397,7 @@ export default function AdminPage() {
       addDoc(projCol, { ...data, createdAt: serverTimestamp() })
         .then(() => { toast({ title: "Project aangemaakt" }); setIsProjectDialogOpen(false); })
         .catch(async () => {
-          errorEmitter.emit('permission-error', new FirestorePermissionError({ path: projCol.path, operation: 'create', requestResourceData: data }));
+          errorEmitter.emit('permission-error', new FirestorePermissionError({ path: projCol.path, operation: 'create', requestResourceData: data } satisfies SecurityRuleContext));
         })
         .finally(() => setIsSavingProject(false));
     }
@@ -614,7 +624,6 @@ export default function AdminPage() {
         </Tabs>
       </main>
 
-      {/* FLOATING DRAGGABLE BULK PANEL */}
       {selectedIds.length > 0 && (
         <div className="fixed z-[1000] shadow-2xl" style={{ left: panelPos.x, top: panelPos.y, width: '420px' }}>
            <Card className="rounded-[2.5rem] bg-white border-4 border-accent overflow-hidden flex flex-col max-h-[80vh]">
@@ -678,7 +687,6 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* ARTWORK EDITOR DIALOG */}
       <Dialog open={isArtworkDialogOpen} onOpenChange={setIsArtworkDialogOpen}>
         <DialogContent className="max-w-4xl rounded-[3rem] p-0 overflow-hidden bg-background">
           <div className="flex h-[85vh]">
@@ -815,7 +823,6 @@ export default function AdminPage() {
         </DialogContent>
       </Dialog>
 
-      {/* ROOM EDITOR DIALOG */}
       <Dialog open={isRoomDialogOpen} onOpenChange={setIsRoomDialogOpen}>
         <DialogContent className="max-w-lg rounded-[3rem] p-0 overflow-hidden bg-background">
           <DialogHeader className="p-10 border-b">
@@ -835,7 +842,6 @@ export default function AdminPage() {
         </DialogContent>
       </Dialog>
 
-      {/* PROJECT EDITOR DIALOG */}
       <Dialog open={isProjectDialogOpen} onOpenChange={setIsProjectDialogOpen}>
         <DialogContent className="max-w-md rounded-[3rem] p-0 overflow-hidden bg-background">
           <DialogHeader className="p-10 border-b">

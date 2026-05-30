@@ -9,7 +9,7 @@ import {
   FirestoreError
 } from 'firebase/firestore';
 import { errorEmitter } from '../error-emitter';
-import { FirestorePermissionError } from '../errors';
+import { FirestorePermissionError, type SecurityRuleContext } from '../errors';
 import { useAuth } from '../provider';
 
 /**
@@ -42,28 +42,20 @@ export function useCollection<T = DocumentData>(collectionQuery: Query<T> | null
         setLoading(false);
         setError(null);
       },
-      (serverError: FirestoreError) => {
-        // Log gedetailleerde diagnostiek naar de console
-        console.group('🔥 Firestore Query Error');
-        console.error('Message:', serverError.message);
-        console.error('Code:', serverError.code);
-        console.info('Auth State:', auth?.currentUser ? `Logged in as ${auth.currentUser.uid}` : 'Anonymous');
-        console.groupEnd();
-
+      async (serverError: FirestoreError) => {
         if (serverError.code === 'permission-denied') {
           const permissionError = new FirestorePermissionError({
-            path: 'collection_query',
+            path: (collectionQuery as any)._query?.path?.toString() || 'collection_query',
             operation: 'list',
-          });
+          } satisfies SecurityRuleContext);
           
-          // Emitter zorgt voor de Toast melding, maar we laten de app niet crashen
           errorEmitter.emit('permission-error', permissionError);
           setError(permissionError);
         } else {
           setError(new Error(serverError.message));
         }
         
-        setData([]); // Fallback naar lege lijst
+        setData([]); 
         setLoading(false);
       }
     );

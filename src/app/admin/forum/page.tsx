@@ -1,9 +1,8 @@
-
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
-import { useFirestore, useCollection } from '@/firebase';
+import { useFirestore, useCollection, useAuth } from '@/firebase';
 import { 
   collection, 
   doc, 
@@ -13,6 +12,7 @@ import {
   orderBy, 
   serverTimestamp 
 } from 'firebase/firestore';
+import { signInAnonymously } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -36,6 +36,7 @@ export default function ForumModerationPage() {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [password, setPassword] = useState('');
   const firestore = useFirestore();
+  const auth = useAuth();
 
   useEffect(() => {
     if (sessionStorage.getItem('admin_auth') === 'true') {
@@ -43,11 +44,21 @@ export default function ForumModerationPage() {
     }
   }, []);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password === '1527') {
-      setIsAuthorized(true);
-      sessionStorage.setItem('admin_auth', 'true');
+      if (auth) {
+        try {
+          await signInAnonymously(auth);
+          setIsAuthorized(true);
+          sessionStorage.setItem('admin_auth', 'true');
+        } catch (err) {
+          toast({ variant: "destructive", title: "Firebase Auth Error" });
+        }
+      } else {
+        setIsAuthorized(true);
+        sessionStorage.setItem('admin_auth', 'true');
+      }
     } else {
       toast({ variant: "destructive", title: "Wachtwoord onjuist" });
     }

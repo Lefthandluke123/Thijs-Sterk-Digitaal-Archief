@@ -9,7 +9,7 @@ import {
   FirestoreError 
 } from 'firebase/firestore';
 import { errorEmitter } from '../error-emitter';
-import { FirestorePermissionError } from '../errors';
+import { FirestorePermissionError, type SecurityRuleContext } from '../errors';
 import { useAuth } from '../provider';
 
 /**
@@ -38,18 +38,12 @@ export function useDoc<T = DocumentData>(docRef: DocumentReference<T> | null) {
         setLoading(false);
         setError(null);
       },
-      (serverError: FirestoreError) => {
-        console.group('🔥 Firestore Document Error');
-        console.error('Path:', docRef.path);
-        console.error('Message:', serverError.message);
-        console.info('Auth State:', auth?.currentUser ? `Logged in as ${auth.currentUser.uid}` : 'Anonymous');
-        console.groupEnd();
-
+      async (serverError: FirestoreError) => {
         if (serverError.code === 'permission-denied') {
           const permissionError = new FirestorePermissionError({
             path: docRef.path,
             operation: 'get',
-          });
+          } satisfies SecurityRuleContext);
           errorEmitter.emit('permission-error', permissionError);
           setError(permissionError);
         } else {

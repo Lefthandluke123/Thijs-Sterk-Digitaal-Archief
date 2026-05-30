@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { useFirestore, useDoc } from '@/firebase';
+import { useFirestore, useDoc, useAuth } from '@/firebase';
 import { doc, updateDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { signInAnonymously } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -57,6 +58,7 @@ export default function TranslateStationPage() {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [password, setPassword] = useState('');
   const firestore = useFirestore();
+  const auth = useAuth();
   const [isSaving, setIsSaving] = useState(false);
   const [translatingField, setTranslatingField] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('translations');
@@ -71,11 +73,21 @@ export default function TranslateStationPage() {
     }
   }, []);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password === '1527') {
-      setIsAuthorized(true);
-      sessionStorage.setItem('admin_auth', 'true');
+      if (auth) {
+        try {
+          await signInAnonymously(auth);
+          setIsAuthorized(true);
+          sessionStorage.setItem('admin_auth', 'true');
+        } catch (err) {
+          toast({ variant: "destructive", title: "Firebase Auth Error" });
+        }
+      } else {
+        setIsAuthorized(true);
+        sessionStorage.setItem('admin_auth', 'true');
+      }
     } else {
       toast({ variant: "destructive", title: "Wachtwoord onjuist" });
     }

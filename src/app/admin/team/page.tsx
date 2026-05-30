@@ -1,8 +1,9 @@
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useAuth } from '@/firebase';
+import { signInAnonymously } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -28,6 +29,7 @@ import { cn } from '@/lib/utils';
 export default function TeamDashboardPage() {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [password, setPassword] = useState('');
+  const auth = useAuth();
 
   useEffect(() => {
     if (sessionStorage.getItem('admin_auth') === 'true') {
@@ -35,11 +37,21 @@ export default function TeamDashboardPage() {
     }
   }, []);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password === '1527') {
-      setIsAuthorized(true);
-      sessionStorage.setItem('admin_auth', 'true');
+      if (auth) {
+        try {
+          await signInAnonymously(auth);
+          setIsAuthorized(true);
+          sessionStorage.setItem('admin_auth', 'true');
+        } catch (err) {
+          toast({ variant: "destructive", title: "Firebase Auth Error" });
+        }
+      } else {
+        setIsAuthorized(true);
+        sessionStorage.setItem('admin_auth', 'true');
+      }
     } else {
       toast({ variant: "destructive", title: "Toegang geweigerd" });
     }

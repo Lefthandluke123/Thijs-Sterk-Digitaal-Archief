@@ -1,10 +1,10 @@
-
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
-import { useFirestore, useCollection } from '@/firebase';
+import { useFirestore, useCollection, useAuth } from '@/firebase';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
+import { signInAnonymously } from 'firebase/auth';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -31,12 +31,11 @@ import {
 import { differenceInSeconds } from 'date-fns';
 import { cn } from '@/lib/utils';
 
-type DashboardModule = 'overview' | 'attention' | 'flow' | 'frustration' | 'gems' | 'segments';
-
 export default function CuratorIntelligencePage() {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [password, setPassword] = useState('');
   const firestore = useFirestore();
+  const auth = useAuth();
 
   useEffect(() => {
     if (sessionStorage.getItem('admin_auth') === 'true') {
@@ -44,11 +43,21 @@ export default function CuratorIntelligencePage() {
     }
   }, []);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password === '1527') {
-      setIsAuthorized(true);
-      sessionStorage.setItem('admin_auth', 'true');
+      if (auth) {
+        try {
+          await signInAnonymously(auth);
+          setIsAuthorized(true);
+          sessionStorage.setItem('admin_auth', 'true');
+        } catch (err) {
+          toast({ variant: "destructive", title: "Firebase Auth Error" });
+        }
+      } else {
+        setIsAuthorized(true);
+        sessionStorage.setItem('admin_auth', 'true');
+      }
     } else {
       toast({ variant: "destructive", title: "Wachtwoord onjuist" });
     }
