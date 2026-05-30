@@ -25,7 +25,6 @@ import {
   Trash2, 
   Loader2, 
   Plus,
-  Minus,
   LayoutDashboard,
   Layers,
   Edit3,
@@ -405,6 +404,22 @@ export default function AdminPage() {
     }
   };
 
+  const resetOlieverf = async () => {
+    if (!firestore) return;
+    try {
+      const batch = writeBatch(firestore);
+      artworks.forEach(art => {
+        if (art.medium === 'Olieverf') {
+          batch.update(doc(firestore, 'artworks', art.id), { medium: '' });
+        }
+      });
+      await batch.commit();
+      toast({ title: "Olieverf gereset naar leeg" });
+    } catch (e) {
+      toast({ variant: "destructive", title: "Fout bij reset" });
+    }
+  };
+
   const selectedArts = useMemo(() => artworks.filter(a => selectedIds.includes(a.id)), [artworks, selectedIds]);
   const isTagAssignedToSelection = (tag: string) => selectedArts.some(a => a.tags?.includes(tag));
   const isRoomAssignedToSelection = (roomId: string) => selectedArts.some(a => a.roomIds?.includes(roomId));
@@ -433,6 +448,9 @@ export default function AdminPage() {
           <div className="flex items-center gap-4">
             <Archive className="w-6 h-6 text-accent" />
             <h1 className="font-headline text-2xl italic leading-none">Museum Archief</h1>
+            <Button variant="ghost" size="icon" onClick={resetOlieverf} className="w-8 h-8 opacity-10 hover:opacity-100 transition-opacity">
+               <Database className="w-4 h-4" />
+            </Button>
           </div>
         </div>
         
@@ -532,9 +550,13 @@ export default function AdminPage() {
 
           <TabsContent value="rooms" className="space-y-12 mt-0">
              <div className="flex justify-center">
-                <Button onClick={handleOpenNewRoom} className="h-16 px-10 rounded-full bg-accent text-white font-black uppercase tracking-widest text-[11px] shadow-xl hover:scale-105 transition-all">
+                <button 
+                  onClick={handleOpenNewRoom} 
+                  type="button"
+                  className="h-16 px-10 rounded-full bg-accent text-white font-black uppercase tracking-widest text-[11px] shadow-xl hover:scale-105 transition-all flex items-center"
+                >
                   <Plus className="w-5 h-5 mr-3" /> Nieuwe Zaal Aanmaken
-                </Button>
+                </button>
              </div>
 
              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -865,63 +887,33 @@ export default function AdminPage() {
 
       {/* ROOM EDITOR DIALOG */}
       <Dialog open={isRoomDialogOpen} onOpenChange={setIsRoomDialogOpen}>
-        <DialogContent className="max-w-md rounded-[3rem] p-10 bg-white border-none shadow-2xl">
-          <DialogHeader>
+        <DialogContent className="max-w-lg rounded-[3rem] p-0 overflow-hidden bg-background">
+          <DialogHeader className="p-10 border-b">
             <DialogTitle className="font-headline text-3xl italic">
               {editingRoom ? 'Zaal Bewerken' : 'Nieuwe Zaal'}
             </DialogTitle>
-            <DialogDescription className="text-[10px] font-black uppercase tracking-widest opacity-40">
-               Configureer zaal instellingen
-            </DialogDescription>
           </DialogHeader>
-
-          <div className="space-y-8 pt-8">
-            <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase ml-2 opacity-40">Titel</Label>
-              <Input 
-                value={roomForm.title} 
-                onChange={e => setRoomForm({...roomForm, title: e.target.value})} 
-                className="h-14 rounded-2xl bg-black/5 border-none px-6 text-lg"
-              />
+          <div className="p-10 space-y-6">
+            <div className="space-y-1.5">
+              <Label className="text-[9px] font-black uppercase ml-2 opacity-40">Naam</Label>
+              <Input value={roomForm.title} onChange={e => setRoomForm({...roomForm, title: e.target.value})} className="h-12 rounded-xl bg-black/5 border-none px-4" />
             </div>
-
-            <div className="grid grid-cols-2 gap-4">
-               <div className="space-y-2">
-                 <Label className="text-[10px] font-black uppercase ml-2 opacity-40">Volgorde</Label>
-                 <Input 
-                   type="number"
-                   value={roomForm.order} 
-                   onChange={e => setRoomForm({...roomForm, order: Number(e.target.value)})} 
-                   className="h-14 rounded-2xl bg-black/5 border-none px-6"
-                 />
-               </div>
-               <div className="space-y-2">
-                 <Label className="text-[10px] font-black uppercase ml-2 opacity-40">Status</Label>
-                 <div className="flex items-center gap-3 h-14 bg-black/5 rounded-2xl px-6">
-                    <Switch 
-                      checked={roomForm.isPublished} 
-                      onCheckedChange={v => setRoomForm({...roomForm, isPublished: v})} 
-                    />
-                    <span className="text-[10px] font-bold uppercase tracking-widest opacity-60">Gepubliceerd</span>
-                 </div>
-               </div>
+            <div className="space-y-1.5">
+              <Label className="text-[9px] font-black uppercase ml-2 opacity-40">Beschrijving</Label>
+              <Textarea value={roomForm.description} onChange={e => setRoomForm({...roomForm, description: e.target.value})} className="min-h-[120px] rounded-2xl bg-black/5 border-none p-4" />
             </div>
-
-            <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase ml-2 opacity-40">Omschrijving</Label>
-              <Textarea 
-                value={roomForm.description} 
-                onChange={e => setRoomForm({...roomForm, description: e.target.value})} 
-                className="min-h-[120px] rounded-2xl bg-black/5 border-none p-6"
-              />
+            <div className="space-y-1.5">
+              <Label className="text-[9px] font-black uppercase ml-2 opacity-40">Volgorde</Label>
+              <Input type="number" value={roomForm.order} onChange={e => setRoomForm({...roomForm, order: parseInt(e.target.value)})} className="h-12 rounded-xl bg-black/5 border-none px-4" />
             </div>
-
-            <Button 
-              onClick={handleSaveRoom} 
-              disabled={isSavingRoom} 
-              className="w-full h-16 rounded-2xl bg-accent text-white font-black uppercase tracking-widest shadow-xl"
-            >
-              {isSavingRoom ? <Loader2 className="animate-spin" /> : editingRoom ? "Wijzigingen Opslaan" : "Zaal Aanmaken"}
+            <div className="flex items-center justify-between p-4 rounded-2xl bg-black/5">
+              <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">Publiek Zichtbaar</Label>
+              <Switch checked={roomForm.isPublished} onCheckedChange={v => setRoomForm({...roomForm, isPublished: v})} />
+            </div>
+          </div>
+          <div className="p-10 pt-0">
+            <Button onClick={handleSaveRoom} disabled={isSavingRoom} className="w-full h-14 rounded-2xl bg-accent text-white font-black uppercase tracking-widest text-[11px]">
+              {isSavingRoom ? <Loader2 className="animate-spin" /> : editingRoom ? 'Wijzigingen Opslaan' : 'Zaal Aanmaken'}
             </Button>
           </div>
         </DialogContent>
