@@ -43,7 +43,9 @@ import {
   Square,
   GripHorizontal,
   FolderInput,
-  Lock
+  Lock,
+  Building2,
+  Filter
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -69,6 +71,7 @@ import { normalizeArtwork, sanitizeArtwork, MUSEUM_TAGS, slugify, sortArtworksBy
 import { Switch } from '@/components/ui/switch';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const ART_TECHNIQUES = [
   "Olieverf",
@@ -116,6 +119,7 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState('archive');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [showMonumentalOnly, setShowMonumentalOnly] = useState(false);
   
   const [isArtworkDialogOpen, setIsArtworkDialogOpen] = useState(false);
   const [isRoomDialogOpen, setIsRoomDialogOpen] = useState(false);
@@ -134,7 +138,7 @@ export default function AdminPage() {
   const dragStartRef = useRef({ x: 0, y: 0 });
 
   const [artworkForm, setArtworkForm] = useState<any>({
-    title: '', displayTitle: '', slug: '', image: '', year: '', medium: '', description: '', tags: [], roomIds: [], featured: false, inShop: false
+    title: '', displayTitle: '', slug: '', image: '', year: '', medium: '', description: '', tags: [], roomIds: [], featured: false, inShop: false, isMonumental: false
   });
   
   const [roomForm, setRoomForm] = useState<any>({ title: '', description: '', order: 0, isPublished: false });
@@ -158,13 +162,18 @@ export default function AdminPage() {
   }, [dbArtworks]);
 
   const filteredArtworks = useMemo(() => {
-    const filtered = artworks.filter((art: any) => 
-      art.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    let filtered = artworks.filter((art: any) => 
+      (art.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       art.displayTitle?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      art.tags?.some((t: string) => t.toLowerCase().includes(searchQuery.toLowerCase()))
+      art.tags?.some((t: string) => t.toLowerCase().includes(searchQuery.toLowerCase())))
     );
+
+    if (showMonumentalOnly) {
+      filtered = filtered.filter((art: any) => art.isMonumental === true);
+    }
+
     return [...filtered].sort(sortArtworksByTitle);
-  }, [artworks, searchQuery]);
+  }, [artworks, searchQuery, showMonumentalOnly]);
 
   const handleToggleSelect = (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -215,7 +224,7 @@ export default function AdminPage() {
 
   const handleOpenNewArtwork = () => {
     setEditingArtwork(null);
-    setArtworkForm({ title: '', displayTitle: '', slug: '', image: '', year: '', medium: '', description: '', tags: [], roomIds: [], featured: false, inShop: false });
+    setArtworkForm({ title: '', displayTitle: '', slug: '', image: '', year: '', medium: '', description: '', tags: [], roomIds: [], featured: false, inShop: false, isMonumental: false });
     setIsArtworkDialogOpen(true);
   };
 
@@ -332,9 +341,19 @@ export default function AdminPage() {
 
           <TabsContent value="archive" className="space-y-8 mt-0">
             <div className="flex items-center justify-between bg-white/50 backdrop-blur-md p-6 rounded-[2.5rem] border border-white/60">
-               <div className="relative flex-1 max-w-md">
-                 <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 opacity-30" />
-                 <Input placeholder="Zoek op titel..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="h-14 pl-14 rounded-2xl bg-white border-none shadow-inner" />
+               <div className="flex items-center gap-4 flex-1">
+                 <div className="relative flex-1 max-w-md">
+                   <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 opacity-30" />
+                   <Input placeholder="Zoek op titel..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="h-14 pl-14 rounded-2xl bg-white border-none shadow-inner" />
+                 </div>
+                 <Button 
+                   type="button" 
+                   onClick={() => setShowMonumentalOnly(!showMonumentalOnly)}
+                   variant={showMonumentalOnly ? "default" : "outline"}
+                   className={cn("h-14 px-8 rounded-2xl font-black uppercase tracking-widest text-[10px]", showMonumentalOnly && "bg-accent text-white border-accent")}
+                 >
+                   <Building2 className="w-4 h-4 mr-2" /> Monumentaal
+                 </Button>
                </div>
                <div className="flex items-center gap-4">
                  <Button type="button" onClick={handleSelectAll} variant="ghost" className="text-[10px] font-black uppercase tracking-widest opacity-40">{selectedIds.length === filteredArtworks.length ? 'Deselecteer' : 'Selecteer Alles'}</Button>
@@ -351,6 +370,11 @@ export default function AdminPage() {
                     <button type="button" onClick={(e) => handleToggleSelect(art.id, e)} className={cn("absolute top-4 left-4 z-10 p-2 rounded-full backdrop-blur-md border", selectedIds.includes(art.id) ? "bg-accent text-white border-accent" : "bg-white/20 opacity-0 hover:opacity-100")}>
                       {selectedIds.includes(art.id) ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
                     </button>
+                    {art.isMonumental && (
+                      <div className="absolute top-4 right-4 z-10 p-2 rounded-full bg-accent/90 text-white shadow-lg">
+                        <Building2 className="w-3.5 h-3.5" />
+                      </div>
+                    )}
                     <Card className="p-4 rounded-3xl overflow-hidden shadow-md border-2 border-transparent">
                       <img src={art.image} className="aspect-square object-cover rounded-2xl mb-4" alt="" />
                       <h3 className="font-bold text-sm truncate">{art.displayTitle || art.title}</h3>
@@ -362,7 +386,14 @@ export default function AdminPage() {
               <div className="space-y-4">
                 {filteredArtworks.map((art: any) => (
                   <Card key={art.id} className="p-6 rounded-[2rem] flex items-center gap-8 cursor-pointer hover:shadow-lg transition-all" onClick={() => handleEditArtwork(art)}>
-                    <img src={art.image} className="w-40 h-40 object-cover rounded-2xl shadow-sm" alt="" />
+                    <div className="relative">
+                      <img src={art.image} className="w-40 h-40 object-cover rounded-2xl shadow-sm" alt="" />
+                      {art.isMonumental && (
+                        <div className="absolute -top-2 -right-2 p-2 rounded-full bg-accent text-white shadow-lg border-2 border-white">
+                          <Building2 className="w-4 h-4" />
+                        </div>
+                      )}
+                    </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="font-bold text-xl mb-1 truncate">{art.title}</h3>
                       <p className="text-xs font-black uppercase opacity-40">{art.year} • {art.medium || 'Geen techniek'}</p>
@@ -477,7 +508,7 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* DIALOGS */}
+      {/* ARTWORK EDITOR DIALOG */}
       <Dialog open={isArtworkDialogOpen} onOpenChange={setIsArtworkDialogOpen}>
         <DialogContent className="max-w-4xl rounded-[3rem] p-0 overflow-hidden bg-background">
           <div className="flex h-[85vh]">
@@ -512,6 +543,14 @@ export default function AdminPage() {
                   <div className="space-y-4">
                     <div className="space-y-1.5"><Label className="text-[9px] font-black uppercase ml-2 opacity-40">Interne Titel</Label><Input value={artworkForm.title} onChange={e => setArtworkForm({...artworkForm, title: e.target.value})} className="h-12 rounded-xl bg-black/5 border-none px-4" /></div>
                     <div className="space-y-1.5"><Label className="text-[9px] font-black uppercase ml-2 opacity-40">Weergavetitel</Label><Input value={artworkForm.displayTitle} onChange={e => setArtworkForm({...artworkForm, displayTitle: e.target.value})} className="h-12 rounded-xl bg-black/5 border-none px-4" /></div>
+                    
+                    <div className="flex items-center space-x-3 p-4 rounded-xl bg-black/5">
+                      <Checkbox id="isMonumental" checked={artworkForm.isMonumental} onCheckedChange={(v) => setArtworkForm({...artworkForm, isMonumental: !!v})} />
+                      <Label htmlFor="isMonumental" className="text-[11px] font-black uppercase tracking-widest cursor-pointer flex items-center gap-2">
+                        <Building2 className="w-4 h-4 text-accent" /> Monumentaal werk
+                      </Label>
+                    </div>
+
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1.5"><Label className="text-[9px] font-black uppercase ml-2 opacity-40">Jaar</Label><Input value={artworkForm.year} onChange={e => setArtworkForm({...artworkForm, year: e.target.value})} className="h-12 rounded-xl bg-black/5 border-none px-4" /></div>
                       <div className="space-y-1.5"><Label className="text-[9px] font-black uppercase ml-2 opacity-40">Techniek</Label><Select value={artworkForm.medium} onValueChange={v => setArtworkForm({...artworkForm, medium: v})}><SelectTrigger className="h-12 rounded-xl bg-black/5 border-none"><SelectValue placeholder="Selecteer..." /></SelectTrigger><SelectContent className="rounded-xl shadow-xl border-none">{ART_TECHNIQUES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></div>
@@ -544,6 +583,7 @@ export default function AdminPage() {
         </DialogContent>
       </Dialog>
 
+      {/* ROOM EDITOR DIALOG */}
       <Dialog open={isRoomDialogOpen} onOpenChange={setIsRoomDialogOpen}>
         <DialogContent className="max-w-lg rounded-[3rem] p-0 overflow-hidden bg-background">
           <DialogHeader className="p-10 border-b"><DialogTitle className="font-headline text-3xl italic">{editingRoom ? 'Zaal Bewerken' : 'Nieuwe Zaal'}</DialogTitle></DialogHeader>

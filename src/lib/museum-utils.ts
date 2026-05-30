@@ -62,11 +62,12 @@ export function normalizeArtwork(id: string, data: any) {
     image: cleanString(data.image || data.imageUrl || data.url) || null,
     description: cleanString(data.description) || "",
     year: filteredYear,
-    medium: cleanString(data.medium) || "", // Geen fallback naar "Olieverf" meer
+    medium: cleanString(data.medium) || "", 
     tags: cleanArray(data.tags),
     roomIds: cleanArray(data.roomIds),
     featured: Boolean(data.featured),
     inShop: Boolean(data.inShop),
+    isMonumental: Boolean(data.isMonumental),
     brightness: typeof data.brightness === 'number' ? data.brightness : 1,
     audioUrls: data.audioUrls || {},
     createdAt: data.createdAt || null,
@@ -120,6 +121,7 @@ export function sanitizeArtwork(input: any) {
     roomIds: cleanArray(input.roomIds),
     featured: Boolean(input.featured),
     inShop: Boolean(input.inShop),
+    isMonumental: Boolean(input.isMonumental),
     updatedAt: serverTimestamp(),
   };
 }
