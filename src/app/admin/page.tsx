@@ -48,7 +48,8 @@ import {
   Filter,
   Images,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  AlertTriangle
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -217,8 +218,26 @@ export default function AdminPage() {
     });
 
     batch.commit()
-      .then(() => toast({ title: "Bijgewerkt" }))
+      .then(() => toast({ title: "Selectie bijgewerkt" }))
       .catch(async () => toast({ variant: "destructive", title: "Bulk update mislukt" }));
+  };
+
+  const handleBulkDelete = async () => {
+    if (!firestore || selectedIds.length === 0) return;
+    if (!confirm(`Weet u zeker dat u deze ${selectedIds.length} werken definitief wilt verwijderen?`)) return;
+
+    const batch = writeBatch(firestore);
+    selectedIds.forEach(id => {
+      batch.delete(doc(firestore, 'artworks', id));
+    });
+
+    try {
+      await batch.commit();
+      toast({ title: `${selectedIds.length} werken verwijderd` });
+      setSelectedIds([]);
+    } catch (e) {
+      toast({ variant: "destructive", title: "Verwijderen mislukt" });
+    }
   };
 
   const handleDragStart = (e: React.MouseEvent) => {
@@ -460,7 +479,7 @@ export default function AdminPage() {
                         <Building2 className="w-3.5 h-3.5" />
                       </div>
                     )}
-                    <Card className="p-4 rounded-3xl overflow-hidden shadow-md border-2 border-transparent">
+                    <Card className="p-4 rounded-3xl overflow-hidden shadow-md border-2 border-transparent bg-white">
                       <img src={art.image} className="aspect-square object-cover rounded-2xl mb-4" alt="" />
                       <h3 className="font-bold text-sm truncate">{art.displayTitle || art.title}</h3>
                     </Card>
@@ -470,9 +489,12 @@ export default function AdminPage() {
             ) : (
               <div className="space-y-4">
                 {filteredArtworks.map((art: any) => (
-                  <Card key={art.id} className="p-6 rounded-[2rem] flex items-center gap-8 cursor-pointer hover:shadow-lg transition-all" onClick={() => handleEditArtwork(art)}>
+                  <Card key={art.id} className={cn("p-6 rounded-[2rem] flex items-center gap-8 cursor-pointer hover:shadow-lg transition-all bg-white relative", selectedIds.includes(art.id) && "border-accent ring-2 ring-accent ring-offset-2")} onClick={() => handleEditArtwork(art)}>
+                    <button type="button" onClick={(e) => handleToggleSelect(art.id, e)} className={cn("p-2 rounded-full border transition-all", selectedIds.includes(art.id) ? "bg-accent text-white border-accent" : "bg-black/5 hover:bg-black/10")}>
+                      {selectedIds.includes(art.id) ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
+                    </button>
                     <div className="relative">
-                      <img src={art.image} className="w-40 h-40 object-cover rounded-2xl shadow-sm" alt="" />
+                      <img src={art.image} className="w-32 h-32 object-cover rounded-2xl shadow-sm" alt="" />
                       {art.isMonumental && (
                         <div className="absolute -top-2 -right-2 p-2 rounded-full bg-accent text-white shadow-lg border-2 border-white">
                           <Building2 className="w-4 h-4" />
@@ -539,7 +561,18 @@ export default function AdminPage() {
                   <span className="font-headline text-lg italic">Bulk Beheer</span>
                   <Badge variant="outline" className="bg-white/10 text-white text-[9px] font-black">{selectedIds.length} items</Badge>
                 </div>
-                <Button type="button" onClick={() => setSelectedIds([])} variant="ghost" className="h-8 w-8 rounded-full p-0 text-white hover:bg-white/10"><X className="w-4 h-4" /></Button>
+                <div className="flex items-center gap-2">
+                   <Button 
+                    type="button" 
+                    onClick={handleBulkDelete}
+                    variant="ghost" 
+                    className="h-8 w-8 rounded-full p-0 text-white hover:bg-red-500"
+                    title="Verwijder selectie"
+                   >
+                     <Trash2 className="w-4 h-4" />
+                   </Button>
+                   <Button type="button" onClick={() => setSelectedIds([])} variant="ghost" className="h-8 w-8 rounded-full p-0 text-white hover:bg-white/10"><X className="w-4 h-4" /></Button>
+                </div>
               </div>
               <div className="flex-1 overflow-y-auto p-6 bg-white space-y-8">
                  <div className="space-y-2">
