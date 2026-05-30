@@ -100,17 +100,12 @@ export default function AdminPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password === '1527') {
+      setIsAuthorized(true);
+      sessionStorage.setItem('admin_auth', 'true');
       if (auth) {
-        try {
-          await signInAnonymously(auth);
-          setIsAuthorized(true);
-          sessionStorage.setItem('admin_auth', 'true');
-        } catch (err) {
-          toast({ variant: "destructive", title: "Firebase Auth Error" });
-        }
-      } else {
-        setIsAuthorized(true);
-        sessionStorage.setItem('admin_auth', 'true');
+        signInAnonymously(auth).catch(err => {
+           console.warn("Anoniem inloggen mislukt, mogelijk niet ingeschakeld in Firebase Console:", err);
+        });
       }
     } else {
       toast({ variant: "destructive", title: "Wachtwoord onjuist" });
