@@ -652,7 +652,7 @@ export default function AdminPage() {
                       <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-30" />
                       <Input placeholder="Filter archief..." className="h-12 pl-10 rounded-xl bg-black/5 border-none" />
                    </div>
-                   <Button onClick={() => setIsSelectorDialogOpen(false)} variant="ghost" className="rounded-full"><X className="w-5 h-5" /></Button>
+                   <button onClick={() => setIsSelectorDialogOpen(false)} className="p-2 hover:bg-black/5 rounded-full transition-colors"><X className="w-6 h-6" /></button>
                 </div>
               </div>
             </DialogHeader>
@@ -741,7 +741,7 @@ export default function AdminPage() {
                 </section>
 
                 <section className="space-y-6">
-                  <div className="flex items-center gap-3 border-l-4 border-accent pl-4"><Edit3 className="w-4 h-4 text-accent" /><h4 className="text-[10px] font-black uppercase tracking-widest opacity-60">Beschrijving</h4></div>
+                  <div className="flex items-center gap-3 border-l-4 border-accent pl-4"><Edit3 className="w-4 h-4 text-accent" /><h4 className="text-[10px) font-black uppercase tracking-widest opacity-60">Beschrijving</h4></div>
                   <Textarea value={artworkForm.description} onChange={e => setArtworkForm({...artworkForm, description: e.target.value})} className="min-h-[140px] rounded-2xl bg-black/5 border-none p-6" />
                 </section>
               </div>
