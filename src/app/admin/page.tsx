@@ -49,7 +49,8 @@ import {
   Images,
   CheckCircle2,
   AlertCircle,
-  AlertTriangle
+  ArrowLeft,
+  Settings2
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -108,8 +109,11 @@ export default function AdminPage() {
   useEffect(() => {
     if (sessionStorage.getItem('admin_auth') === 'true') {
       setIsAuthorized(true);
+      if (auth && !auth.currentUser) {
+        signInAnonymously(auth).catch(err => console.warn("Background auth failed:", err));
+      }
     }
-  }, []);
+  }, [auth]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,9 +121,7 @@ export default function AdminPage() {
       setIsAuthorized(true);
       sessionStorage.setItem('admin_auth', 'true');
       if (auth) {
-        signInAnonymously(auth).catch(err => {
-           console.warn("Anoniem inloggen mislukt:", err);
-        });
+        signInAnonymously(auth).catch(err => console.warn("Anoniem inloggen mislukt:", err));
       }
     } else {
       toast({ variant: "destructive", title: "Wachtwoord onjuist" });
@@ -131,10 +133,12 @@ export default function AdminPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [showMonumentalOnly, setShowMonumentalOnly] = useState(false);
+  const [curatingRoom, setCuratingRoom] = useState<any>(null);
   
   const [isArtworkDialogOpen, setIsArtworkDialogOpen] = useState(false);
   const [isRoomDialogOpen, setIsRoomDialogOpen] = useState(false);
   const [isBulkDialogOpen, setIsBulkDialogOpen] = useState(false);
+  const [isSelectorDialogOpen, setIsSelectorDialogOpen] = useState(false);
   
   const [editingArtwork, setEditingArtwork] = useState<any>(null);
   const [editingRoom, setEditingRoom] = useState<any>(null);
@@ -193,8 +197,17 @@ export default function AdminPage() {
       filtered = filtered.filter((art: any) => art.isMonumental === true);
     }
 
+    if (curatingRoom) {
+      filtered = filtered.filter((art: any) => art.roomIds?.includes(curatingRoom.id));
+    }
+
     return [...filtered].sort(sortArtworksByTitle);
-  }, [artworks, searchQuery, showMonumentalOnly]);
+  }, [artworks, searchQuery, showMonumentalOnly, curatingRoom]);
+
+  const availableForRoom = useMemo(() => {
+    if (!curatingRoom) return [];
+    return artworks.filter(art => !art.roomIds?.includes(curatingRoom.id));
+  }, [artworks, curatingRoom]);
 
   const handleToggleSelect = (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -220,6 +233,20 @@ export default function AdminPage() {
     batch.commit()
       .then(() => toast({ title: "Selectie bijgewerkt" }))
       .catch(async () => toast({ variant: "destructive", title: "Bulk update mislukt" }));
+  };
+
+  const handleBatchAddSelectionToRoom = (ids: string[]) => {
+    if (!firestore || !curatingRoom || ids.length === 0) return;
+    const batch = writeBatch(firestore);
+    ids.forEach(id => {
+      batch.update(doc(firestore, 'artworks', id), { roomIds: arrayUnion(curatingRoom.id) });
+    });
+    batch.commit()
+      .then(() => {
+        toast({ title: `${ids.length} werken toegevoegd aan ${curatingRoom.title}` });
+        setIsSelectorDialogOpen(false);
+      })
+      .catch(() => toast({ variant: "destructive", title: "Toevoegen mislukt" }));
   };
 
   const handleBulkDelete = async () => {
@@ -263,7 +290,11 @@ export default function AdminPage() {
 
   const handleOpenNewArtwork = () => {
     setEditingArtwork(null);
-    setArtworkForm({ title: '', displayTitle: '', slug: '', image: '', year: '', medium: '', description: '', tags: [], roomIds: [], featured: false, inShop: false, isMonumental: false });
+    setArtworkForm({ 
+      title: '', displayTitle: '', slug: '', image: '', year: '', medium: '', description: '', tags: [], 
+      roomIds: curatingRoom ? [curatingRoom.id] : [], 
+      featured: false, inShop: false, isMonumental: false 
+    });
     setIsArtworkDialogOpen(true);
   };
 
@@ -328,7 +359,6 @@ export default function AdminPage() {
     }
   };
 
-  // Bulk Upload Logic
   const handleBulkFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     const newItems: BulkItem[] = files.map(file => ({
@@ -338,6 +368,7 @@ export default function AdminPage() {
       status: 'pending'
     }));
     setBulkItems(prev => [...prev, ...newItems]);
+    if (curatingRoom) setBulkGlobalRooms([curatingRoom.id]);
   };
 
   const handleBulkSave = async () => {
@@ -348,48 +379,26 @@ export default function AdminPage() {
     for (let i = 0; i < bulkItems.length; i++) {
       const item = bulkItems[i];
       if (item.status === 'done') continue;
-
       setBulkItems(prev => prev.map((it, idx) => i === idx ? { ...it, status: 'uploading' } : it));
-
       try {
         const storageRef = ref(storage, `artworks/${Date.now()}_${item.file.name}`);
         const uploadResult = await uploadBytes(storageRef, item.file);
         const url = await getDownloadURL(uploadResult.ref);
-
         const data = sanitizeArtwork({
-          title: item.title,
-          displayTitle: item.title,
-          image: url,
-          year: bulkGlobalYear,
-          medium: bulkGlobalMedium,
-          tags: bulkGlobalTags,
-          roomIds: bulkGlobalRooms,
-          isMonumental: bulkGlobalMonumental
+          title: item.title, displayTitle: item.title, image: url,
+          year: bulkGlobalYear, medium: bulkGlobalMedium, tags: bulkGlobalTags,
+          roomIds: bulkGlobalRooms, isMonumental: bulkGlobalMonumental
         });
-
         await addDoc(collection(firestore, 'artworks'), { ...data, createdAt: serverTimestamp() });
-        
         setBulkItems(prev => prev.map((it, idx) => i === idx ? { ...it, status: 'done' } : it));
         successCount++;
       } catch (err) {
         setBulkItems(prev => prev.map((it, idx) => i === idx ? { ...it, status: 'error' } : it));
       }
     }
-
-    toast({ title: `${successCount} werken toegevoegd aan het archief.` });
+    toast({ title: `${successCount} werken toegevoegd.` });
     setIsBulkUploading(false);
-    if (successCount === bulkItems.length) {
-      setTimeout(() => setIsBulkDialogOpen(false), 1500);
-    }
-  };
-
-  const resetOlieverf = async () => {
-    if (!firestore) return;
-    try {
-      const batch = writeBatch(firestore);
-      artworks.forEach(art => { if (art.medium === 'Olieverf') batch.update(doc(firestore, 'artworks', art.id), { medium: '' }); });
-      await batch.commit(); toast({ title: "Olieverf gereset" });
-    } catch (e) { toast({ variant: "destructive", title: "Fout bij reset" }); }
+    if (successCount === bulkItems.length) setTimeout(() => setIsBulkDialogOpen(false), 1500);
   };
 
   const selectedArts = useMemo(() => artworks.filter(a => selectedIds.includes(a.id)), [artworks, selectedIds]);
@@ -418,14 +427,17 @@ export default function AdminPage() {
           <div className="flex items-center gap-4">
             <Archive className="w-6 h-6 text-accent" />
             <h1 className="font-headline text-2xl italic leading-none">Museum Archief</h1>
-            <Button type="button" variant="ghost" size="icon" onClick={resetOlieverf} className="w-8 h-8 opacity-10 hover:opacity-100"><Database className="w-4 h-4" /></Button>
           </div>
         </div>
         <div className="flex items-center gap-4">
           <Button 
             type="button" 
             variant="outline"
-            onClick={() => { setBulkItems([]); setIsBulkDialogOpen(true); }} 
+            onClick={() => { 
+              setBulkItems([]); 
+              setBulkGlobalRooms(curatingRoom ? [curatingRoom.id] : []);
+              setIsBulkDialogOpen(true); 
+            }} 
             className="h-12 rounded-full border-accent text-accent px-8 font-black uppercase tracking-widest text-[10px] hover:bg-accent/5"
           >
             <Images className="w-4 h-4 mr-2" /> Bulk Upload
@@ -437,27 +449,44 @@ export default function AdminPage() {
       </header>
 
       <main className="max-w-7xl mx-auto space-y-12 pb-48">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-12">
+        <Tabs value={activeTab} onValueChange={(v) => { if(v !== 'archive') setCuratingRoom(null); setActiveTab(v); }} className="space-y-12">
           <TabsList className="bg-white/80 backdrop-blur-xl p-1.5 rounded-full w-fit mx-auto h-16 border shadow-lg">
             <TabsTrigger value="archive" className="rounded-full px-12 h-13 uppercase font-black text-[10px] tracking-widest"><Archive className="w-4 h-4 mr-2" /> Alle Werken</TabsTrigger>
             <TabsTrigger value="rooms" className="rounded-full px-12 h-13 uppercase font-black text-[10px] tracking-widest"><Layers className="w-4 h-4 mr-2" /> Zalen & Curatie</TabsTrigger>
           </TabsList>
 
           <TabsContent value="archive" className="space-y-8 mt-0">
+            {curatingRoom && (
+              <div className="flex items-center justify-between p-6 bg-accent text-white rounded-3xl shadow-xl animate-in slide-in-from-top-4">
+                 <div className="flex items-center gap-4">
+                    <button onClick={() => setCuratingRoom(null)} className="p-2 hover:bg-white/10 rounded-full transition-colors"><ArrowLeft className="w-6 h-6" /></button>
+                    <div>
+                       <h2 className="font-headline text-2xl italic leading-none">Curatie: {curatingRoom.title}</h2>
+                       <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mt-1">U beheert nu alleen de werken in deze zaal</p>
+                    </div>
+                 </div>
+                 <Button onClick={() => setIsSelectorDialogOpen(true)} className="bg-white text-accent rounded-full h-12 px-8 font-black uppercase tracking-widest text-[10px] hover:bg-white/90">
+                    <Plus className="w-4 h-4 mr-2" /> Toevoegen uit Archief
+                 </Button>
+              </div>
+            )}
+
             <div className="flex items-center justify-between bg-white/50 backdrop-blur-md p-6 rounded-[2.5rem] border border-white/60">
                <div className="flex items-center gap-4 flex-1">
                  <div className="relative flex-1 max-w-md">
                    <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 opacity-30" />
                    <Input placeholder="Zoek op titel..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="h-14 pl-14 rounded-2xl bg-white border-none shadow-inner" />
                  </div>
-                 <Button 
-                   type="button" 
-                   onClick={() => setShowMonumentalOnly(!showMonumentalOnly)}
-                   variant={showMonumentalOnly ? "default" : "outline"}
-                   className={cn("h-14 px-8 rounded-2xl font-black uppercase tracking-widest text-[10px]", showMonumentalOnly && "bg-accent text-white border-accent")}
-                 >
-                   <Building2 className="w-4 h-4 mr-2" /> Monumentaal
-                 </Button>
+                 {!curatingRoom && (
+                   <Button 
+                    type="button" 
+                    onClick={() => setShowMonumentalOnly(!showMonumentalOnly)}
+                    variant={showMonumentalOnly ? "default" : "outline"}
+                    className={cn("h-14 px-8 rounded-2xl font-black uppercase tracking-widest text-[10px]", showMonumentalOnly && "bg-accent text-white border-accent")}
+                   >
+                     <Building2 className="w-4 h-4 mr-2" /> Monumentaal
+                   </Button>
+                 )}
                </div>
                <div className="flex items-center gap-4">
                  <Button type="button" onClick={handleSelectAll} variant="ghost" className="text-[10px] font-black uppercase tracking-widest opacity-40">{selectedIds.length === filteredArtworks.length ? 'Deselecteer' : 'Selecteer Alles'}</Button>
@@ -467,21 +496,18 @@ export default function AdminPage() {
                  </div>
                </div>
             </div>
+
             {viewMode === 'grid' ? (
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
                 {filteredArtworks.map((art: any) => (
-                  <div key={art.id} onClick={() => handleEditArtwork(art)} className={cn("cursor-pointer relative", selectedIds.includes(art.id) && "scale-95")}>
-                    <button type="button" onClick={(e) => handleToggleSelect(art.id, e)} className={cn("absolute top-4 left-4 z-10 p-2 rounded-full backdrop-blur-md border", selectedIds.includes(art.id) ? "bg-accent text-white border-accent" : "bg-white/20 opacity-0 hover:opacity-100")}>
+                  <div key={art.id} onClick={() => handleEditArtwork(art)} className={cn("cursor-pointer relative transition-all", selectedIds.includes(art.id) && "scale-95")}>
+                    <button type="button" onClick={(e) => handleToggleSelect(art.id, e)} className={cn("absolute top-4 left-4 z-10 p-2 rounded-full backdrop-blur-md border transition-all", selectedIds.includes(art.id) ? "bg-accent text-white border-accent opacity-100" : "bg-white/20 opacity-0 group-hover:opacity-100")}>
                       {selectedIds.includes(art.id) ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
                     </button>
-                    {art.isMonumental && (
-                      <div className="absolute top-4 right-4 z-10 p-2 rounded-full bg-accent/90 text-white shadow-lg">
-                        <Building2 className="w-3.5 h-3.5" />
-                      </div>
-                    )}
                     <Card className="p-4 rounded-3xl overflow-hidden shadow-md border-2 border-transparent bg-white">
                       <img src={art.image} className="aspect-square object-cover rounded-2xl mb-4" alt="" />
                       <h3 className="font-bold text-sm truncate">{art.displayTitle || art.title}</h3>
+                      <p className="text-[9px] font-black uppercase opacity-30 mt-1">{art.year || '-'}</p>
                     </Card>
                   </div>
                 ))}
@@ -489,18 +515,11 @@ export default function AdminPage() {
             ) : (
               <div className="space-y-4">
                 {filteredArtworks.map((art: any) => (
-                  <Card key={art.id} className={cn("p-6 rounded-[2rem] flex items-center gap-8 cursor-pointer hover:shadow-lg transition-all bg-white relative", selectedIds.includes(art.id) && "border-accent ring-2 ring-accent ring-offset-2")} onClick={() => handleEditArtwork(art)}>
-                    <button type="button" onClick={(e) => handleToggleSelect(art.id, e)} className={cn("p-2 rounded-full border transition-all", selectedIds.includes(art.id) ? "bg-accent text-white border-accent" : "bg-black/5 hover:bg-black/10")}>
+                  <Card key={art.id} className={cn("p-6 rounded-[2rem] flex items-center gap-8 cursor-pointer hover:shadow-lg transition-all bg-white relative", selectedIds.includes(art.id) && "border-accent ring-2 ring-accent")} onClick={() => handleEditArtwork(art)}>
+                    <button type="button" onClick={(e) => handleToggleSelect(art.id, e)} className={cn("p-2 rounded-full border transition-all", selectedIds.includes(art.id) ? "bg-accent text-white border-accent" : "bg-black/5")}>
                       {selectedIds.includes(art.id) ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
                     </button>
-                    <div className="relative">
-                      <img src={art.image} className="w-32 h-32 object-cover rounded-2xl shadow-sm" alt="" />
-                      {art.isMonumental && (
-                        <div className="absolute -top-2 -right-2 p-2 rounded-full bg-accent text-white shadow-lg border-2 border-white">
-                          <Building2 className="w-4 h-4" />
-                        </div>
-                      )}
-                    </div>
+                    <img src={art.image} className="w-32 h-32 object-cover rounded-2xl shadow-sm" alt="" />
                     <div className="flex-1 min-w-0">
                       <h3 className="font-bold text-xl mb-1 truncate">{art.title}</h3>
                       <p className="text-xs font-black uppercase opacity-40">{art.year} • {art.medium || 'Geen techniek'}</p>
@@ -521,27 +540,27 @@ export default function AdminPage() {
                 {rooms?.map((room: any) => {
                   const artCount = artworks.filter(a => a.roomIds?.includes(room.id)).length;
                   return (
-                    <Card key={room.id} className="p-8 rounded-[2.5rem] bg-white border-none shadow-lg flex flex-col justify-between">
+                    <Card key={room.id} className="p-8 rounded-[2.5rem] bg-white border-none shadow-lg flex flex-col justify-between group">
                        <div className="space-y-6">
                           <div className="flex justify-between items-start">
-                             <div className="flex flex-col gap-2">
-                                <Badge className="bg-accent/10 text-accent uppercase text-[9px] font-black">Zaal {room.order}</Badge>
-                                <Badge className={cn("uppercase text-[8px] font-black", room.isPublished ? "bg-green-500/10 text-green-600" : "bg-red-500/10 text-red-600")}>
-                                  {room.isPublished ? <Eye className="w-2.5 h-2.5 mr-1" /> : <EyeOff className="w-2.5 h-2.5 mr-1" />}
-                                  {room.isPublished ? 'Zichtbaar' : 'Verborgen'}
-                                </Badge>
-                             </div>
-                             <div className="flex gap-2">
+                             <Badge className="bg-accent/10 text-accent uppercase text-[9px] font-black">Zaal {room.order}</Badge>
+                             <div className="flex gap-1">
                                 <Button type="button" variant="ghost" size="icon" onClick={() => { setEditingRoom(room); setRoomForm({...room}); setIsRoomDialogOpen(true); }}><Edit3 className="w-4 h-4" /></Button>
                                 <Button type="button" variant="ghost" size="icon" disabled={artCount > 0} onClick={() => deleteDoc(doc(firestore!, 'rooms', room.id))} className="text-red-400"><Trash2 className="w-4 h-4" /></Button>
                              </div>
                           </div>
-                          <h3 className="font-headline text-3xl italic">{room.title}</h3>
-                          <p className="text-sm text-muted-foreground line-clamp-3 italic">{room.description}</p>
+                          <div>
+                             <h3 className="font-headline text-3xl italic mb-2">{room.title}</h3>
+                             <p className="text-xs font-bold uppercase tracking-widest opacity-40">{artCount} werken in zaal</p>
+                          </div>
                        </div>
-                       <div className="mt-8 pt-8 border-t border-black/5">
-                          <Button type="button" onClick={() => updateDoc(doc(firestore!, 'rooms', room.id), { isPublished: !room.isPublished })} variant={room.isPublished ? "outline" : "default"} className="h-12 rounded-2xl font-black uppercase tracking-widest text-[10px] w-full">
-                             {room.isPublished ? "Verbergen" : "Zichtbaar Maken"}
+                       <div className="mt-8 flex flex-col gap-3">
+                          <Button onClick={() => { setCuratingRoom(room); setActiveTab('archive'); }} className="h-14 rounded-2xl bg-accent text-white font-black uppercase tracking-widest text-[10px] w-full shadow-lg group-hover:scale-[1.02] transition-all">
+                             <Settings2 className="w-4 h-4 mr-2" /> Werken Beheren
+                          </Button>
+                          <Button type="button" onClick={() => updateDoc(doc(firestore!, 'rooms', room.id), { isPublished: !room.isPublished })} variant="ghost" className="h-10 text-[9px] font-black uppercase tracking-widest opacity-40 hover:opacity-100">
+                             {room.isPublished ? <EyeOff className="w-3 h-3 mr-2" /> : <Eye className="w-3 h-3 mr-2" />}
+                             {room.isPublished ? "Verbergen" : "Zichtbaar maken"}
                           </Button>
                        </div>
                     </Card>
@@ -562,30 +581,22 @@ export default function AdminPage() {
                   <Badge variant="outline" className="bg-white/10 text-white text-[9px] font-black">{selectedIds.length} items</Badge>
                 </div>
                 <div className="flex items-center gap-2">
-                   <Button 
-                    type="button" 
-                    onClick={handleBulkDelete}
-                    variant="ghost" 
-                    className="h-8 w-8 rounded-full p-0 text-white hover:bg-red-500"
-                    title="Verwijder selectie"
-                   >
-                     <Trash2 className="w-4 h-4" />
-                   </Button>
+                   <Button onClick={handleBulkDelete} variant="ghost" className="h-8 w-8 rounded-full p-0 text-white hover:bg-red-500"><Trash2 className="w-4 h-4" /></Button>
                    <Button type="button" onClick={() => setSelectedIds([])} variant="ghost" className="h-8 w-8 rounded-full p-0 text-white hover:bg-white/10"><X className="w-4 h-4" /></Button>
                 </div>
               </div>
-              <div className="flex-1 overflow-y-auto p-6 bg-white space-y-8">
+              <div className="flex-1 overflow-y-auto p-6 bg-white space-y-8 custom-scrollbar">
                  <div className="space-y-2">
                     <button type="button" onClick={() => setBulkExpanded(p => ({ ...p, rooms: !p.rooms }))} className="flex items-center justify-between w-full p-2 hover:bg-black/5 rounded-lg">
                        <Label className="text-[10px] font-black uppercase text-accent border-l-4 border-accent pl-3 cursor-pointer">Zaal Toewijzing</Label>
                        <ChevronDown className={cn("w-4 h-4 text-accent transition-transform", !bulkExpanded.rooms && "-rotate-90")} />
                     </button>
                     {bulkExpanded.rooms && (
-                      <div className="grid grid-cols-1 gap-2 pt-2 animate-in fade-in duration-300">
+                      <div className="grid grid-cols-1 gap-2 pt-2">
                          {rooms?.map((room: any) => {
                            const isActive = isRoomAssignedToSelection(room.id);
                            return (
-                             <button type="button" key={room.id} onClick={(e) => { e.stopPropagation(); handleBulkUpdate(isActive ? 'remove_room' : 'add_room', room.id); }} className={cn("flex items-center gap-3 p-4 rounded-xl border transition-all text-left", isActive ? "bg-accent/5 border-accent text-accent" : "bg-white border-black/5 text-black/40")}>
+                             <button type="button" key={room.id} onClick={() => handleBulkUpdate(isActive ? 'remove_room' : 'add_room', room.id)} className={cn("flex items-center gap-3 p-4 rounded-xl border transition-all text-left", isActive ? "bg-accent/5 border-accent text-accent" : "bg-white border-black/5 text-black/40")}>
                                 {isActive ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
                                 <span className="text-[10px] font-black uppercase tracking-widest">{room.title}</span>
                              </button>
@@ -601,7 +612,7 @@ export default function AdminPage() {
                        <ChevronDown className={cn("w-4 h-4 text-accent transition-transform", !bulkExpanded.tags && "-rotate-90")} />
                     </button>
                     {bulkExpanded.tags && (
-                      <div className="space-y-6 pt-2 animate-in fade-in duration-300">
+                      <div className="space-y-6 pt-2">
                          {Object.entries(MUSEUM_TAGS).map(([category, tags]) => (
                             <div key={category} className="space-y-3">
                                <p className="text-[8px] font-black uppercase opacity-30 tracking-widest">{category}</p>
@@ -609,7 +620,7 @@ export default function AdminPage() {
                                   {tags.map(tag => {
                                     const isActive = isTagAssignedToSelection(tag);
                                     return (
-                                      <button type="button" key={tag} onClick={(e) => { e.stopPropagation(); handleBulkUpdate(isActive ? 'remove_tag' : 'add_tag', tag); }} className={cn("px-3 py-1.5 rounded-lg text-[9px] font-bold border transition-all flex items-center gap-2", isActive ? "bg-accent/10 border-accent text-accent" : "bg-white border-black/5 text-black/40 hover:border-black/20")}>
+                                      <button type="button" key={tag} onClick={() => handleBulkUpdate(isActive ? 'remove_tag' : 'add_tag', tag)} className={cn("px-3 py-1.5 rounded-lg text-[9px] font-bold border transition-all flex items-center gap-2", isActive ? "bg-accent/10 border-accent text-accent" : "bg-white border-black/5 text-black/40 hover:border-black/20")}>
                                         {isActive ? <CheckSquare className="w-3 h-3" /> : <Square className="w-3 h-3" />}
                                         {tag}
                                       </button>
@@ -625,6 +636,52 @@ export default function AdminPage() {
            </Card>
         </div>
       )}
+
+      {/* ARCHIVE SELECTOR DIALOG (Toevoegen aan zaal) */}
+      <Dialog open={isSelectorDialogOpen} onOpenChange={setIsSelectorDialogOpen}>
+        <DialogContent className="max-w-5xl rounded-[3rem] p-0 overflow-hidden bg-background">
+          <div className="flex flex-col h-[85vh]">
+            <DialogHeader className="p-10 border-b bg-white">
+              <div className="flex items-center justify-between">
+                <div>
+                   <DialogTitle className="font-headline text-3xl italic">Toevoegen aan {curatingRoom?.title}</DialogTitle>
+                   <p className="text-[10px] font-black uppercase tracking-widest opacity-40 mt-1">Selecteer werken uit het archief om toe te voegen aan deze zaal</p>
+                </div>
+                <div className="flex items-center gap-4">
+                   <div className="relative w-64">
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-30" />
+                      <Input placeholder="Filter archief..." className="h-12 pl-10 rounded-xl bg-black/5 border-none" />
+                   </div>
+                   <Button onClick={() => setIsSelectorDialogOpen(false)} variant="ghost" className="rounded-full"><X className="w-5 h-5" /></Button>
+                </div>
+              </div>
+            </DialogHeader>
+
+            <div className="flex-1 overflow-y-auto p-10 custom-scrollbar bg-black/[0.02]">
+               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
+                  {availableForRoom.map(art => (
+                    <div 
+                      key={art.id} 
+                      onClick={() => handleBatchAddSelectionToRoom([art.id])}
+                      className="group cursor-pointer space-y-4"
+                    >
+                       <div className="relative aspect-square rounded-[2rem] overflow-hidden bg-white shadow-md group-hover:shadow-xl transition-all border-2 border-transparent group-hover:border-accent">
+                          <img src={art.image} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" alt="" />
+                          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-accent/20">
+                             <Plus className="w-10 h-10 text-white" />
+                          </div>
+                       </div>
+                       <div className="text-center">
+                          <h4 className="font-bold text-xs truncate px-2">{art.title}</h4>
+                          <p className="text-[9px] font-black uppercase opacity-30">{art.year}</p>
+                       </div>
+                    </div>
+                  ))}
+               </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* ARTWORK EDITOR DIALOG */}
       <Dialog open={isArtworkDialogOpen} onOpenChange={setIsArtworkDialogOpen}>
@@ -659,16 +716,13 @@ export default function AdminPage() {
                     <h4 className="text-[10px] font-black uppercase tracking-widest opacity-60">Identiteit</h4>
                   </div>
                   <div className="space-y-4">
-                    <div className="space-y-1.5"><Label className="text-[9px] font-black uppercase ml-2 opacity-40">Interne Titel</Label><Input value={artworkForm.title} onChange={e => setArtworkForm({...artworkForm, title: e.target.value})} className="h-12 rounded-xl bg-black/5 border-none px-4" /></div>
-                    <div className="space-y-1.5"><Label className="text-[9px] font-black uppercase ml-2 opacity-40">Weergavetitel</Label><Input value={artworkForm.displayTitle} onChange={e => setArtworkForm({...artworkForm, displayTitle: e.target.value})} className="h-12 rounded-xl bg-black/5 border-none px-4" /></div>
-                    
+                    <div className="space-y-1.5"><Label className="text-[9px] font-black uppercase ml-2 opacity-40">Titel</Label><Input value={artworkForm.title} onChange={e => setArtworkForm({...artworkForm, title: e.target.value, displayTitle: artworkForm.displayTitle || e.target.value})} className="h-12 rounded-xl bg-black/5 border-none px-4" /></div>
                     <div className="flex items-center space-x-3 p-4 rounded-xl bg-black/5">
                       <Checkbox id="isMonumental" checked={artworkForm.isMonumental} onCheckedChange={(v) => setArtworkForm({...artworkForm, isMonumental: !!v})} />
                       <Label htmlFor="isMonumental" className="text-[11px] font-black uppercase tracking-widest cursor-pointer flex items-center gap-2">
                         <Building2 className="w-4 h-4 text-accent" /> Monumentaal werk
                       </Label>
                     </div>
-
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1.5"><Label className="text-[9px] font-black uppercase ml-2 opacity-40">Jaar</Label><Input value={artworkForm.year} onChange={e => setArtworkForm({...artworkForm, year: e.target.value})} className="h-12 rounded-xl bg-black/5 border-none px-4" /></div>
                       <div className="space-y-1.5"><Label className="text-[9px] font-black uppercase ml-2 opacity-40">Techniek</Label><Select value={artworkForm.medium} onValueChange={v => setArtworkForm({...artworkForm, medium: v})}><SelectTrigger className="h-12 rounded-xl bg-black/5 border-none"><SelectValue placeholder="Selecteer..." /></SelectTrigger><SelectContent className="rounded-xl shadow-xl border-none">{ART_TECHNIQUES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></div>
@@ -678,7 +732,6 @@ export default function AdminPage() {
 
                 <section className="space-y-6">
                   <div className="flex items-center gap-3 border-l-4 border-accent pl-4"><TagIcon className="w-4 h-4 text-accent" /><h4 className="text-[10px] font-black uppercase tracking-widest opacity-60">Tags</h4></div>
-                  <div className="flex flex-wrap gap-2">{artworkForm.tags?.map((t: string) => <Badge key={t} className="bg-accent text-white rounded-full px-3 py-1 flex items-center gap-2">{t} <X className="w-3 h-3 cursor-pointer" onClick={() => setArtworkForm({...artworkForm, tags: artworkForm.tags.filter((tag: string) => tag !== t)})} /></Badge>)}</div>
                   <div className="space-y-4">{Object.entries(MUSEUM_TAGS).map(([cat, tags]) => <div key={cat} className="space-y-2"><p className="text-[8px] font-black uppercase opacity-30">{cat}</p><div className="flex flex-wrap gap-1.5">{tags.map(tag => <button key={tag} type="button" onClick={() => { const tags = artworkForm.tags || []; setArtworkForm({...artworkForm, tags: tags.includes(tag) ? tags.filter((t: string) => t !== tag) : [...tags, tag]}); }} className={cn("px-3 py-1 rounded-lg text-[9px] font-bold border transition-all", artworkForm.tags?.includes(tag) ? "bg-accent/10 border-accent text-accent" : "bg-white border-black/5 text-black/40 hover:border-black/20")}>{tag}</button>)}</div></div>)}</div>
                 </section>
 
@@ -705,109 +758,34 @@ export default function AdminPage() {
       <Dialog open={isBulkDialogOpen} onOpenChange={setIsBulkDialogOpen}>
         <DialogContent className="max-w-6xl rounded-[3rem] p-0 overflow-hidden bg-background">
           <div className="flex h-[90vh]">
-             {/* Left: Queue & Batch Settings */}
              <div className="w-1/3 bg-black/5 border-r p-8 flex flex-col">
                 <div className="flex-1 overflow-y-auto space-y-10 custom-scrollbar pr-2">
                    <div className="space-y-4">
                       <DialogTitle className="font-headline text-3xl italic">Bulk Archivering</DialogTitle>
                       <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Instellingen voor de hele batch</p>
                    </div>
-
                    <div className="space-y-6">
-                      <div className="space-y-1.5">
-                         <Label className="text-[9px] font-black uppercase ml-2 opacity-40">Gezamenlijk Jaar</Label>
-                         <Input value={bulkGlobalYear} onChange={e => setBulkGlobalYear(e.target.value)} placeholder="Bijv. 1965" className="bg-white border-none h-12 rounded-xl" />
-                      </div>
-                      <div className="space-y-1.5">
-                         <Label className="text-[9px] font-black uppercase ml-2 opacity-40">Gezamenlijke Techniek</Label>
-                         <Select value={bulkGlobalMedium} onValueChange={bulkGlobalMedium === 'Anders...' ? undefined : setBulkGlobalMedium}>
-                           <SelectTrigger className="h-12 rounded-xl bg-white border-none"><SelectValue placeholder="Kies..." /></SelectTrigger>
-                           <SelectContent className="rounded-xl border-none shadow-2xl">{ART_TECHNIQUES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
-                         </Select>
-                      </div>
-                      <div className="flex items-center space-x-3 p-4 rounded-xl bg-white/50">
-                         <Checkbox id="bulkMonumental" checked={bulkGlobalMonumental} onCheckedChange={(v) => setBulkGlobalMonumental(!!v)} />
-                         <Label htmlFor="bulkMonumental" className="text-[10px] font-black uppercase tracking-widest cursor-pointer flex items-center gap-2">
-                           <Building2 className="w-4 h-4 text-accent" /> Allemaal Monumentaal
-                         </Label>
-                      </div>
-                      <div className="space-y-2">
-                         <Label className="text-[9px] font-black uppercase ml-2 opacity-40">Toewijzen aan Zalen</Label>
-                         <div className="grid grid-cols-1 gap-2">
-                           {rooms?.map((room: any) => (
-                             <button key={room.id} type="button" onClick={() => setBulkGlobalRooms(prev => prev.includes(room.id) ? prev.filter(id => id !== room.id) : [...prev, room.id])} className={cn("flex items-center gap-3 p-3 rounded-xl border transition-all text-left", bulkGlobalRooms.includes(room.id) ? "bg-accent/10 border-accent text-accent" : "bg-white border-black/5 text-black/40")}>
-                               {bulkGlobalRooms.includes(room.id) ? <CheckSquare className="w-3.5 h-3.5" /> : <Square className="w-3.5 h-3.5" />}
-                               <span className="text-[9px] font-black uppercase">{room.title}</span>
-                             </button>
-                           ))}
-                         </div>
-                      </div>
+                      <div className="space-y-1.5"><Label className="text-[9px] font-black uppercase ml-2 opacity-40">Jaar</Label><Input value={bulkGlobalYear} onChange={e => setBulkGlobalYear(e.target.value)} placeholder="Bijv. 1965" className="bg-white border-none h-12 rounded-xl" /></div>
+                      <div className="space-y-1.5"><Label className="text-[9px] font-black uppercase ml-2 opacity-40">Techniek</Label><Select value={bulkGlobalMedium} onValueChange={setBulkGlobalMedium}><SelectTrigger className="h-12 rounded-xl bg-white border-none"><SelectValue placeholder="Kies..." /></SelectTrigger><SelectContent className="rounded-xl shadow-2xl border-none">{ART_TECHNIQUES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></div>
+                      <div className="flex items-center space-x-3 p-4 rounded-xl bg-white/50"><Checkbox id="bulkMonumental" checked={bulkGlobalMonumental} onCheckedChange={(v) => setBulkGlobalMonumental(!!v)} /><Label htmlFor="bulkMonumental" className="text-[10px] font-black uppercase tracking-widest cursor-pointer flex items-center gap-2"><Building2 className="w-4 h-4 text-accent" /> Allemaal Monumentaal</Label></div>
+                      <div className="space-y-2"><Label className="text-[9px] font-black uppercase ml-2 opacity-40">Zalen</Label><div className="grid grid-cols-1 gap-2">{rooms?.map((room: any) => (
+                        <button key={room.id} type="button" onClick={() => setBulkGlobalRooms(prev => prev.includes(room.id) ? prev.filter(id => id !== room.id) : [...prev, room.id])} className={cn("flex items-center gap-3 p-3 rounded-xl border transition-all text-left", bulkGlobalRooms.includes(room.id) ? "bg-accent/10 border-accent text-accent" : "bg-white border-black/5 text-black/40")}>
+                          {bulkGlobalRooms.includes(room.id) ? <CheckSquare className="w-3.5 h-3.5" /> : <Square className="w-3.5 h-3.5" />}<span className="text-[9px] font-black uppercase">{room.title}</span>
+                        </button>
+                      ))}</div></div>
                    </div>
                 </div>
-
-                <div className="pt-8 mt-8 border-t border-black/10">
-                   <Button 
-                    type="button" 
-                    onClick={handleBulkSave} 
-                    disabled={isBulkUploading || bulkItems.length === 0} 
-                    className="w-full h-20 rounded-[2rem] bg-accent text-white font-black uppercase tracking-widest shadow-2xl hover:scale-[1.02] transition-all"
-                   >
-                     {isBulkUploading ? <Loader2 className="animate-spin" /> : (
-                       <div className="flex flex-col items-center">
-                          <span className="text-[13px]">Start Bulk Upload</span>
-                          <span className="text-[9px] opacity-60 lowercase mt-1">({bulkItems.length} bestanden in de wacht)</span>
-                       </div>
-                     )}
-                   </Button>
-                </div>
+                <div className="pt-8 mt-8 border-t border-black/10"><Button type="button" onClick={handleBulkSave} disabled={isBulkUploading || bulkItems.length === 0} className="w-full h-20 rounded-[2rem] bg-accent text-white font-black uppercase tracking-widest shadow-2xl hover:scale-[1.02] transition-all">{isBulkUploading ? <Loader2 className="animate-spin" /> : <div className="flex flex-col items-center"><span className="text-[13px]">Start Bulk Upload</span><span className="text-[9px] opacity-60 lowercase mt-1">({bulkItems.length} bestanden)</span></div>}</Button></div>
              </div>
-
-             {/* Right: File Previews */}
              <div className="flex-1 flex flex-col">
-                <header className="p-8 border-b flex justify-between items-center bg-white">
-                   <div className="flex items-center gap-4">
-                      <Images className="w-6 h-6 text-accent" />
-                      <span className="text-[11px] font-black uppercase tracking-widest">Wachtrij ({bulkItems.length})</span>
-                   </div>
-                   <Button type="button" variant="outline" className="rounded-full" onClick={() => document.getElementById('bulk-file-input')?.click()}>
-                     <Plus className="w-4 h-4 mr-2" /> Bestanden toevoegen
-                   </Button>
-                   <input id="bulk-file-input" type="file" multiple className="hidden" onChange={handleBulkFileSelect} />
-                </header>
-
-                <div className="flex-1 overflow-y-auto p-8 bg-white custom-scrollbar">
-                   {bulkItems.length === 0 ? (
-                     <div className="h-full flex flex-col items-center justify-center text-center opacity-20 space-y-4">
-                        <Upload className="w-16 h-16" />
-                        <p className="font-headline text-2xl italic">Selecteer afbeeldingen om te beginnen</p>
-                     </div>
-                   ) : (
-                     <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-                        {bulkItems.map((item, idx) => (
-                          <Card key={idx} className={cn("p-4 rounded-3xl border-2 transition-all relative group", item.status === 'done' ? "border-green-500/20 bg-green-50/10" : "border-transparent")}>
-                             <div className="relative aspect-square rounded-2xl overflow-hidden mb-4 bg-black/5">
-                                <img src={item.preview} className="w-full h-full object-cover" alt="" />
-                                {item.status === 'uploading' && <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Loader2 className="w-8 h-8 text-white animate-spin" /></div>}
-                                {item.status === 'done' && <div className="absolute inset-0 bg-green-500/40 flex items-center justify-center"><CheckCircle2 className="w-10 h-10 text-white" /></div>}
-                                {item.status === 'error' && <div className="absolute inset-0 bg-destructive/40 flex items-center justify-center"><AlertCircle className="w-10 h-10 text-white" /></div>}
-                             </div>
-                             <div className="space-y-2">
-                                <Label className="text-[8px] font-black uppercase opacity-40 ml-1">Titel</Label>
-                                <Input 
-                                  value={item.title} 
-                                  onChange={e => setBulkItems(prev => prev.map((it, i) => i === idx ? { ...it, title: e.target.value } : it))}
-                                  className="h-10 rounded-xl bg-black/5 border-none text-xs"
-                                  disabled={item.status === 'done' || item.status === 'uploading'}
-                                />
-                             </div>
-                             {item.status === 'pending' && (
-                               <button type="button" onClick={() => setBulkItems(prev => prev.filter((_, i) => i !== idx))} className="absolute -top-2 -right-2 bg-white text-destructive p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"><X className="w-3 h-3" /></button>
-                             )}
-                          </Card>
-                        ))}
-                     </div>
-                   )}
-                </div>
+                <header className="p-8 border-b flex justify-between items-center bg-white"><div className="flex items-center gap-4"><Images className="w-6 h-6 text-accent" /><span className="text-[11px] font-black uppercase tracking-widest">Wachtrij ({bulkItems.length})</span></div><Button type="button" variant="outline" className="rounded-full" onClick={() => document.getElementById('bulk-file-input')?.click()}><Plus className="w-4 h-4 mr-2" /> Toevoegen</Button><input id="bulk-file-input" type="file" multiple className="hidden" onChange={handleBulkFileSelect} /></header>
+                <div className="flex-1 overflow-y-auto p-8 bg-white custom-scrollbar">{bulkItems.length === 0 ? <div className="h-full flex flex-col items-center justify-center text-center opacity-20 space-y-4"><Upload className="w-16 h-16" /><p className="font-headline text-2xl italic">Selecteer afbeeldingen</p></div> : <div className="grid grid-cols-2 md:grid-cols-3 gap-6">{bulkItems.map((item, idx) => (
+                  <Card key={idx} className={cn("p-4 rounded-3xl border-2 transition-all relative group", item.status === 'done' ? "border-green-500/20" : "border-transparent")}>
+                    <div className="relative aspect-square rounded-2xl overflow-hidden mb-4 bg-black/5"><img src={item.preview} className="w-full h-full object-cover" alt="" />{item.status === 'uploading' && <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Loader2 className="w-8 h-8 text-white animate-spin" /></div>}{item.status === 'done' && <div className="absolute inset-0 bg-green-500/40 flex items-center justify-center"><CheckCircle2 className="w-10 h-10 text-white" /></div>}</div>
+                    <Input value={item.title} onChange={e => setBulkItems(prev => prev.map((it, i) => i === idx ? { ...it, title: e.target.value } : it))} className="h-10 rounded-xl bg-black/5 border-none text-xs" disabled={item.status === 'done' || item.status === 'uploading'} />
+                    {item.status === 'pending' && <button type="button" onClick={() => setBulkItems(prev => prev.filter((_, i) => i !== idx))} className="absolute -top-2 -right-2 bg-white text-destructive p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100"><X className="w-3 h-3" /></button>}
+                  </Card>
+                ))}</div>}</div>
              </div>
           </div>
         </DialogContent>
