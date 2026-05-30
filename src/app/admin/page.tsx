@@ -14,7 +14,8 @@ import {
   orderBy,
   arrayUnion,
   arrayRemove,
-  writeBatch
+  writeBatch,
+  where
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Button } from '@/components/ui/button';
@@ -43,7 +44,6 @@ import {
   List as ListIcon,
   Tag as TagIcon,
   Save,
-  Wand2,
   Type,
   Calendar,
   Hammer,
@@ -58,7 +58,10 @@ import {
   FolderInput,
   GripHorizontal,
   MousePointer2,
-  Database
+  Database,
+  Eye,
+  EyeOff,
+  AlertCircle
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -90,6 +93,8 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { normalizeArtwork, sanitizeArtwork, MUSEUM_TAGS, slugify, sortArtworksByTitle } from '@/lib/museum-utils';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const ART_TECHNIQUES = [
   "Olieverf",
@@ -139,6 +144,7 @@ export default function AdminPage() {
   const [editingRoom, setEditingRoom] = useState<any>(null);
   
   const [isUploading, setIsUploading] = useState(false);
+  const [isSavingRoom, setIsSavingRoom] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -152,7 +158,12 @@ export default function AdminPage() {
     title: '', displayTitle: '', slug: '', image: '', year: '', medium: '', description: '', tags: [], roomIds: [], featured: false, inShop: false
   });
   
-  const [roomForm, setRoomForm] = useState({ title: '', description: '', order: 0 });
+  const [roomForm, setRoomForm] = useState<any>({ 
+    title: '', 
+    description: '', 
+    order: 0,
+    isPublished: false 
+  });
 
   const artworksQuery = useMemo(() => {
     if (!firestore) return null;
@@ -216,25 +227,6 @@ export default function AdminPage() {
     } catch (e) {
       console.error("Bulk update error:", e);
       toast({ variant: "destructive", title: "Fout bij bulk update" });
-    }
-  };
-
-  // One-time migration function
-  const resetOlieverf = async () => {
-    if (!firestore) return;
-    try {
-      const batch = writeBatch(firestore);
-      let count = 0;
-      artworks.forEach((art: any) => {
-        if (art.medium === 'Olieverf') {
-          batch.update(doc(firestore, 'artworks', art.id), { medium: '' });
-          count++;
-        }
-      });
-      await batch.commit();
-      toast({ title: "Opschoning voltooid", description: `${count} items gereset.` });
-    } catch (e) {
-      toast({ variant: "destructive", title: "Fout bij reset" });
     }
   };
 
@@ -319,6 +311,82 @@ export default function AdminPage() {
     }
   };
 
+  const handleOpenNewRoom = () => {
+    const maxOrder = rooms?.reduce((max: number, r: any) => Math.max(max, r.order || 0), 0) || 0;
+    setEditingRoom(null);
+    setRoomForm({ 
+      title: '', 
+      description: '', 
+      order: maxOrder + 1,
+      isPublished: false 
+    });
+    setIsRoomDialogOpen(true);
+  };
+
+  const handleSaveRoom = async () => {
+    if (!firestore) return;
+    setIsSavingRoom(true);
+
+    try {
+      const data = {
+        ...roomForm,
+        slug: slugify(roomForm.title),
+        updatedAt: serverTimestamp()
+      };
+
+      if (editingRoom) {
+        await updateDoc(doc(firestore, 'rooms', editingRoom.id), data);
+        toast({ title: "Zaal bijgewerkt" });
+      } else {
+        await addDoc(collection(firestore, 'rooms'), { 
+          ...data, 
+          createdAt: serverTimestamp() 
+        });
+        toast({ title: "Zaal aangemaakt" });
+      }
+      setIsRoomDialogOpen(false);
+    } catch (e) {
+      toast({ variant: "destructive", title: "Fout bij opslaan zaal" });
+    } finally {
+      setIsSavingRoom(false);
+    }
+  };
+
+  const handleDeleteRoom = async (roomId: string) => {
+    if (!firestore) return;
+    const hasArtworks = artworks.some(a => a.roomIds?.includes(roomId));
+    if (hasArtworks) {
+      toast({ 
+        variant: "destructive", 
+        title: "Actieve koppelingen", 
+        description: "Verwijder eerst alle werken uit deze zaal." 
+      });
+      return;
+    }
+
+    if (confirm("Weet u zeker dat u deze zaal wilt verwijderen?")) {
+      try {
+        await deleteDoc(doc(firestore, 'rooms', roomId));
+        toast({ title: "Zaal verwijderd" });
+      } catch (e) {
+        toast({ variant: "destructive", title: "Fout bij verwijderen" });
+      }
+    }
+  };
+
+  const togglePublishRoom = async (room: any) => {
+    if (!firestore) return;
+    try {
+      await updateDoc(doc(firestore, 'rooms', room.id), {
+        isPublished: !room.isPublished,
+        updatedAt: serverTimestamp()
+      });
+      toast({ title: room.isPublished ? "Zaal verborgen" : "Zaal gepubliceerd" });
+    } catch (e) {
+      toast({ variant: "destructive", title: "Fout bij wijzigen status" });
+    }
+  };
+
   const toggleTag = (tag: string) => {
     const tags = artworkForm.tags || [];
     if (tags.includes(tag)) {
@@ -337,7 +405,6 @@ export default function AdminPage() {
     }
   };
 
-  // Helper for bulk panel toggle states
   const selectedArts = useMemo(() => artworks.filter(a => selectedIds.includes(a.id)), [artworks, selectedIds]);
   const isTagAssignedToSelection = (tag: string) => selectedArts.some(a => a.tags?.includes(tag));
   const isRoomAssignedToSelection = (roomId: string) => selectedArts.some(a => a.roomIds?.includes(roomId));
@@ -366,9 +433,6 @@ export default function AdminPage() {
           <div className="flex items-center gap-4">
             <Archive className="w-6 h-6 text-accent" />
             <h1 className="font-headline text-2xl italic leading-none">Museum Archief</h1>
-            <Button variant="ghost" size="icon" onClick={resetOlieverf} className="w-6 h-6 p-0 opacity-0 hover:opacity-10 transition-opacity ml-2" title="Reset Olieverf">
-               <Database className="w-3 h-3" />
-            </Button>
           </div>
         </div>
         
@@ -466,31 +530,98 @@ export default function AdminPage() {
             )}
           </TabsContent>
 
-          <TabsContent value="rooms" className="space-y-8 mt-0">
-             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {rooms?.map((room: any) => (
-                  <Card key={room.id} className="p-8 rounded-[2.5rem] bg-white border-none shadow-lg space-y-4">
-                     <div className="flex justify-between items-start">
-                        <Badge className="bg-accent/10 text-accent uppercase text-[9px] tracking-widest font-black">Zaal {room.order}</Badge>
-                        <Button type="button" variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setEditingRoom(room); setRoomForm({...room}); setIsRoomDialogOpen(true); }}><Edit3 className="w-4 h-4" /></Button>
-                     </div>
-                     <h3 className="font-headline text-3xl italic">{room.title}</h3>
-                     <p className="text-sm text-muted-foreground line-clamp-2 italic">{room.description}</p>
-                  </Card>
-                ))}
+          <TabsContent value="rooms" className="space-y-12 mt-0">
+             <div className="flex justify-center">
+                <Button onClick={handleOpenNewRoom} className="h-16 px-10 rounded-full bg-accent text-white font-black uppercase tracking-widest text-[11px] shadow-xl hover:scale-105 transition-all">
+                  <Plus className="w-5 h-5 mr-3" /> Nieuwe Zaal Aanmaken
+                </Button>
+             </div>
+
+             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {rooms?.map((room: any) => {
+                  const artCount = artworks.filter(a => a.roomIds?.includes(room.id)).length;
+                  return (
+                    <Card key={room.id} className="p-8 rounded-[2.5rem] bg-white border-none shadow-lg flex flex-col justify-between">
+                       <div className="space-y-6">
+                          <div className="flex justify-between items-start">
+                             <div className="flex flex-col gap-2">
+                                <Badge className="bg-accent/10 text-accent uppercase text-[9px] tracking-widest font-black w-fit">Zaal {room.order}</Badge>
+                                {room.isPublished ? (
+                                  <Badge className="bg-green-500/10 text-green-600 uppercase text-[8px] font-black w-fit flex items-center gap-1.5"><Eye className="w-2.5 h-2.5" /> Zichtbaar</Badge>
+                                ) : (
+                                  <Badge className="bg-red-500/10 text-red-600 uppercase text-[8px] font-black w-fit flex items-center gap-1.5"><EyeOff className="w-2.5 h-2.5" /> Verborgen</Badge>
+                                )}
+                             </div>
+                             <div className="flex gap-2">
+                                <Button type="button" variant="ghost" size="icon" className="rounded-full hover:bg-black/5" onClick={() => { setEditingRoom(room); setRoomForm({...room}); setIsRoomDialogOpen(true); }}>
+                                   <Edit3 className="w-4 h-4" />
+                                </Button>
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <div>
+                                        <Button 
+                                          type="button" 
+                                          variant="ghost" 
+                                          size="icon" 
+                                          disabled={artCount > 0}
+                                          className="rounded-full hover:bg-red-50 text-red-400 hover:text-red-600 disabled:opacity-20" 
+                                          onClick={() => handleDeleteRoom(room.id)}
+                                        >
+                                          <Trash2 className="w-4 h-4" />
+                                        </Button>
+                                      </div>
+                                    </TooltipTrigger>
+                                    {artCount > 0 && (
+                                      <TooltipContent className="bg-white text-black border shadow-xl p-4 rounded-xl">
+                                        <div className="flex items-center gap-3">
+                                          <AlertCircle className="w-4 h-4 text-red-500" />
+                                          <p className="text-[10px] font-bold uppercase tracking-widest">Bevat nog {artCount} werken</p>
+                                        </div>
+                                      </TooltipContent>
+                                    )}
+                                  </Tooltip>
+                                </TooltipProvider>
+                             </div>
+                          </div>
+                          
+                          <div className="space-y-2">
+                             <h3 className="font-headline text-3xl italic">{room.title}</h3>
+                             <p className="text-sm text-muted-foreground line-clamp-3 italic leading-relaxed">{room.description}</p>
+                          </div>
+                       </div>
+
+                       <div className="mt-8 pt-8 border-t border-black/5 flex flex-col gap-4">
+                          <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest opacity-40">
+                             <span>Inhoud</span>
+                             <span>{artCount} items</span>
+                          </div>
+                          <Button 
+                             onClick={() => togglePublishRoom(room)}
+                             variant={room.isPublished ? "outline" : "default"}
+                             className={cn(
+                               "h-12 rounded-2xl font-black uppercase tracking-widest text-[10px] w-full",
+                               room.isPublished ? "border-accent text-accent hover:bg-accent/5" : "bg-accent text-white"
+                             )}
+                          >
+                             {room.isPublished ? "Verbergen voor Publiek" : "Publiek Zichtbaar Maken"}
+                          </Button>
+                       </div>
+                    </Card>
+                  );
+                })}
              </div>
           </TabsContent>
         </Tabs>
       </main>
 
-      {/* FLOATING DRAGGABLE BULK PANEL WITH INTERNAL SCROLLING */}
+      {/* FLOATING DRAGGABLE BULK PANEL */}
       {selectedIds.length > 0 && (
         <div 
           className="fixed z-[1000] shadow-2xl transition-shadow"
           style={{ left: panelPos.x, top: panelPos.y, width: '420px' }}
         >
            <Card className="rounded-[2.5rem] bg-white border-4 border-accent overflow-hidden flex flex-col max-h-[80vh] min-h-0">
-              {/* Header / Handle */}
               <div 
                 onMouseDown={handleDragStart}
                 className="p-6 bg-accent text-white cursor-grab active:cursor-grabbing flex items-center justify-between shrink-0"
@@ -505,10 +636,8 @@ export default function AdminPage() {
                 </Button>
               </div>
 
-              {/* Scrollable Content Area */}
               <div className="flex-1 overflow-y-auto p-6 min-h-0 custom-scrollbar bg-white">
                  <div className="space-y-4 pb-8">
-                    {/* ROOMS SECTIONS */}
                     <div className="space-y-2">
                        <button 
                          type="button"
@@ -544,7 +673,6 @@ export default function AdminPage() {
 
                     <Separator className="bg-black/5" />
                     
-                    {/* TAGS SECTIONS */}
                     <div className="space-y-2">
                        <button 
                          type="button"
@@ -587,7 +715,6 @@ export default function AdminPage() {
                  </div>
               </div>
 
-              {/* Helper Footer */}
               <div className="p-4 bg-black/5 border-t text-center shrink-0">
                  <p className="text-[8px] font-bold uppercase opacity-30 tracking-[0.2em]">Slepen via de bovenbalk • Toggles werken direct</p>
               </div>
@@ -599,7 +726,6 @@ export default function AdminPage() {
       <Dialog open={isArtworkDialogOpen} onOpenChange={setIsArtworkDialogOpen}>
         <DialogContent className="max-w-4xl rounded-[3rem] p-0 overflow-hidden bg-background">
           <div className="flex h-[85vh]">
-             {/* Linkerkant: Media Preview */}
              <div className="w-1/2 bg-black/5 flex flex-col items-center justify-center p-12 border-r">
                 {artworkForm.image ? (
                   <div className="relative group w-full aspect-square rounded-[2rem] overflow-hidden shadow-2xl">
@@ -617,7 +743,6 @@ export default function AdminPage() {
                 <input type="file" ref={fileInputRef} className="hidden" onChange={e => setSelectedFile(e.target.files?.[0] || null)} />
              </div>
 
-             {/* Rechterkant: Formulier */}
              <div className="w-1/2 flex flex-col h-full">
                 <DialogHeader className="p-8 border-b">
                    <DialogTitle className="font-headline text-3xl italic">
@@ -626,7 +751,6 @@ export default function AdminPage() {
                 </DialogHeader>
                 
                 <div className="flex-1 overflow-y-auto p-8 space-y-10 custom-scrollbar">
-                   {/* Namen Sectie */}
                    <section className="space-y-6">
                       <div className="flex items-center gap-3 border-l-4 border-accent pl-4">
                          <Type className="w-4 h-4 text-accent" />
@@ -661,7 +785,6 @@ export default function AdminPage() {
                       </div>
                    </section>
 
-                   {/* Tags Sectie */}
                    <section className="space-y-6">
                       <div className="flex items-center gap-3 border-l-4 border-accent pl-4">
                          <TagIcon className="w-4 h-4 text-accent" />
@@ -698,7 +821,6 @@ export default function AdminPage() {
                       </div>
                    </section>
 
-                   {/* Zalen Sectie */}
                    <section className="space-y-6">
                       <div className="flex items-center gap-3 border-l-4 border-accent pl-4">
                          <FolderInput className="w-4 h-4 text-accent" />
@@ -737,6 +859,70 @@ export default function AdminPage() {
                    </Button>
                 </div>
              </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ROOM EDITOR DIALOG */}
+      <Dialog open={isRoomDialogOpen} onOpenChange={setIsRoomDialogOpen}>
+        <DialogContent className="max-w-md rounded-[3rem] p-10 bg-white border-none shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="font-headline text-3xl italic">
+              {editingRoom ? 'Zaal Bewerken' : 'Nieuwe Zaal'}
+            </DialogTitle>
+            <DialogDescription className="text-[10px] font-black uppercase tracking-widest opacity-40">
+               Configureer zaal instellingen
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-8 pt-8">
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase ml-2 opacity-40">Titel</Label>
+              <Input 
+                value={roomForm.title} 
+                onChange={e => setRoomForm({...roomForm, title: e.target.value})} 
+                className="h-14 rounded-2xl bg-black/5 border-none px-6 text-lg"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+               <div className="space-y-2">
+                 <Label className="text-[10px] font-black uppercase ml-2 opacity-40">Volgorde</Label>
+                 <Input 
+                   type="number"
+                   value={roomForm.order} 
+                   onChange={e => setRoomForm({...roomForm, order: Number(e.target.value)})} 
+                   className="h-14 rounded-2xl bg-black/5 border-none px-6"
+                 />
+               </div>
+               <div className="space-y-2">
+                 <Label className="text-[10px] font-black uppercase ml-2 opacity-40">Status</Label>
+                 <div className="flex items-center gap-3 h-14 bg-black/5 rounded-2xl px-6">
+                    <Switch 
+                      checked={roomForm.isPublished} 
+                      onCheckedChange={v => setRoomForm({...roomForm, isPublished: v})} 
+                    />
+                    <span className="text-[10px] font-bold uppercase tracking-widest opacity-60">Gepubliceerd</span>
+                 </div>
+               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase ml-2 opacity-40">Omschrijving</Label>
+              <Textarea 
+                value={roomForm.description} 
+                onChange={e => setRoomForm({...roomForm, description: e.target.value})} 
+                className="min-h-[120px] rounded-2xl bg-black/5 border-none p-6"
+              />
+            </div>
+
+            <Button 
+              onClick={handleSaveRoom} 
+              disabled={isSavingRoom} 
+              className="w-full h-16 rounded-2xl bg-accent text-white font-black uppercase tracking-widest shadow-xl"
+            >
+              {isSavingRoom ? <Loader2 className="animate-spin" /> : editingRoom ? "Wijzigingen Opslaan" : "Zaal Aanmaken"}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

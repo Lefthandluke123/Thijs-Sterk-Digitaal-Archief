@@ -8,7 +8,7 @@ import { ContactForm } from '@/components/sections/contact-form';
 import { IntroductionGallery } from '@/components/sections/introduction-gallery';
 import { Toaster } from '@/components/ui/toaster';
 import { useCollection, useFirestore } from '@/firebase';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { collection, query, orderBy, where } from 'firebase/firestore';
 import Link from 'next/link';
 import { ChevronRight, Layers, AlertCircle } from 'lucide-react';
 import { useLanguage } from '@/components/language-provider';
@@ -21,11 +21,15 @@ export default function Home() {
   const firestore = useFirestore();
   const { t } = useLanguage();
 
-  // Stabiele query definitie
+  // Stabiele query definitie: toon alleen gepubliceerde zalen
   const roomsQuery = useMemo(() => {
     if (!firestore) return null;
     try {
-      return query(collection(firestore, 'rooms'), orderBy('order', 'asc'));
+      return query(
+        collection(firestore, 'rooms'), 
+        where('isPublished', '==', true),
+        orderBy('order', 'asc')
+      );
     } catch (e) {
       console.error("Fout bij aanmaken van rooms query:", e);
       return null;
@@ -101,7 +105,7 @@ export default function Home() {
               </div>
             ) : (
               <div className="py-20 text-center border-2 border-dashed rounded-[3rem] opacity-20 italic">
-                 Geen zalen gevonden in de collectie.
+                 Geen gepubliceerde zalen gevonden in de collectie.
               </div>
             )}
           </div>
