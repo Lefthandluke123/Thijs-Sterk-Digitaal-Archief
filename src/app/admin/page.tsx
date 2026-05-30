@@ -748,139 +748,129 @@ export default function AdminPage() {
       <Dialog open={isArtworkDialogOpen} onOpenChange={setIsArtworkDialogOpen}>
         <DialogContent className="max-w-4xl rounded-[3rem] p-0 overflow-hidden bg-background">
           <div className="flex h-[85vh]">
-             <div className="w-1/2 bg-black/5 flex flex-col items-center justify-center p-12 border-r">
-                {artworkForm.image ? (
-                  <div className="relative group w-full aspect-square rounded-[2rem] overflow-hidden shadow-2xl">
-                     <img src={artworkForm.image} className="w-full h-full object-cover" alt="" />
-                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                        <Button type="button" onClick={() => fileInputRef.current?.click()} variant="secondary" className="rounded-full h-12 px-6">Vervangen</Button>
-                     </div>
+            <div className="w-1/2 bg-black/5 flex flex-col items-center justify-center p-12 border-r">
+              {artworkForm.image ? (
+                <div className="relative group w-full aspect-square rounded-[2rem] overflow-hidden shadow-2xl">
+                  <img src={artworkForm.image} className="w-full h-full object-cover" alt="" />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                    <Button type="button" onClick={() => fileInputRef.current?.click()} variant="secondary" className="rounded-full h-12 px-6">Vervangen</Button>
                   </div>
-                ) : (
-                  <div onClick={() => fileInputRef.current?.click()} className="w-full aspect-square rounded-[2rem] border-4 border-dashed flex flex-col items-center justify-center gap-4 cursor-pointer hover:bg-black/5 transition-all">
-                     <Upload className="w-10 h-10 opacity-20" />
-                     <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Upload Afbeelding</p>
+                </div>
+              ) : (
+                <div onClick={() => fileInputRef.current?.click()} className="w-full aspect-square rounded-[2rem] border-4 border-dashed flex flex-col items-center justify-center gap-4 cursor-pointer hover:bg-black/5 transition-all">
+                  <Upload className="w-10 h-10 opacity-20" />
+                  <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Upload Afbeelding</p>
+                </div>
+              )}
+              <input type="file" ref={fileInputRef} className="hidden" onChange={e => setSelectedFile(e.target.files?.[0] || null)} />
+            </div>
+
+            <div className="w-1/2 flex flex-col h-full">
+              <DialogHeader className="p-8 border-b">
+                <DialogTitle className="font-headline text-3xl italic">
+                  {editingArtwork ? 'Werk Bewerken' : 'Nieuw Kunstwerk'}
+                </DialogTitle>
+              </DialogHeader>
+
+              <div className="flex-1 overflow-y-auto p-8 space-y-10 custom-scrollbar">
+                <section className="space-y-6">
+                  <div className="flex items-center gap-3 border-l-4 border-accent pl-4">
+                    <Type className="w-4 h-4 text-accent" />
+                    <h4 className="text-[10px] font-black uppercase tracking-widest opacity-60">Identiteit</h4>
                   </div>
-                )}
-                <input type="file" ref={fileInputRef} className="hidden" onChange={e => setSelectedFile(e.target.files?.[0] || null)} />
-             </div>
+                  <div className="space-y-4">
+                    <div className="space-y-1.5">
+                      <Label className="text-[9px] font-black uppercase ml-2 opacity-40">Interne Titel</Label>
+                      <Input value={artworkForm.title} onChange={e => setArtworkForm({...artworkForm, title: e.target.value})} className="h-12 rounded-xl bg-black/5 border-none px-4" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-[9px] font-black uppercase ml-2 opacity-40">Weergavetitel (Gallerie)</Label>
+                      <Input value={artworkForm.displayTitle} onChange={e => setArtworkForm({...artworkForm, displayTitle: e.target.value})} className="h-12 rounded-xl bg-black/5 border-none px-4" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <Label className="text-[9px] font-black uppercase ml-2 opacity-40">Jaar</Label>
+                        <Input value={artworkForm.year} onChange={e => setArtworkForm({...artworkForm, year: e.target.value})} className="h-12 rounded-xl bg-black/5 border-none px-4" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-[9px] font-black uppercase ml-2 opacity-40">Techniek</Label>
+                        <Select value={artworkForm.medium} onValueChange={v => setArtworkForm({...artworkForm, medium: v})}>
+                          <SelectTrigger className="h-12 rounded-xl bg-black/5 border-none">
+                            <SelectValue placeholder="Selecteer techniek..." />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl shadow-xl border-none">
+                            {ART_TECHNIQUES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+                </section>
 
-             <div className="w-1/2 flex flex-col h-full">
-                <DialogHeader className="p-8 border-b">
-                   <DialogTitle className="font-headline text-3xl italic">
-                     {editingArtwork ? 'Werk Bewerken' : 'Nieuw Kunstwerk'}
-                   </DialogTitle>
-                </DialogHeader>
-                
-                <div className="flex-1 overflow-y-auto p-8 space-y-10 custom-scrollbar">
-                   <section className="space-y-6">
-                      <div className="flex items-center gap-3 border-l-4 border-accent pl-4">
-                         <Type className="w-4 h-4 text-accent" />
-                         <h4 className="text-[10px] font-black uppercase tracking-widest opacity-60">Identiteit</h4>
+                <section className="space-y-6">
+                  <div className="flex items-center gap-3 border-l-4 border-accent pl-4">
+                    <TagIcon className="w-4 h-4 text-accent" />
+                    <h4 className="text-[10px] font-black uppercase tracking-widest opacity-60">Tags & Kenmerken</h4>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {artworkForm.tags?.map((t: string) => (
+                      <Badge key={t} className="bg-accent text-white rounded-full px-3 py-1 flex items-center gap-2">
+                        {t} <X className="w-3 h-3 cursor-pointer" onClick={() => toggleTag(t)} />
+                      </Badge>
+                    ))}
+                  </div>
+                  <div className="space-y-4">
+                    {Object.entries(MUSEUM_TAGS).map(([cat, tags]) => (
+                      <div key={cat} className="space-y-2">
+                        <p className="text-[8px] font-black uppercase opacity-30">{cat}</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {tags.map(tag => (
+                            <button key={tag} type="button" onClick={() => toggleTag(tag)}
+                              className={cn("px-3 py-1 rounded-lg text-[9px] font-bold border transition-all",
+                                artworkForm.tags?.includes(tag) ? "bg-accent/10 border-accent text-accent" : "bg-white border-black/5 text-black/40 hover:border-black/20"
+                              )}>
+                              {tag}
+                            </button>
+                          ))}
+                        </div>
                       </div>
-                      <div className="space-y-4">
-                         <div className="space-y-1.5">
-                            <Label className="text-[9px] font-black uppercase ml-2 opacity-40">Interne Titel</Label>
-                            <Input value={artworkForm.title} onChange={e => setArtworkForm({...artworkForm, title: e.target.value})} className="h-12 rounded-xl bg-black/5 border-none px-4" />
-                         </div>
-                         <div className="space-y-1.5">
-                            <Label className="text-[9px] font-black uppercase ml-2 opacity-40">Weergavetitel (Gallerie)</Label>
-                            <Input value={artworkForm.displayTitle} onChange={e => setArtworkForm({...artworkForm, displayTitle: e.target.value})} className="h-12 rounded-xl bg-black/5 border-none px-4" />
-                         </div>
-                         <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-1.5">
-                               <Label className="text-[9px] font-black uppercase ml-2 opacity-40">Jaar</Label>
-                               <Input value={artworkForm.year} onChange={e => setArtworkForm({...artworkForm, year: e.target.value})} className="h-12 rounded-xl bg-black/5 border-none px-4" />
-                            </div>
-                            <div className="space-y-1.5">
-                               <Label className="text-[9px] font-black uppercase ml-2 opacity-40">Techniek</Label>
-                               <Select value={artworkForm.medium} onValueChange={v => setArtworkForm({...artworkForm, medium: v})}>
-                                  <SelectTrigger className="h-12 rounded-xl bg-black/5 border-none">
-                                     <SelectValue placeholder="Selecteer techniek..." />
-                                  </SelectTrigger>
-                                  <SelectContent className="rounded-xl shadow-xl border-none">
-                                     {ART_TECHNIQUES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                                  </SelectContent>
-                               </Select>
-                            </div>
-                         </div>
-                      </div>
-                   </section>
+                    ))}
+                  </div>
+                </section>
 
-                   <section className="space-y-6">
-                      <div className="flex items-center gap-3 border-l-4 border-accent pl-4">
-                         <TagIcon className="w-4 h-4 text-accent" />
-                         <h4 className="text-[10px] font-black uppercase tracking-widest opacity-60">Tags & Kenmerken</h4>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {artworkForm.tags?.map((t: string) => (
-                          <Badge key={t} className="bg-accent text-white rounded-full px-3 py-1 flex items-center gap-2">
-                             {t} <X className="w-3 h-3 cursor-pointer" onClick={() => toggleTag(t)} />
-                          </Badge>
-                        ))}
-                      </div>
-                      <div className="space-y-4">
-                        {Object.entries(MUSEUM_TAGS).map(([cat, tags]) => (
-                          <div key={cat} className="space-y-2">
-                             <p className="text-[8px] font-black uppercase opacity-30">{cat}</p>
-                             <div className="flex flex-wrap gap-1.5">
-                                {tags.map(tag => (
-                                  <button 
-                                    key={tag} 
-                                    type="button"
-                                    onClick={() => toggleTag(tag)}
-                                    className={cn(
-                                      "px-3 py-1 rounded-lg text-[9px] font-bold border transition-all",
-                                      artworkForm.tags?.includes(tag) ? "bg-accent/10 border-accent text-accent" : "bg-white border-black/5 text-black/40 hover:border-black/20"
-                                    )}
-                                  >
-                                    {tag}
-                                  </button>
-                                ))}
-                             </div>
-                          </div>
-                        ))}
-                      </div>
-                   </section>
+                <section className="space-y-6">
+                  <div className="flex items-center gap-3 border-l-4 border-accent pl-4">
+                    <FolderInput className="w-4 h-4 text-accent" />
+                    <h4 className="text-[10px] font-black uppercase tracking-widest opacity-60">Zaal Toewijzing</h4>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    {rooms?.map((room: any) => (
+                      <button key={room.id} type="button" onClick={() => toggleRoom(room.id)}
+                        className={cn("flex items-center gap-3 p-4 rounded-xl border transition-all text-left",
+                          artworkForm.roomIds?.includes(room.id) ? "bg-accent/5 border-accent text-accent" : "bg-white border-black/5 text-black/40"
+                        )}>
+                        {artworkForm.roomIds?.includes(room.id) ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
+                        <span className="text-[10px] font-black uppercase tracking-widest">{room.title}</span>
+                      </button>
+                    ))}
+                  </div>
+                </section>
 
-                   <section className="space-y-6">
-                      <div className="flex items-center gap-3 border-l-4 border-accent pl-4">
-                         <FolderInput className="w-4 h-4 text-accent" />
-                         <h4 className="text-[10px] font-black uppercase tracking-widest opacity-60">Zaal Toewijzing</h4>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                         {rooms?.map((room: any) => (
-                           <button 
-                             key={room.id}
-                             type="button"
-                             onClick={() => toggleRoom(room.id)}
-                             className={cn(
-                               "flex items-center gap-3 p-4 rounded-xl border transition-all text-left",
-                               artworkForm.roomIds?.includes(room.id) ? "bg-accent/5 border-accent text-accent" : "bg-white border-black/5 text-black/40"
-                             )}
-                           >
-                              {artworkForm.roomIds?.includes(room.id) ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
-                              <span className="text-[10px] font-black uppercase tracking-widest">{room.title}</span>
-                           </button>
-                         ))}
-                      </div>
-                   </section>
+                <section className="space-y-6">
+                  <div className="flex items-center gap-3 border-l-4 border-accent pl-4">
+                    <Edit3 className="w-4 h-4 text-accent" />
+                    <h4 className="text-[10px] font-black uppercase tracking-widest opacity-60">Beschrijving</h4>
+                  </div>
+                  <Textarea value={artworkForm.description} onChange={e => setArtworkForm({...artworkForm, description: e.target.value})} className="min-h-[140px] rounded-2xl bg-black/5 border-none p-6" />
+                </section>
+              </div>
 
-                   <section className="space-y-6">
-                      <div className="flex items-center gap-3 border-l-4 border-accent pl-4">
-                         <Edit3 className="w-4 h-4 text-accent" />
-                         <h4 className="text-[10px] font-black uppercase tracking-widest opacity-60">Beschrijving</h4>
-                      </div>
-                      <Textarea value={artworkForm.description} onChange={e => setArtworkForm({...artworkForm, description: e.target.value})} className="min-h-[140px] rounded-2xl bg-black/5 border-none p-6" />
-                   </section>
-                </div>
-
-                <div className="p-8 bg-black/5 flex items-center gap-4">
-                   <Button type="button" onClick={handleSaveArtwork} disabled={isUploading} className="flex-1 h-16 rounded-2xl bg-accent text-white font-black uppercase tracking-widest shadow-xl">
-                      {isUploading ? <Loader2 className="animate-spin" /> : "Wijzigingen Opslaan"}
-                   </Button>
-                </div>
-             </div>
+              <div className="p-8 bg-black/5 flex items-center gap-4">
+                <Button type="button" onClick={handleSaveArtwork} disabled={isUploading} className="flex-1 h-16 rounded-2xl bg-accent text-white font-black uppercase tracking-widest shadow-xl">
+                  {isUploading ? <Loader2 className="animate-spin" /> : "Wijzigingen Opslaan"}
+                </Button>
+              </div>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
@@ -911,7 +901,7 @@ export default function AdminPage() {
               <Switch checked={roomForm.isPublished} onCheckedChange={v => setRoomForm({...roomForm, isPublished: v})} />
             </div>
           </div>
-          <div className="p-10 pt-0">
+          <div className="px-10 pb-10">
             <Button onClick={handleSaveRoom} disabled={isSavingRoom} className="w-full h-14 rounded-2xl bg-accent text-white font-black uppercase tracking-widest text-[11px]">
               {isSavingRoom ? <Loader2 className="animate-spin" /> : editingRoom ? 'Wijzigingen Opslaan' : 'Zaal Aanmaken'}
             </Button>
