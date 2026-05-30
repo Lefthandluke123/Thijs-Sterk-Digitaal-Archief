@@ -40,7 +40,6 @@ import {
   Database,
   Eye,
   EyeOff,
-  AlertCircle,
   Building2,
   CheckSquare,
   Square,
@@ -72,7 +71,7 @@ import { normalizeArtwork, sanitizeArtwork, MUSEUM_TAGS, slugify, sortArtworksBy
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 const ART_TECHNIQUES = [
   "Olieverf",
@@ -117,7 +116,7 @@ export default function AdminPage() {
         sessionStorage.setItem('admin_auth', 'true');
       }
     } else {
-      toast({ variant: "destructive", title: "Toegang geweigerd" });
+      toast({ variant: "destructive", title: "Wachtwoord onjuist" });
     }
   };
 

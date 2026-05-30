@@ -10,7 +10,7 @@ service cloud.firestore {
 
     // 1. Monumentale Projecten
     match /monumental_projects/{projectId} {
-      allow read: if isAdmin();
+      allow read: if true;
       allow write: if isAdmin();
     }
 
