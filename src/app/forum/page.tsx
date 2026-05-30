@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useRef } from 'react';
 import { useFirestore, useCollection, useAuth, useUser } from '@/firebase';
-import { collection, query, where, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
 import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -95,16 +95,23 @@ export default function ForumPage() {
     });
   };
 
+  // We halen alle berichten op en sorteren op datum.
+  // Filtering op status en categorie doen we in het geheugen om Firestore Index errors te voorkomen.
   const forumQuery = useMemo(() => {
     if (!firestore) return null;
-    let base = query(collection(firestore, 'forum'), where('status', '==', 'approved'), orderBy('createdAt', 'desc'));
-    if (activeCategory !== 'Alle') {
-      base = query(collection(firestore, 'forum'), where('status', '==', 'approved'), where('category', '==', activeCategory), orderBy('createdAt', 'desc'));
-    }
-    return base;
-  }, [firestore, activeCategory]);
+    return query(collection(firestore, 'forum'), orderBy('createdAt', 'desc'));
+  }, [firestore]);
 
-  const { data: posts, loading } = useCollection(forumQuery);
+  const { data: allPosts, loading } = useCollection(forumQuery);
+
+  const posts = useMemo(() => {
+    if (!allPosts) return [];
+    return allPosts.filter((p: any) => {
+      const isApproved = p.status === 'approved';
+      const matchesCategory = activeCategory === 'Alle' || p.category === activeCategory;
+      return isApproved && matchesCategory;
+    });
+  }, [allPosts, activeCategory]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

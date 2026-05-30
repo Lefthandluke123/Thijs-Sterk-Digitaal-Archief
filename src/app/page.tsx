@@ -8,7 +8,7 @@ import { ContactForm } from '@/components/sections/contact-form';
 import { IntroductionGallery } from '@/components/sections/introduction-gallery';
 import { Toaster } from '@/components/ui/toaster';
 import { useCollection, useFirestore } from '@/firebase';
-import { collection, query, orderBy, where } from 'firebase/firestore';
+import { collection, query, orderBy } from 'firebase/firestore';
 import Link from 'next/link';
 import { ChevronRight, Layers, AlertCircle } from 'lucide-react';
 import { useLanguage } from '@/components/language-provider';
@@ -21,13 +21,13 @@ export default function Home() {
   const firestore = useFirestore();
   const { t } = useLanguage();
 
-  // Stabiele query definitie: toon alleen gepubliceerde zalen
+  // We halen alle zalen op en sorteren op volgorde.
+  // Filtering op 'isPublished' doen we in het geheugen om Firestore Index errors te voorkomen.
   const roomsQuery = useMemo(() => {
     if (!firestore) return null;
     try {
       return query(
         collection(firestore, 'rooms'), 
-        where('isPublished', '==', true),
         orderBy('order', 'asc')
       );
     } catch (e) {
@@ -36,7 +36,11 @@ export default function Home() {
     }
   }, [firestore]);
 
-  const { data: rooms, loading, error } = useCollection(roomsQuery);
+  const { data: allRooms, loading, error } = useCollection(roomsQuery);
+
+  const rooms = useMemo(() => {
+    return allRooms?.filter((room: any) => room.isPublished === true) || [];
+  }, [allRooms]);
 
   return (
     <main className="min-h-screen bg-transparent pt-16 md:pt-32 relative">
