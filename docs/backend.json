@@ -33,10 +33,23 @@
         "brightness": { "type": "number" },
         "featured": { "type": "boolean" },
         "inShop": { "type": "boolean" },
+        "isMonumental": { "type": "boolean" },
+        "monumentalProjectId": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["title", "slug", "image"]
+    },
+    "MonumentalProject": {
+      "title": "MonumentalProject",
+      "description": "Een specifiek monumentaal project (wandkunst, glas-in-lood).",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "order": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title"]
     },
     "ActivityLog": {
       "title": "ActivityLog",
@@ -61,6 +74,7 @@
   "firestore": {
     "/rooms/{roomId}": { "schema": "Room", "description": "Museumzalen" },
     "/artworks/{artworkId}": { "schema": "Artwork", "description": "Kunstwerken" },
+    "/monumental_projects/{projectId}": { "schema": "MonumentalProject", "description": "Monumentale Projecten" },
     "/forum/{postId}": { "schema": "ForumPost", "description": "Community berichten" },
     "/activity_logs/{logId}": { "schema": "ActivityLog", "description": "Gedetailleerde gebruikers-tracking" },
     "/settings/site": { "schema": "Settings", "description": "Website configuratie" },

@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
@@ -60,7 +61,9 @@ import {
   Database,
   Eye,
   EyeOff,
-  AlertCircle
+  AlertCircle,
+  Building2,
+  ChevronRight
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -138,15 +141,20 @@ export default function AdminPage() {
   
   const [isArtworkDialogOpen, setIsArtworkDialogOpen] = useState(false);
   const [isRoomDialogOpen, setIsRoomDialogOpen] = useState(false);
+  const [isProjectDialogOpen, setIsProjectDialogOpen] = useState(false);
   
   const [editingArtwork, setEditingArtwork] = useState<any>(null);
   const [editingRoom, setEditingRoom] = useState<any>(null);
+  const [editingProject, setEditingProject] = useState<any>(null);
   
   const [isUploading, setIsUploading] = useState(false);
   const [isSavingRoom, setIsSavingRoom] = useState(false);
+  const [isSavingProject, setIsSavingProject] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
+  const [selectedProjectId, setSelectedProjectId] = useState<string>("");
+
   // Floating Panel State
   const [panelPos, setPanelPos] = useState({ x: 100, y: 150 });
   const [isDragging, setIsDragging] = useState(false);
@@ -154,7 +162,7 @@ export default function AdminPage() {
   const dragStartRef = useRef({ x: 0, y: 0 });
 
   const [artworkForm, setArtworkForm] = useState<any>({
-    title: '', displayTitle: '', slug: '', image: '', year: '', medium: '', description: '', tags: [], roomIds: [], featured: false, inShop: false
+    title: '', displayTitle: '', slug: '', image: '', year: '', medium: '', description: '', tags: [], roomIds: [], featured: false, inShop: false, isMonumental: false, monumentalProjectId: ''
   });
   
   const [roomForm, setRoomForm] = useState<any>({ 
@@ -162,6 +170,11 @@ export default function AdminPage() {
     description: '', 
     order: 0,
     isPublished: false 
+  });
+
+  const [projectForm, setProjectForm] = useState<any>({
+    title: '',
+    order: 0
   });
 
   const artworksQuery = useMemo(() => {
@@ -174,23 +187,37 @@ export default function AdminPage() {
     return query(collection(firestore, 'rooms'), orderBy('order', 'asc'));
   }, [firestore]);
 
+  const projectsQuery = useMemo(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'monumental_projects'), orderBy('order', 'asc'));
+  }, [firestore]);
+
   const { data: dbArtworks, loading: artLoading } = useCollection(artworksQuery);
   const { data: rooms } = useCollection(roomsQuery);
+  const { data: projects } = useCollection(projectsQuery);
 
   const artworks = useMemo(() => {
     if (!dbArtworks) return [];
     return dbArtworks.map(art => normalizeArtwork(art.id, art));
   }, [dbArtworks]);
 
+  const archiveArtworks = useMemo(() => {
+    return artworks.filter(art => !art.isMonumental);
+  }, [artworks]);
+
+  const monumentalArtworks = useMemo(() => {
+    return artworks.filter(art => art.isMonumental && art.monumentalProjectId === selectedProjectId);
+  }, [artworks, selectedProjectId]);
+
   const filteredArtworks = useMemo(() => {
-    if (!artworks) return [];
-    const filtered = artworks.filter((art: any) => 
+    const base = activeTab === 'monumentaal' ? monumentalArtworks : archiveArtworks;
+    const filtered = base.filter((art: any) => 
       art.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       art.displayTitle?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       art.tags?.some((t: string) => t.toLowerCase().includes(searchQuery.toLowerCase()))
     );
     return [...filtered].sort(sortArtworksByTitle);
-  }, [artworks, searchQuery]);
+  }, [archiveArtworks, monumentalArtworks, activeTab, searchQuery]);
 
   const handleToggleSelect = (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -261,7 +288,7 @@ export default function AdminPage() {
   const handleOpenNewArtwork = () => {
     setEditingArtwork(null);
     setArtworkForm({ 
-      title: '', displayTitle: '', slug: '', image: '', year: '', medium: '', description: '', tags: [], roomIds: [], featured: false, inShop: false 
+      title: '', displayTitle: '', slug: '', image: '', year: '', medium: '', description: '', tags: [], roomIds: [], featured: false, inShop: false, isMonumental: false, monumentalProjectId: ''
     });
     setIsArtworkDialogOpen(true);
   };
@@ -271,7 +298,9 @@ export default function AdminPage() {
     setArtworkForm({ 
       ...art, 
       tags: Array.isArray(art.tags) ? art.tags : [],
-      roomIds: Array.isArray(art.roomIds) ? art.roomIds : []
+      roomIds: Array.isArray(art.roomIds) ? art.roomIds : [],
+      isMonumental: !!art.isMonumental,
+      monumentalProjectId: art.monumentalProjectId || ''
     }); 
     setIsArtworkDialogOpen(true); 
   };
@@ -290,7 +319,9 @@ export default function AdminPage() {
 
       const data = sanitizeArtwork({
         ...artworkForm,
-        image: finalImageUrl
+        image: finalImageUrl,
+        isMonumental: artworkForm.isMonumental,
+        monumentalProjectId: artworkForm.isMonumental ? artworkForm.monumentalProjectId : ''
       });
 
       if (editingArtwork) {
@@ -348,6 +379,32 @@ export default function AdminPage() {
       toast({ variant: "destructive", title: "Fout bij opslaan zaal" });
     } finally {
       setIsSavingRoom(false);
+    }
+  };
+
+  const handleOpenNewProject = () => {
+    const maxOrder = projects?.reduce((max: number, p: any) => Math.max(max, p.order || 0), 0) || 0;
+    setEditingProject(null);
+    setProjectForm({ title: '', order: maxOrder + 1 });
+    setIsProjectDialogOpen(true);
+  };
+
+  const handleSaveProject = async () => {
+    if (!firestore) return;
+    setIsSavingProject(true);
+    try {
+      if (editingProject) {
+        await updateDoc(doc(firestore, 'monumental_projects', editingProject.id), projectForm);
+        toast({ title: "Project bijgewerkt" });
+      } else {
+        await addDoc(collection(firestore, 'monumental_projects'), { ...projectForm, createdAt: serverTimestamp() });
+        toast({ title: "Project aangemaakt" });
+      }
+      setIsProjectDialogOpen(false);
+    } catch (e) {
+      toast({ variant: "destructive", title: "Fout bij opslaan project" });
+    } finally {
+      setIsSavingProject(false);
     }
   };
 
@@ -469,6 +526,9 @@ export default function AdminPage() {
             </TabsTrigger>
             <TabsTrigger value="rooms" className="rounded-full px-12 h-13 uppercase font-black text-[10px] tracking-widest">
               <Layers className="w-4 h-4 mr-2" /> Zalen & Curatie
+            </TabsTrigger>
+            <TabsTrigger value="monumentaal" className="rounded-full px-12 h-13 uppercase font-black text-[10px] tracking-widest">
+              <Building2 className="w-4 h-4 mr-2" /> Monumentaal
             </TabsTrigger>
           </TabsList>
 
@@ -634,6 +694,78 @@ export default function AdminPage() {
                 })}
              </div>
           </TabsContent>
+
+          <TabsContent value="monumentaal" className="space-y-8 mt-0">
+            <div className="bg-white/50 backdrop-blur-md p-8 rounded-[3rem] border border-white/60 space-y-8">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="flex items-center gap-4 flex-1 w-full max-w-xl">
+                  <div className="w-full">
+                    <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
+                      <SelectTrigger className="h-14 rounded-2xl bg-white border-none shadow-sm px-6">
+                        <SelectValue placeholder="Selecteer een project..." />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-2xl shadow-xl border-none">
+                        {projects?.map((p: any) => (
+                          <SelectItem key={p.id} value={p.id} className="p-4">{p.title}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button onClick={handleOpenNewProject} className="h-14 rounded-2xl bg-primary text-white px-8 font-black uppercase tracking-widest text-[10px] shrink-0">
+                    <Plus className="w-4 h-4 mr-2" /> Nieuw Project
+                  </Button>
+                </div>
+
+                <div className="flex items-center gap-4">
+                  <div className="bg-black/5 p-1 rounded-xl flex gap-1">
+                    <Button variant={viewMode === 'grid' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('grid')} className="rounded-lg px-3 h-10"><LayoutGrid className="w-4 h-4" /></Button>
+                    <Button variant={viewMode === 'list' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('list')} className="rounded-lg px-3 h-10"><ListIcon className="w-4 h-4" /></Button>
+                  </div>
+                </div>
+              </div>
+
+              {!selectedProjectId && (
+                <div className="py-24 text-center space-y-4 opacity-20 italic">
+                  <Building2 className="w-12 h-12 mx-auto mb-4" />
+                  <p className="text-xl font-headline">Selecteer een project om de werken te bekijken.</p>
+                </div>
+              )}
+            </div>
+
+            {selectedProjectId && (
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                {filteredArtworks.length === 0 ? (
+                  <div className="py-32 text-center border-2 border-dashed rounded-[3rem] opacity-20 italic bg-white/30">
+                    Nog geen werken toegewezen aan dit monumentale project.
+                  </div>
+                ) : viewMode === 'grid' ? (
+                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+                    {filteredArtworks.map((art: any) => (
+                      <div key={art.id} onClick={() => handleEditArtwork(art)} className="cursor-pointer group">
+                        <Card className="p-4 rounded-3xl overflow-hidden shadow-md group-hover:shadow-xl transition-all border-2 border-transparent">
+                          <img src={art.image} className="aspect-square object-cover rounded-2xl mb-4" alt="" />
+                          <h3 className="font-bold text-sm truncate">{art.displayTitle || art.title}</h3>
+                          <p className="text-[9px] font-black uppercase opacity-30 mt-1">{art.year || '-'}</p>
+                        </Card>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {filteredArtworks.map((art: any) => (
+                      <Card key={art.id} className="p-6 rounded-[2rem] flex items-center gap-8 cursor-pointer hover:shadow-lg transition-all" onClick={() => handleEditArtwork(art)}>
+                        <img src={art.image} className="w-40 h-40 object-cover rounded-2xl shadow-sm" alt="" />
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-bold text-xl mb-1 truncate">{art.title}</h3>
+                          <p className="text-xs font-black uppercase tracking-widest opacity-40">{art.year} • {art.medium || 'Geen techniek'}</p>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </TabsContent>
         </Tabs>
       </main>
 
@@ -774,11 +906,32 @@ export default function AdminPage() {
 
               <div className="flex-1 overflow-y-auto p-8 space-y-10 custom-scrollbar">
                 <section className="space-y-6">
-                  <div className="flex items-center gap-3 border-l-4 border-accent pl-4">
-                    <Type className="w-4 h-4 text-accent" />
-                    <h4 className="text-[10px] font-black uppercase tracking-widest opacity-60">Identiteit</h4>
+                  <div className="flex items-center justify-between border-l-4 border-accent pl-4">
+                    <div className="flex items-center gap-3">
+                      <Type className="w-4 h-4 text-accent" />
+                      <h4 className="text-[10px] font-black uppercase tracking-widest opacity-60">Identiteit</h4>
+                    </div>
+                    <div className="flex items-center gap-2 bg-black/5 px-3 py-1.5 rounded-full">
+                       <Label className="text-[9px] font-black uppercase opacity-60">Monumentaal</Label>
+                       <Checkbox checked={artworkForm.isMonumental} onCheckedChange={(v) => setArtworkForm({...artworkForm, isMonumental: !!v})} />
+                    </div>
                   </div>
+
                   <div className="space-y-4">
+                    {artworkForm.isMonumental && (
+                      <div className="space-y-1.5 animate-in fade-in slide-in-from-top-2 duration-300">
+                        <Label className="text-[9px] font-black uppercase ml-2 text-accent">Koppel aan Project</Label>
+                        <Select value={artworkForm.monumentalProjectId} onValueChange={v => setArtworkForm({...artworkForm, monumentalProjectId: v})}>
+                          <SelectTrigger className="h-12 rounded-xl bg-accent/5 border-2 border-accent/20 px-4 text-accent">
+                            <SelectValue placeholder="Selecteer project..." />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl shadow-xl border-none">
+                            {projects?.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.title}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
                     <div className="space-y-1.5">
                       <Label className="text-[9px] font-black uppercase ml-2 opacity-40">Interne Titel</Label>
                       <Input value={artworkForm.title} onChange={e => setArtworkForm({...artworkForm, title: e.target.value})} className="h-12 rounded-xl bg-black/5 border-none px-4" />
@@ -904,6 +1057,32 @@ export default function AdminPage() {
           <div className="px-10 pb-10">
             <Button onClick={handleSaveRoom} disabled={isSavingRoom} className="w-full h-14 rounded-2xl bg-accent text-white font-black uppercase tracking-widest text-[11px]">
               {isSavingRoom ? <Loader2 className="animate-spin" /> : editingRoom ? 'Wijzigingen Opslaan' : 'Zaal Aanmaken'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* PROJECT EDITOR DIALOG */}
+      <Dialog open={isProjectDialogOpen} onOpenChange={setIsProjectDialogOpen}>
+        <DialogContent className="max-w-md rounded-[3rem] p-0 overflow-hidden bg-background">
+          <DialogHeader className="p-10 border-b">
+            <DialogTitle className="font-headline text-3xl italic">
+              {editingProject ? 'Project Bewerken' : 'Nieuw Monumentaal Project'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="p-10 space-y-6">
+            <div className="space-y-1.5">
+              <Label className="text-[9px] font-black uppercase ml-2 opacity-40">Projectnaam</Label>
+              <Input value={projectForm.title} onChange={e => setProjectForm({...projectForm, title: e.target.value})} className="h-12 rounded-xl bg-black/5 border-none px-4" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-[9px] font-black uppercase ml-2 opacity-40">Volgorde</Label>
+              <Input type="number" value={projectForm.order} onChange={e => setProjectForm({...projectForm, order: parseInt(e.target.value)})} className="h-12 rounded-xl bg-black/5 border-none px-4" />
+            </div>
+          </div>
+          <div className="px-10 pb-10">
+            <Button onClick={handleSaveProject} disabled={isSavingProject} className="w-full h-14 rounded-2xl bg-primary text-white font-black uppercase tracking-widest text-[10px]">
+              {isSavingProject ? <Loader2 className="animate-spin" /> : editingProject ? 'Wijzigingen Opslaan' : 'Project Aanmaken'}
             </Button>
           </div>
         </DialogContent>
