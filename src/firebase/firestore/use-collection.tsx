@@ -14,7 +14,7 @@ import { useAuth } from '../provider';
 
 /**
  * @fileOverview Hook voor het realtime ophalen van een collectie met verbeterde foutafhandeling.
- * Voorkomt runtime crashes bij permissiefouten.
+ * Voorkomt runtime crashes bij permissiefouten door uitsluitend de gespecialiseerde error te emitteren.
  */
 export function useCollection<T = DocumentData>(collectionQuery: Query<T> | null) {
   const [data, setData] = useState<T[] | null>(null);
@@ -49,6 +49,7 @@ export function useCollection<T = DocumentData>(collectionQuery: Query<T> | null
             operation: 'list',
           } satisfies SecurityRuleContext);
           
+          // Emit de fout via de centrale listener, log niet naar console om dubbele meldingen te voorkomen
           errorEmitter.emit('permission-error', permissionError);
           setError(permissionError);
         } else {

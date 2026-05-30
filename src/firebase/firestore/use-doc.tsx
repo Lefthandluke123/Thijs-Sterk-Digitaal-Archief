@@ -14,7 +14,6 @@ import { useAuth } from '../provider';
 
 /**
  * @fileOverview Hook voor het realtime ophalen van een document met verbeterde foutafhandeling.
- * Voorkomt runtime crashes bij permissiefouten.
  */
 export function useDoc<T = DocumentData>(docRef: DocumentReference<T> | null) {
   const [data, setData] = useState<T | null>(null);

@@ -687,6 +687,7 @@ export default function AdminPage() {
         </div>
       )}
 
+      {/* ARTWORK EDITOR DIALOG */}
       <Dialog open={isArtworkDialogOpen} onOpenChange={setIsArtworkDialogOpen}>
         <DialogContent className="max-w-4xl rounded-[3rem] p-0 overflow-hidden bg-background">
           <div className="flex h-[85vh]">
@@ -823,6 +824,7 @@ export default function AdminPage() {
         </DialogContent>
       </Dialog>
 
+      {/* ROOM EDITOR DIALOG */}
       <Dialog open={isRoomDialogOpen} onOpenChange={setIsRoomDialogOpen}>
         <DialogContent className="max-w-lg rounded-[3rem] p-0 overflow-hidden bg-background">
           <DialogHeader className="p-10 border-b">
@@ -842,6 +844,7 @@ export default function AdminPage() {
         </DialogContent>
       </Dialog>
 
+      {/* PROJECT EDITOR DIALOG */}
       <Dialog open={isProjectDialogOpen} onOpenChange={setIsProjectDialogOpen}>
         <DialogContent className="max-w-md rounded-[3rem] p-0 overflow-hidden bg-background">
           <DialogHeader className="p-10 border-b">
