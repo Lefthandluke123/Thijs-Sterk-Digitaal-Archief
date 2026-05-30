@@ -50,7 +50,8 @@ import {
   CheckCircle2,
   AlertCircle,
   ArrowLeft,
-  Settings2
+  Settings2,
+  ImagePlus
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -244,7 +245,7 @@ export default function AdminPage() {
     batch.commit()
       .then(() => {
         toast({ title: `${ids.length} werken toegevoegd aan ${curatingRoom.title}` });
-        setIsSelectorDialogOpen(false);
+        // We sluiten de selector niet direct om meer toe te kunnen voegen
       })
       .catch(() => toast({ variant: "destructive", title: "Toevoegen mislukt" }));
   };
@@ -405,6 +406,12 @@ export default function AdminPage() {
   const isTagAssignedToSelection = (tag: string) => selectedArts.some(a => a.tags?.includes(tag));
   const isRoomAssignedToSelection = (roomId: string) => selectedArts.some(a => a.roomIds?.includes(roomId));
 
+  const handleOpenBulkInRoom = () => {
+    setBulkItems([]); 
+    setBulkGlobalRooms(curatingRoom ? [curatingRoom.id] : []);
+    setIsBulkDialogOpen(true);
+  };
+
   if (!isAuthorized) {
     return (
       <main className="min-h-screen flex flex-col items-center justify-center p-6 bg-[#f4f4f2]">
@@ -465,9 +472,14 @@ export default function AdminPage() {
                        <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mt-1">U beheert nu alleen de werken in deze zaal</p>
                     </div>
                  </div>
-                 <Button onClick={() => setIsSelectorDialogOpen(true)} className="bg-white text-accent rounded-full h-12 px-8 font-black uppercase tracking-widest text-[10px] hover:bg-white/90">
-                    <Plus className="w-4 h-4 mr-2" /> Toevoegen uit Archief
-                 </Button>
+                 <div className="flex items-center gap-3">
+                   <Button onClick={handleOpenBulkInRoom} className="bg-white/10 text-white border border-white/20 rounded-full h-12 px-6 font-black uppercase tracking-widest text-[10px] hover:bg-white/20">
+                      <ImagePlus className="w-4 h-4 mr-2" /> Bulk Upload naar Zaal
+                   </Button>
+                   <Button onClick={() => setIsSelectorDialogOpen(true)} className="bg-white text-accent rounded-full h-12 px-8 font-black uppercase tracking-widest text-[10px] hover:bg-white/90 shadow-lg">
+                      <Plus className="w-4 h-4 mr-2" /> Toevoegen uit Archief
+                   </Button>
+                 </div>
               </div>
             )}
 
@@ -621,7 +633,7 @@ export default function AdminPage() {
                                     const isActive = isTagAssignedToSelection(tag);
                                     return (
                                       <button type="button" key={tag} onClick={() => handleBulkUpdate(isActive ? 'remove_tag' : 'add_tag', tag)} className={cn("px-3 py-1.5 rounded-lg text-[9px] font-bold border transition-all flex items-center gap-2", isActive ? "bg-accent/10 border-accent text-accent" : "bg-white border-black/5 text-black/40 hover:border-black/20")}>
-                                        {isActive ? <CheckSquare className="w-3 h-3" /> : <Square className="w-3 h-3" />}
+                                        {isActive ? <CheckSquare className="w-3.5 h-3.5" /> : <Square className="w-3.5 h-3.5" />}
                                         {tag}
                                       </button>
                                     );
@@ -648,10 +660,6 @@ export default function AdminPage() {
                    <p className="text-[10px] font-black uppercase tracking-widest opacity-40 mt-1">Selecteer werken uit het archief om toe te voegen aan deze zaal</p>
                 </div>
                 <div className="flex items-center gap-4">
-                   <div className="relative w-64">
-                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-30" />
-                      <Input placeholder="Filter archief..." className="h-12 pl-10 rounded-xl bg-black/5 border-none" />
-                   </div>
                    <button onClick={() => setIsSelectorDialogOpen(false)} className="p-2 hover:bg-black/5 rounded-full transition-colors"><X className="w-6 h-6" /></button>
                 </div>
               </div>
@@ -762,20 +770,34 @@ export default function AdminPage() {
                 <div className="flex-1 overflow-y-auto space-y-10 custom-scrollbar pr-2">
                    <div className="space-y-4">
                       <DialogTitle className="font-headline text-3xl italic">Bulk Archivering</DialogTitle>
+                      {curatingRoom && (
+                        <Badge className="bg-accent text-white uppercase text-[9px] font-black px-4 py-1.5 rounded-full">
+                           Toevoegen aan: {curatingRoom.title}
+                        </Badge>
+                      )}
                       <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Instellingen voor de hele batch</p>
                    </div>
                    <div className="space-y-6">
                       <div className="space-y-1.5"><Label className="text-[9px] font-black uppercase ml-2 opacity-40">Jaar</Label><Input value={bulkGlobalYear} onChange={e => setBulkGlobalYear(e.target.value)} placeholder="Bijv. 1965" className="bg-white border-none h-12 rounded-xl" /></div>
                       <div className="space-y-1.5"><Label className="text-[9px] font-black uppercase ml-2 opacity-40">Techniek</Label><Select value={bulkGlobalMedium} onValueChange={setBulkGlobalMedium}><SelectTrigger className="h-12 rounded-xl bg-white border-none"><SelectValue placeholder="Kies..." /></SelectTrigger><SelectContent className="rounded-xl shadow-2xl border-none">{ART_TECHNIQUES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></div>
                       <div className="flex items-center space-x-3 p-4 rounded-xl bg-white/50"><Checkbox id="bulkMonumental" checked={bulkGlobalMonumental} onCheckedChange={(v) => setBulkGlobalMonumental(!!v)} /><Label htmlFor="bulkMonumental" className="text-[10px] font-black uppercase tracking-widest cursor-pointer flex items-center gap-2"><Building2 className="w-4 h-4 text-accent" /> Allemaal Monumentaal</Label></div>
-                      <div className="space-y-2"><Label className="text-[9px] font-black uppercase ml-2 opacity-40">Zalen</Label><div className="grid grid-cols-1 gap-2">{rooms?.map((room: any) => (
-                        <button key={room.id} type="button" onClick={() => setBulkGlobalRooms(prev => prev.includes(room.id) ? prev.filter(id => id !== room.id) : [...prev, room.id])} className={cn("flex items-center gap-3 p-3 rounded-xl border transition-all text-left", bulkGlobalRooms.includes(room.id) ? "bg-accent/10 border-accent text-accent" : "bg-white border-black/5 text-black/40")}>
-                          {bulkGlobalRooms.includes(room.id) ? <CheckSquare className="w-3.5 h-3.5" /> : <Square className="w-3.5 h-3.5" />}<span className="text-[9px] font-black uppercase">{room.title}</span>
-                        </button>
-                      ))}</div></div>
+                      <div className="space-y-2">
+                        <Label className="text-[9px] font-black uppercase ml-2 opacity-40">Zalen</Label>
+                        <div className="grid grid-cols-1 gap-2">
+                          {rooms?.map((room: any) => (
+                            <button key={room.id} type="button" onClick={() => setBulkGlobalRooms(prev => prev.includes(room.id) ? prev.filter(id => id !== room.id) : [...prev, room.id])} className={cn("flex items-center gap-3 p-3 rounded-xl border transition-all text-left", bulkGlobalRooms.includes(room.id) ? "bg-accent/10 border-accent text-accent" : "bg-white border-black/5 text-black/40")}>
+                              {bulkGlobalRooms.includes(room.id) ? <CheckSquare className="w-3.5 h-3.5" /> : <Square className="w-3.5 h-3.5" />}<span className="text-[9px] font-black uppercase">{room.title}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                    </div>
                 </div>
-                <div className="pt-8 mt-8 border-t border-black/10"><Button type="button" onClick={handleBulkSave} disabled={isBulkUploading || bulkItems.length === 0} className="w-full h-20 rounded-[2rem] bg-accent text-white font-black uppercase tracking-widest shadow-2xl hover:scale-[1.02] transition-all">{isBulkUploading ? <Loader2 className="animate-spin" /> : <div className="flex flex-col items-center"><span className="text-[13px]">Start Bulk Upload</span><span className="text-[9px] opacity-60 lowercase mt-1">({bulkItems.length} bestanden)</span></div>}</Button></div>
+                <div className="pt-8 mt-8 border-t border-black/10">
+                  <Button type="button" onClick={handleBulkSave} disabled={isBulkUploading || bulkItems.length === 0} className="w-full h-20 rounded-[2rem] bg-accent text-white font-black uppercase tracking-widest shadow-2xl hover:scale-[1.02] transition-all">
+                    {isBulkUploading ? <Loader2 className="animate-spin" /> : <div className="flex flex-col items-center"><span className="text-[13px]">Start Bulk Upload</span><span className="text-[9px] opacity-60 lowercase mt-1">({bulkItems.length} bestanden)</span></div>}
+                  </Button>
+                </div>
              </div>
              <div className="flex-1 flex flex-col">
                 <header className="p-8 border-b flex justify-between items-center bg-white"><div className="flex items-center gap-4"><Images className="w-6 h-6 text-accent" /><span className="text-[11px] font-black uppercase tracking-widest">Wachtrij ({bulkItems.length})</span></div><Button type="button" variant="outline" className="rounded-full" onClick={() => document.getElementById('bulk-file-input')?.click()}><Plus className="w-4 h-4 mr-2" /> Toevoegen</Button><input id="bulk-file-input" type="file" multiple className="hidden" onChange={handleBulkFileSelect} /></header>
