@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -43,6 +44,7 @@ export function useDoc<T = DocumentData>(docRef: DocumentReference<T> | null) {
             path: docRef.path,
             operation: 'get',
           } satisfies SecurityRuleContext);
+          
           errorEmitter.emit('permission-error', permissionError);
           setError(permissionError);
         } else {

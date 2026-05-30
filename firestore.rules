@@ -8,59 +8,68 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Publieke leesrechten voor alle collecties, schrijven alleen voor admin (behalve forum/logs)
-    
+    // 1. Monumentale Projecten (Publiek leesbaar, beheerder schrijft)
     match /monumental_projects/{projectId} {
-      allow read: if true;
+      allow list, get: if true;
       allow write: if isAuthenticated();
     }
 
+    // 2. Museumzalen
     match /rooms/{roomId} {
       allow read: if true;
       allow write: if isAuthenticated();
     }
     
+    // 3. Kunstwerken
     match /artworks/{artworkId} {
       allow read: if true;
       allow write: if isAuthenticated();
     }
 
+    // 4. Forum & Community
     match /forum/{postId} {
       allow read: if true;
       allow create: if isAuthenticated();
       allow update, delete: if isAuthenticated() && (request.auth.uid == resource.data.authorId || isAuthenticated());
     }
 
+    // 5. Instellingen
     match /settings/{settingId} {
       allow read: if true;
       allow write: if isAuthenticated();
     }
 
+    // 6. Story Layouts
     match /stories/{storyId} {
       allow read: if true;
       allow write: if isAuthenticated();
     }
 
+    // 7. Activiteitslogs (Alleen schrijven voor publiek, lezen voor admin)
     match /activity_logs/{logId} {
       allow create: if true;
       allow read: if isAuthenticated(); 
     }
 
+    // 8. Gebruikersprofielen
     match /users/{userId} {
       allow read: if isAuthenticated();
       allow write: if isAuthenticated() && request.auth.uid == userId;
     }
 
+    // 9. Gedeelde kamers
     match /shared_rooms/{roomId} {
       allow read: if true;
       allow create: if true;
     }
 
+    // 10. Privé Archief
     match /privatePhotos/{photoId} {
       allow read: if isAuthenticated();
       allow write: if isAuthenticated();
     }
 
+    // 11. Mail & Orders
     match /mail/{mailId} {
       allow create: if true;
       allow read: if isAuthenticated();
@@ -71,6 +80,7 @@ service cloud.firestore {
       allow read: if isAuthenticated();
     }
 
+    // Default: Alles weigeren
     match /{document=**} {
       allow read, write: if false;
     }

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -49,7 +50,7 @@ export function useCollection<T = DocumentData>(collectionQuery: Query<T> | null
             operation: 'list',
           } satisfies SecurityRuleContext);
           
-          // Emit de fout via de centrale listener, log niet naar console om dubbele meldingen te voorkomen
+          // Emit de fout via de centrale listener
           errorEmitter.emit('permission-error', permissionError);
           setError(permissionError);
         } else {

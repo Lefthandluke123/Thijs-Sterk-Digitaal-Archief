@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
@@ -70,7 +71,6 @@ import { cn } from '@/lib/utils';
 import { normalizeArtwork, sanitizeArtwork, MUSEUM_TAGS, slugify, sortArtworksByTitle } from '@/lib/museum-utils';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
@@ -110,7 +110,7 @@ export default function AdminPage() {
           setIsAuthorized(true);
           sessionStorage.setItem('admin_auth', 'true');
         } catch (err) {
-          toast({ variant: "destructive", title: "Firebase Auth Error", description: "Zorg dat anonieme inlog is ingeschakeld in de console." });
+          toast({ variant: "destructive", title: "Firebase Auth Error" });
         }
       } else {
         setIsAuthorized(true);
@@ -151,17 +151,8 @@ export default function AdminPage() {
     title: '', displayTitle: '', slug: '', image: '', year: '', medium: '', description: '', tags: [], roomIds: [], featured: false, inShop: false, isMonumental: false, monumentalProjectId: ''
   });
   
-  const [roomForm, setRoomForm] = useState<any>({ 
-    title: '', 
-    description: '', 
-    order: 0,
-    isPublished: false 
-  });
-
-  const [projectForm, setProjectForm] = useState<any>({
-    title: '',
-    order: 0
-  });
+  const [roomForm, setRoomForm] = useState<any>({ title: '', description: '', order: 0, isPublished: false });
+  const [projectForm, setProjectForm] = useState<any>({ title: '', order: 0 });
 
   const artworksQuery = useMemo(() => {
     if (!firestore) return null;
@@ -207,22 +198,16 @@ export default function AdminPage() {
 
   const handleToggleSelect = (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    setSelectedIds(prev => 
-      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-    );
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
   };
 
   const handleSelectAll = () => {
-    if (selectedIds.length === filteredArtworks.length) {
-      setSelectedIds([]);
-    } else {
-      setSelectedIds(filteredArtworks.map(a => a.id));
-    }
+    if (selectedIds.length === filteredArtworks.length) setSelectedIds([]);
+    else setSelectedIds(filteredArtworks.map(a => a.id));
   };
 
   const handleBulkUpdate = (type: 'add_tag' | 'remove_tag' | 'add_room' | 'remove_room', value: string) => {
     if (!firestore || selectedIds.length === 0) return;
-    
     const batch = writeBatch(firestore);
     selectedIds.forEach(id => {
       const artRef = doc(firestore, 'artworks', id);
@@ -233,32 +218,21 @@ export default function AdminPage() {
     });
 
     batch.commit()
-      .then(() => {
-        toast({ title: "Bijgewerkt", description: `${selectedIds.length} items aangepast.` });
-      })
-      .catch(async () => {
-        toast({ variant: "destructive", title: "Bulk update mislukt" });
-      });
+      .then(() => toast({ title: "Bijgewerkt" }))
+      .catch(async () => toast({ variant: "destructive", title: "Bulk update mislukt" }));
   };
 
   const handleDragStart = (e: React.MouseEvent) => {
     setIsDragging(true);
-    dragStartRef.current = {
-      x: e.clientX - panelPos.x,
-      y: e.clientY - panelPos.y
-    };
+    dragStartRef.current = { x: e.clientX - panelPos.x, y: e.clientY - panelPos.y };
   };
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isDragging) return;
-      setPanelPos({
-        x: e.clientX - dragStartRef.current.x,
-        y: e.clientY - dragStartRef.current.y
-      });
+      setPanelPos({ x: e.clientX - dragStartRef.current.x, y: e.clientY - dragStartRef.current.y });
     };
     const handleMouseUp = () => setIsDragging(false);
-
     if (isDragging) {
       window.addEventListener('mousemove', handleMouseMove);
       window.addEventListener('mouseup', handleMouseUp);
@@ -271,28 +245,19 @@ export default function AdminPage() {
 
   const handleOpenNewArtwork = () => {
     setEditingArtwork(null);
-    setArtworkForm({ 
-      title: '', displayTitle: '', slug: '', image: '', year: '', medium: '', description: '', tags: [], roomIds: [], featured: false, inShop: false, isMonumental: false, monumentalProjectId: ''
-    });
+    setArtworkForm({ title: '', displayTitle: '', slug: '', image: '', year: '', medium: '', description: '', tags: [], roomIds: [], featured: false, inShop: false, isMonumental: false, monumentalProjectId: '' });
     setIsArtworkDialogOpen(true);
   };
 
   const handleEditArtwork = (art: any) => {
     setEditingArtwork(art); 
-    setArtworkForm({ 
-      ...art, 
-      tags: Array.isArray(art.tags) ? art.tags : [],
-      roomIds: Array.isArray(art.roomIds) ? art.roomIds : [],
-      isMonumental: !!art.isMonumental,
-      monumentalProjectId: art.monumentalProjectId || ''
-    }); 
+    setArtworkForm({ ...art, tags: Array.isArray(art.tags) ? art.tags : [], roomIds: Array.isArray(art.roomIds) ? art.roomIds : [], isMonumental: !!art.isMonumental, monumentalProjectId: art.monumentalProjectId || '' }); 
     setIsArtworkDialogOpen(true); 
   };
 
   const handleSaveArtwork = async () => {
     if (!firestore) return;
     setIsUploading(true);
-
     try {
       let finalImageUrl = artworkForm.image;
       if (selectedFile && storage) {
@@ -301,44 +266,22 @@ export default function AdminPage() {
         finalImageUrl = await getDownloadURL(uploadResult.ref);
       }
 
-      const data = sanitizeArtwork({
-        ...artworkForm,
-        image: finalImageUrl,
-        isMonumental: artworkForm.isMonumental,
-        monumentalProjectId: artworkForm.isMonumental ? artworkForm.monumentalProjectId : ''
-      });
+      const data = sanitizeArtwork({ ...artworkForm, image: finalImageUrl });
 
       if (editingArtwork) {
         const artRef = doc(firestore, 'artworks', editingArtwork.id);
         updateDoc(artRef, data)
           .then(() => toast({ title: "Bijgewerkt" }))
-          .catch(async () => {
-             errorEmitter.emit('permission-error', new FirestorePermissionError({
-               path: artRef.path,
-               operation: 'update',
-               requestResourceData: data
-             } satisfies SecurityRuleContext));
-          });
+          .catch(async () => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: artRef.path, operation: 'update', requestResourceData: data })));
       } else {
         const artCol = collection(firestore, 'artworks');
         addDoc(artCol, { ...data, createdAt: serverTimestamp() })
-          .then(() => toast({ title: "Toegevoegd aan archief" }))
-          .catch(async () => {
-             errorEmitter.emit('permission-error', new FirestorePermissionError({
-               path: artCol.path,
-               operation: 'create',
-               requestResourceData: data
-             } satisfies SecurityRuleContext));
-          });
+          .then(() => toast({ title: "Toegevoegd" }))
+          .catch(async () => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: artCol.path, operation: 'create', requestResourceData: data })));
       }
-
       setIsArtworkDialogOpen(false);
       setSelectedFile(null);
-    } catch (e: any) { 
-      toast({ variant: "destructive", title: "Fout bij opslaan" }); 
-    } finally {
-      setIsUploading(false);
-    }
+    } catch (e) { toast({ variant: "destructive", title: "Fout bij opslaan" }); } finally { setIsUploading(false); }
   };
 
   const handleOpenNewRoom = () => {
@@ -352,22 +295,17 @@ export default function AdminPage() {
     if (!firestore) return;
     setIsSavingRoom(true);
     const data = { ...roomForm, slug: slugify(roomForm.title), updatedAt: serverTimestamp() };
-
     if (editingRoom) {
       const roomRef = doc(firestore, 'rooms', editingRoom.id);
       updateDoc(roomRef, data)
-        .then(() => { toast({ title: "Zaal bijgewerkt" }); setIsRoomDialogOpen(false); })
-        .catch(async () => {
-          errorEmitter.emit('permission-error', new FirestorePermissionError({ path: roomRef.path, operation: 'update', requestResourceData: data } satisfies SecurityRuleContext));
-        })
+        .then(() => { toast({ title: "Bijgewerkt" }); setIsRoomDialogOpen(false); })
+        .catch(async () => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: roomRef.path, operation: 'update', requestResourceData: data })))
         .finally(() => setIsSavingRoom(false));
     } else {
       const roomsCol = collection(firestore, 'rooms');
       addDoc(roomsCol, { ...data, createdAt: serverTimestamp() })
-        .then(() => { toast({ title: "Zaal aangemaakt" }); setIsRoomDialogOpen(false); })
-        .catch(async () => {
-          errorEmitter.emit('permission-error', new FirestorePermissionError({ path: roomsCol.path, operation: 'create', requestResourceData: data } satisfies SecurityRuleContext));
-        })
+        .then(() => { toast({ title: "Aangemaakt" }); setIsRoomDialogOpen(false); })
+        .catch(async () => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: roomsCol.path, operation: 'create', requestResourceData: data })))
         .finally(() => setIsSavingRoom(false));
     }
   };
@@ -383,51 +321,19 @@ export default function AdminPage() {
     if (!firestore) return;
     setIsSavingProject(true);
     const data = { ...projectForm, updatedAt: serverTimestamp() };
-
     if (editingProject) {
       const projRef = doc(firestore, 'monumental_projects', editingProject.id);
       updateDoc(projRef, data)
-        .then(() => { toast({ title: "Project bijgewerkt" }); setIsProjectDialogOpen(false); })
-        .catch(async () => {
-          errorEmitter.emit('permission-error', new FirestorePermissionError({ path: projRef.path, operation: 'update', requestResourceData: data } satisfies SecurityRuleContext));
-        })
+        .then(() => { toast({ title: "Bijgewerkt" }); setIsProjectDialogOpen(false); })
+        .catch(async () => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: projRef.path, operation: 'update', requestResourceData: data })))
         .finally(() => setIsSavingProject(false));
     } else {
       const projCol = collection(firestore, 'monumental_projects');
       addDoc(projCol, { ...data, createdAt: serverTimestamp() })
         .then(() => { toast({ title: "Project aangemaakt" }); setIsProjectDialogOpen(false); })
-        .catch(async () => {
-          errorEmitter.emit('permission-error', new FirestorePermissionError({ path: projCol.path, operation: 'create', requestResourceData: data } satisfies SecurityRuleContext));
-        })
+        .catch(async () => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: projCol.path, operation: 'create', requestResourceData: data })))
         .finally(() => setIsSavingProject(false));
     }
-  };
-
-  const handleDeleteRoom = (roomId: string) => {
-    if (!firestore) return;
-    if (confirm("Weet u zeker dat u deze zaal wilt verwijderen?")) {
-      deleteDoc(doc(firestore, 'rooms', roomId))
-        .then(() => toast({ title: "Zaal verwijderd" }))
-        .catch(async () => toast({ variant: "destructive", title: "Verwijderen mislukt" }));
-    }
-  };
-
-  const togglePublishRoom = (room: any) => {
-    if (!firestore) return;
-    updateDoc(doc(firestore, 'rooms', room.id), { isPublished: !room.isPublished, updatedAt: serverTimestamp() })
-      .then(() => toast({ title: room.isPublished ? "Verborgen" : "Gepubliceerd" }));
-  };
-
-  const toggleTag = (tag: string) => {
-    const tags = artworkForm.tags || [];
-    if (tags.includes(tag)) setArtworkForm({ ...artworkForm, tags: tags.filter((t: string) => t !== tag) });
-    else setArtworkForm({ ...artworkForm, tags: [...tags, tag] });
-  };
-
-  const toggleRoom = (roomId: string) => {
-    const roomIds = artworkForm.roomIds || [];
-    if (roomIds.includes(roomId)) setArtworkForm({ ...artworkForm, roomIds: roomIds.filter((id: string) => id !== roomId) });
-    else setArtworkForm({ ...artworkForm, roomIds: [...roomIds, roomId] });
   };
 
   const resetOlieverf = async () => {
@@ -435,8 +341,7 @@ export default function AdminPage() {
     try {
       const batch = writeBatch(firestore);
       artworks.forEach(art => { if (art.medium === 'Olieverf') batch.update(doc(firestore, 'artworks', art.id), { medium: '' }); });
-      await batch.commit();
-      toast({ title: "Olieverf gereset" });
+      await batch.commit(); toast({ title: "Olieverf gereset" });
     } catch (e) { toast({ variant: "destructive", title: "Fout bij reset" }); }
   };
 
@@ -448,9 +353,7 @@ export default function AdminPage() {
     return (
       <main className="min-h-screen flex flex-col items-center justify-center p-6 bg-[#f4f4f2]">
         <Card className="max-w-md w-full p-12 rounded-[3rem] shadow-2xl border-none space-y-8 text-center">
-          <div className="w-20 h-20 bg-accent/5 rounded-full flex items-center justify-center mx-auto text-accent">
-            <Lock className="w-8 h-8" />
-          </div>
+          <div className="w-20 h-20 bg-accent/5 rounded-full flex items-center justify-center mx-auto text-accent"><Lock className="w-8 h-8" /></div>
           <h1 className="font-headline text-3xl italic">Archief <span className="text-accent">Beheer</span></h1>
           <form onSubmit={handleLogin} className="space-y-6">
             <Input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Wachtwoord" className="h-16 rounded-2xl text-center text-xl bg-black/5 border-none" />
@@ -468,12 +371,10 @@ export default function AdminPage() {
           <div className="flex items-center gap-4">
             <Archive className="w-6 h-6 text-accent" />
             <h1 className="font-headline text-2xl italic leading-none">Museum Archief</h1>
-            <Button type="button" variant="ghost" size="icon" onClick={resetOlieverf} className="w-8 h-8 opacity-10 hover:opacity-100 transition-opacity">
-               <Database className="w-4 h-4" />
-            </Button>
+            <Button type="button" variant="ghost" size="icon" onClick={resetOlieverf} className="w-8 h-8 opacity-10 hover:opacity-100"><Database className="w-4 h-4" /></Button>
           </div>
         </div>
-        <Button type="button" onClick={handleOpenNewArtwork} className="h-12 rounded-full bg-accent text-white px-8 font-black uppercase tracking-widest text-[10px] shadow-lg hover:scale-105 transition-all">
+        <Button type="button" onClick={handleOpenNewArtwork} className="h-12 rounded-full bg-accent text-white px-8 font-black uppercase tracking-widest text-[10px] shadow-lg hover:scale-105">
           <Plus className="w-4 h-4 mr-2" /> Nieuw Kunstwerk
         </Button>
       </header>
@@ -490,7 +391,7 @@ export default function AdminPage() {
             <div className="flex items-center justify-between bg-white/50 backdrop-blur-md p-6 rounded-[2.5rem] border border-white/60">
                <div className="relative flex-1 max-w-md">
                  <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 opacity-30" />
-                 <Input placeholder="Zoek op titel of tags..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="h-14 pl-14 rounded-2xl bg-white border-none shadow-inner" />
+                 <Input placeholder="Zoek op titel..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="h-14 pl-14 rounded-2xl bg-white border-none shadow-inner" />
                </div>
                <div className="flex items-center gap-4">
                  <Button type="button" onClick={handleSelectAll} variant="ghost" className="text-[10px] font-black uppercase tracking-widest opacity-40">{selectedIds.length === filteredArtworks.length ? 'Deselecteer' : 'Selecteer Alles'}</Button>
@@ -551,15 +452,15 @@ export default function AdminPage() {
                              </div>
                              <div className="flex gap-2">
                                 <Button type="button" variant="ghost" size="icon" onClick={() => { setEditingRoom(room); setRoomForm({...room}); setIsRoomDialogOpen(true); }}><Edit3 className="w-4 h-4" /></Button>
-                                <Button type="button" variant="ghost" size="icon" disabled={artCount > 0} onClick={() => handleDeleteRoom(room.id)} className="text-red-400"><Trash2 className="w-4 h-4" /></Button>
+                                <Button type="button" variant="ghost" size="icon" disabled={artCount > 0} onClick={() => deleteDoc(doc(firestore!, 'rooms', room.id))} className="text-red-400"><Trash2 className="w-4 h-4" /></Button>
                              </div>
                           </div>
                           <h3 className="font-headline text-3xl italic">{room.title}</h3>
-                          <p className="text-sm text-muted-foreground line-clamp-3 italic leading-relaxed">{room.description}</p>
+                          <p className="text-sm text-muted-foreground line-clamp-3 italic">{room.description}</p>
                        </div>
                        <div className="mt-8 pt-8 border-t border-black/5">
-                          <Button type="button" onClick={() => togglePublishRoom(room)} variant={room.isPublished ? "outline" : "default"} className="h-12 rounded-2xl font-black uppercase tracking-widest text-[10px] w-full">
-                             {room.isPublished ? "Verbergen voor Publiek" : "Publiek Zichtbaar Maken"}
+                          <Button type="button" onClick={() => updateDoc(doc(firestore!, 'rooms', room.id), { isPublished: !room.isPublished })} variant={room.isPublished ? "outline" : "default"} className="h-12 rounded-2xl font-black uppercase tracking-widest text-[10px] w-full">
+                             {room.isPublished ? "Verbergen" : "Zichtbaar Maken"}
                           </Button>
                        </div>
                     </Card>
@@ -573,12 +474,12 @@ export default function AdminPage() {
               <div className="flex items-center justify-between gap-6">
                 <div className="flex items-center gap-4 flex-1 max-w-xl">
                   <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
-                    <SelectTrigger className="h-14 rounded-2xl bg-white border-none shadow-sm px-6"><SelectValue placeholder="Selecteer een project..." /></SelectTrigger>
+                    <SelectTrigger className="h-14 rounded-2xl bg-white border-none shadow-sm px-6"><SelectValue placeholder="Selecteer project..." /></SelectTrigger>
                     <SelectContent className="rounded-2xl shadow-xl border-none">
-                      {projects?.map((p: any) => <SelectItem key={p.id} value={p.id} className="p-4">{p.title}</SelectItem>)}
+                      {projects?.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.title}</SelectItem>)}
                     </SelectContent>
                   </Select>
-                  <Button type="button" onClick={handleOpenNewProject} className="h-14 rounded-2xl bg-primary text-white px-8 font-black uppercase tracking-widest text-[10px] shrink-0">
+                  <Button type="button" onClick={handleOpenNewProject} className="h-14 rounded-2xl bg-primary text-white px-8 font-black uppercase tracking-widest text-[10px]">
                     <Plus className="w-4 h-4 mr-2" /> Nieuw Project
                   </Button>
                 </div>
@@ -587,20 +488,18 @@ export default function AdminPage() {
                   <Button type="button" variant={viewMode === 'list' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('list')} className="rounded-lg"><ListIcon className="w-4 h-4" /></Button>
                 </div>
               </div>
-              {!selectedProjectId && <div className="py-24 text-center opacity-20 italic"><Building2 className="w-12 h-12 mx-auto mb-4" /><p className="text-xl font-headline">Selecteer een project om de werken te bekijken.</p></div>}
             </div>
             {selectedProjectId && (
               <div className="animate-in fade-in duration-500">
                 {filteredArtworks.length === 0 ? (
-                  <div className="py-32 text-center border-2 border-dashed rounded-[3rem] opacity-20 italic">Nog geen werken toegewezen aan dit project.</div>
+                  <div className="py-32 text-center border-2 border-dashed rounded-[3rem] opacity-20 italic">Geen werken in dit project.</div>
                 ) : viewMode === 'grid' ? (
                   <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
                     {filteredArtworks.map((art: any) => (
-                      <div key={art.id} onClick={() => handleEditArtwork(art)} className="cursor-pointer group">
-                        <Card className="p-4 rounded-3xl overflow-hidden shadow-md border-2 border-transparent">
+                      <div key={art.id} onClick={() => handleEditArtwork(art)} className="cursor-pointer">
+                        <Card className="p-4 rounded-3xl overflow-hidden shadow-md">
                           <img src={art.image} className="aspect-square object-cover rounded-2xl mb-4" alt="" />
                           <h3 className="font-bold text-sm truncate">{art.displayTitle || art.title}</h3>
-                          <p className="text-[9px] font-black uppercase opacity-30 mt-1">{art.year || '-'}</p>
                         </Card>
                       </div>
                     ))}
@@ -608,11 +507,11 @@ export default function AdminPage() {
                 ) : (
                   <div className="space-y-4">
                     {filteredArtworks.map((art: any) => (
-                      <Card key={art.id} className="p-6 rounded-[2rem] flex items-center gap-8 cursor-pointer hover:shadow-lg transition-all border-2 border-transparent" onClick={() => handleEditArtwork(art)}>
+                      <Card key={art.id} className="p-6 rounded-[2rem] flex items-center gap-8 cursor-pointer hover:shadow-lg" onClick={() => handleEditArtwork(art)}>
                         <img src={art.image} className="w-40 h-40 object-cover rounded-2xl shadow-sm" alt="" />
                         <div className="flex-1 min-w-0">
                           <h3 className="font-bold text-xl mb-1 truncate">{art.title}</h3>
-                          <p className="text-xs font-black uppercase tracking-widest opacity-40">{art.year} • {art.medium || 'Geen techniek'}</p>
+                          <p className="text-xs font-black uppercase opacity-40">{art.year} • {art.medium}</p>
                         </div>
                       </Card>
                     ))}
@@ -687,7 +586,7 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* ARTWORK EDITOR DIALOG */}
+      {/* DIALOGS */}
       <Dialog open={isArtworkDialogOpen} onOpenChange={setIsArtworkDialogOpen}>
         <DialogContent className="max-w-4xl rounded-[3rem] p-0 overflow-hidden bg-background">
           <div className="flex h-[85vh]">
@@ -710,155 +609,74 @@ export default function AdminPage() {
 
             <div className="w-1/2 flex flex-col h-full">
               <DialogHeader className="p-8 border-b">
-                <DialogTitle className="font-headline text-3xl italic">{editingArtwork ? 'Werk Bewerken' : 'Nieuw Kunstwerk'}</DialogTitle>
+                <DialogTitle className="font-headline text-3xl italic">{editingArtwork ? 'Bewerken' : 'Nieuw Werk'}</DialogTitle>
               </DialogHeader>
 
               <div className="flex-1 overflow-y-auto p-8 space-y-10 custom-scrollbar">
                 <section className="space-y-6">
                   <div className="flex items-center justify-between border-l-4 border-accent pl-4">
-                    <div className="flex items-center gap-3">
-                      <Type className="w-4 h-4 text-accent" />
-                      <h4 className="text-[10px] font-black uppercase tracking-widest opacity-60">Identiteit</h4>
-                    </div>
-                    <div className="flex items-center gap-2 bg-black/5 px-3 py-1.5 rounded-full">
-                       <Label className="text-[9px] font-black uppercase opacity-60">Monumentaal</Label>
-                       <Checkbox checked={artworkForm.isMonumental} onCheckedChange={(v) => setArtworkForm({...artworkForm, isMonumental: !!v})} />
-                    </div>
+                    <div className="flex items-center gap-3"><Type className="w-4 h-4 text-accent" /><h4 className="text-[10px] font-black uppercase tracking-widest opacity-60">Identiteit</h4></div>
+                    <div className="flex items-center gap-2 bg-black/5 px-3 py-1.5 rounded-full"><Label className="text-[9px] font-black uppercase opacity-60">Monumentaal</Label><Checkbox checked={artworkForm.isMonumental} onCheckedChange={(v) => setArtworkForm({...artworkForm, isMonumental: !!v})} /></div>
                   </div>
-
                   <div className="space-y-4">
                     {artworkForm.isMonumental && (
-                      <div className="space-y-1.5 animate-in fade-in duration-300">
-                        <Label className="text-[9px] font-black uppercase ml-2 text-accent">Koppel aan Project</Label>
-                        <Select value={artworkForm.monumentalProjectId} onValueChange={v => setArtworkForm({...artworkForm, monumentalProjectId: v})}>
-                          <SelectTrigger className="h-12 rounded-xl bg-accent/5 border-2 border-accent/20 px-4 text-accent"><SelectValue placeholder="Selecteer project..." /></SelectTrigger>
-                          <SelectContent className="rounded-xl shadow-xl border-none">
-                            {projects?.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.title}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                      </div>
+                      <div className="space-y-1.5"><Label className="text-[9px] font-black uppercase ml-2 text-accent">Project</Label><Select value={artworkForm.monumentalProjectId} onValueChange={v => setArtworkForm({...artworkForm, monumentalProjectId: v})}><SelectTrigger className="h-12 rounded-xl bg-accent/5 border-2 border-accent/20 px-4 text-accent"><SelectValue placeholder="Project..." /></SelectTrigger><SelectContent className="rounded-xl shadow-xl border-none">{projects?.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.title}</SelectItem>)}</SelectContent></Select></div>
                     )}
-                    <div className="space-y-1.5">
-                      <Label className="text-[9px] font-black uppercase ml-2 opacity-40">Interne Titel</Label>
-                      <Input value={artworkForm.title} onChange={e => setArtworkForm({...artworkForm, title: e.target.value})} className="h-12 rounded-xl bg-black/5 border-none px-4" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-[9px] font-black uppercase ml-2 opacity-40">Weergavetitel (Gallerie)</Label>
-                      <Input value={artworkForm.displayTitle} onChange={e => setArtworkForm({...artworkForm, displayTitle: e.target.value})} className="h-12 rounded-xl bg-black/5 border-none px-4" />
-                    </div>
+                    <div className="space-y-1.5"><Label className="text-[9px] font-black uppercase ml-2 opacity-40">Interne Titel</Label><Input value={artworkForm.title} onChange={e => setArtworkForm({...artworkForm, title: e.target.value})} className="h-12 rounded-xl bg-black/5 border-none px-4" /></div>
+                    <div className="space-y-1.5"><Label className="text-[9px] font-black uppercase ml-2 opacity-40">Weergavetitel</Label><Input value={artworkForm.displayTitle} onChange={e => setArtworkForm({...artworkForm, displayTitle: e.target.value})} className="h-12 rounded-xl bg-black/5 border-none px-4" /></div>
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <Label className="text-[9px] font-black uppercase ml-2 opacity-40">Jaar</Label>
-                        <Input value={artworkForm.year} onChange={e => setArtworkForm({...artworkForm, year: e.target.value})} className="h-12 rounded-xl bg-black/5 border-none px-4" />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-[9px] font-black uppercase ml-2 opacity-40">Techniek</Label>
-                        <Select value={artworkForm.medium} onValueChange={v => setArtworkForm({...artworkForm, medium: v})}>
-                          <SelectTrigger className="h-12 rounded-xl bg-black/5 border-none"><SelectValue placeholder="Selecteer techniek..." /></SelectTrigger>
-                          <SelectContent className="rounded-xl shadow-xl border-none">
-                            {ART_TECHNIQUES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                      </div>
+                      <div className="space-y-1.5"><Label className="text-[9px] font-black uppercase ml-2 opacity-40">Jaar</Label><Input value={artworkForm.year} onChange={e => setArtworkForm({...artworkForm, year: e.target.value})} className="h-12 rounded-xl bg-black/5 border-none px-4" /></div>
+                      <div className="space-y-1.5"><Label className="text-[9px] font-black uppercase ml-2 opacity-40">Techniek</Label><Select value={artworkForm.medium} onValueChange={v => setArtworkForm({...artworkForm, medium: v})}><SelectTrigger className="h-12 rounded-xl bg-black/5 border-none"><SelectValue placeholder="Selecteer..." /></SelectTrigger><SelectContent className="rounded-xl shadow-xl border-none">{ART_TECHNIQUES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></div>
                     </div>
                   </div>
                 </section>
 
                 <section className="space-y-6">
-                  <div className="flex items-center gap-3 border-l-4 border-accent pl-4">
-                    <TagIcon className="w-4 h-4 text-accent" />
-                    <h4 className="text-[10px] font-black uppercase tracking-widest opacity-60">Tags & Kenmerken</h4>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {artworkForm.tags?.map((t: string) => (
-                      <Badge key={t} className="bg-accent text-white rounded-full px-3 py-1 flex items-center gap-2">
-                        {t} <X className="w-3 h-3 cursor-pointer" onClick={() => toggleTag(t)} />
-                      </Badge>
-                    ))}
-                  </div>
-                  <div className="space-y-4">
-                    {Object.entries(MUSEUM_TAGS).map(([cat, tags]) => (
-                      <div key={cat} className="space-y-2">
-                        <p className="text-[8px] font-black uppercase opacity-30">{cat}</p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {tags.map(tag => (
-                            <button key={tag} type="button" onClick={() => toggleTag(tag)} className={cn("px-3 py-1 rounded-lg text-[9px] font-bold border transition-all", artworkForm.tags?.includes(tag) ? "bg-accent/10 border-accent text-accent" : "bg-white border-black/5 text-black/40 hover:border-black/20")}>{tag}</button>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                  <div className="flex items-center gap-3 border-l-4 border-accent pl-4"><TagIcon className="w-4 h-4 text-accent" /><h4 className="text-[10px] font-black uppercase tracking-widest opacity-60">Tags</h4></div>
+                  <div className="flex flex-wrap gap-2">{artworkForm.tags?.map((t: string) => <Badge key={t} className="bg-accent text-white rounded-full px-3 py-1 flex items-center gap-2">{t} <X className="w-3 h-3 cursor-pointer" onClick={() => setArtworkForm({...artworkForm, tags: artworkForm.tags.filter((tag: string) => tag !== t)})} /></Badge>)}</div>
+                  <div className="space-y-4">{Object.entries(MUSEUM_TAGS).map(([cat, tags]) => <div key={cat} className="space-y-2"><p className="text-[8px] font-black uppercase opacity-30">{cat}</p><div className="flex flex-wrap gap-1.5">{tags.map(tag => <button key={tag} type="button" onClick={() => { const tags = artworkForm.tags || []; setArtworkForm({...artworkForm, tags: tags.includes(tag) ? tags.filter((t: string) => t !== tag) : [...tags, tag]}); }} className={cn("px-3 py-1 rounded-lg text-[9px] font-bold border transition-all", artworkForm.tags?.includes(tag) ? "bg-accent/10 border-accent text-accent" : "bg-white border-black/5 text-black/40 hover:border-black/20")}>{tag}</button>)}</div></div>)}</div>
                 </section>
 
                 <section className="space-y-6">
-                  <div className="flex items-center gap-3 border-l-4 border-accent pl-4">
-                    <FolderInput className="w-4 h-4 text-accent" />
-                    <h4 className="text-[10px] font-black uppercase tracking-widest opacity-60">Zaal Toewijzing</h4>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    {rooms?.map((room: any) => (
-                      <button key={room.id} type="button" onClick={() => toggleRoom(room.id)} className={cn("flex items-center gap-3 p-4 rounded-xl border transition-all text-left", artworkForm.roomIds?.includes(room.id) ? "bg-accent/5 border-accent text-accent" : "bg-white border-black/5 text-black/40")}>
-                        {artworkForm.roomIds?.includes(room.id) ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
-                        <span className="text-[10px] font-black uppercase tracking-widest">{room.title}</span>
-                      </button>
-                    ))}
-                  </div>
+                  <div className="flex items-center gap-3 border-l-4 border-accent pl-4"><FolderInput className="w-4 h-4 text-accent" /><h4 className="text-[10px] font-black uppercase tracking-widest opacity-60">Zalen</h4></div>
+                  <div className="grid grid-cols-2 gap-4">{rooms?.map((room: any) => <button key={room.id} type="button" onClick={() => { const roomIds = artworkForm.roomIds || []; setArtworkForm({...artworkForm, roomIds: roomIds.includes(room.id) ? roomIds.filter((id: string) => id !== room.id) : [...roomIds, room.id]}); }} className={cn("flex items-center gap-3 p-4 rounded-xl border transition-all text-left", artworkForm.roomIds?.includes(room.id) ? "bg-accent/5 border-accent text-accent" : "bg-white border-black/5 text-black/40")}>{artworkForm.roomIds?.includes(room.id) ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}<span className="text-[10px] font-black uppercase tracking-widest">{room.title}</span></button>)}</div>
                 </section>
 
                 <section className="space-y-6">
-                  <div className="flex items-center gap-3 border-l-4 border-accent pl-4">
-                    <Edit3 className="w-4 h-4 text-accent" />
-                    <h4 className="text-[10px] font-black uppercase tracking-widest opacity-60">Beschrijving</h4>
-                  </div>
+                  <div className="flex items-center gap-3 border-l-4 border-accent pl-4"><Edit3 className="w-4 h-4 text-accent" /><h4 className="text-[10px] font-black uppercase tracking-widest opacity-60">Beschrijving</h4></div>
                   <Textarea value={artworkForm.description} onChange={e => setArtworkForm({...artworkForm, description: e.target.value})} className="min-h-[140px] rounded-2xl bg-black/5 border-none p-6" />
                 </section>
               </div>
 
               <div className="p-8 bg-black/5 flex items-center gap-4">
-                <Button type="button" onClick={handleSaveArtwork} disabled={isUploading} className="flex-1 h-16 rounded-2xl bg-accent text-white font-black uppercase tracking-widest shadow-xl">
-                  {isUploading ? <Loader2 className="animate-spin" /> : "Wijzigingen Opslaan"}
-                </Button>
+                <Button type="button" onClick={handleSaveArtwork} disabled={isUploading} className="flex-1 h-16 rounded-2xl bg-accent text-white font-black uppercase tracking-widest shadow-xl">{isUploading ? <Loader2 className="animate-spin" /> : "Opslaan"}</Button>
               </div>
             </div>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* ROOM EDITOR DIALOG */}
       <Dialog open={isRoomDialogOpen} onOpenChange={setIsRoomDialogOpen}>
         <DialogContent className="max-w-lg rounded-[3rem] p-0 overflow-hidden bg-background">
-          <DialogHeader className="p-10 border-b">
-            <DialogTitle className="font-headline text-3xl italic">{editingRoom ? 'Zaal Bewerken' : 'Nieuwe Zaal'}</DialogTitle>
-          </DialogHeader>
+          <DialogHeader className="p-10 border-b"><DialogTitle className="font-headline text-3xl italic">{editingRoom ? 'Zaal Bewerken' : 'Nieuwe Zaal'}</DialogTitle></DialogHeader>
           <div className="p-10 space-y-6">
             <div className="space-y-1.5"><Label className="text-[9px] font-black uppercase ml-2 opacity-40">Naam</Label><Input value={roomForm.title} onChange={e => setRoomForm({...roomForm, title: e.target.value})} className="h-12 rounded-xl bg-black/5 border-none px-4" /></div>
             <div className="space-y-1.5"><Label className="text-[9px] font-black uppercase ml-2 opacity-40">Beschrijving</Label><Textarea value={roomForm.description} onChange={e => setRoomForm({...roomForm, description: e.target.value})} className="min-h-[120px] rounded-2xl bg-black/5 border-none p-4" /></div>
             <div className="space-y-1.5"><Label className="text-[9px] font-black uppercase ml-2 opacity-40">Volgorde</Label><Input type="number" value={roomForm.order} onChange={e => setRoomForm({...roomForm, order: parseInt(e.target.value)})} className="h-12 rounded-xl bg-black/5 border-none px-4" /></div>
             <div className="flex items-center justify-between p-4 rounded-2xl bg-black/5"><Label className="text-[10px] font-black uppercase tracking-widest opacity-60">Publiek Zichtbaar</Label><Switch checked={roomForm.isPublished} onCheckedChange={v => setRoomForm({...roomForm, isPublished: v})} /></div>
           </div>
-          <div className="px-10 pb-10">
-            <Button type="button" onClick={handleSaveRoom} disabled={isSavingRoom} className="w-full h-14 rounded-2xl bg-accent text-white font-black uppercase tracking-widest text-[11px]">
-              {isSavingRoom ? <Loader2 className="animate-spin" /> : editingRoom ? 'Wijzigingen Opslaan' : 'Zaal Aanmaken'}
-            </Button>
-          </div>
+          <div className="px-10 pb-10"><Button type="button" onClick={handleSaveRoom} disabled={isSavingRoom} className="w-full h-14 rounded-2xl bg-accent text-white font-black uppercase tracking-widest text-[11px]">{isSavingRoom ? <Loader2 className="animate-spin" /> : "Opslaan"}</Button></div>
         </DialogContent>
       </Dialog>
 
-      {/* PROJECT EDITOR DIALOG */}
       <Dialog open={isProjectDialogOpen} onOpenChange={setIsProjectDialogOpen}>
         <DialogContent className="max-w-md rounded-[3rem] p-0 overflow-hidden bg-background">
-          <DialogHeader className="p-10 border-b">
-            <DialogTitle className="font-headline text-3xl italic">{editingProject ? 'Project Bewerken' : 'Nieuw Monumentaal Project'}</DialogTitle>
-          </DialogHeader>
+          <DialogHeader className="p-10 border-b"><DialogTitle className="font-headline text-3xl italic">{editingProject ? 'Project Bewerken' : 'Nieuw Project'}</DialogTitle></DialogHeader>
           <div className="p-10 space-y-6">
-            <div className="space-y-1.5"><Label className="text-[9px] font-black uppercase ml-2 opacity-40">Projectnaam</Label><Input value={projectForm.title} onChange={e => setProjectForm({...projectForm, title: e.target.value})} className="h-12 rounded-xl bg-black/5 border-none px-4" /></div>
+            <div className="space-y-1.5"><Label className="text-[9px] font-black uppercase ml-2 opacity-40">Naam</Label><Input value={projectForm.title} onChange={e => setProjectForm({...projectForm, title: e.target.value})} className="h-12 rounded-xl bg-black/5 border-none px-4" /></div>
             <div className="space-y-1.5"><Label className="text-[9px] font-black uppercase ml-2 opacity-40">Volgorde</Label><Input type="number" value={projectForm.order} onChange={e => setProjectForm({...projectForm, order: parseInt(e.target.value)})} className="h-12 rounded-xl bg-black/5 border-none px-4" /></div>
           </div>
-          <div className="px-10 pb-10">
-            <Button type="button" onClick={handleSaveProject} disabled={isSavingProject} className="w-full h-14 rounded-2xl bg-primary text-white font-black uppercase tracking-widest text-[10px]">
-              {isSavingProject ? <Loader2 className="animate-spin" /> : editingProject ? 'Wijzigingen Opslaan' : 'Project Aanmaken'}
-            </Button>
-          </div>
+          <div className="px-10 pb-10"><Button type="button" onClick={handleSaveProject} disabled={isSavingProject} className="w-full h-14 rounded-2xl bg-primary text-white font-black uppercase text-[10px]">{isSavingProject ? <Loader2 className="animate-spin" /> : "Project Opslaan"}</Button></div>
         </DialogContent>
       </Dialog>
     </div>
