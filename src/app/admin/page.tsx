@@ -675,7 +675,7 @@ export default function AdminPage() {
              {/* Left: Queue & Batch Settings */}
              <div className="w-1/3 bg-black/5 border-r p-8 flex flex-col gap-10">
                 <div className="space-y-4">
-                   <h2 className="font-headline text-3xl italic">Bulk Archivering</h2>
+                   <DialogTitle className="font-headline text-3xl italic">Bulk Archivering</DialogTitle>
                    <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Instellingen voor de hele batch</p>
                 </div>
 
