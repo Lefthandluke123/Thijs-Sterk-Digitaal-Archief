@@ -45,7 +45,10 @@ import {
   FolderInput,
   Lock,
   Building2,
-  Filter
+  Filter,
+  Images,
+  CheckCircle2,
+  AlertCircle
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -87,6 +90,13 @@ const ART_TECHNIQUES = [
   "Anders..."
 ];
 
+type BulkItem = {
+  file: File;
+  title: string;
+  preview: string;
+  status: 'pending' | 'uploading' | 'done' | 'error';
+};
+
 export default function AdminPage() {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [password, setPassword] = useState('');
@@ -107,7 +117,7 @@ export default function AdminPage() {
       sessionStorage.setItem('admin_auth', 'true');
       if (auth) {
         signInAnonymously(auth).catch(err => {
-           console.warn("Anoniem inloggen mislukt, mogelijk niet ingeschakeld in Firebase Console:", err);
+           console.warn("Anoniem inloggen mislukt:", err);
         });
       }
     } else {
@@ -123,6 +133,7 @@ export default function AdminPage() {
   
   const [isArtworkDialogOpen, setIsArtworkDialogOpen] = useState(false);
   const [isRoomDialogOpen, setIsRoomDialogOpen] = useState(false);
+  const [isBulkDialogOpen, setIsBulkDialogOpen] = useState(false);
   
   const [editingArtwork, setEditingArtwork] = useState<any>(null);
   const [editingRoom, setEditingRoom] = useState<any>(null);
@@ -131,6 +142,15 @@ export default function AdminPage() {
   const [isSavingRoom, setIsSavingRoom] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Bulk Upload State
+  const [bulkItems, setBulkItems] = useState<BulkItem[]>([]);
+  const [isBulkUploading, setIsBulkUploading] = useState(false);
+  const [bulkGlobalYear, setBulkGlobalYear] = useState('');
+  const [bulkGlobalMedium, setBulkGlobalMedium] = useState('');
+  const [bulkGlobalTags, setBulkGlobalTags] = useState<string[]>([]);
+  const [bulkGlobalRooms, setBulkGlobalRooms] = useState<string[]>([]);
+  const [bulkGlobalMonumental, setBulkGlobalMonumental] = useState(false);
 
   const [panelPos, setPanelPos] = useState({ x: 100, y: 150 });
   const [isDragging, setIsDragging] = useState(false);
@@ -289,6 +309,61 @@ export default function AdminPage() {
     }
   };
 
+  // Bulk Upload Logic
+  const handleBulkFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const newItems: BulkItem[] = files.map(file => ({
+      file,
+      title: file.name.split('.').slice(0, -1).join('.'),
+      preview: URL.createObjectURL(file),
+      status: 'pending'
+    }));
+    setBulkItems(prev => [...prev, ...newItems]);
+  };
+
+  const handleBulkSave = async () => {
+    if (!firestore || !storage || bulkItems.length === 0) return;
+    setIsBulkUploading(true);
+    let successCount = 0;
+
+    for (let i = 0; i < bulkItems.length; i++) {
+      const item = bulkItems[i];
+      if (item.status === 'done') continue;
+
+      setBulkItems(prev => prev.map((it, idx) => i === idx ? { ...it, status: 'uploading' } : it));
+
+      try {
+        const storageRef = ref(storage, `artworks/${Date.now()}_${item.file.name}`);
+        const uploadResult = await uploadBytes(storageRef, item.file);
+        const url = await getDownloadURL(uploadResult.ref);
+
+        const data = sanitizeArtwork({
+          title: item.title,
+          displayTitle: item.title,
+          image: url,
+          year: bulkGlobalYear,
+          medium: bulkGlobalMedium,
+          tags: bulkGlobalTags,
+          roomIds: bulkGlobalRooms,
+          isMonumental: bulkGlobalMonumental
+        });
+
+        await addDoc(collection(firestore, 'artworks'), { ...data, createdAt: serverTimestamp() });
+        
+        setBulkItems(prev => prev.map((it, idx) => i === idx ? { ...it, status: 'done' } : it));
+        successCount++;
+      } catch (err) {
+        setBulkItems(prev => prev.map((it, idx) => i === idx ? { ...it, status: 'error' } : it));
+      }
+    }
+
+    toast({ title: `${successCount} werken toegevoegd aan het archief.` });
+    setIsBulkUploading(false);
+    if (successCount === bulkItems.length) {
+      setTimeout(() => setIsBulkDialogOpen(false), 1500);
+    }
+  };
+
   const resetOlieverf = async () => {
     if (!firestore) return;
     try {
@@ -327,9 +402,19 @@ export default function AdminPage() {
             <Button type="button" variant="ghost" size="icon" onClick={resetOlieverf} className="w-8 h-8 opacity-10 hover:opacity-100"><Database className="w-4 h-4" /></Button>
           </div>
         </div>
-        <Button type="button" onClick={handleOpenNewArtwork} className="h-12 rounded-full bg-accent text-white px-8 font-black uppercase tracking-widest text-[10px] shadow-lg hover:scale-105">
-          <Plus className="w-4 h-4 mr-2" /> Nieuw Kunstwerk
-        </Button>
+        <div className="flex items-center gap-4">
+          <Button 
+            type="button" 
+            variant="outline"
+            onClick={() => { setBulkItems([]); setIsBulkDialogOpen(true); }} 
+            className="h-12 rounded-full border-accent text-accent px-8 font-black uppercase tracking-widest text-[10px] hover:bg-accent/5"
+          >
+            <Images className="w-4 h-4 mr-2" /> Bulk Upload
+          </Button>
+          <Button type="button" onClick={handleOpenNewArtwork} className="h-12 rounded-full bg-accent text-white px-8 font-black uppercase tracking-widest text-[10px] shadow-lg hover:scale-105 transition-all">
+            <Plus className="w-4 h-4 mr-2" /> Nieuw Kunstwerk
+          </Button>
+        </div>
       </header>
 
       <main className="max-w-7xl mx-auto space-y-12 pb-48">
@@ -579,6 +664,111 @@ export default function AdminPage() {
                 <Button type="button" onClick={handleSaveArtwork} disabled={isUploading} className="flex-1 h-16 rounded-2xl bg-accent text-white font-black uppercase tracking-widest shadow-xl">{isUploading ? <Loader2 className="animate-spin" /> : "Opslaan"}</Button>
               </div>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* BULK UPLOAD DIALOG */}
+      <Dialog open={isBulkDialogOpen} onOpenChange={setIsBulkDialogOpen}>
+        <DialogContent className="max-w-6xl rounded-[3rem] p-0 overflow-hidden bg-background">
+          <div className="flex h-[90vh]">
+             {/* Left: Queue & Batch Settings */}
+             <div className="w-1/3 bg-black/5 border-r p-8 flex flex-col gap-10">
+                <div className="space-y-4">
+                   <h2 className="font-headline text-3xl italic">Bulk Archivering</h2>
+                   <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Instellingen voor de hele batch</p>
+                </div>
+
+                <div className="space-y-6">
+                   <div className="space-y-1.5">
+                      <Label className="text-[9px] font-black uppercase ml-2 opacity-40">Gezamenlijk Jaar</Label>
+                      <Input value={bulkGlobalYear} onChange={e => setBulkGlobalYear(e.target.value)} placeholder="Bijv. 1965" className="bg-white border-none h-12 rounded-xl" />
+                   </div>
+                   <div className="space-y-1.5">
+                      <Label className="text-[9px] font-black uppercase ml-2 opacity-40">Gezamenlijke Techniek</Label>
+                      <Select value={bulkGlobalMedium} onValueChange={setBulkGlobalMedium}>
+                        <SelectTrigger className="h-12 rounded-xl bg-white border-none"><SelectValue placeholder="Kies..." /></SelectTrigger>
+                        <SelectContent className="rounded-xl border-none shadow-2xl">{ART_TECHNIQUES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                      </Select>
+                   </div>
+                   <div className="flex items-center space-x-3 p-4 rounded-xl bg-white/50">
+                      <Checkbox id="bulkMonumental" checked={bulkGlobalMonumental} onCheckedChange={(v) => setBulkGlobalMonumental(!!v)} />
+                      <Label htmlFor="bulkMonumental" className="text-[10px] font-black uppercase tracking-widest cursor-pointer flex items-center gap-2">
+                        <Building2 className="w-4 h-4 text-accent" /> Allemaal Monumentaal
+                      </Label>
+                   </div>
+                   <div className="space-y-2">
+                      <Label className="text-[9px] font-black uppercase ml-2 opacity-40">Toewijzen aan Zalen</Label>
+                      <div className="grid grid-cols-1 gap-2">
+                        {rooms?.map((room: any) => (
+                          <button key={room.id} type="button" onClick={() => setBulkGlobalRooms(prev => prev.includes(room.id) ? prev.filter(id => id !== room.id) : [...prev, room.id])} className={cn("flex items-center gap-3 p-3 rounded-xl border transition-all text-left", bulkGlobalRooms.includes(room.id) ? "bg-accent/10 border-accent text-accent" : "bg-white border-black/5 text-black/40")}>
+                            {bulkGlobalRooms.includes(room.id) ? <CheckSquare className="w-3.5 h-3.5" /> : <Square className="w-3.5 h-3.5" />}
+                            <span className="text-[9px] font-black uppercase">{room.title}</span>
+                          </button>
+                        ))}
+                      </div>
+                   </div>
+                </div>
+
+                <div className="mt-auto">
+                   <Button 
+                    type="button" 
+                    onClick={handleBulkSave} 
+                    disabled={isBulkUploading || bulkItems.length === 0} 
+                    className="w-full h-16 rounded-2xl bg-accent text-white font-black uppercase tracking-widest shadow-xl"
+                   >
+                     {isBulkUploading ? <Loader2 className="animate-spin" /> : `Importeer ${bulkItems.length} Werken`}
+                   </Button>
+                </div>
+             </div>
+
+             {/* Right: File Previews */}
+             <div className="flex-1 flex flex-col">
+                <header className="p-8 border-b flex justify-between items-center bg-white">
+                   <div className="flex items-center gap-4">
+                      <Images className="w-6 h-6 text-accent" />
+                      <span className="text-[11px] font-black uppercase tracking-widest">Wachtrij ({bulkItems.length})</span>
+                   </div>
+                   <Button type="button" variant="outline" className="rounded-full" onClick={() => document.getElementById('bulk-file-input')?.click()}>
+                     <Plus className="w-4 h-4 mr-2" /> Bestanden toevoegen
+                   </Button>
+                   <input id="bulk-file-input" type="file" multiple className="hidden" onChange={handleBulkFileSelect} />
+                </header>
+
+                <div className="flex-1 overflow-y-auto p-8 bg-white custom-scrollbar">
+                   {bulkItems.length === 0 ? (
+                     <div className="h-full flex flex-col items-center justify-center text-center opacity-20 space-y-4">
+                        <Upload className="w-16 h-16" />
+                        <p className="font-headline text-2xl italic">Selecteer afbeeldingen om te beginnen</p>
+                     </div>
+                   ) : (
+                     <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                        {bulkItems.map((item, idx) => (
+                          <Card key={idx} className={cn("p-4 rounded-3xl border-2 transition-all relative group", item.status === 'done' ? "border-green-500/20 bg-green-50/10" : "border-transparent")}>
+                             <div className="relative aspect-square rounded-2xl overflow-hidden mb-4 bg-black/5">
+                                <img src={item.preview} className="w-full h-full object-cover" alt="" />
+                                {item.status === 'uploading' && <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Loader2 className="w-8 h-8 text-white animate-spin" /></div>}
+                                {item.status === 'done' && <div className="absolute inset-0 bg-green-500/40 flex items-center justify-center"><CheckCircle2 className="w-10 h-10 text-white" /></div>}
+                                {item.status === 'error' && <div className="absolute inset-0 bg-destructive/40 flex items-center justify-center"><AlertCircle className="w-10 h-10 text-white" /></div>}
+                             </div>
+                             <div className="space-y-2">
+                                <Label className="text-[8px] font-black uppercase opacity-40 ml-1">Titel</Label>
+                                <Input 
+                                  value={item.title} 
+                                  onChange={e => setBulkItems(prev => prev.map((it, i) => i === idx ? { ...it, title: e.target.value } : it))}
+                                  className="h-10 rounded-xl bg-black/5 border-none text-xs"
+                                  disabled={item.status === 'done' || item.status === 'uploading'}
+                                />
+                             </div>
+                             {item.status === 'pending' && (
+                               <button type="button" onClick={() => setBulkItems(prev => prev.filter((_, i) => i !== idx))} className="absolute -top-2 -right-2 bg-white text-destructive p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"><X className="w-3 h-3" /></button>
+                             )}
+                          </Card>
+                        ))}
+                     </div>
+                   )}
+                </div>
+             </div>
           </div>
         </DialogContent>
       </Dialog>
