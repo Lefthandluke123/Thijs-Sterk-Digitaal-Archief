@@ -673,51 +673,58 @@ export default function AdminPage() {
         <DialogContent className="max-w-6xl rounded-[3rem] p-0 overflow-hidden bg-background">
           <div className="flex h-[90vh]">
              {/* Left: Queue & Batch Settings */}
-             <div className="w-1/3 bg-black/5 border-r p-8 flex flex-col gap-10">
-                <div className="space-y-4">
-                   <DialogTitle className="font-headline text-3xl italic">Bulk Archivering</DialogTitle>
-                   <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Instellingen voor de hele batch</p>
-                </div>
+             <div className="w-1/3 bg-black/5 border-r p-8 flex flex-col">
+                <div className="flex-1 overflow-y-auto space-y-10 custom-scrollbar pr-2">
+                   <div className="space-y-4">
+                      <DialogTitle className="font-headline text-3xl italic">Bulk Archivering</DialogTitle>
+                      <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Instellingen voor de hele batch</p>
+                   </div>
 
-                <div className="space-y-6">
-                   <div className="space-y-1.5">
-                      <Label className="text-[9px] font-black uppercase ml-2 opacity-40">Gezamenlijk Jaar</Label>
-                      <Input value={bulkGlobalYear} onChange={e => setBulkGlobalYear(e.target.value)} placeholder="Bijv. 1965" className="bg-white border-none h-12 rounded-xl" />
-                   </div>
-                   <div className="space-y-1.5">
-                      <Label className="text-[9px] font-black uppercase ml-2 opacity-40">Gezamenlijke Techniek</Label>
-                      <Select value={bulkGlobalMedium} onValueChange={setBulkGlobalMedium}>
-                        <SelectTrigger className="h-12 rounded-xl bg-white border-none"><SelectValue placeholder="Kies..." /></SelectTrigger>
-                        <SelectContent className="rounded-xl border-none shadow-2xl">{ART_TECHNIQUES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
-                      </Select>
-                   </div>
-                   <div className="flex items-center space-x-3 p-4 rounded-xl bg-white/50">
-                      <Checkbox id="bulkMonumental" checked={bulkGlobalMonumental} onCheckedChange={(v) => setBulkGlobalMonumental(!!v)} />
-                      <Label htmlFor="bulkMonumental" className="text-[10px] font-black uppercase tracking-widest cursor-pointer flex items-center gap-2">
-                        <Building2 className="w-4 h-4 text-accent" /> Allemaal Monumentaal
-                      </Label>
-                   </div>
-                   <div className="space-y-2">
-                      <Label className="text-[9px] font-black uppercase ml-2 opacity-40">Toewijzen aan Zalen</Label>
-                      <div className="grid grid-cols-1 gap-2">
-                        {rooms?.map((room: any) => (
-                          <button key={room.id} type="button" onClick={() => setBulkGlobalRooms(prev => prev.includes(room.id) ? prev.filter(id => id !== room.id) : [...prev, room.id])} className={cn("flex items-center gap-3 p-3 rounded-xl border transition-all text-left", bulkGlobalRooms.includes(room.id) ? "bg-accent/10 border-accent text-accent" : "bg-white border-black/5 text-black/40")}>
-                            {bulkGlobalRooms.includes(room.id) ? <CheckSquare className="w-3.5 h-3.5" /> : <Square className="w-3.5 h-3.5" />}
-                            <span className="text-[9px] font-black uppercase">{room.title}</span>
-                          </button>
-                        ))}
+                   <div className="space-y-6">
+                      <div className="space-y-1.5">
+                         <Label className="text-[9px] font-black uppercase ml-2 opacity-40">Gezamenlijk Jaar</Label>
+                         <Input value={bulkGlobalYear} onChange={e => setBulkGlobalYear(e.target.value)} placeholder="Bijv. 1965" className="bg-white border-none h-12 rounded-xl" />
+                      </div>
+                      <div className="space-y-1.5">
+                         <Label className="text-[9px] font-black uppercase ml-2 opacity-40">Gezamenlijke Techniek</Label>
+                         <Select value={bulkGlobalMedium} onValueChange={bulkGlobalMedium === 'Anders...' ? undefined : setBulkGlobalMedium}>
+                           <SelectTrigger className="h-12 rounded-xl bg-white border-none"><SelectValue placeholder="Kies..." /></SelectTrigger>
+                           <SelectContent className="rounded-xl border-none shadow-2xl">{ART_TECHNIQUES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                         </Select>
+                      </div>
+                      <div className="flex items-center space-x-3 p-4 rounded-xl bg-white/50">
+                         <Checkbox id="bulkMonumental" checked={bulkGlobalMonumental} onCheckedChange={(v) => setBulkGlobalMonumental(!!v)} />
+                         <Label htmlFor="bulkMonumental" className="text-[10px] font-black uppercase tracking-widest cursor-pointer flex items-center gap-2">
+                           <Building2 className="w-4 h-4 text-accent" /> Allemaal Monumentaal
+                         </Label>
+                      </div>
+                      <div className="space-y-2">
+                         <Label className="text-[9px] font-black uppercase ml-2 opacity-40">Toewijzen aan Zalen</Label>
+                         <div className="grid grid-cols-1 gap-2">
+                           {rooms?.map((room: any) => (
+                             <button key={room.id} type="button" onClick={() => setBulkGlobalRooms(prev => prev.includes(room.id) ? prev.filter(id => id !== room.id) : [...prev, room.id])} className={cn("flex items-center gap-3 p-3 rounded-xl border transition-all text-left", bulkGlobalRooms.includes(room.id) ? "bg-accent/10 border-accent text-accent" : "bg-white border-black/5 text-black/40")}>
+                               {bulkGlobalRooms.includes(room.id) ? <CheckSquare className="w-3.5 h-3.5" /> : <Square className="w-3.5 h-3.5" />}
+                               <span className="text-[9px] font-black uppercase">{room.title}</span>
+                             </button>
+                           ))}
+                         </div>
                       </div>
                    </div>
                 </div>
 
-                <div className="mt-auto">
+                <div className="pt-8 mt-8 border-t border-black/10">
                    <Button 
                     type="button" 
                     onClick={handleBulkSave} 
                     disabled={isBulkUploading || bulkItems.length === 0} 
-                    className="w-full h-16 rounded-2xl bg-accent text-white font-black uppercase tracking-widest shadow-xl"
+                    className="w-full h-20 rounded-[2rem] bg-accent text-white font-black uppercase tracking-widest shadow-2xl hover:scale-[1.02] transition-all"
                    >
-                     {isBulkUploading ? <Loader2 className="animate-spin" /> : `Importeer ${bulkItems.length} Werken`}
+                     {isBulkUploading ? <Loader2 className="animate-spin" /> : (
+                       <div className="flex flex-col items-center">
+                          <span className="text-[13px]">Start Bulk Upload</span>
+                          <span className="text-[9px] opacity-60 lowercase mt-1">({bulkItems.length} bestanden in de wacht)</span>
+                       </div>
+                     )}
                    </Button>
                 </div>
              </div>
