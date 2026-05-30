@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
@@ -40,7 +39,6 @@ import {
   Database,
   Eye,
   EyeOff,
-  Building2,
   CheckSquare,
   Square,
   GripHorizontal,
@@ -68,7 +66,6 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { normalizeArtwork, sanitizeArtwork, MUSEUM_TAGS, slugify, sortArtworksByTitle } from '@/lib/museum-utils';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -127,19 +124,14 @@ export default function AdminPage() {
   
   const [isArtworkDialogOpen, setIsArtworkDialogOpen] = useState(false);
   const [isRoomDialogOpen, setIsRoomDialogOpen] = useState(false);
-  const [isProjectDialogOpen, setIsProjectDialogOpen] = useState(false);
   
   const [editingArtwork, setEditingArtwork] = useState<any>(null);
   const [editingRoom, setEditingRoom] = useState<any>(null);
-  const [editingProject, setEditingProject] = useState<any>(null);
   
   const [isUploading, setIsUploading] = useState(false);
   const [isSavingRoom, setIsSavingRoom] = useState(false);
-  const [isSavingProject, setIsSavingProject] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
-  const [selectedProjectId, setSelectedProjectId] = useState<string>("");
 
   const [panelPos, setPanelPos] = useState({ x: 100, y: 150 });
   const [isDragging, setIsDragging] = useState(false);
@@ -147,11 +139,10 @@ export default function AdminPage() {
   const dragStartRef = useRef({ x: 0, y: 0 });
 
   const [artworkForm, setArtworkForm] = useState<any>({
-    title: '', displayTitle: '', slug: '', image: '', year: '', medium: '', description: '', tags: [], roomIds: [], featured: false, inShop: false, isMonumental: false, monumentalProjectId: ''
+    title: '', displayTitle: '', slug: '', image: '', year: '', medium: '', description: '', tags: [], roomIds: [], featured: false, inShop: false
   });
   
   const [roomForm, setRoomForm] = useState<any>({ title: '', description: '', order: 0, isPublished: false });
-  const [projectForm, setProjectForm] = useState<any>({ title: '', order: 0 });
 
   const artworksQuery = useMemo(() => {
     if (!firestore) return null;
@@ -163,37 +154,22 @@ export default function AdminPage() {
     return query(collection(firestore, 'rooms'), orderBy('order', 'asc'));
   }, [firestore]);
 
-  const projectsQuery = useMemo(() => {
-    if (!firestore) return null;
-    return query(collection(firestore, 'monumental_projects'), orderBy('order', 'asc'));
-  }, [firestore]);
-
   const { data: dbArtworks, loading: artLoading } = useCollection(artworksQuery);
   const { data: rooms } = useCollection(roomsQuery);
-  const { data: projects } = useCollection(projectsQuery);
 
   const artworks = useMemo(() => {
     if (!dbArtworks) return [];
     return dbArtworks.map(art => normalizeArtwork(art.id, art));
   }, [dbArtworks]);
 
-  const archiveArtworks = useMemo(() => {
-    return artworks.filter(art => !art.isMonumental);
-  }, [artworks]);
-
-  const monumentalArtworks = useMemo(() => {
-    return artworks.filter(art => art.isMonumental && art.monumentalProjectId === selectedProjectId);
-  }, [artworks, selectedProjectId]);
-
   const filteredArtworks = useMemo(() => {
-    const base = activeTab === 'monumentaal' ? monumentalArtworks : archiveArtworks;
-    const filtered = base.filter((art: any) => 
+    const filtered = artworks.filter((art: any) => 
       art.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       art.displayTitle?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       art.tags?.some((t: string) => t.toLowerCase().includes(searchQuery.toLowerCase()))
     );
     return [...filtered].sort(sortArtworksByTitle);
-  }, [archiveArtworks, monumentalArtworks, activeTab, searchQuery]);
+  }, [artworks, searchQuery]);
 
   const handleToggleSelect = (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -244,13 +220,13 @@ export default function AdminPage() {
 
   const handleOpenNewArtwork = () => {
     setEditingArtwork(null);
-    setArtworkForm({ title: '', displayTitle: '', slug: '', image: '', year: '', medium: '', description: '', tags: [], roomIds: [], featured: false, inShop: false, isMonumental: false, monumentalProjectId: '' });
+    setArtworkForm({ title: '', displayTitle: '', slug: '', image: '', year: '', medium: '', description: '', tags: [], roomIds: [], featured: false, inShop: false });
     setIsArtworkDialogOpen(true);
   };
 
   const handleEditArtwork = (art: any) => {
     setEditingArtwork(art); 
-    setArtworkForm({ ...art, tags: Array.isArray(art.tags) ? art.tags : [], roomIds: Array.isArray(art.roomIds) ? art.roomIds : [], isMonumental: !!art.isMonumental, monumentalProjectId: art.monumentalProjectId || '' }); 
+    setArtworkForm({ ...art, tags: Array.isArray(art.tags) ? art.tags : [], roomIds: Array.isArray(art.roomIds) ? art.roomIds : [] }); 
     setIsArtworkDialogOpen(true); 
   };
 
@@ -309,32 +285,6 @@ export default function AdminPage() {
     }
   };
 
-  const handleOpenNewProject = () => {
-    const maxOrder = projects?.reduce((max: number, p: any) => Math.max(max, p.order || 0), 0) || 0;
-    setEditingProject(null);
-    setProjectForm({ title: '', order: maxOrder + 1 });
-    setIsProjectDialogOpen(true);
-  };
-
-  const handleSaveProject = () => {
-    if (!firestore) return;
-    setIsSavingProject(true);
-    const data = { ...projectForm, updatedAt: serverTimestamp() };
-    if (editingProject) {
-      const projRef = doc(firestore, 'monumental_projects', editingProject.id);
-      updateDoc(projRef, data)
-        .then(() => { toast({ title: "Bijgewerkt" }); setIsProjectDialogOpen(false); })
-        .catch(async () => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: projRef.path, operation: 'update', requestResourceData: data })))
-        .finally(() => setIsSavingProject(false));
-    } else {
-      const projCol = collection(firestore, 'monumental_projects');
-      addDoc(projCol, { ...data, createdAt: serverTimestamp() })
-        .then(() => { toast({ title: "Project aangemaakt" }); setIsProjectDialogOpen(false); })
-        .catch(async () => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: projCol.path, operation: 'create', requestResourceData: data })))
-        .finally(() => setIsSavingProject(false));
-    }
-  };
-
   const resetOlieverf = async () => {
     if (!firestore) return;
     try {
@@ -383,7 +333,6 @@ export default function AdminPage() {
           <TabsList className="bg-white/80 backdrop-blur-xl p-1.5 rounded-full w-fit mx-auto h-16 border shadow-lg">
             <TabsTrigger value="archive" className="rounded-full px-12 h-13 uppercase font-black text-[10px] tracking-widest"><Archive className="w-4 h-4 mr-2" /> Alle Werken</TabsTrigger>
             <TabsTrigger value="rooms" className="rounded-full px-12 h-13 uppercase font-black text-[10px] tracking-widest"><Layers className="w-4 h-4 mr-2" /> Zalen & Curatie</TabsTrigger>
-            <TabsTrigger value="monumentaal" className="rounded-full px-12 h-13 uppercase font-black text-[10px] tracking-widest"><Building2 className="w-4 h-4 mr-2" /> Monumentaal</TabsTrigger>
           </TabsList>
 
           <TabsContent value="archive" className="space-y-8 mt-0">
@@ -466,58 +415,6 @@ export default function AdminPage() {
                   );
                 })}
              </div>
-          </TabsContent>
-
-          <TabsContent value="monumentaal" className="space-y-8 mt-0">
-            <div className="bg-white/50 backdrop-blur-md p-8 rounded-[3rem] border border-white/60 space-y-8">
-              <div className="flex items-center justify-between gap-6">
-                <div className="flex items-center gap-4 flex-1 max-w-xl">
-                  <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
-                    <SelectTrigger className="h-14 rounded-2xl bg-white border-none shadow-sm px-6"><SelectValue placeholder="Selecteer project..." /></SelectTrigger>
-                    <SelectContent className="rounded-2xl shadow-xl border-none">
-                      {projects?.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.title}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                  <Button type="button" onClick={handleOpenNewProject} className="h-14 rounded-2xl bg-primary text-white px-8 font-black uppercase tracking-widest text-[10px]">
-                    <Plus className="w-4 h-4 mr-2" /> Nieuw Project
-                  </Button>
-                </div>
-                <div className="bg-black/5 p-1 rounded-xl flex gap-1">
-                  <Button type="button" variant={viewMode === 'grid' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('grid')} className="rounded-lg"><LayoutGrid className="w-4 h-4" /></Button>
-                  <Button type="button" variant={viewMode === 'list' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('list')} className="rounded-lg"><ListIcon className="w-4 h-4" /></Button>
-                </div>
-              </div>
-            </div>
-            {selectedProjectId && (
-              <div className="animate-in fade-in duration-500">
-                {filteredArtworks.length === 0 ? (
-                  <div className="py-32 text-center border-2 border-dashed rounded-[3rem] opacity-20 italic">Geen werken in dit project.</div>
-                ) : viewMode === 'grid' ? (
-                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
-                    {filteredArtworks.map((art: any) => (
-                      <div key={art.id} onClick={() => handleEditArtwork(art)} className="cursor-pointer">
-                        <Card className="p-4 rounded-3xl overflow-hidden shadow-md">
-                          <img src={art.image} className="aspect-square object-cover rounded-2xl mb-4" alt="" />
-                          <h3 className="font-bold text-sm truncate">{art.displayTitle || art.title}</h3>
-                        </Card>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {filteredArtworks.map((art: any) => (
-                      <Card key={art.id} className="p-6 rounded-[2rem] flex items-center gap-8 cursor-pointer hover:shadow-lg" onClick={() => handleEditArtwork(art)}>
-                        <img src={art.image} className="w-40 h-40 object-cover rounded-2xl shadow-sm" alt="" />
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-bold text-xl mb-1 truncate">{art.title}</h3>
-                          <p className="text-xs font-black uppercase opacity-40">{art.year} • {art.medium}</p>
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
           </TabsContent>
         </Tabs>
       </main>
@@ -613,14 +510,11 @@ export default function AdminPage() {
 
               <div className="flex-1 overflow-y-auto p-8 space-y-10 custom-scrollbar">
                 <section className="space-y-6">
-                  <div className="flex items-center justify-between border-l-4 border-accent pl-4">
-                    <div className="flex items-center gap-3"><Type className="w-4 h-4 text-accent" /><h4 className="text-[10px] font-black uppercase tracking-widest opacity-60">Identiteit</h4></div>
-                    <div className="flex items-center gap-2 bg-black/5 px-3 py-1.5 rounded-full"><Label className="text-[9px] font-black uppercase opacity-60">Monumentaal</Label><Checkbox checked={artworkForm.isMonumental} onCheckedChange={(v) => setArtworkForm({...artworkForm, isMonumental: !!v})} /></div>
+                  <div className="flex items-center gap-3 border-l-4 border-accent pl-4">
+                    <Type className="w-4 h-4 text-accent" />
+                    <h4 className="text-[10px] font-black uppercase tracking-widest opacity-60">Identiteit</h4>
                   </div>
                   <div className="space-y-4">
-                    {artworkForm.isMonumental && (
-                      <div className="space-y-1.5"><Label className="text-[9px] font-black uppercase ml-2 text-accent">Project</Label><Select value={artworkForm.monumentalProjectId} onValueChange={v => setArtworkForm({...artworkForm, monumentalProjectId: v})}><SelectTrigger className="h-12 rounded-xl bg-accent/5 border-2 border-accent/20 px-4 text-accent"><SelectValue placeholder="Project..." /></SelectTrigger><SelectContent className="rounded-xl shadow-xl border-none">{projects?.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.title}</SelectItem>)}</SelectContent></Select></div>
-                    )}
                     <div className="space-y-1.5"><Label className="text-[9px] font-black uppercase ml-2 opacity-40">Interne Titel</Label><Input value={artworkForm.title} onChange={e => setArtworkForm({...artworkForm, title: e.target.value})} className="h-12 rounded-xl bg-black/5 border-none px-4" /></div>
                     <div className="space-y-1.5"><Label className="text-[9px] font-black uppercase ml-2 opacity-40">Weergavetitel</Label><Input value={artworkForm.displayTitle} onChange={e => setArtworkForm({...artworkForm, displayTitle: e.target.value})} className="h-12 rounded-xl bg-black/5 border-none px-4" /></div>
                     <div className="grid grid-cols-2 gap-4">
@@ -665,17 +559,6 @@ export default function AdminPage() {
             <div className="flex items-center justify-between p-4 rounded-2xl bg-black/5"><Label className="text-[10px] font-black uppercase tracking-widest opacity-60">Publiek Zichtbaar</Label><Switch checked={roomForm.isPublished} onCheckedChange={v => setRoomForm({...roomForm, isPublished: v})} /></div>
           </div>
           <div className="px-10 pb-10"><Button type="button" onClick={handleSaveRoom} disabled={isSavingRoom} className="w-full h-14 rounded-2xl bg-accent text-white font-black uppercase tracking-widest text-[11px]">{isSavingRoom ? <Loader2 className="animate-spin" /> : "Opslaan"}</Button></div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isProjectDialogOpen} onOpenChange={setIsProjectDialogOpen}>
-        <DialogContent className="max-w-md rounded-[3rem] p-0 overflow-hidden bg-background">
-          <DialogHeader className="p-10 border-b"><DialogTitle className="font-headline text-3xl italic">{editingProject ? 'Project Bewerken' : 'Nieuw Project'}</DialogTitle></DialogHeader>
-          <div className="p-10 space-y-6">
-            <div className="space-y-1.5"><Label className="text-[9px] font-black uppercase ml-2 opacity-40">Naam</Label><Input value={projectForm.title} onChange={e => setProjectForm({...projectForm, title: e.target.value})} className="h-12 rounded-xl bg-black/5 border-none px-4" /></div>
-            <div className="space-y-1.5"><Label className="text-[9px] font-black uppercase ml-2 opacity-40">Volgorde</Label><Input type="number" value={projectForm.order} onChange={e => setProjectForm({...projectForm, order: parseInt(e.target.value)})} className="h-12 rounded-xl bg-black/5 border-none px-4" /></div>
-          </div>
-          <div className="px-10 pb-10"><Button type="button" onClick={handleSaveProject} disabled={isSavingProject} className="w-full h-14 rounded-2xl bg-primary text-white font-black uppercase text-[10px]">{isSavingProject ? <Loader2 className="animate-spin" /> : "Project Opslaan"}</Button></div>
         </DialogContent>
       </Dialog>
     </div>

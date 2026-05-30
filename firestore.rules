@@ -1,4 +1,3 @@
-
 rules_version = '2';
 
 service cloud.firestore {
@@ -8,68 +7,62 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // 1. Monumentale Projecten
-    match /monumental_projects/{projectId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    // 2. Museumzalen
+    // 1. Museumzalen
     match /rooms/{roomId} {
       allow read: if true;
       allow write: if isAdmin();
     }
     
-    // 3. Kunstwerken
+    // 2. Kunstwerken
     match /artworks/{artworkId} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
-    // 4. Forum & Community
+    // 3. Forum & Community
     match /forum/{postId} {
       allow read: if true;
       allow create: if isAdmin();
       allow update, delete: if isAdmin();
     }
 
-    // 5. Instellingen
+    // 4. Instellingen
     match /settings/{settingId} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
-    // 6. Story Layouts
+    // 5. Story Layouts
     match /stories/{storyId} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
-    // 7. Activiteitslogs (Alleen schrijven voor publiek, lezen voor admin)
+    // 6. Activiteitslogs (Alleen schrijven voor publiek, lezen voor admin)
     match /activity_logs/{logId} {
       allow create: if true;
       allow read: if isAdmin(); 
     }
 
-    // 8. Gebruikersprofielen
+    // 7. Gebruikersprofielen
     match /users/{userId} {
       allow read: if isAdmin();
       allow write: if isAdmin() && request.auth.uid == userId;
     }
 
-    // 9. Gedeelde kamers
+    // 8. Gedeelde kamers
     match /shared_rooms/{roomId} {
       allow read: if true;
       allow create: if true;
     }
 
-    // 10. Privé Archief
+    // 9. Privé Archief
     match /privatePhotos/{photoId} {
       allow read: if isAdmin();
       allow write: if isAdmin();
     }
 
-    // 11. Mail & Orders
+    // 10. Mail & Orders
     match /mail/{mailId} {
       allow create: if true;
       allow read: if isAdmin();
