@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Room": {
@@ -24,6 +25,8 @@
         "displayTitle": { "type": "string" },
         "slug": { "type": "string" },
         "image": { "type": "string" },
+        "videoUrl": { "type": "string" },
+        "mediaType": { "type": "string", "enum": ["image", "video"] },
         "roomIds": { "type": "array", "items": { "type": "string" } },
         "tags": { "type": "array", "items": { "type": "string" } },
         "year": { "type": "string" },
@@ -31,11 +34,12 @@
         "description": { "type": "string" },
         "brightness": { "type": "number" },
         "featured": { "type": "boolean" },
+        "isMonumental": { "type": "boolean" },
         "inShop": { "type": "boolean" },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["title", "slug", "image"]
+      "required": ["title", "slug"]
     },
     "ActivityLog": {
       "title": "ActivityLog",

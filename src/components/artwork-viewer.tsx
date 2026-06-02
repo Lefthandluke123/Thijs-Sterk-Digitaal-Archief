@@ -1,8 +1,9 @@
+
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import dynamic from 'next/dynamic';
-import { X, ChevronLeft, ChevronRight, Info, Mic, Pause, ImageIcon, MousePointer2, Move } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Info, Mic, Pause, ImageIcon, MousePointer2, Move, Film } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/components/language-provider';
 import { ShareButton } from './share-button';
@@ -91,6 +92,8 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
 
   // Easter Egg Handler: Kleuren extraheren en simulatie triggeren
   const handleArtworkClick = async () => {
+    if (artwork?.mediaType === 'video') return; // Geen easter egg op video's
+
     setHintTrigger(p => p + 1);
     
     const now = Date.now();
@@ -138,7 +141,9 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
     return null;
   }
 
+  const isVideo = artwork.mediaType === 'video' || !!artwork.videoUrl;
   const displayImage = cleanString(artwork.image || artwork.imageUrl || artwork.url);
+  const displayVideo = cleanString(artwork.videoUrl);
 
   return (
     <div 
@@ -151,7 +156,22 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
         onClick={handleArtworkClick}
       >
         <div className="w-full h-full max-w-[95vw] max-h-[85vh] flex items-center justify-center">
-          {displayImage ? (
+          {isVideo ? (
+            <div className="relative w-full h-full flex items-center justify-center bg-black/5 rounded-[3rem] overflow-hidden shadow-2xl">
+               <video 
+                src={displayVideo || ''} 
+                className="max-w-full max-h-full" 
+                controls 
+                autoPlay 
+                muted 
+                loop
+               />
+               <div className="absolute top-6 left-6 flex items-center gap-3 bg-white/20 backdrop-blur-xl px-5 py-2 rounded-full border border-white/20">
+                  <Film className="w-4 h-4 text-white" />
+                  <span className="text-[10px] font-black uppercase text-white tracking-widest">Filmfragment</span>
+               </div>
+            </div>
+          ) : displayImage ? (
             <DeepZoomViewer 
               key={artwork.id} 
               imageUrl={displayImage} 
@@ -160,7 +180,7 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
           ) : (
             <div className="flex flex-col items-center gap-4 opacity-20">
                <ImageIcon className="w-20 h-20" />
-               <p className="text-xs font-black uppercase tracking-widest">Geen afbeelding beschikbaar</p>
+               <p className="text-xs font-black uppercase tracking-widest">Geen media beschikbaar</p>
             </div>
           )}
         </div>
@@ -206,7 +226,7 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
              <Info className="w-5 h-5" />
            </button>
 
-           <button onClick={onClose} className="p-4 bg-white/90 backdrop-blur-3xl rounded-full text-foreground hover:bg-destructive hover:text-white transition-all border border-black/5 shadow-xl" title="Sluiten (Rechtsboven)">
+           <button onClick={onClose} className="p-4 bg-white/90 backdrop-blur-3xl rounded-full text-foreground hover:bg-destructive hover:text-white transition-all border border-black/5 shadow-xl" title="Sluiten">
              <X className="w-5 h-5" />
            </button>
         </div>
@@ -222,27 +242,29 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
         </div>
       </div>
 
-      <div className={cn(
-        "absolute bottom-20 left-1/2 -translate-x-1/2 z-[10040] flex flex-col items-center gap-3 pointer-events-none transition-opacity duration-2000 ease-in-out",
-        (showMetadata || !showHints) ? "opacity-0" : "opacity-100"
-      )}>
-         <div className="bg-white/40 backdrop-blur-xl border border-black/5 px-6 py-1.5 rounded-full flex items-center gap-6 shadow-sm">
-            <div className="flex items-center gap-2">
-               <MousePointer2 className="w-3 h-3 opacity-30" />
-               <span className="text-[8px] font-bold uppercase tracking-widest opacity-40">Klik: Zoom</span>
-            </div>
-            <div className="w-0.5 h-0.5 bg-black/10 rounded-full" />
-            <div className="flex items-center gap-2">
-               <span className="text-[8px] font-black px-1 py-0.5 bg-black/5 rounded border border-black/10 text-accent/60">Cmd+Klik</span>
-               <span className="text-[8px] font-bold uppercase tracking-widest opacity-40">Uitzoomen</span>
-            </div>
-            <div className="w-0.5 h-0.5 bg-black/10 rounded-full" />
-            <div className="flex items-center gap-2">
-               <Move className="w-3 h-3 opacity-30" />
-               <span className="text-[8px] font-bold uppercase tracking-widest opacity-40">Muis vasthouden: Bewegen</span>
-            </div>
-         </div>
-      </div>
+      {!isVideo && (
+        <div className={cn(
+          "absolute bottom-20 left-1/2 -translate-x-1/2 z-[10040] flex flex-col items-center gap-3 pointer-events-none transition-opacity duration-2000 ease-in-out",
+          (showMetadata || !showHints) ? "opacity-0" : "opacity-100"
+        )}>
+           <div className="bg-white/40 backdrop-blur-xl border border-black/5 px-6 py-1.5 rounded-full flex items-center gap-6 shadow-sm">
+              <div className="flex items-center gap-2">
+                 <MousePointer2 className="w-3 h-3 opacity-30" />
+                 <span className="text-[8px] font-bold uppercase tracking-widest opacity-40">Klik: Zoom</span>
+              </div>
+              <div className="w-0.5 h-0.5 bg-black/10 rounded-full" />
+              <div className="flex items-center gap-2">
+                 <span className="text-[8px] font-black px-1 py-0.5 bg-black/5 rounded border border-black/10 text-accent/60">Cmd+Klik</span>
+                 <span className="text-[8px] font-bold uppercase tracking-widest opacity-40">Uitzoomen</span>
+              </div>
+              <div className="w-0.5 h-0.5 bg-black/10 rounded-full" />
+              <div className="flex items-center gap-2">
+                 <Move className="w-3 h-3 opacity-30" />
+                 <span className="text-[8px] font-bold uppercase tracking-widest opacity-40">Muis vasthouden: Bewegen</span>
+              </div>
+           </div>
+        </div>
+      )}
     </div>
   );
 }

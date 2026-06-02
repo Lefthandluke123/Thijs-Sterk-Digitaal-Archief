@@ -1,3 +1,4 @@
+
 /**
  * @fileOverview Museum Utilities voor sorteren en data-verwerking.
  * Inclusief Hardening Layer voor Firestore data integriteit en Romeinse sortering.
@@ -11,7 +12,7 @@ export const ROMAN_VALUES: Record<string, number> = {
 
 export const MUSEUM_TAGS = {
   "Periode": ["Vroeg werk", "45-50", "50-60", "60-70", "70-82"],
-  "Techniek": ["Olieverf", "Aquarel", "Gouache", "Litho", "Pentekening", "Gemengde techniek", "Glas in lood", "Houtskool", "Ets", "Zeefdruk"],
+  "Techniek": ["Olieverf", "Aquarel", "Gouache", "Litho", "Pentekening", "Gemengde techniek", "Glas in lood", "Houtskool", "Ets", "Zeefdruk", "Film/Video"],
   "Monumentaal": ["Monumentaal", "Glas in lood"],
   "Plaats": ["Groet", "Schoorl", "Hargen", "Camperduin", "Holland", "Amsterdam", "Frankrijk", "Bretagne", "Griekenland"],
   "Onderwerp": ["Havens", "Stillevens", "Bloemen", "Dieren", "Water", "Mensen", "Polder"]
@@ -58,6 +59,8 @@ export function normalizeArtwork(id: string, data: any) {
     displayTitle: cleanString(data.displayTitle) || cleanString(data.title) || "Ongetiteld",
     slug: cleanString(data.slug) || id,
     image: cleanString(data.image || data.imageUrl || data.url) || null,
+    videoUrl: cleanString(data.videoUrl) || null,
+    mediaType: data.mediaType === 'video' ? 'video' : 'image',
     description: cleanString(data.description) || "",
     year: filteredYear,
     medium: cleanString(data.medium) || "", 
@@ -112,6 +115,8 @@ export function sanitizeArtwork(input: any, timestamp?: any) {
     displayTitle: baseTitle,
     slug: finalSlug,
     image: cleanString(input.image) || null,
+    videoUrl: cleanString(input.videoUrl) || null,
+    mediaType: input.mediaType === 'video' ? 'video' : 'image',
     description: cleanString(input.description) || "",
     year: finalYear,
     medium: cleanString(input.medium) || "",

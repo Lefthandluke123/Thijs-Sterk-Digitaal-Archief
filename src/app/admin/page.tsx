@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
@@ -36,7 +37,6 @@ import {
   List as ListIcon,
   Tag as TagIcon,
   Type,
-  Database,
   Eye,
   EyeOff,
   CheckSquare,
@@ -45,13 +45,13 @@ import {
   FolderInput,
   Lock,
   Building2,
-  Filter,
   Images,
   CheckCircle2,
-  AlertCircle,
   ArrowLeft,
   Settings2,
-  ImagePlus
+  ImagePlus,
+  PlayCircle,
+  Film
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -90,6 +90,7 @@ const ART_TECHNIQUES = [
   "Houtskool",
   "Ets",
   "Zeefdruk",
+  "Film/Video",
   "Anders..."
 ];
 
@@ -98,6 +99,7 @@ type BulkItem = {
   title: string;
   preview: string;
   status: 'pending' | 'uploading' | 'done' | 'error';
+  mediaType: 'image' | 'video';
 };
 
 export default function AdminPage() {
@@ -164,7 +166,7 @@ export default function AdminPage() {
   const dragStartRef = useRef({ x: 0, y: 0 });
 
   const [artworkForm, setArtworkForm] = useState<any>({
-    title: '', displayTitle: '', slug: '', image: '', year: '', medium: '', description: '', tags: [], roomIds: [], featured: false, inShop: false, isMonumental: false
+    title: '', displayTitle: '', slug: '', image: '', videoUrl: '', mediaType: 'image', year: '', medium: '', description: '', tags: [], roomIds: [], featured: false, inShop: false, isMonumental: false
   });
   
   const [roomForm, setRoomForm] = useState<any>({ title: '', description: '', order: 0, isPublished: false });
@@ -291,7 +293,7 @@ export default function AdminPage() {
   const handleOpenNewArtwork = () => {
     setEditingArtwork(null);
     setArtworkForm({ 
-      title: '', displayTitle: '', slug: '', image: '', year: '', medium: '', description: '', tags: [], 
+      title: '', displayTitle: '', slug: '', image: '', videoUrl: '', mediaType: 'image', year: '', medium: '', description: '', tags: [], 
       roomIds: curatingRoom ? [curatingRoom.id] : [], 
       featured: false, inShop: false, isMonumental: false 
     });
@@ -300,7 +302,12 @@ export default function AdminPage() {
 
   const handleEditArtwork = (art: any) => {
     setEditingArtwork(art); 
-    setArtworkForm({ ...art, tags: Array.isArray(art.tags) ? art.tags : [], roomIds: Array.isArray(art.roomIds) ? art.roomIds : [] }); 
+    setArtworkForm({ 
+      ...art, 
+      tags: Array.isArray(art.tags) ? art.tags : [], 
+      roomIds: Array.isArray(art.roomIds) ? art.roomIds : [],
+      mediaType: art.mediaType || (art.videoUrl ? 'video' : 'image')
+    }); 
     setIsArtworkDialogOpen(true); 
   };
 
@@ -309,13 +316,31 @@ export default function AdminPage() {
     setIsUploading(true);
     try {
       let finalImageUrl = artworkForm.image;
+      let finalVideoUrl = artworkForm.videoUrl;
+      let mediaType = artworkForm.mediaType;
+
       if (selectedFile && storage) {
-        const storageRef = ref(storage, `artworks/${Date.now()}_${selectedFile.name}`);
+        const isVideo = selectedFile.type.startsWith('video/');
+        const folder = isVideo ? 'videos' : 'artworks';
+        const storageRef = ref(storage, `${folder}/${Date.now()}_${selectedFile.name}`);
         const uploadResult = await uploadBytes(storageRef, selectedFile);
-        finalImageUrl = await getDownloadURL(uploadResult.ref);
+        const url = await getDownloadURL(uploadResult.ref);
+        
+        if (isVideo) {
+          finalVideoUrl = url;
+          mediaType = 'video';
+        } else {
+          finalImageUrl = url;
+          mediaType = 'image';
+        }
       }
 
-      const data = sanitizeArtwork({ ...artworkForm, image: finalImageUrl }, serverTimestamp());
+      const data = sanitizeArtwork({ 
+        ...artworkForm, 
+        image: finalImageUrl, 
+        videoUrl: finalVideoUrl,
+        mediaType: mediaType
+      }, serverTimestamp());
 
       if (editingArtwork) {
         const artRef = doc(firestore, 'artworks', editingArtwork.id);
@@ -365,7 +390,8 @@ export default function AdminPage() {
       file,
       title: file.name.split('.').slice(0, -1).join('.'),
       preview: URL.createObjectURL(file),
-      status: 'pending'
+      status: 'pending',
+      mediaType: file.type.startsWith('video/') ? 'video' : 'image'
     }));
     setBulkItems(prev => [...prev, ...newItems]);
     if (curatingRoom) setBulkGlobalRooms([curatingRoom.id]);
@@ -381,14 +407,24 @@ export default function AdminPage() {
       if (item.status === 'done') continue;
       setBulkItems(prev => prev.map((it, idx) => i === idx ? { ...it, status: 'uploading' } : it));
       try {
-        const storageRef = ref(storage, `artworks/${Date.now()}_${item.file.name}`);
+        const folder = item.mediaType === 'video' ? 'videos' : 'artworks';
+        const storageRef = ref(storage, `${folder}/${Date.now()}_${item.file.name}`);
         const uploadResult = await uploadBytes(storageRef, item.file);
         const url = await getDownloadURL(uploadResult.ref);
+        
         const data = sanitizeArtwork({
-          title: item.title, displayTitle: item.title, image: url,
-          year: bulkGlobalYear, medium: bulkGlobalMedium, tags: bulkGlobalTags,
-          roomIds: bulkGlobalRooms, isMonumental: bulkGlobalMonumental
+          title: item.title, 
+          displayTitle: item.title, 
+          image: item.mediaType === 'image' ? url : '',
+          videoUrl: item.mediaType === 'video' ? url : '',
+          mediaType: item.mediaType,
+          year: bulkGlobalYear, 
+          medium: bulkGlobalMedium || (item.mediaType === 'video' ? 'Film/Video' : ''), 
+          tags: bulkGlobalTags,
+          roomIds: bulkGlobalRooms, 
+          isMonumental: bulkGlobalMonumental
         }, serverTimestamp());
+        
         await addDoc(collection(firestore, 'artworks'), { ...data, createdAt: serverTimestamp() });
         setBulkItems(prev => prev.map((it, idx) => i === idx ? { ...it, status: 'done' } : it));
         successCount++;
@@ -449,7 +485,7 @@ export default function AdminPage() {
             <Images className="w-4 h-4 mr-2" /> Bulk Upload
           </Button>
           <Button type="button" onClick={handleOpenNewArtwork} className="h-12 rounded-full bg-accent text-white px-8 font-black uppercase tracking-widest text-[10px] shadow-lg hover:scale-105 transition-all">
-            <Plus className="w-4 h-4 mr-2" /> Nieuw Kunstwerk
+            <Plus className="w-4 h-4 mr-2" /> Nieuw Werk
           </Button>
         </div>
       </header>
@@ -516,7 +552,17 @@ export default function AdminPage() {
                       {selectedIds.includes(art.id) ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
                     </button>
                     <Card className="p-4 rounded-3xl overflow-hidden shadow-md border-2 border-transparent bg-white">
-                      <img src={art.image} className="aspect-square object-cover rounded-2xl mb-4" alt="" />
+                      <div className="aspect-square rounded-2xl mb-4 bg-black/5 flex items-center justify-center relative overflow-hidden">
+                        {art.mediaType === 'video' ? (
+                           <>
+                             <video src={art.videoUrl} className="w-full h-full object-cover" />
+                             <div className="absolute inset-0 flex items-center justify-center bg-black/20"><PlayCircle className="w-10 h-10 text-white" /></div>
+                           </>
+                        ) : (
+                          <img src={art.image} className="w-full h-full object-cover" alt="" />
+                        )}
+                        {art.isMonumental && <div className="absolute top-2 right-2 bg-accent text-white p-1 rounded-lg"><Building2 className="w-3 h-3" /></div>}
+                      </div>
                       <h3 className="font-bold text-sm truncate">{art.displayTitle || art.title}</h3>
                       <p className="text-[9px] font-black uppercase opacity-30 mt-1">{art.year || '-'}</p>
                     </Card>
@@ -530,9 +576,22 @@ export default function AdminPage() {
                     <button type="button" onClick={(e) => handleToggleSelect(art.id, e)} className={cn("p-2 rounded-full border transition-all", selectedIds.includes(art.id) ? "bg-accent text-white border-accent" : "bg-black/5")}>
                       {selectedIds.includes(art.id) ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
                     </button>
-                    <img src={art.image} className="w-32 h-32 object-cover rounded-2xl shadow-sm" alt="" />
+                    <div className="w-32 h-32 rounded-2xl shadow-sm overflow-hidden bg-black/5 flex items-center justify-center relative">
+                      {art.mediaType === 'video' ? (
+                        <>
+                          <video src={art.videoUrl} className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 flex items-center justify-center"><PlayCircle className="w-8 h-8 text-white/80" /></div>
+                        </>
+                      ) : (
+                        <img src={art.image} className="w-full h-full object-cover" alt="" />
+                      )}
+                    </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-bold text-xl mb-1 truncate">{art.title}</h3>
+                      <div className="flex items-center gap-3 mb-1">
+                        <h3 className="font-bold text-xl truncate">{art.title}</h3>
+                        {art.isMonumental && <Badge variant="outline" className="bg-accent/10 text-accent uppercase text-[8px] font-black border-accent/20"><Building2 className="w-2.5 h-2.5 mr-1" /> Monumentaal</Badge>}
+                        {art.mediaType === 'video' && <Badge variant="outline" className="bg-blue-500/10 text-blue-600 uppercase text-[8px] font-black border-blue-500/20"><Film className="w-2.5 h-2.5 mr-1" /> Video</Badge>}
+                      </div>
                       <p className="text-xs font-black uppercase opacity-40">{art.year} • {art.medium || 'Geen techniek'}</p>
                     </div>
                   </Card>
@@ -648,7 +707,7 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* ARCHIVE SELECTOR DIALOG (Toevoegen aan zaal) */}
+      {/* ARCHIVE SELECTOR DIALOG */}
       <Dialog open={isSelectorDialogOpen} onOpenChange={setIsSelectorDialogOpen}>
         <DialogContent className="max-w-5xl rounded-[3rem] p-0 overflow-hidden bg-background">
           <div className="flex flex-col h-[85vh]">
@@ -672,8 +731,12 @@ export default function AdminPage() {
                       onClick={() => handleBatchAddSelectionToRoom([art.id])}
                       className="group cursor-pointer space-y-4"
                     >
-                       <div className="relative aspect-square rounded-[2rem] overflow-hidden bg-white shadow-md group-hover:shadow-xl transition-all border-2 border-transparent group-hover:border-accent">
-                          <img src={art.image} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" alt="" />
+                       <div className="relative aspect-square rounded-[2rem] overflow-hidden bg-white shadow-md group-hover:shadow-xl transition-all border-2 border-transparent group-hover:border-accent flex items-center justify-center">
+                          {art.mediaType === 'video' ? (
+                            <video src={art.videoUrl} className="w-full h-full object-cover opacity-60 group-hover:opacity-100" />
+                          ) : (
+                            <img src={art.image} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" alt="" />
+                          )}
                           <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-accent/20">
                              <Plus className="w-10 h-10 text-white" />
                           </div>
@@ -694,10 +757,22 @@ export default function AdminPage() {
       <Dialog open={isArtworkDialogOpen} onOpenChange={setIsArtworkDialogOpen}>
         <DialogContent className="max-w-4xl rounded-[3rem] p-0 overflow-hidden bg-background">
           <div className="flex h-[85vh]">
-            <div className="w-1/2 bg-black/5 flex flex-col items-center justify-center p-12 border-r">
-              {artworkForm.image ? (
+            <div className="w-1/2 bg-black/5 flex flex-col items-center justify-center p-12 border-r relative">
+              {artworkForm.mediaType === 'video' || (selectedFile?.type.startsWith('video/')) ? (
+                <div className="relative group w-full aspect-square rounded-[2rem] overflow-hidden shadow-2xl bg-black">
+                   <video 
+                    src={selectedFile ? URL.createObjectURL(selectedFile) : artworkForm.videoUrl} 
+                    className="w-full h-full object-contain" 
+                    controls 
+                   />
+                   <div className="absolute top-4 left-4 bg-white/20 backdrop-blur-md px-4 py-1.5 rounded-full text-[10px] font-black text-white uppercase tracking-widest">Video</div>
+                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity pointer-events-none">
+                    <Button type="button" onClick={() => fileInputRef.current?.click()} variant="secondary" className="rounded-full h-12 px-6 pointer-events-auto">Vervangen</Button>
+                  </div>
+                </div>
+              ) : artworkForm.image || (selectedFile && selectedFile.type.startsWith('image/')) ? (
                 <div className="relative group w-full aspect-square rounded-[2rem] overflow-hidden shadow-2xl">
-                  <img src={artworkForm.image} className="w-full h-full object-cover" alt="" />
+                  <img src={selectedFile ? URL.createObjectURL(selectedFile) : artworkForm.image} className="w-full h-full object-cover" alt="" />
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
                     <Button type="button" onClick={() => fileInputRef.current?.click()} variant="secondary" className="rounded-full h-12 px-6">Vervangen</Button>
                   </div>
@@ -705,10 +780,10 @@ export default function AdminPage() {
               ) : (
                 <div onClick={() => fileInputRef.current?.click()} className="w-full aspect-square rounded-[2rem] border-4 border-dashed flex flex-col items-center justify-center gap-4 cursor-pointer hover:bg-black/5 transition-all">
                   <Upload className="w-10 h-10 opacity-20" />
-                  <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Upload Afbeelding</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Upload Beeld of Video</p>
                 </div>
               )}
-              <input type="file" ref={fileInputRef} className="hidden" onChange={e => setSelectedFile(e.target.files?.[0] || null)} />
+              <input type="file" ref={fileInputRef} className="hidden" accept="image/*,video/*" onChange={e => setSelectedFile(e.target.files?.[0] || null)} />
             </div>
 
             <div className="w-1/2 flex flex-col h-full">
@@ -748,7 +823,7 @@ export default function AdminPage() {
                 </section>
 
                 <section className="space-y-6">
-                  <div className="flex items-center gap-3 border-l-4 border-accent pl-4"><Edit3 className="w-4 h-4 text-accent" /><h4 className="text-[10px) font-black uppercase tracking-widest opacity-60">Beschrijving</h4></div>
+                  <div className="flex items-center gap-3 border-l-4 border-accent pl-4"><Edit3 className="w-4 h-4 text-accent" /><h4 className="text-[10px] font-black uppercase tracking-widest opacity-60">Beschrijving</h4></div>
                   <Textarea value={artworkForm.description} onChange={e => setArtworkForm({...artworkForm, description: e.target.value})} className="min-h-[140px] rounded-2xl bg-black/5 border-none p-6" />
                 </section>
               </div>
@@ -799,10 +874,18 @@ export default function AdminPage() {
                 </div>
              </div>
              <div className="flex-1 flex flex-col">
-                <header className="p-8 border-b flex justify-between items-center bg-white"><div className="flex items-center gap-4"><Images className="w-6 h-6 text-accent" /><span className="text-[11px] font-black uppercase tracking-widest">Wachtrij ({bulkItems.length})</span></div><Button type="button" variant="outline" className="rounded-full" onClick={() => document.getElementById('bulk-file-input')?.click()}><Plus className="w-4 h-4 mr-2" /> Toevoegen</Button><input id="bulk-file-input" type="file" multiple className="hidden" onChange={handleBulkFileSelect} /></header>
-                <div className="flex-1 overflow-y-auto p-8 bg-white custom-scrollbar">{bulkItems.length === 0 ? <div className="h-full flex flex-col items-center justify-center text-center opacity-20 space-y-4"><Upload className="w-16 h-16" /><p className="font-headline text-2xl italic">Selecteer afbeeldingen</p></div> : <div className="grid grid-cols-2 md:grid-cols-3 gap-6">{bulkItems.map((item, idx) => (
+                <header className="p-8 border-b flex justify-between items-center bg-white"><div className="flex items-center gap-4"><Images className="w-6 h-6 text-accent" /><span className="text-[11px] font-black uppercase tracking-widest">Wachtrij ({bulkItems.length})</span></div><Button type="button" variant="outline" className="rounded-full" onClick={() => document.getElementById('bulk-file-input')?.click()}><Plus className="w-4 h-4 mr-2" /> Toevoegen</Button><input id="bulk-file-input" type="file" multiple className="hidden" accept="image/*,video/*" onChange={handleBulkFileSelect} /></header>
+                <div className="flex-1 overflow-y-auto p-8 bg-white custom-scrollbar">{bulkItems.length === 0 ? <div className="h-full flex flex-col items-center justify-center text-center opacity-20 space-y-4"><Upload className="w-16 h-16" /><p className="font-headline text-2xl italic">Selecteer afbeeldingen of video's</p></div> : <div className="grid grid-cols-2 md:grid-cols-3 gap-6">{bulkItems.map((item, idx) => (
                   <Card key={idx} className={cn("p-4 rounded-3xl border-2 transition-all relative group", item.status === 'done' ? "border-green-500/20" : "border-transparent")}>
-                    <div className="relative aspect-square rounded-2xl overflow-hidden mb-4 bg-black/5"><img src={item.preview} className="w-full h-full object-cover" alt="" />{item.status === 'uploading' && <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Loader2 className="w-8 h-8 text-white animate-spin" /></div>}{item.status === 'done' && <div className="absolute inset-0 bg-green-500/40 flex items-center justify-center"><CheckCircle2 className="w-10 h-10 text-white" /></div>}</div>
+                    <div className="relative aspect-square rounded-2xl overflow-hidden mb-4 bg-black/5 flex items-center justify-center">
+                       {item.mediaType === 'video' ? (
+                          <video src={item.preview} className="w-full h-full object-cover" />
+                       ) : (
+                          <img src={item.preview} className="w-full h-full object-cover" alt="" />
+                       )}
+                       {item.status === 'uploading' && <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Loader2 className="w-8 h-8 text-white animate-spin" /></div>}{item.status === 'done' && <div className="absolute inset-0 bg-green-500/40 flex items-center justify-center"><CheckCircle2 className="w-10 h-10 text-white" /></div>}
+                       {item.mediaType === 'video' && <div className="absolute top-2 left-2 bg-blue-600 text-white p-1 rounded-md"><Film className="w-3 h-3" /></div>}
+                    </div>
                     <Input value={item.title} onChange={e => setBulkItems(prev => prev.map((it, i) => i === idx ? { ...it, title: e.target.value } : it))} className="h-10 rounded-xl bg-black/5 border-none text-xs" disabled={item.status === 'done' || item.status === 'uploading'} />
                     {item.status === 'pending' && <button type="button" onClick={() => setBulkItems(prev => prev.filter((_, i) => i !== idx))} className="absolute -top-2 -right-2 bg-white text-destructive p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100"><X className="w-3 h-3" /></button>}
                   </Card>
