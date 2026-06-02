@@ -48,7 +48,7 @@ function NavbarContent() {
   const { language, t } = useLanguage();
 
   const [logoClicks, setLogoClicks] = useState(0);
-  const clickTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const clickTimerRef = useRef<any>(null);
 
   const roomsQuery = useMemo(() => {
     if (!firestore) return null;

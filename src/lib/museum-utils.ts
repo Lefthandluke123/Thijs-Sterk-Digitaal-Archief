@@ -1,9 +1,8 @@
 /**
  * @fileOverview Museum Utilities voor sorteren en data-verwerking.
  * Inclusief Hardening Layer voor Firestore data integriteit en Romeinse sortering.
+ * GEEN FIREBASE IMPORTS HIER (veilig voor server-side gebruik).
  */
-
-import { serverTimestamp } from 'firebase/firestore';
 
 export const ROMAN_VALUES: Record<string, number> = {
   'I': 1, 'II': 2, 'III': 3, 'IV': 4, 'V': 5, 'VI': 6, 'VII': 7, 'VIII': 8, 'IX': 9, 'X': 10, 
@@ -51,7 +50,6 @@ export function slugify(text: string): string {
  */
 export function normalizeArtwork(id: string, data: any) {
   const rawYear = cleanString(data.year) || "";
-  // Agressieve 2026 filtering
   const filteredYear = rawYear.replace(/2026/g, '').replace(/\s+/g, ' ').trim();
 
   return {
@@ -97,15 +95,15 @@ export function normalizePrivatePhoto(id: string, data: any) {
 }
 
 /**
- * Maakt data klaar voor opslag. Verwijdert 2026 definitief.
+ * Maakt data klaar voor opslag.
+ * Verwacht een 'timestamp' object van de beller (bijv. serverTimestamp()).
  */
-export function sanitizeArtwork(input: any) {
+export function sanitizeArtwork(input: any, timestamp?: any) {
   const baseTitle = cleanString(input.displayTitle) || cleanString(input.title) || "Ongetiteld";
   const finalSlug = slugify(cleanString(input.slug) || baseTitle);
   
   let finalYear = "";
   if (input.year !== undefined && input.year !== null) {
-    // Verwijder 2026 uit invoer
     finalYear = String(input.year).replace(/2026/g, '').replace(/\s+/g, ' ').trim();
   }
 
@@ -122,7 +120,7 @@ export function sanitizeArtwork(input: any) {
     featured: Boolean(input.featured),
     inShop: Boolean(input.inShop),
     isMonumental: Boolean(input.isMonumental),
-    updatedAt: serverTimestamp(),
+    updatedAt: timestamp || null,
   };
 }
 
@@ -143,12 +141,10 @@ export function cleanArray(arr?: any[]): string[] {
 export const parseTitleForSort = (title: string) => {
   if (!title) return { romanVal: 999, num: 999, original: '' };
   
-  // Zoek naar Romeinse cijfers aan het einde van woorden
   const romanPattern = /\b(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII|XIV|XV|XVI|XVII|XVIII|XIX|XX)\b/gi;
   const matches = Array.from(title.matchAll(romanPattern));
   const lastRoman = matches.length > 0 ? matches[matches.length - 1][0] : null;
   
-  // Zoek naar normale nummers
   const numMatch = title.match(/(\d+)/);
   
   return {

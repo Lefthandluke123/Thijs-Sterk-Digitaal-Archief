@@ -245,7 +245,6 @@ export default function AdminPage() {
     batch.commit()
       .then(() => {
         toast({ title: `${ids.length} werken toegevoegd aan ${curatingRoom.title}` });
-        // We sluiten de selector niet direct om meer toe te kunnen voegen
       })
       .catch(() => toast({ variant: "destructive", title: "Toevoegen mislukt" }));
   };
@@ -316,7 +315,7 @@ export default function AdminPage() {
         finalImageUrl = await getDownloadURL(uploadResult.ref);
       }
 
-      const data = sanitizeArtwork({ ...artworkForm, image: finalImageUrl });
+      const data = sanitizeArtwork({ ...artworkForm, image: finalImageUrl }, serverTimestamp());
 
       if (editingArtwork) {
         const artRef = doc(firestore, 'artworks', editingArtwork.id);
@@ -389,7 +388,7 @@ export default function AdminPage() {
           title: item.title, displayTitle: item.title, image: url,
           year: bulkGlobalYear, medium: bulkGlobalMedium, tags: bulkGlobalTags,
           roomIds: bulkGlobalRooms, isMonumental: bulkGlobalMonumental
-        });
+        }, serverTimestamp());
         await addDoc(collection(firestore, 'artworks'), { ...data, createdAt: serverTimestamp() });
         setBulkItems(prev => prev.map((it, idx) => i === idx ? { ...it, status: 'done' } : it));
         successCount++;
