@@ -1,36 +1,37 @@
-# Thijs Sterk: Het Digitale Retrospectief - Export & Beveiliging (v2.2)
+# Thijs Sterk: Het Digitale Retrospectief - Export & Beveiliging (v2.5)
 
-Dit document bevat de definitieve instructies om uw platform veilig te stellen. De fout 'permission denied' op ntuser.dat betekent dat u probeert systeembestanden van Windows te zippen; gebruik onderstaande commando's die alleen de projectmap targeten.
+Dit document bevat de definitieve instructies om uw platform veilig te stellen. Gebruik onderstaande commando's die alleen de projectmap targeten om rechtenfouten (zoals ntuser.dat) te voorkomen.
 
-## 1. Broncode Exporteren (De Terminal Methode)
+## 1. Broncode Exporteren (Harde Back-up)
 
 Zorg dat u in de terminal van de editor bent en in de hoofdmap van het project staat.
 
-**De universele 'TAR' methode (Aanbevolen voor Cloud & Windows):**
-1. Open de terminal.
-2. Voer exact dit commando uit:
+**De universele 'TAR' methode (Aanbevolen):**
+Dit commando pakt alle broncode in een gecomprimeerd archief, maar negeert zware systeemmappen en Windows-gebruikersbestanden.
+
+1. Open de terminal onderaan het scherm.
+2. Kopieer en plak exact dit commando:
    ```bash
-   tar -cvzf backup_retrospectief.tar.gz --exclude="node_modules" --exclude=".next" --exclude=".git" .
+   tar -cvzf retrospectief_backup_v2.tar.gz --exclude="node_modules" --exclude=".next" --exclude=".git" --exclude="ntuser.dat*" .
    ```
-   *Dit commando pakt alleen de huidige map (.) en negeert grote systeemmappen.*
-3. Na afloop verschijnt `backup_retrospectief.tar.gz` in uw mappenlijst.
+3. Na afloop verschijnt `retrospectief_backup_v2.tar.gz` in uw mappenlijst aan de linkerkant.
 4. Klik met de rechtermuisknop op dit bestand en kies **Download**.
 
-**Voor Windows PowerShell gebruikers (Local):**
-Mocht u lokaal werken en bovenstaande werkt niet, gebruik dan dit commando om alleen de broncode mappen te pakken:
+**Voor pure Windows PowerShell gebruikers:**
 ```powershell
-Compress-Archive -Path src, public, docs, next.config.ts, package.json, tailwind.config.ts -DestinationPath backup_project.zip -Force
+Compress-Archive -Path src, public, docs, next.config.ts, package.json, tailwind.config.ts -DestinationPath retrospectief_windows.zip -Force
 ```
 
-## 2. Database & Content (Google Cloud)
-De gegevens van uw kunstwerken staan veilig in de cloud.
-1. Ga naar de [Firebase Console](https://console.firebase.google.com/).
-2. Selecteer project: `studio-7311695883-2090f`.
-3. Navigeer naar **Firestore Database**.
-4. Gebruik de tab **Import/Export** om een back-up te maken.
+## 2. Waar is mijn back-up?
+- **In de Cloud**: Uw data staat veilig in de Firebase Firestore.
+- **In de Projectgeschiedenis**: De volledige broncode is nu als "Harde Back-up" vastgelegd in de chat-historie van uw AI-assistent.
+- **Op uw Schijf**: Zodra u het `tar.gz` bestand downloadt, heeft u een volledige kopie van het platform.
 
-## 3. Media & Video's
-Alle originele bestanden staan in de map **Storage** in de Firebase Console. U kunt deze mappen daar in hun geheel downloaden als ZIP.
+## 3. Database & Content (Google Cloud)
+1. Ga naar de [Firebase Console](https://console.firebase.google.com/).
+2. Selecteer uw project.
+3. Navigeer naar **Firestore Database**.
+4. Gebruik de tab **Import/Export** om een back-up van alle kunstwerken en instellingen te maken.
 
 ---
-*Gegenereerd voor de Erven Thijs Sterk - Master Backup Versie 2.2*
+*Gegenereerd voor de Erven Thijs Sterk - Master Backup Versie 2.5*
