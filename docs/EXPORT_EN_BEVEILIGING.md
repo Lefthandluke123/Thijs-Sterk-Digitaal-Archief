@@ -1,31 +1,35 @@
-# Thijs Sterk: Het Digitale Retrospectief - Export & Beveiliging (v2.0)
+# Thijs Sterk: Het Digitale Retrospectief - Export & Beveiliging (v2.1)
 
-Dit document bevat de instructies om de volledige broncode en databasegegevens van het platform veilig te stellen.
+Dit document bevat de definitieve instructies om uw platform veilig te stellen als de standaard `zip` opdracht niet werkt.
 
-## 1. Broncode Exporteren (ZIP/TAR)
-Mocht de `zip` opdracht niet werken, gebruik dan de meer robuuste `tar` opdracht.
+## 1. Broncode Exporteren (De Terminal Methode)
 
-**Methode A: ZIP**
-```bash
-zip -r backup_$(date +%F).zip . -x "node_modules/*" ".next/*" ".git/*"
+Als `zip` niet wordt herkend, gebruik dan de `tar` opdracht. Deze is tegenwoordig standaard aanwezig op Windows 10/11, macOS en Linux.
+
+**De universele 'TAR' methode (Aanbevolen):**
+1. Open de terminal in de editor.
+2. Voer het volgende commando uit:
+   ```bash
+   tar -cvzf backup_retrospectief.tar.gz --exclude="node_modules" --exclude=".next" --exclude=".git" .
+   ```
+3. Na afloop verschijnt `backup_retrospectief.tar.gz` in uw mappenlijst.
+4. Klik met de rechtermuisknop op dit bestand en kies **Download**.
+
+**Voor Windows PowerShell gebruikers:**
+Mocht bovenstaande falen, gebruik dan dit specifieke commando:
+```powershell
+Compress-Archive -Path * -DestinationPath backup_retrospectief.zip -Force
 ```
 
-**Methode B: TAR (Meest stabiel in Cloud)**
-```bash
-tar -czvf backup_$(date +%F).tar.gz --exclude='node_modules' --exclude='.next' --exclude='.git' .
-```
-
-## 2. Database & Gebruikersgegevens (Firestore)
-De schilderijen, activiteitslogs en vriendenprofielen staan in de Google Cloud (Firebase).
+## 2. Database & Content (Google Cloud)
+De gegevens van uw kunstwerken en de instellingen staan veilig in de cloud, maar een extra kopie is verstandig.
 1. Ga naar de [Firebase Console](https://console.firebase.google.com/).
-2. Selecteer uw project: `studio-7311695883-2090f`.
-3. Navigeer naar **Firestore Database** -> **Import/Export**.
-4. Kies een Google Cloud Storage bucket om een kopie van alle collecties te bewaren. 
+2. Selecteer project: `studio-7311695883-2090f`.
+3. Navigeer naar **Firestore Database**.
+4. Gebruik de tab **Import/Export** om een back-up te maken naar een Google Cloud Storage bucket.
 
-## 3. Media & Foto's (Firebase Storage)
-Alle hoge-resolutie beelden en video's staan in de Storage bucket.
-1. Ga in de Firebase Console naar **Storage**.
-2. U kunt hier mappen handmatig downloaden als ZIP via de interface.
+## 3. Media & Video's
+Alle originele bestanden die u via de Bulk Upload heeft toegevoegd, staan in de map **Storage** in de Firebase Console. U kunt deze mappen daar in hun geheel downloaden als ZIP via de web-interface van Google.
 
 ---
-*Gegenereerd voor de Erven Thijs Sterk - Master Backup Versie 2.0*
+*Gegenereerd voor de Erven Thijs Sterk - Master Backup Versie 2.1*

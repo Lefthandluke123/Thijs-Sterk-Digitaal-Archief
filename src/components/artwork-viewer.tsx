@@ -25,6 +25,10 @@ interface ArtworkViewerProps {
   onNext?: () => void;
 }
 
+/**
+ * @fileOverview Multimedia Viewer (Versie 2.0).
+ * Ondersteunt Deep Zoom voor schilderijen en een Video Player voor monumentaal werk.
+ */
 export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewerProps) {
   const [showMetadata, setShowMetadata] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
