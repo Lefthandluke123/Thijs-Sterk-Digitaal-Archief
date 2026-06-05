@@ -26,9 +26,6 @@ export const PRIVATE_ALBUMS = [
   "Persoonlijke momenten"
 ];
 
-/**
- * Maakt een string URL-vriendelijk (kebab-case).
- */
 export function slugify(text: string): string {
   if (!text) return "";
   return text
@@ -44,9 +41,6 @@ export function slugify(text: string): string {
     .replace(/-+$/, '');
 }
 
-/**
- * Normaliseert Firestore data voor veilig gebruik in de UI.
- */
 export function normalizeArtwork(id: string, data: any) {
   const rawYear = cleanString(data.year) || "";
   const filteredYear = rawYear.replace(/2026/g, '').replace(/\s+/g, ' ').trim();
@@ -74,9 +68,6 @@ export function normalizeArtwork(id: string, data: any) {
   };
 }
 
-/**
- * Maakt data klaar voor opslag.
- */
 export function sanitizeArtwork(input: any, timestamp?: any) {
   const baseTitle = cleanString(input.displayTitle) || cleanString(input.title) || "Ongetiteld";
   const finalSlug = slugify(cleanString(input.slug) || baseTitle);
@@ -119,22 +110,6 @@ export function cleanArray(arr?: any[]): string[] {
     .filter(v => v.length > 0 && v !== "undefined" && v !== "null");
 }
 
-export const parseTitleForSort = (title: string) => {
-  if (!title) return { romanVal: 999, num: 999, original: '' };
-  
-  const romanPattern = /\b(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII|XIV|XV|XVI|XVII|XVIII|XIX|XX)\b/gi;
-  const matches = Array.from(title.matchAll(romanPattern));
-  const lastRoman = matches.length > 0 ? matches[matches.length - 1][0] : null;
-  
-  const numMatch = title.match(/(\d+)/);
-  
-  return {
-    romanVal: lastRoman ? (ROMAN_VALUES[lastRoman.toUpperCase()] || 999) : 999,
-    num: numMatch ? parseInt(numMatch[1], 10) : 999,
-    original: title.toLowerCase()
-  };
-};
-
 export const sortArtworksByTitle = (a: any, b: any) => {
   const titleA = a.displayTitle || a.title || '';
   const titleB = b.displayTitle || b.title || '';
@@ -151,4 +126,17 @@ export const sortArtworksByTitle = (a: any, b: any) => {
   }
   
   return pA.original.localeCompare(pB.original);
+};
+
+const parseTitleForSort = (title: string) => {
+  if (!title) return { romanVal: 999, num: 999, original: '' };
+  const romanPattern = /\b(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII|XIV|XV|XVI|XVII|XVIII|XIX|XX)\b/gi;
+  const matches = Array.from(title.matchAll(romanPattern));
+  const lastRoman = matches.length > 0 ? matches[matches.length - 1][0] : null;
+  const numMatch = title.match(/(\d+)/);
+  return {
+    romanVal: lastRoman ? (ROMAN_VALUES[lastRoman.toUpperCase()] || 999) : 999,
+    num: numMatch ? parseInt(numMatch[1], 10) : 999,
+    original: title.toLowerCase()
+  };
 };

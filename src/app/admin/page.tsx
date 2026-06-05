@@ -150,7 +150,6 @@ export default function AdminPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Bulk Upload State
   const [bulkItems, setBulkItems] = useState<BulkItem[]>([]);
   const [isBulkUploading, setIsBulkUploading] = useState(false);
   const [bulkGlobalYear, setBulkGlobalYear] = useState('');
@@ -440,12 +439,6 @@ export default function AdminPage() {
   const isTagAssignedToSelection = (tag: string) => selectedArts.some(a => a.tags?.includes(tag));
   const isRoomAssignedToSelection = (roomId: string) => selectedArts.some(a => a.roomIds?.includes(roomId));
 
-  const handleOpenBulkInRoom = () => {
-    setBulkItems([]); 
-    setBulkGlobalRooms(curatingRoom ? [curatingRoom.id] : []);
-    setIsBulkDialogOpen(true);
-  };
-
   if (!isAuthorized) {
     return (
       <main className="min-h-screen flex flex-col items-center justify-center p-6 bg-[#f4f4f2]">
@@ -507,7 +500,7 @@ export default function AdminPage() {
                     </div>
                  </div>
                  <div className="flex items-center gap-3">
-                   <Button onClick={handleOpenBulkInRoom} className="bg-white/10 text-white border border-white/20 rounded-full h-12 px-6 font-black uppercase tracking-widest text-[10px] hover:bg-white/20">
+                   <Button onClick={() => { setBulkItems([]); setBulkGlobalRooms([curatingRoom.id]); setIsBulkDialogOpen(true); }} className="bg-white/10 text-white border border-white/20 rounded-full h-12 px-6 font-black uppercase tracking-widest text-[10px] hover:bg-white/20">
                       <ImagePlus className="w-4 h-4 mr-2" /> Bulk Upload naar Zaal
                    </Button>
                    <Button onClick={() => setIsSelectorDialogOpen(true)} className="bg-white text-accent rounded-full h-12 px-8 font-black uppercase tracking-widest text-[10px] hover:bg-white/90 shadow-lg">
@@ -589,7 +582,6 @@ export default function AdminPage() {
                       <div className="flex items-center gap-3 mb-1">
                         <h3 className="font-bold text-xl truncate">{art.title}</h3>
                         {art.isMonumental && <Badge variant="outline" className="bg-accent/10 text-accent uppercase text-[8px] font-black border-accent/20"><Building2 className="w-2.5 h-2.5 mr-1" /> Monumentaal</Badge>}
-                        {art.mediaType === 'video' && <Badge variant="outline" className="bg-blue-500/10 text-blue-600 uppercase text-[8px] font-black border-blue-500/20"><Film className="w-2.5 h-2.5 mr-1" /> Video</Badge>}
                       </div>
                       <p className="text-xs font-black uppercase opacity-40">{art.year} • {art.medium || 'Geen techniek'}</p>
                     </div>
@@ -706,7 +698,7 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* ARCHIVE SELECTOR DIALOG */}
+      {/* SELECTOR DIALOG */}
       <Dialog open={isSelectorDialogOpen} onOpenChange={setIsSelectorDialogOpen}>
         <DialogContent className="max-w-5xl rounded-[3rem] p-0 overflow-hidden bg-background">
           <div className="flex flex-col h-[85vh]">
@@ -752,7 +744,7 @@ export default function AdminPage() {
         </DialogContent>
       </Dialog>
 
-      {/* ARTWORK EDITOR DIALOG */}
+      {/* ARTWORK EDITOR */}
       <Dialog open={isArtworkDialogOpen} onOpenChange={setIsArtworkDialogOpen}>
         <DialogContent className="max-w-4xl rounded-[3rem] p-0 overflow-hidden bg-background">
           <div className="flex h-[85vh]">
@@ -835,7 +827,7 @@ export default function AdminPage() {
         </DialogContent>
       </Dialog>
 
-      {/* BULK UPLOAD DIALOG */}
+      {/* BULK UPLOAD */}
       <Dialog open={isBulkDialogOpen} onOpenChange={setIsBulkDialogOpen}>
         <DialogContent className="max-w-6xl rounded-[3rem] p-0 overflow-hidden bg-background">
           <div className="flex h-[90vh]">
@@ -894,7 +886,7 @@ export default function AdminPage() {
         </DialogContent>
       </Dialog>
 
-      {/* ROOM EDITOR DIALOG */}
+      {/* ROOM EDITOR */}
       <Dialog open={isRoomDialogOpen} onOpenChange={setIsRoomDialogOpen}>
         <DialogContent className="max-w-lg rounded-[3rem] p-0 overflow-hidden bg-background">
           <DialogHeader className="p-10 border-b"><DialogTitle className="font-headline text-3xl italic">{editingRoom ? 'Zaal Bewerken' : 'Nieuwe Zaal'}</DialogTitle></DialogHeader>

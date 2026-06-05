@@ -27,7 +27,7 @@ interface ArtworkViewerProps {
 
 /**
  * @fileOverview Multimedia Viewer (Versie 2.0).
- * Ondersteunt Deep Zoom voor schilderijen en een Video Player voor monumentaal werk.
+ * Ondersteunt Deep Zoom voor schilderijen en een Video Player voor monumentaal werk of drone-shots.
  */
 export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewerProps) {
   const [showMetadata, setShowMetadata] = useState(false);
@@ -93,16 +93,13 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
 
   const handleArtworkClick = async () => {
     if (artwork?.mediaType === 'video') return;
-
     setHintTrigger(p => p + 1);
-    
     const now = Date.now();
     if (now - lastClickRef.current > 2000) {
       setClickCount(1);
     } else {
       const newCount = clickCount + 1;
       setClickCount(newCount);
-      
       if (newCount >= 4) {
         setClickCount(0);
         const colors = await extractColors(cleanString(artwork.image || artwork.imageUrl || artwork.url));
@@ -241,30 +238,6 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
           </p>
         </div>
       </div>
-
-      {!isVideo && (
-        <div className={cn(
-          "absolute bottom-20 left-1/2 -translate-x-1/2 z-[10040] flex flex-col items-center gap-3 pointer-events-none transition-opacity duration-2000 ease-in-out",
-          (showMetadata || !showHints) ? "opacity-0" : "opacity-100"
-        )}>
-           <div className="bg-white/40 backdrop-blur-xl border border-black/5 px-6 py-1.5 rounded-full flex items-center gap-6 shadow-sm">
-              <div className="flex items-center gap-2">
-                 <MousePointer2 className="w-3 h-3 opacity-30" />
-                 <span className="text-[8px] font-bold uppercase tracking-widest opacity-40">Klik: Zoom</span>
-              </div>
-              <div className="w-0.5 h-0.5 bg-black/10 rounded-full" />
-              <div className="flex items-center gap-2">
-                 <span className="text-[8px] font-black px-1 py-0.5 bg-black/5 rounded border border-black/10 text-accent/60">Cmd+Klik</span>
-                 <span className="text-[8px] font-bold uppercase tracking-widest opacity-40">Uitzoomen</span>
-              </div>
-              <div className="w-0.5 h-0.5 bg-black/10 rounded-full" />
-              <div className="flex items-center gap-2">
-                 <Move className="w-3 h-3 opacity-30" />
-                 <span className="text-[8px] font-bold uppercase tracking-widest opacity-40">Muis vasthouden: Bewegen</span>
-              </div>
-           </div>
-        </div>
-      )}
     </div>
   );
 }
