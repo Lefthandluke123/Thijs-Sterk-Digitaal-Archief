@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -6,7 +5,6 @@ import React, { useEffect, useRef, useState } from 'react';
 /**
  * @fileOverview MatrixEffect: Een digitale regen-animatie die de hele pagina overneemt.
  * Bevat een complexe 'dialoog' exit-sequentie om de simulatie te verlaten.
- * Inclusief een 'fleeing button' grap bij de JA/NEE keuze.
  */
 export function MatrixEffect() {
   const [active, setActive] = useState(false);
@@ -15,7 +13,6 @@ export function MatrixEffect() {
   const [neeOffset, setNeeOffset] = useState({ x: 0, y: 0 });
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Exit Sequentie Config
   const steps = [
     { 
       button: "RED VAN ONDERGANG", 
@@ -117,7 +114,6 @@ export function MatrixEffect() {
   };
 
   const handleNeeHover = () => {
-    // Spring weg naar een willekeurige plek binnen een straal
     const randomX = (Math.random() - 0.5) * 400;
     const randomY = (Math.random() - 0.5) * 200;
     setNeeOffset({ x: randomX, y: randomY });
@@ -146,14 +142,12 @@ export function MatrixEffect() {
         {current.isChoice ? (
           <div className="flex gap-4 items-center">
             <span className="text-white font-mono text-[10px] uppercase tracking-widest mr-4 opacity-40">Wat kiest u?</span>
-            
             <button 
               onClick={handleExitClick}
               className="bg-green-600 text-white border-2 border-green-600 px-8 py-3 rounded-full font-mono text-[10px] font-black uppercase tracking-[0.3em] transition-all shadow-[0_0_30px_rgba(34,197,94,0.4)] hover:scale-110"
             >
               JA
             </button>
-
             <button 
               onMouseEnter={handleNeeHover}
               style={{ transform: `translate(${neeOffset.x}px, ${neeOffset.y}px)` }}
@@ -176,10 +170,6 @@ export function MatrixEffect() {
             {current.button}
           </button>
         )}
-      </div>
-
-      <div className="absolute bottom-10 left-10 text-white/10 font-mono text-[8px] uppercase tracking-[0.5em] pointer-events-none">
-         Archief Error 1913-1982 // Protocol: Sterk_Atmosphere_Sync // Step: {exitStep + 1}
       </div>
     </div>
   );

@@ -3,7 +3,7 @@ import { slugify } from './museum-utils';
 
 /**
  * @fileOverview Server-side Firestore data fetching via REST API.
- * Geoptimaliseerd voor data-consistentie (geen 2026) en betrouwbaarheid.
+ * Isolatielaag om server crashes bij client SDK imports te voorkomen.
  */
 
 const PROJECT_ID = firebaseConfig.projectId;
@@ -36,7 +36,6 @@ const mapDocument = (doc: any) => {
     data[key] = extract(doc.fields[key]);
   });
   
-  // Normaliseer afbeelding URLs
   const rawImage = data.image || data.imageUrl || data.url;
   if (rawImage && typeof rawImage === 'string') {
     let finalUrl = rawImage;
@@ -47,7 +46,6 @@ const mapDocument = (doc: any) => {
     data.imageUrl = finalUrl; 
   }
 
-  // Agressieve 2026-filtering op server-niveau
   if (data.year && typeof data.year === 'string') {
     data.year = data.year.replace(/2026/g, '').replace(/\s+/g, ' ').trim();
   }
@@ -62,7 +60,7 @@ export async function getRoomsServer() {
     const json = await res.json();
     return (json.documents || [])
       .map(mapDocument)
-      .filter((r: any) => r && r.isPublic !== false)
+      .filter((r: any) => r && r.isPublished !== false)
       .sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
   } catch (e) { return []; }
 }
@@ -106,37 +104,6 @@ export async function getArtworksByRoomIdServer(roomId: string) {
       .filter((r: any) => r.document)
       .map((r: any) => mapDocument(r.document));
   } catch (e) { return []; }
-}
-
-export async function getArtworkBySlugServer(slug: string) {
-  if (!slug) return null;
-  const targetSlug = slugify(slug);
-
-  try {
-    const url = `${BASE_URL}:runQuery`;
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        structuredQuery: {
-          from: [{ collectionId: 'artworks' }],
-          where: {
-            fieldFilter: {
-              field: { fieldPath: 'slug' },
-              op: 'EQUAL',
-              value: { stringValue: targetSlug }
-            }
-          },
-          limit: 1
-        }
-      }),
-      next: { revalidate: 0 }
-    });
-    const results = await res.json();
-    const docResult = results?.[0]?.document;
-    if (docResult) return mapDocument(docResult);
-    return await getArtworkServer(slug);
-  } catch (e) { return null; }
 }
 
 export async function getArtworkServer(id: string) {

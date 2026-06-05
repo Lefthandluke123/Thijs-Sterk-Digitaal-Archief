@@ -46,7 +46,6 @@ export function slugify(text: string): string {
 
 /**
  * Normaliseert Firestore data voor veilig gebruik in de UI.
- * Verwijdert expliciet 2026 en voorkomt ongewenste fallbacks.
  */
 export function normalizeArtwork(id: string, data: any) {
   const rawYear = cleanString(data.year) || "";
@@ -77,7 +76,6 @@ export function normalizeArtwork(id: string, data: any) {
 
 /**
  * Maakt data klaar voor opslag.
- * Verwacht een 'timestamp' object van de beller (bijv. serverTimestamp()).
  */
 export function sanitizeArtwork(input: any, timestamp?: any) {
   const baseTitle = cleanString(input.displayTitle) || cleanString(input.title) || "Ongetiteld";

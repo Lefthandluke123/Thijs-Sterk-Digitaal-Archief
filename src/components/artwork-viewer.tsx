@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -34,14 +33,12 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
   const [showHints, setShowHints] = useState(true);
   const [hintTrigger, setHintTrigger] = useState(0);
   
-  // Easter Egg State
   const [clickCount, setClickCount] = useState(0);
   const lastClickRef = useRef(0);
 
   const pathname = usePathname();
   const { language, t } = useLanguage();
 
-  // Beheer het automatisch verdwijnen van de hints
   useEffect(() => {
     if (artwork) {
       setShowHints(true);
@@ -53,7 +50,7 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
   useEffect(() => {
     if (artwork && typeof window !== 'undefined') {
       setArtworkUrl(`${window.location.origin}/art/${artwork.slug || artwork.id}`);
-      setClickCount(0); // Reset bij nieuw schilderij
+      setClickCount(0);
     }
   }, [artwork]);
 
@@ -90,9 +87,8 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
     setIsPlaying(!isPlaying);
   };
 
-  // Easter Egg Handler: Kleuren extraheren en simulatie triggeren
   const handleArtworkClick = async () => {
-    if (artwork?.mediaType === 'video') return; // Geen easter egg op video's
+    if (artwork?.mediaType === 'video') return;
 
     setHintTrigger(p => p + 1);
     
@@ -107,7 +103,7 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
         setClickCount(0);
         const colors = await extractColors(cleanString(artwork.image || artwork.imageUrl || artwork.url));
         window.dispatchEvent(new CustomEvent('trigger-simulation', { detail: { colors } }));
-        onClose(); // Sluit de viewer om de matrix te tonen
+        onClose();
       }
     }
     lastClickRef.current = now;
@@ -128,7 +124,7 @@ export function ArtworkViewer({ artwork, onClose, onPrev, onNext }: ArtworkViewe
         ctx.drawImage(img, 0, 0, 10, 10);
         const data = ctx.getImageData(0, 0, 10, 10).data;
         const colors = [];
-        for (let i = 0; i < data.length; i += 16) { // Neem een sample van pixels
+        for (let i = 0; i < data.length; i += 16) {
           colors.push(`rgb(${data[i]}, ${data[i+1]}, ${data[i+2]})`);
         }
         resolve(colors.length > 0 ? colors : ["#0F0"]);
