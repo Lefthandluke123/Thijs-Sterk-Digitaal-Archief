@@ -867,7 +867,7 @@ export default function AdminPage() {
              <div className="flex-1 flex flex-col">
                 <header className="p-8 border-b flex justify-between items-center bg-white"><div className="flex items-center gap-4"><Images className="w-6 h-6 text-accent" /><span className="text-[11px] font-black uppercase tracking-widest">Wachtrij ({bulkItems.length})</span></div><Button type="button" variant="outline" className="rounded-full" onClick={() => document.getElementById('bulk-file-input')?.click()}><Plus className="w-4 h-4 mr-2" /> Toevoegen</Button><input id="bulk-file-input" type="file" multiple className="hidden" accept="image/*,video/*" onChange={handleBulkFileSelect} /></header>
                 <div className="flex-1 overflow-y-auto p-8 bg-white custom-scrollbar">{bulkItems.length === 0 ? <div className="h-full flex flex-col items-center justify-center text-center opacity-20 space-y-4"><Upload className="w-16 h-16" /><p className="font-headline text-2xl italic">Selecteer afbeeldingen of video's</p></div> : <div className="grid grid-cols-2 md:grid-cols-3 gap-6">{bulkItems.map((item, idx) => (
-                  <Card key={idx} className={cn("p-4 rounded-3xl border-2 transition-all relative group", item.status === 'done' ? "border-green-500/20" : "border-transparent")}>
+                  <Card className={cn("p-4 rounded-3xl border-2 transition-all relative group", item.status === 'done' ? "border-green-500/20" : "border-transparent")} key={idx}>
                     <div className="relative aspect-square rounded-2xl overflow-hidden mb-4 bg-black/5 flex items-center justify-center">
                        {item.mediaType === 'video' ? (
                           <video src={item.preview} className="w-full h-full object-cover" />
