@@ -148,7 +148,6 @@ export default function AdminPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [isSavingRoom, setIsSavingRoom] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [bulkItems, setBulkItems] = useState<BulkItem[]>([]);
   const [isBulkUploading, setIsBulkUploading] = useState(false);
@@ -160,7 +159,6 @@ export default function AdminPage() {
 
   const [panelPos, setPanelPos] = useState({ x: 100, y: 150 });
   const [isDragging, setIsDragging] = useState(false);
-  const [bulkExpanded, setBulkExpanded] = useState({ rooms: true, tags: true });
   const dragStartRef = useRef({ x: 0, y: 0 });
 
   const [artworkForm, setArtworkForm] = useState<any>({
@@ -233,7 +231,7 @@ export default function AdminPage() {
 
     batch.commit()
       .then(() => toast({ title: "Selectie bijgewerkt" }))
-      .catch(async () => toast({ variant: "destructive", title: "Bulk update mislukt" }));
+      .catch(() => toast({ variant: "destructive", title: "Bulk update mislukt" }));
   };
 
   const handleBatchAddSelectionToRoom = (ids: string[]) => {
@@ -648,55 +646,138 @@ export default function AdminPage() {
               </div>
               <div className="flex-1 overflow-y-auto p-6 bg-white space-y-8 custom-scrollbar">
                  <div className="space-y-2">
-                    <button type="button" onClick={() => setBulkExpanded(p => ({ ...p, rooms: !p.rooms }))} className="flex items-center justify-between w-full p-2 hover:bg-black/5 rounded-lg">
-                       <Label className="text-[10px] font-black uppercase text-accent border-l-4 border-accent pl-3 cursor-pointer">Zaal Toewijzing</Label>
-                       <ChevronDown className={cn("w-4 h-4 text-accent transition-transform", !bulkExpanded.rooms && "-rotate-90")} />
-                    </button>
-                    {bulkExpanded.rooms && (
-                      <div className="grid grid-cols-1 gap-2 pt-2">
-                         {rooms?.map((room: any) => {
-                           const isActive = isRoomAssignedToSelection(room.id);
-                           return (
-                             <button type="button" key={room.id} onClick={() => handleBulkUpdate(isActive ? 'remove_room' : 'add_room', room.id)} className={cn("flex items-center gap-3 p-4 rounded-xl border transition-all text-left", isActive ? "bg-accent/5 border-accent text-accent" : "bg-white border-black/5 text-black/40")}>
-                                {isActive ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
-                                <span className="text-[10px] font-black uppercase tracking-widest">{room.title}</span>
-                             </button>
-                           );
-                         })}
-                      </div>
-                    )}
+                    <Label className="text-[10px] font-black uppercase text-accent border-l-4 border-accent pl-3">Zaal Toewijzing</Label>
+                    <div className="grid grid-cols-1 gap-2 pt-2">
+                       {rooms?.map((room: any) => {
+                         const isActive = isRoomAssignedToSelection(room.id);
+                         return (
+                           <button type="button" key={room.id} onClick={() => handleBulkUpdate(isActive ? 'remove_room' : 'add_room', room.id)} className={cn("flex items-center gap-3 p-4 rounded-xl border transition-all text-left", isActive ? "bg-accent/5 border-accent text-accent" : "bg-white border-black/5 text-black/40")}>
+                              {isActive ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
+                              <span className="text-[10px] font-black uppercase tracking-widest">{room.title}</span>
+                           </button>
+                         );
+                       })}
+                    </div>
                  </div>
                  <Separator className="bg-black/5" />
                  <div className="space-y-2">
-                    <button type="button" onClick={() => setBulkExpanded(p => ({ ...p, tags: !p.tags }))} className="flex items-center justify-between w-full p-2 hover:bg-black/5 rounded-lg">
-                       <Label className="text-[10px] font-black uppercase text-accent border-l-4 border-accent pl-3 cursor-pointer">Tags & Kenmerken</Label>
-                       <ChevronDown className={cn("w-4 h-4 text-accent transition-transform", !bulkExpanded.tags && "-rotate-90")} />
-                    </button>
-                    {bulkExpanded.tags && (
-                      <div className="space-y-6 pt-2">
-                         {Object.entries(MUSEUM_TAGS).map(([category, tags]) => (
-                            <div key={category} className="space-y-3">
-                               <p className="text-[8px] font-black uppercase opacity-30 tracking-widest">{category}</p>
-                               <div className="flex flex-wrap gap-1.5">
-                                  {tags.map(tag => {
-                                    const isActive = isTagAssignedToSelection(tag);
-                                    return (
-                                      <button type="button" key={tag} onClick={() => handleBulkUpdate(isActive ? 'remove_tag' : 'add_tag', tag)} className={cn("px-3 py-1.5 rounded-lg text-[9px] font-bold border transition-all flex items-center gap-2", isActive ? "bg-accent/10 border-accent text-accent" : "bg-white border-black/5 text-black/40 hover:border-black/20")}>
-                                        {isActive ? <CheckSquare className="w-3.5 h-3.5" /> : <Square className="w-3.5 h-3.5" />}
-                                        {tag}
-                                      </button>
-                                    );
-                                  })}
-                               </div>
-                            </div>
-                         ))}
-                      </div>
-                    )}
+                    <Label className="text-[10px] font-black uppercase text-accent border-l-4 border-accent pl-3">Tags & Kenmerken</Label>
+                    <div className="space-y-6 pt-2">
+                       {Object.entries(MUSEUM_TAGS).map(([category, tags]) => (
+                          <div key={category} className="space-y-3">
+                             <p className="text-[8px] font-black uppercase opacity-30 tracking-widest">{category}</p>
+                             <div className="flex flex-wrap gap-1.5">
+                                {tags.map(tag => {
+                                  const isActive = isTagAssignedToSelection(tag);
+                                  return (
+                                    <button type="button" key={tag} onClick={() => handleBulkUpdate(isActive ? 'remove_tag' : 'add_tag', tag)} className={cn("px-3 py-1.5 rounded-lg text-[9px] font-bold border transition-all flex items-center gap-2", isActive ? "bg-accent/10 border-accent text-accent" : "bg-white border-black/5 text-black/40 hover:border-black/20")}>
+                                      {isActive ? <CheckSquare className="w-3.5 h-3.5" /> : <Square className="w-3.5 h-3.5" />}
+                                      {tag}
+                                    </button>
+                                  );
+                                })}
+                             </div>
+                          </div>
+                       ))}
+                    </div>
                  </div>
               </div>
            </Card>
         </div>
       )}
+
+      {/* DIALOGS EN EDITORS HIERONDER... (Harde Backup Master 2.0) */}
+      <Dialog open={isArtworkDialogOpen} onOpenChange={setIsArtworkDialogOpen}>
+        <DialogContent className="max-w-4xl rounded-[3rem] p-0 overflow-hidden bg-background">
+          <div className="flex h-[85vh]">
+            <div className="w-1/2 bg-black/5 relative overflow-hidden flex flex-col items-center justify-center p-12">
+               {artworkForm.mediaType === 'video' ? (
+                 <video src={artworkForm.videoUrl} className="max-w-full max-h-full rounded-2xl shadow-2xl" controls />
+               ) : (
+                 artworkForm.image ? <img src={artworkForm.image} className="max-w-full max-h-full object-contain rounded-xl shadow-2xl" alt="" /> : <div className="text-center opacity-20"><ImagePlus className="w-16 h-16 mx-auto mb-4" /><p className="font-headline text-2xl">Geen beeld</p></div>
+               )}
+               <div className="mt-8">
+                  <Button type="button" variant="outline" className="rounded-full h-12 px-8 font-black uppercase tracking-widest text-[10px]" onClick={() => document.getElementById('file-upload')?.click()}>
+                    <Upload className="w-4 h-4 mr-2" /> Nieuwe Media
+                  </Button>
+                  <input id="file-upload" type="file" className="hidden" accept="image/*,video/*" onChange={(e) => { const file = e.target.files?.[0]; if(file) setSelectedFile(file); }} />
+               </div>
+            </div>
+            <div className="flex-1 flex flex-col h-full bg-white">
+              <DialogHeader className="p-8 border-b"><DialogTitle className="font-headline text-3xl italic">{editingArtwork ? 'Werk Bewerken' : 'Nieuw Werk'}</DialogTitle></DialogHeader>
+              <div className="flex-1 overflow-y-auto p-8 space-y-10 custom-scrollbar">
+                <section className="space-y-6">
+                  <div className="flex items-center gap-3 border-l-4 border-accent pl-4"><Type className="w-4 h-4 text-accent" /><h4 className="text-[10px] font-black uppercase tracking-widest opacity-60">Identiteit</h4></div>
+                  <div className="grid gap-4">
+                    <div className="space-y-1.5"><Label className="text-[9px] font-black uppercase ml-2 opacity-40">Archief Titel</Label><Input value={artworkForm.title} onChange={e => setArtworkForm({...artworkForm, title: e.target.value})} className="bg-black/5 border-none h-12 rounded-xl" /></div>
+                    <div className="space-y-1.5"><Label className="text-[9px] font-black uppercase ml-2 opacity-40">Publieke Titel</Label><Input value={artworkForm.displayTitle} onChange={e => setArtworkForm({...artworkForm, displayTitle: e.target.value})} className="bg-black/5 border-none h-12 rounded-xl" /></div>
+                    <div className="grid grid-cols-2 gap-4">
+                       <div className="space-y-1.5"><Label className="text-[9px] font-black uppercase ml-2 opacity-40">Jaar</Label><Input value={artworkForm.year} onChange={e => setArtworkForm({...artworkForm, year: e.target.value})} className="bg-black/5 border-none h-12 rounded-xl" /></div>
+                       <div className="space-y-1.5"><Label className="text-[9px] font-black uppercase ml-2 opacity-40">Techniek</Label><Select value={artworkForm.medium} onValueChange={v => setArtworkForm({...artworkForm, medium: v})}><SelectTrigger className="bg-black/5 border-none h-12 rounded-xl"><SelectValue placeholder="Kies..." /></SelectTrigger><SelectContent className="rounded-xl shadow-2xl border-none">{ART_TECHNIQUES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></div>
+                    </div>
+                  </div>
+                </section>
+
+                <section className="space-y-6">
+                  <div className="flex items-center gap-3 border-l-4 border-accent pl-4"><TagIcon className="w-4 h-4 text-accent" /><h4 className="text-[10px] font-black uppercase tracking-widest opacity-60">Kenmerken</h4></div>
+                  <div className="space-y-6">{Object.entries(MUSEUM_TAGS).map(([cat, tags]) => <div key={cat} className="space-y-2"><p className="text-[8px] font-black uppercase opacity-30 tracking-widest">{cat}</p><div className="flex flex-wrap gap-1.5">{tags.map(tag => <button key={tag} type="button" onClick={() => { const currentTags = artworkForm.tags || []; setArtworkForm({...artworkForm, tags: currentTags.includes(tag) ? currentTags.filter((t: string) => t !== tag) : [...currentTags, tag]}); }} className={cn("px-3 py-1.5 rounded-lg text-[9px] font-bold border transition-all", artworkForm.tags?.includes(tag) ? "bg-accent/10 border-accent text-accent" : "bg-white border-black/5 text-black/40 hover:border-black/20")}>{tag}</button>)}</div></div>)}</div>
+                </section>
+
+                <section className="space-y-6">
+                  <div className="flex items-center gap-3 border-l-4 border-accent pl-4"><FolderInput className="w-4 h-4 text-accent" /><h4 className="text-[10px] font-black uppercase tracking-widest opacity-60">Zalen</h4></div>
+                  <div className="grid grid-cols-2 gap-4">{rooms?.map((room: any) => <button key={room.id} type="button" onClick={() => { const roomIds = artworkForm.roomIds || []; setArtworkForm({...artworkForm, roomIds: roomIds.includes(room.id) ? roomIds.filter((id: string) => id !== room.id) : [...roomIds, room.id]}); }} className={cn("flex items-center gap-3 p-4 rounded-xl border transition-all text-left", artworkForm.roomIds?.includes(room.id) ? "bg-accent/5 border-accent text-accent" : "bg-white border-black/5 text-black/40")}>{artworkForm.roomIds?.includes(room.id) ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}<span className="text-[10px] font-black uppercase tracking-widest">{room.title}</span></button>)}</div>
+                </section>
+              </div>
+              <div className="p-8 bg-black/5 flex items-center gap-4"><Button type="button" onClick={handleSaveArtwork} disabled={isUploading} className="flex-1 h-16 rounded-2xl bg-accent text-white font-black uppercase tracking-widest shadow-xl">{isUploading ? <Loader2 className="animate-spin" /> : "Opslaan"}</Button></div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* BULK UPLOAD DIALOG */}
+      <Dialog open={isBulkDialogOpen} onOpenChange={setIsBulkDialogOpen}>
+        <DialogContent className="max-w-6xl rounded-[3rem] p-0 overflow-hidden bg-background">
+          <div className="flex h-[90vh]">
+             <div className="w-1/3 bg-black/5 border-r p-8 flex flex-col">
+                <div className="flex-1 overflow-y-auto space-y-10 custom-scrollbar pr-2">
+                   <div className="space-y-4">
+                      <DialogTitle className="font-headline text-3xl italic">Bulk Archivering</DialogTitle>
+                      {curatingRoom && (
+                        <Badge className="bg-accent text-white uppercase text-[9px] font-black px-4 py-1.5 rounded-full">
+                           Toevoegen aan: {curatingRoom.title}
+                        </Badge>
+                      )}
+                      <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Instellingen voor de hele batch</p>
+                   </div>
+                   <div className="space-y-6">
+                      <div className="space-y-1.5"><Label className="text-[9px] font-black uppercase ml-2 opacity-40">Jaar</Label><Input value={bulkGlobalYear} onChange={e => setBulkGlobalYear(e.target.value)} placeholder="Bijv. 1965" className="bg-white border-none h-12 rounded-xl" /></div>
+                      <div className="space-y-1.5"><Label className="text-[9px] font-black uppercase ml-2 opacity-40">Techniek</Label><Select value={bulkGlobalMedium} onValueChange={setBulkGlobalMedium}><SelectTrigger className="h-12 rounded-xl bg-white border-none"><SelectValue placeholder="Kies..." /></SelectTrigger><SelectContent className="rounded-xl shadow-2xl border-none">{ART_TECHNIQUES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></div>
+                      <div className="flex items-center space-x-3 p-4 rounded-xl bg-white/50"><Checkbox id="bulkMonumental" checked={bulkGlobalMonumental} onCheckedChange={(v) => setBulkGlobalMonumental(!!v)} /><Label htmlFor="bulkMonumental" className="text-[10px] font-black uppercase tracking-widest cursor-pointer flex items-center gap-2"><Building2 className="w-4 h-4 text-accent" /> Allemaal Monumentaal</Label></div>
+                   </div>
+                </div>
+                <div className="pt-8 mt-8 border-t border-black/10">
+                  <Button type="button" onClick={handleBulkSave} disabled={isBulkUploading || bulkItems.length === 0} className="w-full h-20 rounded-[2rem] bg-accent text-white font-black uppercase tracking-widest shadow-2xl hover:scale-[1.02] transition-all">
+                    {isBulkUploading ? <Loader2 className="animate-spin" /> : <div className="flex flex-col items-center"><span className="text-[13px]">Start Bulk Upload</span><span className="text-[9px] opacity-60 lowercase mt-1">({bulkItems.length} bestanden)</span></div>}
+                  </Button>
+                </div>
+             </div>
+             <div className="flex-1 flex flex-col">
+                <header className="p-8 border-b flex justify-between items-center bg-white"><div className="flex items-center gap-4"><Images className="w-6 h-6 text-accent" /><span className="text-[11px] font-black uppercase tracking-widest">Wachtrij ({bulkItems.length})</span></div><Button type="button" variant="outline" className="rounded-full" onClick={() => document.getElementById('bulk-file-input')?.click()}><Plus className="w-4 h-4 mr-2" /> Toevoegen</Button><input id="bulk-file-input" type="file" multiple className="hidden" accept="image/*,video/*" onChange={handleBulkFileSelect} /></header>
+                <div className="flex-1 overflow-y-auto p-8 bg-white custom-scrollbar">
+                   {bulkItems.length === 0 ? <div className="h-full flex flex-col items-center justify-center text-center opacity-20 space-y-4"><Upload className="w-16 h-16" /><p className="font-headline text-2xl italic">Selecteer afbeeldingen of video's</p></div> : <div className="grid grid-cols-2 md:grid-cols-3 gap-6">{bulkItems.map((item, idx) => (
+                  <Card key={idx} className={cn("p-4 rounded-3xl border-2 transition-all relative group", item.status === 'done' ? "border-green-500/20" : "border-transparent")}>
+                    <div className="relative aspect-square rounded-2xl overflow-hidden mb-4 bg-black/5 flex items-center justify-center">
+                       {item.mediaType === 'video' ? <video src={item.preview} className="w-full h-full object-cover" /> : <img src={item.preview} className="w-full h-full object-cover" alt="" />}
+                       {item.status === 'uploading' && <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Loader2 className="w-8 h-8 text-white animate-spin" /></div>}{item.status === 'done' && <div className="absolute inset-0 bg-green-500/40 flex items-center justify-center"><CheckCircle2 className="w-10 h-10 text-white" /></div>}
+                       {item.mediaType === 'video' && <div className="absolute top-2 left-2 bg-blue-600 text-white p-1 rounded-md"><Film className="w-3 h-3" /></div>}
+                    </div>
+                    <Input value={item.title} onChange={e => setBulkItems(prev => prev.map((it, i) => i === idx ? { ...it, title: e.target.value } : it))} className="h-10 rounded-xl bg-black/5 border-none text-xs" />
+                  </Card>
+                ))}</div>}</div>
+             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* SELECTOR DIALOG */}
       <Dialog open={isSelectorDialogOpen} onOpenChange={setIsSelectorDialogOpen}>
@@ -708,34 +789,18 @@ export default function AdminPage() {
                    <DialogTitle className="font-headline text-3xl italic">Toevoegen aan {curatingRoom?.title}</DialogTitle>
                    <p className="text-[10px] font-black uppercase tracking-widest opacity-40 mt-1">Selecteer werken uit het archief om toe te voegen aan deze zaal</p>
                 </div>
-                <div className="flex items-center gap-4">
-                   <button onClick={() => setIsSelectorDialogOpen(false)} className="p-2 hover:bg-black/5 rounded-full transition-colors"><X className="w-6 h-6" /></button>
-                </div>
+                <button onClick={() => setIsSelectorDialogOpen(false)} className="p-2 hover:bg-black/5 rounded-full transition-colors"><X className="w-6 h-6" /></button>
               </div>
             </DialogHeader>
-
             <div className="flex-1 overflow-y-auto p-10 custom-scrollbar bg-black/[0.02]">
                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
                   {availableForRoom.map(art => (
-                    <div 
-                      key={art.id} 
-                      onClick={() => handleBatchAddSelectionToRoom([art.id])}
-                      className="group cursor-pointer space-y-4"
-                    >
+                    <div key={art.id} onClick={() => handleBatchAddSelectionToRoom([art.id])} className="group cursor-pointer space-y-4">
                        <div className="relative aspect-square rounded-[2rem] overflow-hidden bg-white shadow-md group-hover:shadow-xl transition-all border-2 border-transparent group-hover:border-accent flex items-center justify-center">
-                          {art.mediaType === 'video' ? (
-                            <video src={art.videoUrl} className="w-full h-full object-cover opacity-60 group-hover:opacity-100" />
-                          ) : (
-                            <img src={art.image} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" alt="" />
-                          )}
-                          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-accent/20">
-                             <Plus className="w-10 h-10 text-white" />
-                          </div>
+                          {art.mediaType === 'video' ? <video src={art.videoUrl} className="w-full h-full object-cover opacity-60 group-hover:opacity-100" /> : <img src={art.image} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" alt="" />}
+                          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-accent/20"><Plus className="w-10 h-10 text-white" /></div>
                        </div>
-                       <div className="text-center">
-                          <h4 className="font-bold text-xs truncate px-2">{art.title}</h4>
-                          <p className="text-[9px] font-black uppercase opacity-30">{art.year}</p>
-                       </div>
+                       <div className="text-center"><h4 className="font-bold text-xs truncate px-2">{art.title}</h4><p className="text-[9px] font-black uppercase opacity-30">{art.year}</p></div>
                     </div>
                   ))}
                </div>

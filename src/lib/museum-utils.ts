@@ -1,7 +1,6 @@
 /**
- * @fileOverview Museum Utilities voor sorteren en data-verwerking.
- * Inclusief Hardening Layer voor Firestore data integriteit en Romeinse sortering.
- * GEEN FIREBASE IMPORTS HIER (veilig voor server-side gebruik).
+ * @fileOverview Museum Utilities - Hardened Version 2.0.
+ * Geoptimaliseerd voor integrale stabiliteit en Multimedia support.
  */
 
 export const ROMAN_VALUES: Record<string, number> = {
@@ -17,34 +16,12 @@ export const MUSEUM_TAGS = {
   "Onderwerp": ["Havens", "Stillevens", "Bloemen", "Dieren", "Water", "Mensen", "Polder"]
 };
 
-export const PRIVATE_ALBUMS = [
-  "Familie",
-  "Reizen",
-  "Atelier",
-  "Achter de schermen",
-  "Muzikanten",
-  "Persoonlijke momenten"
-];
-
 export function slugify(text: string): string {
   if (!text) return "";
-  return text
-    .toString()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .trim()
-    .replace(/\s+/g, '-')
-    .replace(/[^\w\-]+/g, '')
-    .replace(/\-\-+/g, '-')
-    .replace(/^-+/, '')
-    .replace(/-+$/, '');
+  return text.toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w\-]+/g, '').replace(/\-\-+/g, '-').replace(/^-+/, '').replace(/-+$/, '');
 }
 
 export function normalizeArtwork(id: string, data: any) {
-  const rawYear = cleanString(data.year) || "";
-  const filteredYear = rawYear.replace(/2026/g, '').replace(/\s+/g, ' ').trim();
-
   return {
     id,
     title: cleanString(data.title) || "Ongetiteld",
@@ -54,41 +31,32 @@ export function normalizeArtwork(id: string, data: any) {
     videoUrl: cleanString(data.videoUrl) || null,
     mediaType: data.mediaType === 'video' ? 'video' : 'image',
     description: cleanString(data.description) || "",
-    year: filteredYear,
+    year: cleanString(data.year)?.replace(/2026/g, '').trim() || "",
     medium: cleanString(data.medium) || "", 
-    tags: cleanArray(data.tags),
-    roomIds: cleanArray(data.roomIds),
+    tags: Array.isArray(data.tags) ? data.tags : [],
+    roomIds: Array.isArray(data.roomIds) ? data.roomIds : [],
     featured: Boolean(data.featured),
     inShop: Boolean(data.inShop),
     isMonumental: Boolean(data.isMonumental),
     brightness: typeof data.brightness === 'number' ? data.brightness : 1,
     audioUrls: data.audioUrls || {},
-    createdAt: data.createdAt || null,
-    updatedAt: data.updatedAt || null,
   };
 }
 
 export function sanitizeArtwork(input: any, timestamp?: any) {
   const baseTitle = cleanString(input.displayTitle) || cleanString(input.title) || "Ongetiteld";
-  const finalSlug = slugify(cleanString(input.slug) || baseTitle);
-  
-  let finalYear = "";
-  if (input.year !== undefined && input.year !== null) {
-    finalYear = String(input.year).replace(/2026/g, '').replace(/\s+/g, ' ').trim();
-  }
-
   return {
     title: cleanString(input.title) || "Ongetiteld",
     displayTitle: baseTitle,
-    slug: finalSlug,
+    slug: slugify(cleanString(input.slug) || baseTitle),
     image: cleanString(input.image) || null,
     videoUrl: cleanString(input.videoUrl) || null,
     mediaType: input.mediaType === 'video' ? 'video' : 'image',
     description: cleanString(input.description) || "",
-    year: finalYear,
+    year: String(input.year || "").replace(/2026/g, '').trim(),
     medium: cleanString(input.medium) || "",
-    tags: cleanArray(input.tags),
-    roomIds: cleanArray(input.roomIds),
+    tags: Array.isArray(input.tags) ? input.tags : [],
+    roomIds: Array.isArray(input.roomIds) ? input.roomIds : [],
     featured: Boolean(input.featured),
     inShop: Boolean(input.inShop),
     isMonumental: Boolean(input.isMonumental),
@@ -102,41 +70,13 @@ export function cleanString(v?: any): string | null {
   return s.length > 0 ? s : null;
 }
 
-export function cleanArray(arr?: any[]): string[] {
-  if (!arr || !Array.isArray(arr)) return [];
-  return arr
-    .filter(v => v !== null && v !== undefined)
-    .map(v => String(v).trim())
-    .filter(v => v.length > 0 && v !== "undefined" && v !== "null");
-}
-
 export const sortArtworksByTitle = (a: any, b: any) => {
-  const titleA = a.displayTitle || a.title || '';
-  const titleB = b.displayTitle || b.title || '';
-  
-  const pA = parseTitleForSort(titleA);
-  const pB = parseTitleForSort(titleB);
-  
-  if (pA.romanVal !== pB.romanVal) {
-    return pA.romanVal - pB.romanVal;
-  }
-  
-  if (pA.num !== pB.num) {
-    return pA.num - pB.num;
-  }
-  
-  return pA.original.localeCompare(pB.original);
-};
-
-const parseTitleForSort = (title: string) => {
-  if (!title) return { romanVal: 999, num: 999, original: '' };
-  const romanPattern = /\b(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII|XIV|XV|XVI|XVII|XVIII|XIX|XX)\b/gi;
-  const matches = Array.from(title.matchAll(romanPattern));
-  const lastRoman = matches.length > 0 ? matches[matches.length - 1][0] : null;
-  const numMatch = title.match(/(\d+)/);
-  return {
-    romanVal: lastRoman ? (ROMAN_VALUES[lastRoman.toUpperCase()] || 999) : 999,
-    num: numMatch ? parseInt(numMatch[1], 10) : 999,
-    original: title.toLowerCase()
+  const parse = (t: string) => {
+    const roman = t.match(/\b(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII)\b/gi);
+    const lastRoman = roman ? roman[roman.length - 1].toUpperCase() : null;
+    return { romanVal: lastRoman ? (ROMAN_VALUES[lastRoman] || 999) : 999, original: t.toLowerCase() };
   };
+  const pA = parse(a.displayTitle || a.title || '');
+  const pB = parse(b.displayTitle || b.title || '');
+  return pA.romanVal !== pB.romanVal ? pA.romanVal - pB.romanVal : pA.original.localeCompare(pB.original);
 };
