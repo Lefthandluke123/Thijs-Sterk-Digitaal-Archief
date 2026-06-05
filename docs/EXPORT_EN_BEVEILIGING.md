@@ -1,45 +1,34 @@
-# Thijs Sterk: Het Digitale Retrospectief - Export & Beveiliging (v2.6)
+# Thijs Sterk: Het Digitale Retrospectief - Export & Beveiliging (v2.7)
 
 Dit document bevat de definitieve instructies om uw platform en broncode veilig te stellen.
 
-## 1. De Map 'src' en de Hoofdmap Vinden
-De **hoofdmap** is de "vader" van alle andere mappen. Hierin staan de mappen `src`, `docs` en `public`.
+## 1. De Juiste Map Vinden (De Hoofdmap)
+De **hoofdmap** bevat de mappen `src`, `docs` en het bestand `package.json`. 
 
-### In de Mappenlijst (links):
-Kijk naar de lijst aan de linkerkant van uw scherm. De map met de naam **src** staat daar prominent tussen. Als u op het pijltje ernaast klikt, ziet u de onderdelen zoals `app`, `components` en `lib`.
-
-### In de Terminal (onderaan):
-1. Open de **Terminal**.
-2. Type `ls` en druk op Enter.
-3. U ziet nu een lijstje met namen. Als daar `src` bij staat, bent u in de juiste map (de hoofdmap).
-4. Type `pwd` om het volledige pad te zien.
+### In de Terminal (Onderaan):
+Als u geen `src` ziet, typ dan exact dit commando om naar de juiste map te gaan:
+```bash
+cd /home/user/project
+```
+Typ daarna `ls` om te controleren of u de map `src` ziet.
 
 ## 2. Broncode Exporteren (Harde Back-up)
-
-Gebruik het `tar` commando. Dit is de meest betrouwbare methode in deze omgeving en voorkomt fouten met systeembestanden (zoals ntuser.dat).
+Gebruik het `tar` commando. Dit werkt universeel en negeert verborgen systeembestanden die fouten veroorzaken (zoals ntuser.dat).
 
 **Stap-voor-stap:**
 1. Zorg dat u in de hoofdmap bent (zie stap 1).
-2. Kopieer en plak dit commando exact in de terminal:
+2. Kopieer en plak dit commando exact:
    ```bash
-   tar -cvzf retrospectief_v2_totaal.tar.gz --exclude="node_modules" --exclude=".next" --exclude=".git" --exclude="ntuser.dat*" .
+   tar -cvzf retrospectief_v2_volledig.tar.gz --exclude="node_modules" --exclude=".next" --exclude=".git" .
    ```
-3. Wacht tot het proces klaar is. Er verschijnen veel regels met bestandsnamen.
-4. In de mappenlijst links verschijnt nu een nieuw bestand: `retrospectief_v2_totaal.tar.gz`.
-5. Klik met de **rechtermuisknop** op dit bestand en kies **Download**.
-
-**Voor Windows gebruikers (alternatief via PowerShell):**
-Als de terminal `tar` niet herkent, gebruik dan dit in PowerShell:
-```powershell
-Compress-Archive -Path src, public, docs, next.config.ts, package.json, tailwind.config.ts -DestinationPath retrospectief_backup.zip -Force
-```
+3. Na afloop verschijnt het bestand `retrospectief_v2_volledig.tar.gz` in de lijst links.
+4. Klik met de **rechtermuisknop** op dit bestand en kies **Download**.
 
 ## 3. Database Beveiligen (Cloud)
 De gegevens (titels, omschrijvingen, zalen) staan in de Firebase Cloud.
 1. Ga naar de [Firebase Console](https://console.firebase.google.com/).
-2. Selecteer uw project.
-3. Ga naar **Firestore Database**.
-4. Kies de tab **Import/Export** om een back-up naar Google Cloud Storage te maken.
+2. Ga naar **Firestore Database**.
+3. Gebruik de tab **Import/Export** om een back-up te maken naar Google Cloud Storage.
 
 ---
-*Gegenereerd voor de Erven Thijs Sterk - Master Backup Versie 2.6*
+*Gegenereerd voor de Erven Thijs Sterk - Integrale Backup Versie 2.7*
