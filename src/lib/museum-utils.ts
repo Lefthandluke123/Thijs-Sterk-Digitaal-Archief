@@ -1,4 +1,3 @@
-
 /**
  * @fileOverview Museum Utilities voor sorteren en data-verwerking.
  * Inclusief Hardening Layer voor Firestore data integriteit en Romeinse sortering.
@@ -71,27 +70,6 @@ export function normalizeArtwork(id: string, data: any) {
     isMonumental: Boolean(data.isMonumental),
     brightness: typeof data.brightness === 'number' ? data.brightness : 1,
     audioUrls: data.audioUrls || {},
-    createdAt: data.createdAt || null,
-    updatedAt: data.updatedAt || null,
-  };
-}
-
-/**
- * Normaliseert privéfoto data.
- */
-export function normalizePrivatePhoto(id: string, data: any) {
-  return {
-    id,
-    title: data.title || "Zonder titel",
-    description: data.description || "",
-    imageUrl: data.imageUrl || data.image || "",
-    thumbnailUrl: data.thumbnailUrl || data.imageUrl || "",
-    year: data.year || null,
-    tags: cleanArray(data.tags),
-    people: cleanArray(data.people),
-    album: data.album || "Ongecategoriseerd",
-    visibility: data.visibility || "friends",
-    featured: Boolean(data.featured),
     createdAt: data.createdAt || null,
     updatedAt: data.updatedAt || null,
   };
