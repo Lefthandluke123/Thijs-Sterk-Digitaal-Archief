@@ -1,7 +1,7 @@
 'use server';
-
 import Stripe from 'stripe';
 import { headers } from 'next/headers';
+import { logError, logErrorAndReturn } from './error-logger';
 
 /**
  * Maakt een Stripe Checkout sessie aan voor een museum-reproductie.
@@ -14,15 +14,23 @@ export async function createCheckoutSession(params: {
   stripeSecretKey: string;
 }) {
   if (!params.stripeSecretKey) {
-    throw new Error('Stripe Secret Key is niet geconfigureerd in de beheeromgeving.');
+    const error = new Error('Stripe Secret Key is niet geconfigureerd in de beheeromgeving.');
+    logError('createCheckoutSession', error);
+    throw error;
   }
 
-  const stripe = new Stripe(params.stripeSecretKey);
-  const host = (await headers()).get('host');
-  const protocol = host?.includes('localhost') ? 'http' : 'https';
-  const baseUrl = `${protocol}://${host}`;
-
   try {
+    const stripe = new Stripe(params.stripeSecretKey);
+    const host = (await headers()).get('host');
+    
+    if (!host) {
+      logError('createCheckoutSession', 'No host header found');
+      throw new Error('Host header niet beschikbaar');
+    }
+
+    const protocol = host.includes('localhost') ? 'http' : 'https';
+    const baseUrl = `${protocol}://${host}`;
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card', 'ideal'],
       line_items: [
@@ -33,7 +41,7 @@ export async function createCheckoutSession(params: {
               name: `${params.artworkTitle} - ${params.productType}`,
               description: `Gecertificeerde reproductie van het werk ${params.artworkTitle}`,
             },
-            unit_amount: Math.round(params.price * 100), // Stripe rekent in centen
+            unit_amount: Math.round(params.price * 100),
           },
           quantity: 1,
         },
@@ -47,9 +55,17 @@ export async function createCheckoutSession(params: {
       },
     });
 
+    if (!session.id || !session.url) {
+      logError('createCheckoutSession', 'Session created but missing id or url', { session });
+      throw new Error('Stripe sessie ongeldig');
+    }
+
     return { sessionId: session.id, url: session.url };
-  } catch (error: any) {
-    console.error('Stripe Session Error:', error);
-    throw new Error(error.message);
+  } catch (error) {
+    logError('createCheckoutSession', error, { 
+      artworkId: params.artworkId,
+      productType: params.productType 
+    });
+    throw error;
   }
 }

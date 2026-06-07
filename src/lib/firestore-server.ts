@@ -1,5 +1,6 @@
 import { firebaseConfig } from '@/firebase/config';
 import { slugify } from './museum-utils';
+import { logError, logErrorAndReturn } from './error-logger';
 
 /**
  * @fileOverview Server-side Firestore data fetching via REST API.
@@ -56,13 +57,18 @@ const mapDocument = (doc: any) => {
 export async function getRoomsServer() {
   try {
     const res = await fetch(`${BASE_URL}/rooms`, { next: { revalidate: 0 } });
-    if (!res.ok) return [];
+    if (!res.ok) {
+      logError('getRoomsServer', `HTTP ${res.status} fetching rooms`);
+      return [];
+    }
     const json = await res.json();
     return (json.documents || [])
       .map(mapDocument)
       .filter((r: any) => r && r.isPublished !== false)
       .sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
-  } catch (e) { return []; }
+  } catch (e) {
+    return logErrorAndReturn('getRoomsServer', e, []);
+  }
 }
 
 export async function getRoomBySlugServer(slug: string) {
@@ -75,7 +81,9 @@ export async function getRoomBySlugServer(slug: string) {
     if (!room) room = rooms.find((r: any) => slugify(r.title || "") === targetSlug);
     if (!room) room = rooms.find((r: any) => r.id === slug);
     return room || null;
-  } catch (e) { return null; }
+  } catch (e) {
+    return logErrorAndReturn('getRoomBySlugServer', e, null, { slug });
+  }
 }
 
 export async function getArtworksByRoomIdServer(roomId: string) {
@@ -99,17 +107,27 @@ export async function getArtworksByRoomIdServer(roomId: string) {
       next: { revalidate: 0 }
     });
     const results = await res.json();
-    if (!Array.isArray(results)) return [];
+    if (!Array.isArray(results)) {
+      logError('getArtworksByRoomIdServer', 'Invalid results format', { roomId });
+      return [];
+    }
     return results
       .filter((r: any) => r.document)
       .map((r: any) => mapDocument(r.document));
-  } catch (e) { return []; }
+  } catch (e) {
+    return logErrorAndReturn('getArtworksByRoomIdServer', e, [], { roomId });
+  }
 }
 
 export async function getArtworkServer(id: string) {
   try {
     const res = await fetch(`${BASE_URL}/artworks/${id}`, { next: { revalidate: 0 } });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      logError('getArtworkServer', `HTTP ${res.status} fetching artwork`, { id });
+      return null;
+    }
     return mapDocument(await res.json());
-  } catch (e) { return null; }
+  } catch (e) {
+    return logErrorAndReturn('getArtworkServer', e, null, { id });
+  }
 }
