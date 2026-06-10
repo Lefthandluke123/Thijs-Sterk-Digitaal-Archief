@@ -1,5 +1,15 @@
 {
   "projects": {
     "default": "studio-7311695883-2090f"
-  }
+  },
+  "targets": {
+    "studio-7311695883-2090f": {
+      "hosting": {
+        "thijs-sterk": [
+          "studio-7311695883-2090f"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }
