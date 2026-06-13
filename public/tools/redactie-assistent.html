@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Redactie-assistent — Thijs Sterk Archief</title>
+<style>
+  :root{
+    --inkt:#1d2733; --papier:#f7f6f2; --kaart:#ffffff;
+    --water:#2e6f8e; --water-licht:#e3eef3; --lijn:#dcd9d0;
+    --groen:#3a7d44; --rood:#b04a3a; --grijs:#6b7480;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--papier);color:var(--inkt);
+    font:15px/1.5 "Helvetica Neue",Arial,sans-serif}
+  header{background:var(--water);color:#fff;padding:18px 24px}
+  header h1{margin:0;font-size:20px;font-weight:600;letter-spacing:.3px}
+  header p{margin:4px 0 0;font-size:13px;opacity:.85}
+  main{max-width:1000px;margin:0 auto;padding:20px 24px 60px}
+  section{background:var(--kaart);border:1px solid var(--lijn);border-radius:8px;
+    padding:18px 20px;margin-bottom:18px}
+  h2{margin:0 0 10px;font-size:15px;color:var(--water);text-transform:uppercase;
+    letter-spacing:.6px}
+  h3{margin:16px 0 8px;font-size:13px;color:var(--water);font-weight:600}
+  label{display:block;font-size:12px;color:var(--grijs);margin:10px 0 3px;font-weight:600}
+  input[type=text], textarea{width:100%;border:1px solid var(--lijn);border-radius:6px;
+    padding:8px 10px;font:inherit;background:#fff;color:var(--inkt)}
+  input[type=text]:focus, textarea:focus{outline:2px solid var(--water);outline-offset:0}
+  textarea{resize:vertical}
+  button{font:inherit;border:none;border-radius:6px;padding:9px 16px;cursor:pointer;
+    font-weight:600}
+  button:disabled{opacity:.45;cursor:default}
+  .btn-primair{background:var(--water);color:#fff}
+  .btn-kopieer{background:var(--groen);color:#fff}
+  .btn-stil{background:var(--water-licht);color:var(--water)}
+  .werkbalk{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px}
+  #status{font-size:13px;color:var(--grijs)}
+  #status.bezig{color:var(--water);font-weight:600}
+  #status.fout{color:var(--rood);font-weight:600}
+  .tabbladjes{display:flex;gap:8px;border-bottom:1px solid var(--lijn);margin-bottom:14px}
+  .tabblad-knop{padding:8px 12px;border:none;background:none;cursor:pointer;font-weight:600;
+    color:var(--grijs);border-bottom:3px solid transparent;transition:all .15s}
+  .tabblad-knop.actief{color:var(--water);border-bottom-color:var(--water)}
+  .tab-inhoud{display:none}
+  .tab-inhoud.zichtbaar{display:block}
+  .veld{margin-bottom:12px}
+  .hint{font-size:12px;color:var(--grijs);margin:4px 0 0}
+  .vink{display:inline-flex;align-items:center;gap:6px;font-size:13px;margin:8px 0}
+  input[type=checkbox]{cursor:pointer}
+  #json-uit{height:280px;font-family:Menlo,Consolas,monospace;font-size:12px;
+    background:#fbfaf7}
+</style>
+</head>
+<body>
+<header>
+  <h1>Redactie-assistent</h1>
+  <p>Thijs Sterk Archief · bulk-bewerkingen op hele batch · zoek & vervang of AI-herschrijving</p>
+</header>
+<main>
+
+<section>
+  <h2>JSON invoeren</h2>
+  <label for="json-in">Plak hier je metadata-vertaald.json</label>
+  <textarea id="json-in" placeholder='{
+  "werk-titel": {...}
+}'></textarea>
+  <div class="werkbalk">
+    <button class="btn-primair" id="laad">Laad JSON</button>
+    <span id="status"></span>
+  </div>
+</section>
+
+<section id="bewerkings-sectie" style="display:none">
+  <h2>Bulk-bewerkingen</h2>
+  
+  <div class="tabbladjes">
+    <button class="tabblad-knop actief" data-tab="zoeken">Zoek & vervang</button>
+    <button class="tabblad-knop" data-tab="herschrijven">AI-herschrijving</button>
+  </div>
+
+  <div id="zoeken" class="tab-inhoud zichtbaar">
+    <h3>Zoek & vervang (alle velden, alle talen)</h3>
+    <div class="veld">
+      <label for="zoekterm">Zoeken naar (gewone tekst of regex)</label>
+      <input type="text" id="zoekterm" placeholder="bijv. Bergense School">
+    </div>
+    <div class="veld">
+      <label for="vervangterm">Vervangen door</label>
+      <input type="text" id="vervangterm" placeholder="leeg laten om te verwijderen">
+    </div>
+    <div class="vink">
+      <input type="checkbox" id="regex-aan"> Regex gebruiken
+      <span class="hint">(geavanceerd)</span>
+    </div>
+    <div class="vink">
+      <input type="checkbox" id="opruimen" checked> Opruimen losse leestekens .,;:!?
+    </div>
+    <div class="werkbalk">
+      <button class="btn-primair" id="voer-uit-zoeken">Voer uit</button>
+      <span id="zoeken-status"></span>
+    </div>
+  </div>
+
+  <div id="herschrijven" class="tab-inhoud">
+    <h3>AI-herschrijving van beschrijvingen</h3>
+    <p class="hint">Herschrijft alle beschrijvingen (in alle talen) volgens één aanwijzing. Behoud de originele NL-versie als referentie.</p>
+    <div class="veld">
+      <label for="herschrijf-instructie">Aanwijzing</label>
+      <textarea id="herschrijf-instructie" placeholder="bijv. Maak elke beschrijving maximaal 2 zinnen lang, behoud de kerngedachte"></textarea>
+    </div>
+    <div class="werkbalk">
+      <button class="btn-primair" id="voer-uit-herschrijven">Herschrijf alle beschrijvingen</button>
+      <span id="herschrijf-status"></span>
+    </div>
+  </div>
+</section>
+
+<section id="json-sectie" style="display:none">
+  <h2>JSON-resultaat</h2>
+  <p class="hint">Bewaar dit als <b>metadata-vertaald.json</b> als je tevreden bent.</p>
+  <textarea id="json-uit" readonly></textarea>
+  <div class="werkbalk">
+    <button class="btn-kopieer" id="kopieer">Kopieer JSON</button>
+    <span id="kopieer-status" style="font-size:13px;color:var(--groen)"></span>
+  </div>
+</section>
+
+</main>
+<script>
+let data = {};
+
+const $ = id => document.getElementById(id);
+
+$("laad").addEventListener("click",()=>{
+  const invoer = $("json-in").value.trim();
+  if(!invoer) return alert("Plak eerst JSON");
+  try{
+    data = JSON.parse(invoer);
+  }catch(e){
+    return alert("Ongeldige JSON: "+e.message);
+  }
+  $("bewerkings-sectie").style.display="block";
+  $("json-sectie").style.display="block";
+  updateJson();
+  $("json-in").value="";
+});
+
+// Tab-navigatie
+document.querySelectorAll(".tabblad-knop").forEach(knop=>{
+  knop.addEventListener("click",()=>{
+    const tab = knop.dataset.tab;
+    document.querySelectorAll(".tabblad-knop").forEach(k=>k.classList.remove("actief"));
+    document.querySelectorAll(".tab-inhoud").forEach(t=>t.classList.remove("zichtbaar"));
+    knop.classList.add("actief");
+    $( tab).classList.add("zichtbaar");
+  });
+});
+
+function updateJson(){
+  $("json-uit").value=JSON.stringify(data,null,2);
+}
+
+// ZOEK & VERVANG
+$("voer-uit-zoeken").addEventListener("click",()=>{
+  const zoek = $("zoekterm").value;
+  if(!zoek) return alert("Voer een zoekterm in");
+  const verv = $("vervangterm").value;
+  const isRegex = $("regex-aan").checked;
+  const opruimen = $("opruimen").checked;
+  const status = $("zoeken-status");
+  
+  let aantal=0;
+  try{
+    const regex = isRegex ? new RegExp(zoek,"gi") : null;
+    Object.values(data).forEach(w=>{
+      // Alle tekstuele velden doorlopen
+      ["titel","beschrijving","techniek","altTekst"].forEach(v=>{
+        if(!w[v]) return;
+        if(typeof w[v]==="object"){
+          // Geneste talen-structuur
+          Object.keys(w[v]).forEach(taal=>{
+            let txt = w[v][taal]||"";
+            if(regex){
+              txt = txt.replace(regex,verv);
+            }else{
+              txt = txt.split(zoek).join(verv);
+            }
+            if(opruimen) txt = opruimen_leestekens(txt);
+            w[v][taal] = txt;
+            aantal++;
+          });
+        }else{
+          // Platte string
+          let txt = w[v]||"";
+          if(regex){
+            txt = txt.replace(regex,verv);
+          }else{
+            txt = txt.split(zoek).join(verv);
+          }
+          if(opruimen) txt = opruimen_leestekens(txt);
+          w[v] = txt;
+          aantal++;
+        }
+      });
+      // Tags ook doorlopen
+      if(w.tags && Array.isArray(w.tags)){
+        w.tags = w.tags.map(tag=>{
+          let t=tag;
+          if(regex) t=t.replace(regex,verv);
+          else t=t.split(zoek).join(verv);
+          if(opruimen) t=opruimen_leestekens(t);
+          return t;
+        });
+      }
+    });
+    status.textContent=`✓ ${aantal} vervangingen`;
+    status.style.color="var(--groen)";
+    updateJson();
+  }catch(e){
+    status.textContent="Fout: "+e.message;
+    status.style.color="var(--rood)";
+  }
+});
+
+function opruimen_leestekens(txt){
+  // Verwijder losse leestekens aan begin/eind, dubbele spaties, enz.
+  txt = txt.replace(/\s+/g," ").trim();
+  txt = txt.replace(/([.,;:!?])\1+/g,"$1");
+  return txt;
+}
+
+// AI-HERSCHRIJVING
+$("voer-uit-herschrijven").addEventListener("click",async()=>{
+  const instructie = $("herschrijf-instructie").value.trim();
+  if(!instructie) return alert("Voer een aanwijzing in");
+  
+  const knop = $("voer-uit-herschrijven");
+  const status = $("herschrijf-status");
+  knop.disabled = true;
+  status.textContent = "AI bezig…";
+  status.className = "bezig";
+  
+  let klaar=0, fout=0;
+  const werken = Object.values(data);
+  
+  for(const w of werken){
+    if(!w.beschrijving || typeof w.beschrijving!=="object"){
+      klaar++;
+      continue;
+    }
+    const nlTekst = w.beschrijving.nl||"";
+    if(!nlTekst){klaar++;continue}
+    
+    status.textContent=`${klaar+fout+1}/${werken.length}…`;
+    
+    try{
+      const r = await vraagAI_herschrijf(nlTekst,instructie,w);
+      Object.entries(r).forEach(([taal,tekst])=>{
+        w.beschrijving[taal] = tekst;
+      });
+      klaar++;
+    }catch(e){
+      console.error(e);
+      fout++;
+    }
+    updateJson();
+  }
+  
+  status.className = fout?"fout":"";
+  status.textContent = fout?`${klaar} ok, ${fout} fout`:`${klaar} herschreven ✓`;
+  knop.disabled = false;
+});
+
+async function vraagAI_herschrijf(nlTekst, instructie, werk){
+  const prompt=`Je herschrijft beschrijvingen van schilderijen voor een museumcatalogus.
+  
+Origineel Nederlands: "${nlTekst}"
+
+Aanwijzing: ${instructie}
+
+Herschrijf DEZELFDE inhoud (behoud wat te zien is, compositie, kleur, sfeer) ALLEEN volgens de aanwijzing.
+
+Antwoord met geldige JSON voor alle talen, GEEN uitleg, GEEN backticks:
+{"nl":"...","en":"...","de":"...","fr":"...","es":"..."}
+
+Zorg dat de inhoud gelijk blijft aan het origineel Nederlands, alleen vorm verandert.`;
+
+  const resp=await fetch("https://api.anthropic.com/v1/messages",{
+    method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      model:"claude-sonnet-4-6",max_tokens:1000,
+      messages:[{role:"user",content:prompt}]
+    })
+  });
+  if(!resp.ok) throw new Error("API-fout "+resp.status);
+  const data=await resp.json();
+  const tekst=data.content.filter(b=>b.type==="text").map(b=>b.text).join("\n");
+  const schoon=tekst.replace(/```json|```/g,"").trim();
+  return JSON.parse(schoon);
+}
+
+$("kopieer").addEventListener("click",async()=>{
+  await navigator.clipboard.writeText($("json-uit").value);
+  $("kopieer-status").textContent="Gekopieerd ✓";
+  setTimeout(()=>$("kopieer-status").textContent="",2500);
+});
+</script>
+</body>
+</html>

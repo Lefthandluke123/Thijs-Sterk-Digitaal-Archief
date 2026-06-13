@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vertaal-assistent — Thijs Sterk Archief</title>
+<style>
+  :root{
+    --inkt:#1d2733; --papier:#f7f6f2; --kaart:#ffffff;
+    --water:#2e6f8e; --water-licht:#e3eef3; --lijn:#dcd9d0;
+    --groen:#3a7d44; --rood:#b04a3a; --grijs:#6b7480;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--papier);color:var(--inkt);
+    font:15px/1.5 "Helvetica Neue",Arial,sans-serif}
+  header{background:var(--water);color:#fff;padding:18px 24px}
+  header h1{margin:0;font-size:20px;font-weight:600;letter-spacing:.3px}
+  header p{margin:4px 0 0;font-size:13px;opacity:.85}
+  main{max-width:1200px;margin:0 auto;padding:20px 24px 60px}
+  section{background:var(--kaart);border:1px solid var(--lijn);border-radius:8px;
+    padding:18px 20px;margin-bottom:18px}
+  h2{margin:0 0 10px;font-size:15px;color:var(--water);text-transform:uppercase;
+    letter-spacing:.6px}
+  label{display:block;font-size:12px;color:var(--grijs);margin:10px 0 3px;font-weight:600}
+  textarea{width:100%;border:1px solid var(--lijn);border-radius:6px;
+    padding:8px 10px;font:inherit;background:#fff;color:var(--inkt);resize:vertical}
+  textarea:focus{outline:2px solid var(--water);outline-offset:0}
+  button{font:inherit;border:none;border-radius:6px;padding:9px 16px;cursor:pointer;
+    font-weight:600}
+  button:disabled{opacity:.45;cursor:default}
+  .btn-primair{background:var(--water);color:#fff}
+  .btn-kopieer{background:var(--groen);color:#fff}
+  .werkbalk{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px}
+  #status{font-size:13px;color:var(--grijs)}
+  #status.bezig{color:var(--water);font-weight:600}
+  #status.fout{color:var(--rood);font-weight:600}
+  .taal-tabs{display:flex;gap:8px;border-bottom:1px solid var(--lijn);margin-bottom:14px}
+  .taal-tab{padding:8px 12px;border:none;background:none;cursor:pointer;font-weight:600;
+    color:var(--grijs);border-bottom:3px solid transparent;transition:all .15s}
+  .taal-tab.actief{color:var(--water);border-bottom-color:var(--water)}
+  .veld{margin-bottom:14px}
+  .veld-label{font-size:12px;color:var(--water);font-weight:600;margin-bottom:3px}
+  .veld label{margin:3px 0;font-size:12px;color:var(--grijs)}
+  .veld textarea{height:60px;font-size:13px}
+  .hint{font-size:12px;color:var(--grijs);margin:4px 0 0}
+  #json-uit{height:280px;font-family:Menlo,Consolas,monospace;font-size:12px;
+    background:#fbfaf7}
+  .werk{border:1px solid var(--lijn);border-radius:8px;padding:14px;margin-bottom:14px;background:#fff}
+  .werk-titel{font-weight:600;margin-bottom:10px}
+  .talen-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Vertaal-assistent</h1>
+  <p>Thijs Sterk Archief · paste metadata.json in → AI vertaalt naar EN/DE/FR/ES · edit live, JSON groeit mee</p>
+</header>
+<main>
+
+<section>
+  <h2>JSON invoeren</h2>
+  <label for="json-in">Plak hier je metadata.json (output van de metadata-assistent)</label>
+  <textarea id="json-in" placeholder='{
+  "werk-titel": {
+    "bestandsnaam": "...",
+    "titel": "...",
+    ...
+  }
+}'></textarea>
+  <div class="werkbalk">
+    <button class="btn-primair" id="laad">Laad JSON</button>
+    <button class="btn-primair" id="alleen-bewerken" disabled>Alleen bewerken (sla AI over)</button>
+    <span id="status"></span>
+  </div>
+</section>
+
+<section id="werken-sectie" style="display:none">
+  <h2>Vertalingen per werk</h2>
+  <div id="werken" style="margin-top:14px"></div>
+</section>
+
+<section id="json-sectie" style="display:none">
+  <h2>JSON-resultaat</h2>
+  <p class="hint">Groeit live mee. Bewaar dit als <b>metadata-vertaald.json</b>.</p>
+  <textarea id="json-uit" readonly></textarea>
+  <div class="werkbalk">
+    <button class="btn-kopieer" id="kopieer">Kopieer JSON</button>
+    <span id="kopieer-status" style="font-size:13px;color:var(--groen)"></span>
+  </div>
+</section>
+
+</main>
+<script>
+const TALEN = {nl:"Nederlands",en:"English",de:"Deutsch",fr:"Français",es:"Español"};
+const VELDEN = ["titel","beschrijving","techniek"];
+let data = {}; // {slug: {bestandsnaam, titel:{nl,en,...}, ...}, ...}
+
+const $ = id => document.getElementById(id);
+
+$("laad").addEventListener("click",async()=>{
+  const invoer = $("json-in").value.trim();
+  if(!invoer) return alert("Plak eerst JSON");
+  try{
+    data = JSON.parse(invoer);
+  }catch(e){
+    return alert("Ongeldige JSON: "+e.message);
+  }
+  
+  // Zet alle velden naar geneste talen-structuur
+  Object.values(data).forEach(w=>{
+    VELDEN.forEach(v=>{
+      if(typeof w[v]==="string"){
+        w[v]={nl:w[v],en:"",de:"",fr:"",es:""};
+      }else if(!w[v]){
+        w[v]={nl:"",en:"",de:"",fr:"",es:""};
+      }
+    });
+  });
+  
+  render();
+  $("werken-sectie").style.display="block";
+  $("json-sectie").style.display="block";
+  $("json-in").value="";
+});
+
+function render(){
+  const werken=$("werken");
+  werken.innerHTML="";
+  Object.entries(data).forEach(([slug,w])=>{
+    const div=document.createElement("div"); div.className="werk";
+    let html=`<div class="werk-titel">${esc(w.titel?.nl||w.bestandsnaam)}</div>
+      <div class="talen-grid">`;
+    VELDEN.forEach(v=>{
+      html+=`<div class="veld" data-veld="${v}">
+        <div class="veld-label">${v.toUpperCase()}</div>`;
+      Object.entries(TALEN).forEach(([taal,naam])=>{
+        const waarde = w[v]?.[taal]||"";
+        html+=`<label>${naam}</label><textarea data-slug="${slug}" data-v="${v}" 
+          data-taal="${taal}">${esc(waarde)}</textarea>`;
+      });
+      html+=`</div>`;
+    });
+    html+=`</div>`;
+    div.innerHTML=html;
+    div.querySelectorAll("textarea").forEach(ta=>{
+      ta.addEventListener("input",()=>{
+        const {slug:s,v,taal:t}=ta.dataset;
+        data[s][v][t]=ta.value;
+        updateJson();
+      });
+    });
+    werken.appendChild(div);
+  });
+}
+
+function esc(s){return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;")}
+
+function updateJson(){
+  const uit={};
+  Object.entries(data).forEach(([slug,w])=>{
+    uit[slug]={
+      bestandsnaam:w.bestandsnaam,
+      titel:w.titel,
+      beschrijving:w.beschrijving,
+      techniek:w.techniek,
+      altTekst:w.altTekst,
+      tags:w.tags,
+      categorie:w.categorie,
+      afmetingen:w.afmetingen,
+      jaartal:w.jaartal
+    };
+  });
+  $("json-uit").value=JSON.stringify(uit,null,2);
+}
+
+$("alleen-bewerken").addEventListener("click",()=>{
+  $("werken-sectie").style.display="block";
+  $("json-sectie").style.display="block";
+  render();
+});
+
+$("kopieer").addEventListener("click",async()=>{
+  await navigator.clipboard.writeText($("json-uit").value);
+  $("kopieer-status").textContent="Gekopieerd ✓";
+  setTimeout(()=>$("kopieer-status").textContent="",2500);
+});
+
+// AI-vertaling
+async function vertaalAlles(){
+  const knop=$("laad"), status=$("status");
+  knop.disabled=true; status.className="bezig";
+  let klaar=0, fout=0;
+  const werken=Object.entries(data);
+  for(const [slug,w] of werken){
+    status.textContent=`AI vertaalt ${klaar+fout+1}/${werken.length}…`;
+    try{
+      const r=await vraagAI(w);
+      VELDEN.forEach(v=>{
+        if(r[v]){
+          Object.entries(r[v]).forEach(([t,waarde])=>{
+            w[v][t]=waarde;
+          });
+        }
+      });
+      klaar++;
+    }catch(e){
+      console.error(e); fout++;
+    }
+    render(); updateJson();
+  }
+  status.className=fout?"fout":"";
+  status.textContent=fout?`${klaar} klaar, ${fout} fout`:`Alle ${klaar} vertaald ✓`;
+  knop.disabled=false;
+}
+
+// Voeg AI-vertaal knop toe aan werkbalk
+const werkbalk=document.querySelector(".werkbalk");
+const aiKnop=document.createElement("button");
+aiKnop.className="btn-primair";
+aiKnop.textContent="Vertaal alles met AI";
+aiKnop.id="vertaal-ai";
+werkbalk.insertBefore(aiKnop, $("status"));
+aiKnop.addEventListener("click",vertaalAlles);
+
+async function vraagAI(w){
+  const prompt=`Je vertaalt Nederlandse museumcatalogusteksten naar Engels, Duits, Frans en Spaans.
+De Nederlandse teksten zijn:
+- titel: "${w.titel?.nl||""}"
+- beschrijving: "${w.beschrijving?.nl||""}"
+- techniek: "${w.techniek?.nl||""}"
+
+Vertaal ALLEEN deze drie velden (niet altText en tags). Behoud de stijl en lengte.
+Antwoord UITSLUITEND met geldige JSON, geen uitleg, geen backticks:
+{"titel":{"en":"...","de":"...","fr":"...","es":"..."},
+ "beschrijving":{"en":"...","de":"...","fr":"...","es":"..."},
+ "techniek":{"en":"...","de":"...","fr":"...","es":"..."}}`;
+  const resp=await fetch("https://api.anthropic.com/v1/messages",{
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      model:"claude-sonnet-4-6", max_tokens:1000,
+      messages:[{role:"user",content:prompt}]
+    })
+  });
+  if(!resp.ok) throw new Error("API-fout "+resp.status);
+  const data=await resp.json();
+  const tekst=data.content.filter(b=>b.type==="text").map(b=>b.text).join("\n");
+  const schoon=tekst.replace(/```json|```/g,"").trim();
+  return JSON.parse(schoon);
+}
+</script>
+</body>
+</html>

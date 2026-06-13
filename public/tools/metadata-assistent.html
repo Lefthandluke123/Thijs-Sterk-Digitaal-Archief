@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Metadata-assistent — Thijs Sterk Archief</title>
+<style>
+  :root{
+    --inkt:#1d2733; --papier:#f7f6f2; --kaart:#ffffff;
+    --water:#2e6f8e; --water-licht:#e3eef3; --lijn:#dcd9d0;
+    --groen:#3a7d44; --rood:#b04a3a; --grijs:#6b7480;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--papier);color:var(--inkt);
+    font:15px/1.5 "Helvetica Neue",Arial,sans-serif}
+  header{background:var(--water);color:#fff;padding:18px 24px}
+  header h1{margin:0;font-size:20px;font-weight:600;letter-spacing:.3px}
+  header p{margin:4px 0 0;font-size:13px;opacity:.85}
+  main{max-width:1100px;margin:0 auto;padding:20px 24px 60px}
+  section{background:var(--kaart);border:1px solid var(--lijn);border-radius:8px;
+    padding:18px 20px;margin-bottom:18px}
+  h2{margin:0 0 10px;font-size:15px;color:var(--water);text-transform:uppercase;
+    letter-spacing:.6px}
+  label{display:block;font-size:12px;color:var(--grijs);margin:10px 0 3px;font-weight:600}
+  textarea,input[type=text],select{width:100%;border:1px solid var(--lijn);border-radius:6px;
+    padding:8px 10px;font:inherit;background:#fff;color:var(--inkt)}
+  textarea:focus,input:focus,select:focus{outline:2px solid var(--water);outline-offset:0}
+  textarea{resize:vertical}
+  #basisprompt{height:130px;font-size:13px}
+  #batchinstructie{height:50px;font-size:13px}
+  #dropzone{border:2px dashed var(--water);border-radius:8px;background:var(--water-licht);
+    padding:34px;text-align:center;color:var(--water);cursor:pointer;font-size:15px;
+    transition:background .15s}
+  #dropzone.over{background:#cfe2eb}
+  #dropzone strong{display:block;font-size:16px;margin-bottom:4px}
+  button{font:inherit;border:none;border-radius:6px;padding:9px 16px;cursor:pointer;
+    font-weight:600}
+  button:disabled{opacity:.45;cursor:default}
+  .btn-primair{background:var(--water);color:#fff}
+  .btn-stil{background:var(--water-licht);color:var(--water)}
+  .btn-kopieer{background:var(--groen);color:#fff}
+  .werkbalk{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px}
+  #status{font-size:13px;color:var(--grijs)}
+  #status.bezig{color:var(--water);font-weight:600}
+  #status.fout{color:var(--rood);font-weight:600}
+  .kaart{display:grid;grid-template-columns:170px 1fr;gap:16px;border:1px solid var(--lijn);
+    border-radius:8px;padding:14px;margin-bottom:14px;background:#fff}
+  .kaart img{width:170px;height:170px;object-fit:contain;background:#eee;border-radius:6px}
+  .kaart .bestand{font-size:11px;color:var(--grijs);word-break:break-all;margin-top:6px}
+  .kaart .ai-status{font-size:12px;margin-top:6px}
+  .ai-status.ok{color:var(--groen)} .ai-status.bezig{color:var(--water)}
+  .ai-status.fout{color:var(--rood)}
+  .velden{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+  .velden .breed{grid-column:1/-1}
+  .velden textarea{height:64px;font-size:13px}
+  .kaart-kop{display:flex;justify-content:space-between;align-items:center;grid-column:1/-1}
+  .verwijder{background:none;color:var(--rood);padding:2px 6px;font-size:13px}
+  #json-uit{height:240px;font-family:Menlo,Consolas,monospace;font-size:12px;
+    background:#fbfaf7}
+  .hint{font-size:12px;color:var(--grijs);margin:4px 0 0}
+</style>
+</head>
+<body>
+<header>
+  <h1>Metadata-assistent</h1>
+  <p>Thijs Sterk Archief · sleep schilderijen erin, AI stelt metadata voor, jij vult aan · batch van 10–20 werkt het best</p>
+</header>
+<main>
+
+<section>
+  <h2>AI-instructies</h2>
+  <label for="basisprompt">Basisprompt (bewerkbaar)</label>
+  <textarea id="basisprompt">Je beschrijft schilderijen van de Nederlandse schilder Thijs Sterk (1913-1982) voor een online museumcatalogus. Geef per schilderij:
+- titel: korte Nederlandse titel, zonder aanhalingstekens
+- beschrijving: 2 à 4 zinnen in museumcatalogus-toon over wat er te zien is (compositie, kleur, licht, sfeer)
+- altTekst: één feitelijke Nederlandse zin die het beeld beschrijft voor blinde bezoekers
+- tags: 5 à 8 Nederlandse trefwoorden in kleine letters
+- categorie: precies één uit deze lijst: Landschap, Portret, Stilleven, Abstract, Stadsgezicht, Zeegezicht, Figuratief, Monumentaal, Dieren, Bloemen, Overig
+
+BELANGRIJK: noem nooit kunststromingen, scholen of -ismen (dus ook geen "Bergense School", geen "impressionisme" enz.). Beschrijf alleen wat zichtbaar is.</textarea>
+  <label for="batchinstructie">Tijdelijke aanwijzingen voor deze batch (optioneel)</label>
+  <textarea id="batchinstructie" placeholder="Bijv.: dit zijn allemaal aquarellen uit de jaren vijftig"></textarea>
+</section>
+
+<section>
+  <h2>Schilderijen</h2>
+  <div id="dropzone">
+    <strong>Sleep schilderijen hierheen</strong>
+    of klik om bestanden te kiezen (JPG/PNG)
+  </div>
+  <input type="file" id="bestandinvoer" accept="image/*" multiple hidden>
+  <div class="werkbalk">
+    <button class="btn-primair" id="genereer" disabled>Genereer metadata met AI</button>
+    <button class="btn-stil" id="leegmaken" disabled>Alles leegmaken</button>
+    <span id="status"></span>
+  </div>
+  <div id="kaarten" style="margin-top:16px"></div>
+</section>
+
+<section>
+  <h2>JSON-resultaat</h2>
+  <p class="hint">Groeit live mee terwijl je typt. Bewaar dit als <b>metadata.json</b> (Plain Text, geen slimme aanhalingstekens!).</p>
+  <textarea id="json-uit" readonly></textarea>
+  <div class="werkbalk">
+    <button class="btn-kopieer" id="kopieer">Kopieer JSON</button>
+    <span id="kopieer-status" style="font-size:13px;color:var(--groen)"></span>
+  </div>
+</section>
+
+</main>
+<script>
+const CATEGORIEEN = ["Landschap","Portret","Stilleven","Abstract","Stadsgezicht",
+  "Zeegezicht","Figuratief","Monumentaal","Dieren","Bloemen","Overig"];
+let werken = []; // {id, bestandsnaam, dataUrl, mediaType, base64klein, velden:{...}}
+
+const $ = id => document.getElementById(id);
+const dropzone=$("dropzone"), invoer=$("bestandinvoer"), kaarten=$("kaarten");
+
+dropzone.addEventListener("click",()=>invoer.click());
+dropzone.addEventListener("dragover",e=>{e.preventDefault();dropzone.classList.add("over")});
+dropzone.addEventListener("dragleave",()=>dropzone.classList.remove("over"));
+dropzone.addEventListener("drop",e=>{e.preventDefault();dropzone.classList.remove("over");
+  voegToe([...e.dataTransfer.files])});
+invoer.addEventListener("change",()=>{voegToe([...invoer.files]);invoer.value=""});
+
+function voegToe(bestanden){
+  bestanden.filter(f=>f.type.startsWith("image/")).forEach(f=>{
+    const lezer=new FileReader();
+    lezer.onload=async ()=>{
+      const klein = await verklein(lezer.result);
+      werken.push({
+        id: Math.random().toString(36).slice(2),
+        bestandsnaam: f.name,
+        dataUrl: lezer.result,
+        base64klein: klein,
+        velden:{slug:"",titel:"",beschrijving:"",altTekst:"",tags:"",
+          categorie:"Landschap",afmetingen:"",jaartal:"",techniek:""},
+        aiStatus:""
+      });
+      render(); updateJson();
+    };
+    lezer.readAsDataURL(f);
+  });
+}
+
+// Verklein naar max 900px voor de API (scheelt enorm in payload)
+function verklein(dataUrl){
+  return new Promise(res=>{
+    const img=new Image();
+    img.onload=()=>{
+      const max=900, s=Math.min(1, max/Math.max(img.width,img.height));
+      const c=document.createElement("canvas");
+      c.width=Math.round(img.width*s); c.height=Math.round(img.height*s);
+      c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+      res(c.toDataURL("image/jpeg",0.85).split(",")[1]);
+    };
+    img.src=dataUrl;
+  });
+}
+
+function maakSlug(t){
+  return t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"");
+}
+
+function render(){
+  kaarten.innerHTML="";
+  werken.forEach(w=>{
+    const k=document.createElement("div"); k.className="kaart";
+    k.innerHTML=`
+      <div>
+        <img src="${w.dataUrl}" alt="">
+        <div class="bestand">${w.bestandsnaam}</div>
+        <div class="ai-status ${w.aiStatus==="ok"?"ok":w.aiStatus==="bezig"?"bezig":w.aiStatus?"fout":""}">
+          ${w.aiStatus==="ok"?"✓ AI-voorstel klaar":w.aiStatus==="bezig"?"⏳ AI bezig…":w.aiStatus||""}
+        </div>
+      </div>
+      <div class="velden">
+        <div class="kaart-kop">
+          <span style="font-weight:600">${w.velden.titel||"(nog geen titel)"}</span>
+          <button class="verwijder" data-act="weg">✕ verwijder</button>
+        </div>
+        <div><label>Titel</label><input type="text" data-v="titel" value="${esc(w.velden.titel)}"></div>
+        <div><label>Slug</label><input type="text" data-v="slug" value="${esc(w.velden.slug)}"></div>
+        <div class="breed"><label>Beschrijving</label><textarea data-v="beschrijving">${esc(w.velden.beschrijving)}</textarea></div>
+        <div class="breed"><label>Alt-tekst (alleen NL)</label><input type="text" data-v="altTekst" value="${esc(w.velden.altTekst)}"></div>
+        <div><label>Tags (komma's, alleen NL)</label><input type="text" data-v="tags" value="${esc(w.velden.tags)}"></div>
+        <div><label>Categorie</label><select data-v="categorie">${
+          CATEGORIEEN.map(c=>`<option ${c===w.velden.categorie?"selected":""}>${c}</option>`).join("")
+        }</select></div>
+        <div><label>Afmetingen (bijv. 80 x 60 cm)</label><input type="text" data-v="afmetingen" value="${esc(w.velden.afmetingen)}"></div>
+        <div><label>Jaartal</label><input type="text" data-v="jaartal" value="${esc(w.velden.jaartal)}"></div>
+        <div class="breed"><label>Techniek (bijv. olieverf op doek)</label><input type="text" data-v="techniek" value="${esc(w.velden.techniek)}"></div>
+      </div>`;
+    k.querySelectorAll("[data-v]").forEach(el=>{
+      el.addEventListener("input",()=>{
+        w.velden[el.dataset.v]=el.value;
+        if(el.dataset.v==="titel" && !w.slugHandmatig){
+          w.velden.slug=maakSlug(el.value);
+          k.querySelector('[data-v="slug"]').value=w.velden.slug;
+        }
+        if(el.dataset.v==="slug") w.slugHandmatig=true;
+        updateJson();
+      });
+    });
+    k.querySelector('[data-act="weg"]').addEventListener("click",()=>{
+      werken=werken.filter(x=>x.id!==w.id); render(); updateJson();
+    });
+    kaarten.appendChild(k);
+  });
+  $("genereer").disabled = werken.length===0;
+  $("leegmaken").disabled = werken.length===0;
+}
+
+function esc(s){return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;")}
+
+function updateJson(){
+  const uit={};
+  werken.forEach(w=>{
+    const v=w.velden;
+    const sleutel=v.slug||maakSlug(v.titel)||maakSlug(w.bestandsnaam.replace(/\.[^.]+$/,""));
+    uit[sleutel]={
+      bestandsnaam:w.bestandsnaam,
+      titel:v.titel, beschrijving:v.beschrijving, techniek:v.techniek,
+      altTekst:v.altTekst,
+      tags:v.tags.split(",").map(t=>t.trim()).filter(Boolean),
+      categorie:v.categorie, afmetingen:v.afmetingen, jaartal:v.jaartal
+    };
+  });
+  $("json-uit").value=JSON.stringify(uit,null,2);
+}
+
+$("leegmaken").addEventListener("click",()=>{
+  if(confirm("Alle schilderijen en velden leegmaken?")){werken=[];render();updateJson()}
+});
+
+$("kopieer").addEventListener("click",async()=>{
+  await navigator.clipboard.writeText($("json-uit").value);
+  $("kopieer-status").textContent="Gekopieerd ✓";
+  setTimeout(()=>$("kopieer-status").textContent="",2500);
+});
+
+$("genereer").addEventListener("click",async()=>{
+  const knop=$("genereer"), status=$("status");
+  knop.disabled=true; status.className="bezig";
+  let klaar=0, fouten=0;
+  for(const w of werken){
+    if(w.aiStatus==="ok"){klaar++;continue} // sla al-gegenereerde over
+    w.aiStatus="bezig"; render();
+    status.textContent=`AI bezig met ${klaar+fouten+1} van ${werken.length}…`;
+    try{
+      const r=await vraagAI(w);
+      w.velden.titel=r.titel||w.velden.titel;
+      w.velden.beschrijving=r.beschrijving||"";
+      w.velden.altTekst=r.altTekst||"";
+      w.velden.tags=(r.tags||[]).join(", ");
+      if(CATEGORIEEN.includes(r.categorie)) w.velden.categorie=r.categorie;
+      if(!w.slugHandmatig) w.velden.slug=maakSlug(w.velden.titel);
+      w.aiStatus="ok"; klaar++;
+    }catch(e){
+      console.error(e); w.aiStatus="Fout: "+e.message; fouten++;
+    }
+    render(); updateJson();
+  }
+  status.className=fouten?"fout":"";
+  status.textContent=fouten?`Klaar, maar ${fouten} mislukt — probeer die opnieuw.`:`Alle ${klaar} klaar ✓`;
+  knop.disabled=false;
+});
+
+async function vraagAI(w){
+  const prompt = $("basisprompt").value.trim()
+    + ($("batchinstructie").value.trim() ? "\n\nExtra aanwijzing voor deze batch: "+$("batchinstructie").value.trim() : "")
+    + `\n\nAntwoord UITSLUITEND met geldige JSON, zonder uitleg en zonder markdown-backticks, in dit formaat:
+{"titel":"...","beschrijving":"...","altTekst":"...","tags":["..."],"categorie":"..."}`;
+  const resp=await fetch("https://api.anthropic.com/v1/messages",{
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      model:"claude-sonnet-4-6", max_tokens:1000,
+      messages:[{role:"user",content:[
+        {type:"image",source:{type:"base64",media_type:"image/jpeg",data:w.base64klein}},
+        {type:"text",text:prompt}
+      ]}]
+    })
+  });
+  if(!resp.ok) throw new Error("API-fout "+resp.status);
+  const data=await resp.json();
+  const tekst=data.content.filter(b=>b.type==="text").map(b=>b.text).join("\n");
+  const schoon=tekst.replace(/```json|```/g,"").trim();
+  return JSON.parse(schoon);
+}
+</script>
+</body>
+</html>
